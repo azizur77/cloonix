@@ -1,0 +1,36 @@
+#!/bin/bash
+HERE=`pwd`
+set -e
+AGENT_BIN=${HERE}/agent_bin
+rm -rf ${AGENT_BIN}
+mkdir -p ${AGENT_BIN}
+
+LIB_CLOWNIX=${HERE}/../lib_io_clownix
+BLKD=${HERE}/../lib_blkd
+RPCT=${HERE}/../lib_rpct
+
+
+cd $LIB_CLOWNIX
+export CFLAGS=
+make clean
+make
+
+cd $BLKD
+export CFLAGS=
+make clean
+make
+
+cd $RPCT
+export CFLAGS=
+make clean
+make
+
+cd ${HERE}/cloonix_dropbear
+make clean
+make
+
+cp scp      ${AGENT_BIN}/dropbear_cloonix_scp
+cp dbclient ${AGENT_BIN}/dropbear_cloonix_ssh
+cp dropbear ${AGENT_BIN}/dropbear_cloonix_sshd
+
+

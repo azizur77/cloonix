@@ -1,0 +1,35 @@
+#!/bin/bash
+HERE=`pwd`
+set -e
+echo IOC
+cd ${HERE}/../lib_ioc
+make clean
+make
+echo
+echo BLKD
+cd ${HERE}/../lib_blkd
+make clean
+make
+echo
+echo RPCT
+cd ${HERE}/../lib_rpct
+make clean
+make
+echo
+echo LIB_MULAN
+cd ${HERE}/../lib_mulan
+make clean
+make
+echo
+echo MULAN
+cd ${HERE}/../mulan
+make clean
+make
+echo
+
+
+
+
+
+
+

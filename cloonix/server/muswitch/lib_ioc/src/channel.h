@@ -1,0 +1,47 @@
+/****************************************************************************/
+/* Copyright (C) 2006-2017 Cloonix <clownix@clownix.net>  License GPL-3.0+  */
+/****************************************************************************/
+/*                                                                          */
+/*   This program is free software: you can redistribute it and/or modify   */
+/*   it under the terms of the GNU General Public License as published by   */
+/*   the Free Software Foundation, either version 3 of the License, or      */
+/*   (at your option) any later version.                                    */
+/*                                                                          */
+/*   This program is distributed in the hope that it will be useful,        */
+/*   but WITHOUT ANY WARRANTY; without even the implied warranty of         */
+/*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
+/*   GNU General Public License for more details.                           */
+/*                                                                          */
+/*   You should have received a copy of the GNU General Public License      */
+/*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+/*                                                                          */
+/****************************************************************************/
+void channel_beat_set (t_all_ctx *all_ctx, t_heartbeat_cb beat);
+/*---------------------------------------------------------------------------*/
+int channel_create(t_all_ctx *all_ctx, int is_blkd, int fd, 
+                   t_fd_event rx_cb, 
+                   t_fd_event tx_cb, 
+                   t_fd_error err_cb,
+                   char *from);
+/*---------------------------------------------------------------------------*/
+void channel_delete(t_all_ctx *all_ctx, int llid);
+/*---------------------------------------------------------------------------*/
+void channel_loop(t_all_ctx *all_ctx);
+/*---------------------------------------------------------------------------*/
+void channel_init(t_all_ctx *all_ctx);
+/*---------------------------------------------------------------------------*/
+int channel_check_llid(t_all_ctx *all_ctx, int llid, 
+                       int *is_blkd, const char *fct);
+/*---------------------------------------------------------------------------*/
+int get_fd_with_llid(t_all_ctx *all_ctx, int llid);
+/*---------------------------------------------------------------------------*/
+void channel_rx_local_flow_ctrl(void *ptr, int llid, int stop);
+void channel_tx_local_flow_ctrl(void *ptr, int llid, int stop);
+/*---------------------------------------------------------------------------*/
+
+
+
+
+
+
+

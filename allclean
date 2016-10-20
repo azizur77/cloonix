@@ -1,0 +1,11 @@
+#!/bin/bash
+CLOONIX_CONFIG=./cloonix/cloonix_config
+if [ ! -e $CLOONIX_CONFIG ]; then
+  echo NOT FOUND:
+  echo $CLOONIX_CONFIG
+  exit
+fi
+CLOONIX_VERSION=$(cat ./cloonix/cloonix_config | grep CLOONIX_VERSION)
+CLOONIX_VERSION=${CLOONIX_VERSION#*=}
+rm -f cloonix-${CLOONIX_VERSION}.tar.gz
+rm -rf tmpbuild

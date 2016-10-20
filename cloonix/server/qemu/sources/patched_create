@@ -1,0 +1,19 @@
+#!/bin/bash
+HERE=`pwd`
+QEMU_NAME=qemu-1b0d384
+QEMU_TAR_NAME=qemu-1b0d384.tar.gz
+rm -rf $QEMU_NAME
+
+if [ -e tainted_qemu ]; then
+  echo remove tainted_qemu directory and start again
+  exit 1
+fi
+
+tar xvf $QEMU_TAR_NAME
+
+mv $QEMU_NAME tainted_qemu
+
+cd tainted_qemu
+
+patch -f -p1 < ../cloonix_patch
+

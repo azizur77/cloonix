@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+CLOONIX_CONFIG=./cloonix/cloonix_config
+if [ ! -e $CLOONIX_CONFIG ]; then
+  echo NOT FOUND:
+  echo $CLOONIX_CONFIG
+  exit
+fi
+CLOONIX_VERSION=$(cat ./cloonix/cloonix_config | grep CLOONIX_VERSION)
+CLOONIX_VERSION=${CLOONIX_VERSION#*=}
+./allclean
+./build
+./pack
+./install cloonix-${CLOONIX_VERSION}.tar.gz

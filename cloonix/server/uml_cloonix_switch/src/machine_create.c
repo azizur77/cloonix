@@ -1,0 +1,565 @@
+/****************************************************************************/
+/* Copyright (C) 2006-2017 Cloonix <clownix@clownix.net>  License GPL-3.0+  */
+/****************************************************************************/
+/*                                                                          */
+/*   This program is free software: you can redistribute it and/or modify   */
+/*   it under the terms of the GNU General Public License as published by   */
+/*   the Free Software Foundation, either version 3 of the License, or      */
+/*   (at your option) any later version.                                    */
+/*                                                                          */
+/*   This program is distributed in the hope that it will be useful,        */
+/*   but WITHOUT ANY WARRANTY; without even the implied warranty of         */
+/*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
+/*   GNU General Public License for more details.                           */
+/*                                                                          */
+/*   You should have received a copy of the GNU General Public License      */
+/*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+/*                                                                          */
+/****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/un.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <signal.h>
+#include <errno.h>
+
+
+#include "io_clownix.h"
+#include "lib_commons.h"
+#include "rpc_clownix.h"
+#include "cfg_store.h"
+#include "commun_daemon.h"
+#include "heartbeat.h"
+#include "machine_create.h"
+#include "event_subscriber.h"
+#include "pid_clone.h"
+#include "system_callers.h"
+#include "lan_to_name.h"
+#include "doors_rpc.h"
+#include "utils_cmd_line_maker.h"
+#include "automates.h"
+#include "llid_trace.h"
+#include "cdrom_creation_clone.h"
+#include "qmonitor.h"
+#include "qmp.h"
+#include "qhvc0.h"
+#include "doorways_mngt.h"
+#include "timeout_service.h"
+#include "c2c.h"
+#include "mueth_mngt.h"
+#include "stats_counters.h"
+#include "stats_counters_sysinfo.h"
+
+
+
+
+
+void uml_vm_automaton(void *unused_data, int status, char *name);
+void qemu_vm_automaton(void *unused_data, int status, char *name);
+
+
+/*****************************************************************************/
+typedef struct t_action_rm_dir
+{
+  int llid;
+  int tid;
+  int vm_id;
+  char name[MAX_NAME_LEN];
+} t_action_rm_dir;
+/*---------------------------------------------------------------------------*/
+typedef struct t_vm_building
+{
+  int llid;
+  int tid;
+  int thread_action_done;
+  int thread_action_status;
+  t_vm_params vm_params;
+  int vm_id;
+  int ref_jfs;
+  void *jfs;
+  int type_eth;
+  int llid_eth[MAX_ETH_VM+2];
+} t_vm_building;
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void add_eth_cfg(t_vm *vm, int eth, char *err)
+{
+  char path_data[MAX_PATH_LEN];
+  sprintf(path_data,"%s%d", utils_get_intf_prefix(0, vm->vm_id), eth);
+  cfg_set_eth(&(vm->vm_params), eth, path_data);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void death_of_rmdir_clone(void *data, int status, char *name)
+{
+  t_action_rm_dir *act = (t_action_rm_dir *) data;
+  int result;
+  if (cfg_is_a_zombie(act->name))
+    {
+    cfg_del_zombie(act->name);
+    result = status;
+    }
+  else
+    KOUT(" ");
+  event_print("End erasing %s data status %d", act->name, result);
+  event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+  dec_lock_self_destruction_dir();
+  clownix_free(act, __FUNCTION__);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int rmdir_clone(void *data)
+{
+  int result = 0;
+  char info[MAX_PRINT_LEN];
+  t_action_rm_dir *act = (t_action_rm_dir *) data;
+  info[0] = 0;
+  if (rm_machine_dirs(act->vm_id, info))
+    {
+    sleep(1);
+    if (rm_machine_dirs(act->vm_id, info))
+      {
+      sleep(1);
+      if (rm_machine_dirs(act->vm_id, info))
+        {
+        KERR(" %s ", info);
+        result = -1;
+        }
+      }
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void action_rm_dir_timed(void *data)
+{
+  t_action_rm_dir *act = (t_action_rm_dir *) data;
+  pid_clone_launch(rmdir_clone, death_of_rmdir_clone, NULL,
+                   (void *) act, (void *) act, NULL, act->name, -1, 1);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void timeout_erase_dir_zombie(int vm_id, char *name)
+{
+  t_action_rm_dir *act;
+  act = (t_action_rm_dir *) clownix_malloc(sizeof(t_action_rm_dir),12);
+  memset(act, 0, sizeof(t_action_rm_dir));
+  act->vm_id = vm_id; 
+  strcpy(act->name, name);
+  clownix_timeout_add(50, action_rm_dir_timed, (void *) act, NULL, NULL);
+  inc_lock_self_destruction_dir();
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void delayed_vm_cutoff(void *data)
+{
+  int pid;
+  char *name = (char *) data;
+  t_vm *vm = cfg_get_vm(name);
+  int i, vm_id, nb_eth;
+  t_eth *eth, *next_eth;
+  if (vm)
+    {
+    eth = vm->eth_head;
+    nb_eth = vm->vm_params.nb_eth;
+    for (i=0; i<nb_eth; i++)
+      {
+      if (eth)
+        {
+        next_eth = eth->next;
+        cfg_unset_eth(vm, eth);
+        eth = next_eth;
+        }
+      }
+    pid = utils_get_pid_of_machine(vm);
+    if (pid)
+      {
+      if ( !kill(pid, SIGTERM))
+        KERR("Brutal kill of %s", vm->vm_params.name);
+      }
+    vm_id = cfg_unset_vm(vm);
+    cfg_free_vm_id(vm_id);
+    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    }
+  clownix_free(data, __FUNCTION__);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void arm_delayed_vm_cutoff(char *name)
+{
+  char *vmn;
+  vmn = clownix_malloc(MAX_NAME_LEN, 13);
+  memset (vmn, 0, MAX_NAME_LEN);
+  strncpy(vmn, name, MAX_NAME_LEN-1);
+  clownix_timeout_add(300, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
+}
+/*---------------------------------------------------------------------------*/
+    
+/*****************************************************************************/
+static void machine_recv_del_vm(t_vm *vm)
+{
+  int pid;
+  if (!vm)
+    KOUT(" ");
+  pid = utils_get_pid_of_machine(vm);
+  if (pid)
+    {
+    event_print("POLITE DESTRUCT SIGNAL TO KVM %s PID %d",
+                 vm->vm_params.name, pid);
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void timeout_start_vm_create_automaton(void *data)
+{
+  char *vm_name = (char *) data;
+  t_vm   *vm = cfg_get_vm(vm_name);
+  t_wake_up_eths *wake_up_eths;
+  if (vm)
+    {
+    wake_up_eths = vm->wake_up_eths;
+    if (wake_up_eths)
+      {
+      if (strcmp(wake_up_eths->name, vm_name))
+        KOUT("%s %s", wake_up_eths->name, vm_name);
+      else 
+        qemu_vm_automaton(NULL, 0, vm->vm_params.name);
+      }
+    }
+  clownix_free(data, __FUNCTION__);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void start_lock_and_watchdog(int llid, int tid, t_vm *vm, char *err)
+{
+  t_wake_up_eths *data;
+  if (!vm)
+    KOUT(" ");
+  utils_chk_my_dirs(vm);
+  event_print("Making cmd line for %s", vm->vm_params.name);
+  data = (t_wake_up_eths *) clownix_malloc(sizeof(t_wake_up_eths), 13);
+  memset(data, 0, sizeof(t_wake_up_eths));
+  data->state = 0;
+  data->llid = llid;
+  data->tid = tid;
+  strcpy(data->name, vm->vm_params.name);
+  vm->wake_up_eths = data;
+  cfg_set_vm_locked(vm);
+  cdrom_config_creation_request(vm, vm->vm_params.nb_eth, 
+                               vm->vm_params.vm_config_flags);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int run_linux_virtual_machine(int llid, int tid, char *name, 
+                              t_vm *vm, char *err)
+{
+  int result = -1;
+  if (umid_pid_already_exists(vm->vm_id))
+    {
+    sprintf( err, "Machine %s seems to be running already", name);
+    event_print("Machine %s seems to be running already", name);
+    KERR(" ");
+    }
+  else
+    {
+    start_lock_and_watchdog(llid, tid, vm, err);
+    result = 0;
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static char *get_binary_name(t_vm_params *vm_params)
+{
+  static char binary_name[MAX_NAME_LEN];
+  memset(binary_name, 0, MAX_NAME_LEN);
+  strncpy(binary_name, QEMU_EXE, MAX_NAME_LEN-1);
+  return binary_name;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void death_of_mkdir_clone(void *data, int status, char *name)
+{
+  int i;
+  char err[MAX_PATH_LEN];
+  t_vm *vm;
+  t_vm_building *vm_building = (t_vm_building *) data;
+  cfg_del_newborn(name);
+  if (status)
+    {
+    sprintf(err,"Path: \"%s\" pb creating directory", 
+                cfg_get_work_vm(vm_building->vm_id));
+    send_status_ko(vm_building->llid, vm_building->tid, err);
+    clownix_free(vm_building,  __FUNCTION__);
+    }
+  else
+    {
+    event_print("Directories for %s created", vm_building->vm_params.name);
+    cfg_set_vm(&(vm_building->vm_params),
+                vm_building->vm_id, vm_building->llid);
+    vm = cfg_get_vm(vm_building->vm_params.name);
+    if (!vm)
+      KOUT(" ");
+
+    for (i=0; i<vm_building->vm_params.nb_eth; i++)
+      add_eth_cfg(vm, i, err);
+
+    strncpy(vm->binary_name, get_binary_name(&(vm_building->vm_params)), 
+            MAX_NAME_LEN-1);
+    if (!run_linux_virtual_machine(vm_building->llid, vm_building->tid,
+                                   vm_building->vm_params.name, vm, err))
+      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    else
+      {
+      send_status_ko(vm_building->llid, vm_building->tid, err);
+      machine_death(vm_building->vm_params.name, error_death_run);
+      }
+    }
+  recv_coherency_unlock();
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int mkdir_clone(void *data)
+{
+  int result;
+  t_vm_building *vm_building = (t_vm_building *) data;
+  result = mk_machine_dirs(vm_building->vm_params.name, vm_building->vm_id);
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void machine_recv_add_vm(int llid, int tid, t_vm_params *vm_params, int vm_id)
+{
+  t_vm_building *vm_building;
+  vm_building = (t_vm_building *) clownix_malloc(sizeof(t_vm_building), 16);
+  memset(vm_building, 0, sizeof(t_vm_building));
+  vm_building->llid = llid;
+  vm_building->tid  = tid;
+  memcpy(&(vm_building->vm_params), vm_params, sizeof(t_vm_params));
+  vm_building->vm_id  = vm_id;
+  pid_clone_launch(mkdir_clone, death_of_mkdir_clone, NULL,
+                   (void *) vm_building, (void *) vm_building, NULL, 
+                   vm_building->vm_params.name, -1, 1);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void timeout_service2(int job_idx, int is_timeout, void *opaque)
+{
+  t_opaque_agent_req *agent_req = (t_opaque_agent_req *) opaque;
+  qhvc0_end_qemu_unix(agent_req->name);
+  qmp_end_qemu_unix(agent_req->name);
+  qmonitor_end_qemu_unix(agent_req->name);
+  arm_delayed_vm_cutoff(agent_req->name);
+  doors_send_del_vm(get_doorways_llid(), 0, agent_req->name);
+  clownix_free(opaque, __FUNCTION__);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void timeout_service1(int job_idx, int is_timeout, void *opaque)
+{
+  t_opaque_agent_req *agent_req = (t_opaque_agent_req *) opaque;
+  if (is_timeout)
+    {
+    qhvc0_end_qemu_unix(agent_req->name);
+    qmp_end_qemu_unix(agent_req->name);
+    qmonitor_end_qemu_unix(agent_req->name);
+    arm_delayed_vm_cutoff(agent_req->name);
+    doors_send_del_vm(get_doorways_llid(), 0, agent_req->name);
+    clownix_free(opaque, __FUNCTION__);
+    }
+  else
+    timeout_service_alloc(timeout_service2, opaque, 500);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void try_shutdown_with_agent_first(char *name)
+{
+  char buf[MAX_NAME_LEN];
+  t_opaque_agent_req *opaque;
+  int job_idx;
+  opaque = (void *) clownix_malloc(sizeof(t_opaque_agent_req), 9);
+  memset(opaque, 0, sizeof(t_opaque_agent_req));
+  strncpy(opaque->name, name, MAX_NAME_LEN-1);
+  strncpy(opaque->action, "poweroff", MAX_NAME_LEN-1);
+  job_idx = timeout_service_alloc(timeout_service1, (void *)opaque, 300);
+  memset(buf, 0, MAX_NAME_LEN);
+  snprintf(buf, MAX_NAME_LEN-1, HALT_REQUEST, job_idx);
+  doors_send_command(get_doorways_llid(), 0, name, buf);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void stop_mueth_qemu(t_vm *vm)
+{
+  int i;
+  for (i=0; i<vm->vm_params.nb_eth; i++)
+    {
+    if (mueth_vm_stop(vm->vm_params.name, i))
+      KERR("%s %d", vm->vm_params.name, i);
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int machine_death( char *name, int error_death)
+{
+  int result = -1;
+  t_vm *vm = cfg_get_vm(name);
+  if (!vm)
+    return result;
+  if ((error_death) && 
+      (error_death != error_death_qmp) &&
+      (error_death != error_death_qmonitor))
+    {
+    if (error_death == error_death_timeout_hvc0_silent)
+      KERR("%s KILLED BECAUSE OF NO hvc0 IN GUEST", name);
+    else if (error_death == error_death_timeout_hvc0_conf)
+      KERR("%s KILLED BECAUSE OF NO AUTOLOGING IN hvc0 CONF", name);
+    else
+      KERR("%s %s %d ", __FUNCTION__, name, error_death);
+    }
+  if (vm->vm_to_be_killed == 0)
+    {
+    doors_send_del_vm(get_doorways_llid(), 0, name);
+    vm->vm_to_be_killed = 1;
+    stop_mueth_qemu(vm);
+    if (vm->pid_of_cp_clone)
+      {
+      KERR("CP ROOTFS SIGKILL %s, PID %d", name, vm->pid_of_cp_clone);
+      kill(vm->pid_of_cp_clone, SIGKILL);
+      vm->pid_of_cp_clone = 0;
+      }
+    try_shutdown_with_agent_first(name);
+    if (!cfg_is_a_zombie(name))
+      {
+      result = 0;
+      stats_counters_vm_death(name);
+      stats_counters_sysinfo_vm_death(name);
+      cfg_add_zombie(vm->vm_id, name);
+      if (!cfg_get_vm_locked(vm))
+        {
+        if (vm->wake_up_eths != NULL)
+          KOUT(" ");
+        timeout_erase_dir_zombie(vm->vm_id, name);
+        machine_recv_del_vm(vm);
+        }
+      else
+        {
+        if (vm->wake_up_eths == NULL)
+          KOUT(" ");
+        vm->vm_to_be_killed = 0;
+        vm->wake_up_eths->destroy_requested = 1;
+        clownix_timeout_del(vm->wake_up_eths->abs_beat,vm->wake_up_eths->ref,
+                            __FILE__, __LINE__);
+        clownix_timeout_add(1, utils_vm_create_fct_abort,(void *)vm,
+                      &(vm->wake_up_eths->abs_beat),&(vm->wake_up_eths->ref));
+        }
+      }
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void machine_recv_kill_clownix(void)
+{
+  int i, nb;
+  char name[MAX_NAME_LEN];
+  t_vm *vm = cfg_get_first_vm(&nb);
+  t_vm *next_vm;
+  for (i=0; i<nb; i++)
+    {
+    if (!vm)
+      KOUT(" ");
+    next_vm = vm->next;
+    strcpy(name, vm->vm_params.name);
+    machine_death(name, error_death_noerr);
+    vm = next_vm;
+    }
+  if (vm) 
+    KOUT(" ");
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void tmux_duplicate_clone_msg(void *data, char *msg)
+{
+  char tmux_name[MAX_NAME_LEN+2];
+  t_check_tmux_duplicate *tmux = (t_check_tmux_duplicate *) data;
+  memset(tmux_name, 0, MAX_NAME_LEN+2);
+  snprintf(tmux_name, MAX_NAME_LEN+1, "%s: ", tmux->name);
+  if (!strncmp(msg, tmux_name, strlen(tmux_name)))
+    strcpy(tmux->msg, "DUPLICATE");
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void tmux_duplicate_clone_death(void *data, int status, char *name)
+{
+  t_check_tmux_duplicate *tmux = (t_check_tmux_duplicate *) data;
+  if (!tmux->cb)
+    KOUT(" ");
+  if (!strcmp(tmux->msg, "DUPLICATE"))
+    tmux->cb(-1, tmux->name);
+  else
+    tmux->cb(0, tmux->name);
+  clownix_free(data, __FUNCTION__);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int tmux_duplicate_clone(void *data)
+{
+  char *cmd = utils_get_tmux_bin_path();
+  char *sock = utils_get_tmux_sock_path();
+
+  char *argv[] = { cmd, "-S", sock, "ls", NULL, };
+  my_popen(cmd, argv);
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void tmux_duplicate_check(char *name, t_tmux_duplicate_callback cb)
+{
+  t_check_tmux_duplicate *tmux;
+  int len = sizeof(t_check_tmux_duplicate);
+  tmux = (t_check_tmux_duplicate *) clownix_malloc(len, 7);
+  memset(tmux, 0, len);
+  strncpy(tmux->name, name, MAX_NAME_LEN-1);
+  tmux->cb = cb;
+  pid_clone_launch(tmux_duplicate_clone, tmux_duplicate_clone_death,
+                   tmux_duplicate_clone_msg, NULL, tmux, tmux, name, -1, 1);
+}
+/*---------------------------------------------------------------------------*/
+
+

@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+HERE=`pwd`
+CLOONIX_COMMON=${HERE}/../../../cloonix/common
+TARGET=${CLOONIX_COMMON}/spice/spice_lib
+if [ ! -d ${TARGET} ]; then
+  echo
+  echo NOT FOUND:
+  echo ${TARGET}
+  echo
+  exit
+fi
+
+cd ${HERE}/spice_client
+./patched_create
+mv tainted_spice spice_client
+rm -rf ${TARGET}/spice_client
+mv spice_client ${TARGET}
+
+cd ${TARGET}/spice_client
+PKG_CONFIG_PATH=${TARGET}/pkgconfig \
+./configure --prefix=${TARGET} \
+            --libdir=${TARGET} \
+            --disable-polkit \
+            --enable-usbredir \
+            --enable-gtk-doc=no \
+            --enable-gtk-doc-html=no \
+            --enable-gtk-doc-pdf=no \
+            --enable-controler=no \
+            --enable-dbus=no \
+            --enable-vala=no \
+            --enable-webdav=no \
+            --enable-smartcard=no \
+            --enable-lz4=no
+
+
+make clean
+make
+make install
+
+

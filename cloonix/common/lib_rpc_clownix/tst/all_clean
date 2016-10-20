@@ -1,0 +1,22 @@
+#!/bin/bash
+HERE=`pwd`
+cd ../../lib_io_clownix/
+make clean
+
+cd $HERE/../../lib_utils/
+make clean
+
+cd $HERE/../../lib_blkd/
+make clean
+
+cd $HERE/../../lib_rpct/
+make clean
+
+cd $HERE
+cd ..
+make clean
+
+cd $HERE
+make clean
+
+

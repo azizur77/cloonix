@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+HERE=`pwd`
+TARGET=${HERE}/spice_lib
+rm -rf ${TARGET}
+mkdir -p ${TARGET}
+
+
+cd $TARGET
+tar xvf ${HERE}/spice_protocol/spice-protocol.tar.gz
+cd spice-protocol
+./configure --prefix=${TARGET} \
+            --datarootdir=${TARGET}
+make clean
+make
+make install
+
+export PKG_CONFIG_PATH=${TARGET}/pkgconfig
+SPICE_PC=${TARGET}/spice-protocol/spice-protocol.pc
+mkdir -p $PKG_CONFIG_PATH
+cp -f ${SPICE_PC} $PKG_CONFIG_PATH
+sed -i s"%prefix}/share%prefix}%" ${PKG_CONFIG_PATH}/spice-protocol.pc
+
+cd ${TARGET}
+tar xvf ${HERE}/spice_usb/usbredir.tar.gz
+cd usbredir
+
+PKG_CONFIG_PATH=${TARGET}/pkgconfig \
+./configure --prefix=${TARGET} \
+            --libdir=${TARGET}
+make clean
+make
+make install
+
+

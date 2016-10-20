@@ -1,0 +1,29 @@
+#!/bin/bash
+HERE=`pwd`
+#----------------------------------------------------------
+if [ $# != 1 ]; then
+  echo Give cloonix to install as param
+  exit
+fi
+#----------------------------------------------------------
+CLOONIX=$1
+if [ ! -e $CLOONIX ]; then
+  echo NOT FOUND:
+  echo $CLOONIX
+  exit
+fi
+#----------------------------------------------------------
+for i in  cloonix_cli \
+          cloonix_gui \
+          cloonix_net \
+          cloonix_scp \
+          cloonix_ssh \
+          cloonix_zor ; do
+  sudo rm -f /usr/local/bin/${i}
+done
+sudo rm -rf /usr/local/bin/cloonix
+#----------------------------------------------------------
+cd /usr/local/bin
+sudo tar zxvf ${HERE}/${CLOONIX}
+sudo chown -R root:root /usr/local/bin/cloonix*
+#----------------------------------------------------------

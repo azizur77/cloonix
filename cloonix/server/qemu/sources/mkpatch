@@ -1,0 +1,12 @@
+#!/bin/bash
+HERE=`pwd`
+QEMU_NAME=qemu-1b0d384
+QEMU_TAR_NAME=qemu-1b0d384.tar.gz
+rm -rf ${QEMU_NAME}
+if [ ! -e tainted_qemu ]; then
+  echo tainted_qemu directory must exist 
+  exit 1
+fi
+tar xvf ${QEMU_TAR_NAME}
+diff -Naur ${QEMU_NAME} tainted_qemu > tmp_cloonix_patch
+rm -rf ${QEMU_NAME}

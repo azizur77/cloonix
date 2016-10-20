@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ ! -e tainted_spice ]; then
+  echo Must have tainted_spice
+fi
+tar xvf spice-gtk.tar.gz
+diff -Naur spice-gtk tainted_spice > tmp_cloonix.patch

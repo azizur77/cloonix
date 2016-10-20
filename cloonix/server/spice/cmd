@@ -1,0 +1,32 @@
+#!/bin/bash
+set -e
+HERE=`pwd`
+CLOONIX_COMMON=${HERE}/../../../cloonix/common
+TARGET=${CLOONIX_COMMON}/spice/spice_lib
+if [ ! -d ${TARGET} ]; then
+  echo
+  echo NOT FOUND:
+  echo ${TARGET}
+  echo
+  exit
+fi
+
+#----------------------------------------------------------
+cd ${HERE}/spice_server
+tar xvf spice.tar.gz
+mv spice spice_server
+rm -rf ${TARGET}/spice_server
+mv spice_server ${TARGET}
+
+cd ${TARGET}/spice_server
+
+PKG_CONFIG_PATH=${TARGET}/pkgconfig \
+./configure LIBS="-lm" --prefix=${TARGET} \
+            --libdir=${TARGET} \
+            --datarootdir=${TARGET} \
+            --disable-celt051 --disable-smartcard --disable-client \
+            --enable-shared --disable-static --enable-lz4=no 
+make clean
+make
+make install
+
