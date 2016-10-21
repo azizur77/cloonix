@@ -860,9 +860,11 @@ static void execchild(struct ChanSess *chansess)
     }
   else
     {
+    addnewvar("USER", getenv("USER"));
+    addnewvar("HOME", getenv("HOME"));
     unsetenv("PATH");
     addnewvar("PATH", pth); 
-    addnewvar("TERM", "linux");
+    addnewvar("TERM", "xterm");
     if (chansess->cloonix_display)
       addnewvar("DISPLAY", chansess->cloonix_display);
     }
