@@ -76,8 +76,6 @@ struct packetlist {
 };
 
 struct AuthState {
-        char *username; /* This is the username the client presents to check. It
-                                           is updated each run through, used for auth checking */
         unsigned char authtypes; /* Flags indicating which auth types are still 
                                                                 valid */
         unsigned int failcount; /* Number of (failed) authentication attempts.*/

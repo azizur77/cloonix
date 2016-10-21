@@ -80,7 +80,6 @@ static char g_tmux_work_path[MAX_PATH_LEN];
 static char g_password[MSG_DIGEST_LEN];
 /*--------------------------------------------------------------------------*/
 
-
 /*****************************************************************************/
 int wireshark_present_in_server(void)
 {
@@ -235,7 +234,7 @@ char **get_argv_local_dbssh(char *name)
            "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh", 
            get_local_cloonix_tree());
   strncpy(doors_addr, get_doors_client_addr(), MAX_PATH_LEN-1);
-  snprintf(username, MAX_PATH_LEN-1, "%s@local_host_dropbear", get_username());
+  snprintf(username, MAX_PATH_LEN-1, "local_host_dropbear");
   snprintf(cmd, 2*MAX_PATH_LEN-1, "/usr/bin/tmux -S %s attach -t %s; sleep 10", 
            get_tmux_work_path(), nm);
 
@@ -252,15 +251,6 @@ char **get_argv_local_dbssh(char *name)
 GtkWidget *get_main_window(void)
 {
   return g_main_window;
-}
-/*--------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *get_username(void)
-{
-  if (!g_cloonix_config.username[0])
-    KOUT(" ");
-  return (g_cloonix_config.username);
 }
 /*--------------------------------------------------------------------------*/
 

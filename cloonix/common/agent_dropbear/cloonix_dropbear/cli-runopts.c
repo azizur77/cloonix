@@ -23,13 +23,11 @@ static void parse_hostname(char* orighostarg)
   if (cli_opts.vmname == NULL) 
     {
     cli_opts.vmname = userhostarg;
-    cli_opts.username = "root";
     } 
   else 
     {
     cli_opts.vmname[0] = 0;
     cli_opts.vmname++;
-    cli_opts.username = userhostarg;
     }
   if (cli_opts.vmname[0] == 0)
     KOUT("Bad hostname");
@@ -52,7 +50,6 @@ void cli_getopts(int argc, char ** argv)
   argc--;
   argv++;
   cli_opts.vmname = NULL;
-  cli_opts.username = NULL;
   cli_opts.cmd = NULL;
   cli_opts.wantpty = 9;
   opts.recv_window = DEFAULT_RECV_WINDOW;
@@ -73,9 +70,6 @@ void cli_getopts(int argc, char ** argv)
         {
         case 't':
           cli_opts.wantpty = 1;
-        break;
-        case 'l':
-          next = &cli_opts.username;
         break;
         default:
           KOUT("unknown argument '%s'\n", argv[i]);

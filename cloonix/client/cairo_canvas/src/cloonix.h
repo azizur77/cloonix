@@ -63,7 +63,6 @@ char *get_spice_vm_path(int vm_id);
 char *get_cmd_path(void);
 int inside_cloonix(char **name);
 
-char *get_username(void);
 char **get_argv_local_dbssh(char *name);
 
 int get_vm_config_flags(t_custom_vm *cust_vm);

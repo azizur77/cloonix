@@ -53,7 +53,6 @@ typedef struct cli_runopts {
         char *cloonix_password;
 	char *progname;
 	char *vmname;
-	char *username;
 	char *cmd;
 	int wantpty;
 } cli_runopts;
