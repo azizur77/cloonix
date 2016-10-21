@@ -215,11 +215,55 @@ static void check_for_another_instance(char *clownlock, int keep_fd)
 /****************************************************************************/
 static void mk_and_tst_work_path(void)
 {
-  char clownlock[MAX_PATH_LEN];
+  char path1[MAX_PATH_LEN];
+  char path2[MAX_PATH_LEN];
+  char *ptr;
+  memset(path1, 0, MAX_PATH_LEN);
+  memset(path2, 0, MAX_PATH_LEN);
+  strncpy(path1, cfg_get_root_work(), MAX_PATH_LEN-1); 
+  ptr = strrchr(path1, '/');
+  if (!ptr)
+    {
+    printf("%d Bad work dir in config: %s\n", __LINE__, cfg_get_root_work());
+    KOUT("%s", cfg_get_root_work());
+    }
+  *ptr = 0;
+  strcpy(path2, path1);
+  if (!strlen(path1))
+    {
+    printf("%d Bad work dir in config: %s\n", __LINE__, cfg_get_root_work());
+    KOUT("%s", cfg_get_root_work());
+    }
+  ptr = strrchr(path1, '/');
+  if (!ptr)
+    {
+    printf("%d Bad work dir in config: %s\n", __LINE__,cfg_get_root_work());
+    KOUT("%s", cfg_get_root_work());
+    }
+  *ptr = 0;
+  if (!file_exists(path2, F_OK))
+    {
+    if (!strlen(path1))
+      {
+      printf("%d Bad work dir in config: %s\n",__LINE__,cfg_get_root_work());
+      KOUT("%s", cfg_get_root_work());
+      }
+    if (!file_exists(path1, W_OK))
+      {
+      printf("%d Bad work dir in config: %s\n",__LINE__,cfg_get_root_work());
+      KOUT("%s", cfg_get_root_work());
+      }
+    my_mkdir(path2);
+    }
+  if (!file_exists(path2, W_OK))
+    {
+    printf("%d Bad work dir in config: %s\n", __LINE__, cfg_get_root_work());
+    KOUT("%s", cfg_get_root_work());
+    }
   my_mkdir(cfg_get_root_work());
   my_mkdir(utils_path_to_tux());
-  sprintf(clownlock, "%s/cloonix_lock",  cfg_get_root_work());
-  check_for_another_instance(clownlock, 0);
+  sprintf(path1, "%s/cloonix_lock",  cfg_get_root_work());
+  check_for_another_instance(path1, 0);
 }
 /*--------------------------------------------------------------------------*/
 
