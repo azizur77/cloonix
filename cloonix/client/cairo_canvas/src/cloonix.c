@@ -440,10 +440,7 @@ void work_dir_resp(int tid, t_cloonix_config *conf)
   my_mkdir(g_tmp_work_path);
 
   if (gtk_init_check(NULL, NULL) == FALSE)
-    {
-    printf("\n\nError in gtk_init_check function\n\n");
-    exit(-1);
-    }
+    KOUT("Error in gtk_init_check function");
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
