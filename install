@@ -26,4 +26,7 @@ sudo rm -rf /usr/local/bin/cloonix
 cd /usr/local/bin
 sudo tar zxvf ${HERE}/${CLOONIX}
 sudo chown -R root:root /usr/local/bin/cloonix*
+
+MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
+sudo chmod u+s ${MUTAP}
 #----------------------------------------------------------
