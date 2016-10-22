@@ -172,7 +172,7 @@ static int start_launch(void *ptr)
   static char *environ[] = { lib_path,xauth,username,logname,home,display, NULL };
   memset(lib_path, 0, MAX_PATH_LEN);
   snprintf(lib_path, MAX_PATH_LEN-1, 
-           "LD_LIBRARY_PATH=%s/cloonix/common/spice/spice_lib", 
+           "LD_LIBRARY_PATH=%s/common/spice/spice_lib", 
            get_local_cloonix_tree());
   memset(xauth, 0, MAX_PATH_LEN);
   if (!getenv("XAUTHORITY"))
