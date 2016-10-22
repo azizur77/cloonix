@@ -23,16 +23,11 @@ done
   echo
   sleep 1
 #----------------------------------------------------------
-  AGENT_DROPBEAR=${CLOONIX_COMMON}/agent_dropbear
-  AGENT_BIN=${AGENT_DROPBEAR}/agent_bin
-  AGENT_BIN_ALIEN=${AGENT_DROPBEAR}/agent_bin_alien
-  cd $AGENT_DROPBEAR
+  cd ${CLOONIX_COMMON}/agent_dropbear
   ./cmd_alien
   ./cmd
 #----------------------------------------------------------
-  SPICE=${CLOONIX_COMMON}/spice
-  SPICE_LIB=${SPICE}/spice_lib
-  cd ${SPICE}
+  cd ${CLOONIX_COMMON}/spice
   ./cmd
 #----------------------------------------------------------
   for i in lib_rpc_clownix \

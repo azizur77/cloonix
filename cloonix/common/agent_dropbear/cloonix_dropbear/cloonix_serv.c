@@ -76,10 +76,14 @@ static char *get_xauth_bin(void)
 void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key)
 {
   char cmd[XAUTH_CMD_LEN];
+  char *xauthority = getenv("XAUTHORITY");
   memset(cmd, 0, XAUTH_CMD_LEN);
-  snprintf(cmd, XAUTH_CMD_LEN-1, "%s add %s MIT-MAGIC-COOKIE-1 %s",
+  snprintf(cmd, XAUTH_CMD_LEN-1, "%s -b add %s MIT-MAGIC-COOKIE-1 %s",
                get_xauth_bin(), display, cookie_key);
-  system(cmd);
+  if (!access(xauthority, W_OK))
+    system(cmd);
+  else
+    KERR("%s  %s", xauthority, cmd);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -157,7 +161,7 @@ void cloonix_enqueue(struct Queue* queue, void* item)
 /****************************************************************************/
 static int ident_readln(int fd, char* buf, int count) 
 {
-        char in;
+        char in, result;
         int pos = 0;
         int num = 0;
         fd_set fds;
@@ -170,12 +174,16 @@ static int ident_readln(int fd, char* buf, int count)
                 FD_SET(fd, &fds);
                 timeout.tv_sec = 1;
                 timeout.tv_usec = 0;
-                if (select(fd+1, &fds, NULL, NULL, &timeout) < 0) {
+                result = select(fd+1, &fds, NULL, NULL, &timeout);
+                if (result < 0) {
                         if ((errno == EINTR) || (errno == EAGAIN)) {
                                 continue;
                         }
                         return -1;
+                KERR("%d %d", pos, count);
                 }
+                if (result == 0)
+                  KERR("%d %d", pos, count);
                 if (FD_ISSET(fd, &fds)) {
                         num = read(fd, &in, 1);
                         if (num < 0) {

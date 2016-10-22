@@ -245,7 +245,7 @@ static int spawn_command( struct ChanSess *chansess,
 static void run_shell_command(const char *cmd, unsigned int maxfd, 
                        char *usershell, char *login) 
 {
-  char *argv[4];
+  char *argv[7];
   char *baseshell = NULL;
   unsigned int i;
   int len;
@@ -254,10 +254,10 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
     {
     argv[0] = baseshell;
     argv[1] = "--noprofile";
-    argv[1] = "--norc";
-    argv[1] = "-c";
-    argv[2] = (char*)cmd;
-    argv[3] = NULL;
+    argv[2] = "--norc";
+    argv[3] = "-c";
+    argv[4] = (char*)cmd;
+    argv[5] = NULL;
     } 
   else 
     {
@@ -266,11 +266,11 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
       len =  strlen(login) + 20;
       argv[0] = baseshell;
       argv[1] = "--noprofile";
-      argv[1] = "--norc";
-      argv[1] = "-c";
-      argv[2] = (char*)m_malloc(len);
-      argv[3] = NULL;
-      snprintf(argv[2], len, "%s -p -f root", login);
+      argv[2] = "--norc";
+      argv[3] = "-c";
+      argv[4] = (char*)m_malloc(len);
+      argv[5] = NULL;
+      snprintf(argv[4], len, "%s -p -f root", login);
       }
     else
       {
