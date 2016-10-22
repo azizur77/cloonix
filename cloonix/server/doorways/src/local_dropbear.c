@@ -289,8 +289,6 @@ static int add_listen_x11(int display_sock_x11)
   snprintf(path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX,
                                  display_sock_x11 + IDX_X11_DISPLAY_ADD);
   fd_listen = util_socket_listen_unix(path);
-  if (fd_listen <= 0)
-    KOUT(" %d %d", fd_listen, errno);
   return fd_listen;
 }
 /*--------------------------------------------------------------------------*/
@@ -314,23 +312,35 @@ static int listen_x11_begin(t_local_dropbear *ld)
   int result = -1;
   pool_init_sub_dido_idx(ld);
   ld->idx_display_sock_x11 = pool_alloc_display_sock_x11();
-  DOUT(NULL, FLAG_HOP_DOORS, "LISTEN START %d", ld->idx_display_sock_x11);
+  ld->llid_display_sock_x11 = 0;
   ld->fd_display_sock_x11 = add_listen_x11(ld->idx_display_sock_x11);
-  ld->llid_display_sock_x11 = msg_watch_fd(ld->fd_display_sock_x11,
-                                           listen_x11_evt,
-                                           listen_x11_err,
-                                           "listen_x11");
-  if (!ld->llid_display_sock_x11)
+  if (ld->fd_display_sock_x11 < 0)
     {
+    DOUT(NULL, FLAG_HOP_DOORS, "BAD LISTEN START");
     KERR(" ");
+    pool_release_sub_dido_idx(ld, ld->idx_display_sock_x11);
+    ld->idx_display_sock_x11 = 0;
     }
   else
     {
-    if (g_local_llid[ld->llid_display_sock_x11])
-      KOUT("%d", ld->llid_display_sock_x11);
-    g_local_llid[ld->llid_display_sock_x11] = ld;
-    g_idx_display_sock_x11[ld->idx_display_sock_x11] = ld;;
-    result = 0;
+    ld->llid_display_sock_x11 = msg_watch_fd(ld->fd_display_sock_x11,
+                                             listen_x11_evt,
+                                             listen_x11_err,
+                                             "listen_x11");
+    if (!ld->llid_display_sock_x11)
+      {
+      DOUT(NULL, FLAG_HOP_DOORS, "BAD LISTEN START");
+      KERR(" ");
+      }
+    else
+      {
+      DOUT(NULL, FLAG_HOP_DOORS, "LISTEN START %d", ld->idx_display_sock_x11);
+      if (g_local_llid[ld->llid_display_sock_x11])
+        KOUT("%d", ld->llid_display_sock_x11);
+      g_local_llid[ld->llid_display_sock_x11] = ld;
+      g_idx_display_sock_x11[ld->idx_display_sock_x11] = ld;;
+      result = 0;
+      }
     }
   return result;
 }
