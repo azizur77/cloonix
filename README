@@ -5,11 +5,10 @@ See cloonix.fr for more documentation.
 For each distribution, packets have to be installed, then a call to
 ./doitall does the build, pack and install of the binaries in /usr/local/bin.
 
-Be aware that the cloonix.config file is installed with the binaries 
-and that your own cloonix.config must be saved and rewritten each time
-you make an installation with ./doitall. 
-To simplify install, cloonix.config is in an unconventional location, it is 
+To simplify install, cloonix_config is in an unconventional location, it is 
 installed with the binaries at (/usr/local/bin/cloonix).
+Be aware that your own cloonix_config must be saved and rewritten each time
+you make an installation with ./doitall. 
 
 
 Packets that must be installed for build:
