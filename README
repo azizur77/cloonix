@@ -2,7 +2,17 @@
 Tool to help in the creation of virtual machine networks.
 See cloonix.fr for more documentation.
 
-The following packets have to be installed, then ./doitall
+For each distribution, packets have to be installed, then a call to
+./doitall does the build, pack and install of the binaries in /usr/local/bin.
+
+Be aware that the cloonix.config file is installed with the binaries 
+and that your own cloonix.config must be saved and rewritten each time
+you make an installation with ./doitall. 
+To simplify install, cloonix.config is in an unconventional location, it is 
+installed with the binaries at (/usr/local/bin/cloonix).
+
+
+Packets that must be installed for build:
 
 stretch jessie xenial
 =====================
