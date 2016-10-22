@@ -428,7 +428,6 @@ void work_dir_resp(int tid, t_cloonix_config *conf)
            cloonix_conf_info_get_version(), conf->version);
     exit(-1);
     }
-  printf("\nVersion:%s\n", cloonix_conf_info_get_version());
   daemon(0,0);
   move_init();
   menu_init();
@@ -440,7 +439,12 @@ void work_dir_resp(int tid, t_cloonix_config *conf)
                              g_cloonix_config.work_dir, TMUX_SOCK);
   my_mkdir(g_tmp_work_path);
 
-  gtk_init(NULL, NULL);
+  if (gtk_init_check(NULL, NULL) == FALSE)
+    {
+    printf("\n\nError in gtk_init_check function\n\n");
+    exit(-1);
+    }
+
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
   g_main_window = window;
