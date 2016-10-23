@@ -76,10 +76,14 @@ static char *get_xauth_bin(void)
 void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key)
 {
   char cmd[XAUTH_CMD_LEN];
+  char *xauthority = getenv("XAUTHORITY");
   memset(cmd, 0, XAUTH_CMD_LEN);
   snprintf(cmd, XAUTH_CMD_LEN-1, "%s add %s MIT-MAGIC-COOKIE-1 %s",
                get_xauth_bin(), display, cookie_key);
-  system(cmd);
+  if ((xauthority) && (access(xauthority, W_OK)))
+    KERR("%s not writable", xauthority);
+  else
+    system(cmd);
 }
 /*--------------------------------------------------------------------------*/
 

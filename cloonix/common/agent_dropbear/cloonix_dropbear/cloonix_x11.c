@@ -102,21 +102,24 @@ static int sock_cli_unix(char *pname)
 {
   int len,  sock, result = -1;
   struct sockaddr_un addr;
-  if (!test_file_is_socket(pname))
+  if (strlen(pname))
     {
-    sock = socket (AF_UNIX, SOCK_STREAM, 0);
-    if (sock <= 0)
-      KOUT(" ");
-    memset (&addr, 0, sizeof (struct sockaddr_un));
-    addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, pname);
-    len = sizeof (struct sockaddr_un);
-    nonblock(sock);
-    fd_cloexec(sock);
-    if (connect(sock,(struct sockaddr *) &addr, len))
-      close(sock);
-    else
-      result = sock;
+    if (!test_file_is_socket(pname))
+      {
+      sock = socket (AF_UNIX, SOCK_STREAM, 0);
+      if (sock <= 0)
+        KOUT(" ");
+      memset (&addr, 0, sizeof (struct sockaddr_un));
+      addr.sun_family = AF_UNIX;
+      strcpy(addr.sun_path, pname);
+      len = sizeof (struct sockaddr_un);
+      nonblock(sock);
+      fd_cloexec(sock);
+      if (connect(sock,(struct sockaddr *) &addr, len))
+        close(sock);
+      else
+        result = sock;
+      }
     }
   return result;
 }
@@ -341,26 +344,33 @@ void receive_traf_x11_from_doors(int dido_llid, int sub_dido_idx,
 /****************************************************************************/
 static int get_x11_path(int port, int idx_x11, char *x11_path)
 {
-  int is_inet = 0;
+  int val, is_inet = 0;
+  char *display;
+  memset(x11_path, 0, MAX_PATH_LEN);
   if (!in_cloonix_file_exists())
     {
-    memset(x11_path, 0, MAX_PATH_LEN);
-    snprintf(x11_path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX, 0);
-    if (access(x11_path, F_OK))
+    if (port > 6000)
+      is_inet = 1;
+    else
       {
-      memset(x11_path, 0, MAX_PATH_LEN);
-      snprintf(x11_path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX, 1);
-      if (access(x11_path, F_OK))
-        KERR("X11 socket not found: %s", x11_path);
+      display = getenv("DISPLAY");
+      if (sscanf(display, ":%d", &val) == 1)
+        {
+        snprintf(x11_path,MAX_PATH_LEN-1,"%s%d",UNIX_X11_SOCKET_PREFIX,val);
+        if (access(x11_path, F_OK))
+          {
+          KERR("X11 socket not found: %s", x11_path);
+          memset(x11_path, 0, MAX_PATH_LEN);
+          }
+        }
+      else
+        KERR("X11 display not good: %s", display);
       }
     }
-  if (in_cloonix_file_exists())
+  else
     {
-    memset(x11_path, 0, MAX_PATH_LEN);
     snprintf(x11_path,MAX_PATH_LEN-1,"%s%d", UNIX_X11_SOCKET_PREFIX, idx_x11);
     }
-  else if (port > 6000)
-    is_inet = 1;
   return is_inet;
 }
 /*--------------------------------------------------------------------------*/
