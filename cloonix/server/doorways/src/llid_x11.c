@@ -269,9 +269,7 @@ void receive_ctrl_x11_from_client(int dido_llid, int sub_dido_idx,
   DOUT(NULL, FLAG_HOP_DOORS, "%s %d %d %s", __FUNCTION__, 
                                            dido_llid, sub_dido_idx, buf);
   cur = get_ctx_with_sub_dido_idx(dido_llid, sub_dido_idx);
-  if (!cur)
-    KERR("%d %d %s", dido_llid, sub_dido_idx, buf);
-  else
+  if (cur)
     {
     if (!strcmp(buf, DOOR_X11_OPENOK))
       {

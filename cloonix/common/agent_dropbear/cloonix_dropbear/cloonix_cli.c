@@ -277,7 +277,7 @@ static int put_in_file_xauth_line(char *xauth_bin, char *dpy, char *file)
         }
       }
     if (pclose(fp))
-      KERR("%s", cmd);
+      KERR("%s %d", cmd, errno);
     else
       {
       if (!found)

@@ -307,7 +307,7 @@ static int local_x11_open(int dido_llid, int sub_dido_idx,
       x11_fd = sock_cli_inet(port);
     else
       x11_fd = sock_cli_unix(x11_path);
-    if (x11_fd > 0)
+    if (x11_fd >= 0)
       {
       x11_llid = msg_watch_fd(x11_fd, x11_rx_cb, x11_err_cb, "x11");
       if (x11_llid == 0)
@@ -342,8 +342,18 @@ void receive_traf_x11_from_doors(int dido_llid, int sub_dido_idx,
 static int get_x11_path(int port, int idx_x11, char *x11_path)
 {
   int is_inet = 0;
-  memset(x11_path, 0, MAX_PATH_LEN);
-  snprintf(x11_path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX, 0);
+  if (!in_cloonix_file_exists())
+    {
+    memset(x11_path, 0, MAX_PATH_LEN);
+    snprintf(x11_path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX, 0);
+    if (access(x11_path, F_OK))
+      {
+      memset(x11_path, 0, MAX_PATH_LEN);
+      snprintf(x11_path, MAX_PATH_LEN-1, "%s%d", UNIX_X11_SOCKET_PREFIX, 1);
+      if (access(x11_path, F_OK))
+        KERR("X11 socket not found: %s", x11_path);
+      }
+    }
   if (in_cloonix_file_exists())
     {
     memset(x11_path, 0, MAX_PATH_LEN);

@@ -162,23 +162,25 @@ static t_qemu_spice_item *qemu_spice_reserve_name(char *vm_name)
 static int start_launch(void *ptr)
 {
   char **argv = (char **) ptr;
+  char *xauthority;
   static char lib_path[MAX_PATH_LEN];
   static char xauth[MAX_PATH_LEN];
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];
   static char logname[MAX_NAME_LEN];
   static char display[MAX_NAME_LEN];
-
   static char *environ[] = { lib_path,xauth,username,logname,home,display, NULL };
+
   memset(lib_path, 0, MAX_PATH_LEN);
+  memset(xauth, 0, MAX_PATH_LEN);
   snprintf(lib_path, MAX_PATH_LEN-1, 
            "LD_LIBRARY_PATH=%s/common/spice/spice_lib", 
            get_local_cloonix_tree());
-  memset(xauth, 0, MAX_PATH_LEN);
-  if (!getenv("XAUTHORITY"))
-    snprintf(xauth,MAX_PATH_LEN-1,"XAUTHORITY=%s/.Xauthority",getenv("HOME"));
+  xauthority = getenv("XAUTHORITY");
+  if ((xauthority) && (!access(xauthority, W_OK)))
+    snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority); 
   else
-    snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", getenv("XAUTHORITY"));
+    snprintf(xauth,MAX_PATH_LEN-1,"XAUTHORITY=");
   if(!getenv("HOME"))
     KOUT(" ");
   if(!getenv("USER"))
