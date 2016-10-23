@@ -176,17 +176,17 @@ static int start_launch(void *ptr)
   snprintf(lib_path, MAX_PATH_LEN-1, 
            "LD_LIBRARY_PATH=%s/common/spice/spice_lib", 
            get_local_cloonix_tree());
-  xauthority = getenv("XAUTHORITY");
-  if ((xauthority) && (!access(xauthority, W_OK)))
-    snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority); 
-  else
-    snprintf(xauth,MAX_PATH_LEN-1,"XAUTHORITY=");
   if(!getenv("HOME"))
     KOUT(" ");
   if(!getenv("USER"))
     KOUT(" ");
   if(!getenv("DISPLAY"))
     KOUT(" ");
+  xauthority = getenv("XAUTHORITY");
+  if ((xauthority) && (!access(xauthority, W_OK)))
+    snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority); 
+  else
+    snprintf(xauth,MAX_PATH_LEN-1,"XAUTHORITY=%s/.Xauthority",getenv("HOME"));
   memset(home, 0, MAX_PATH_LEN);
   snprintf(home, MAX_PATH_LEN-1, "HOME=%s", getenv("HOME"));
   memset(display, 0, MAX_NAME_LEN);
