@@ -107,25 +107,22 @@ KOUT(" ");
  */
 
 static void
-arg_setup(char *host, char *remuser, char *cmd)
+arg_setup(char *host, char *cmd)
 {
 	replacearg(&args, 0, "%s", ssh_program);
-	if (remuser != NULL)
-		addargs(&args, "-l%s", remuser);
 	addargs(&args, "%s", host);
 	addargs(&args, "%s", cmd);
 }
 
 static int
-do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
+do_cmd(char *host, char *cmd, int *fdin, int *fdout)
 {
 	int pin[2], pout[2], reserved[2];
 
 	if (verbose_mode)
 		fprintf(stderr,
-		    "Executing: program %s host %s, user %s, command %s\n",
-		    ssh_program, host,
-		    remuser ? remuser : "(unspecified)", cmd);
+		    "Executing: program %s host %s, command %s\n",
+		    ssh_program, host, cmd);
 
 	/*
 	 * Reserve two descriptors so that the real pipes won't get
@@ -154,7 +151,7 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
 		dup2(pout[1], 1);
 		close(pin[0]);
 		close(pout[1]);
-		arg_setup(host, remuser, cmd);
+		arg_setup(host, cmd);
 		execvp(ssh_program, args.list);
 		perror(ssh_program);
 KOUT(" ");
@@ -181,7 +178,6 @@ typedef struct {
 BUF *allocbuf(BUF *, int);
 void lostconn(int);
 void nospace(void);
-int okname(char *);
 void run_err(const char *,...);
 void verifydir(char *);
 
@@ -356,7 +352,7 @@ void
 toremote(char *targ, int argc, char **argv)
 {
 	int i, len;
-	char *bp, *host, *src, *suser, *thost, *tuser, *arg;
+	char *bp, *host, *src, *thost, *arg;
 	arglist alist;
 
 	memset(&alist, '\0', sizeof(alist));
@@ -369,18 +365,10 @@ toremote(char *targ, int argc, char **argv)
 	arg = xstrdup(argv[argc - 1]);
 	if ((thost = strrchr(arg, '@'))) {
 		*thost++ = 0;
-		tuser = arg;
-		if (*tuser == '\0')
-                  KOUT(" ");
 	} else {
 		thost = arg;
-		tuser = "root";
 	}
 
-	if (tuser != NULL && !okname(tuser)) {
-		xfree(arg);
-		return;
-	}
 
 	for (i = 0; i < argc - 1; i++) {
 		src = colon(argv[i]);
@@ -393,28 +381,17 @@ toremote(char *targ, int argc, char **argv)
 			if (*src == 0)
 				src = ".";
 			host = strrchr(argv[i], '@');
-
 			if (host) {
 				*host++ = 0;
 				host = cleanhostname(host);
-				suser = argv[i];
-				if (*suser == '\0')
-                                  KOUT(" ");
-				addargs(&alist, "-l");
-				addargs(&alist, "%s", suser);
 			} else {
 				host = cleanhostname(argv[i]);
-                                suser = "root";
-				addargs(&alist, "-l");
-				addargs(&alist, "%s", suser);
  
 			}
 			addargs(&alist, "%s", host);
 			addargs(&alist, "%s", cmd);
 			addargs(&alist, "%s", src);
-			addargs(&alist, "%s%s%s:%s",
-			    tuser ? tuser : "", tuser ? "@" : "",
-			    thost, targ);
+			addargs(&alist, "%s:%s", thost, targ);
 			if (do_local_cmd(&alist) != 0)
 				errs = 1;
 		} else {	/* local to remote */
@@ -423,7 +400,7 @@ toremote(char *targ, int argc, char **argv)
 				bp = xmalloc(len);
 				(void) snprintf(bp, len, "%s -t %s", cmd, targ);
 				host = cleanhostname(thost);
-				if (do_cmd(host, tuser, bp, &remin,
+				if (do_cmd(host, bp, &remin,
 				    &remout) < 0)
 KOUT(" ");
 				if (response() < 0)
@@ -439,7 +416,7 @@ void
 tolocal(int argc, char **argv)
 {
 	int i, len;
-	char *bp, *host, *src, *suser;
+	char *bp, *host, *src;
 	arglist alist;
 
 	memset(&alist, '\0', sizeof(alist));
@@ -464,18 +441,14 @@ tolocal(int argc, char **argv)
 			src = ".";
 		if ((host = strrchr(argv[i], '@')) == NULL) {
 			host = argv[i];
-			suser = "root";
 		} else {
 			*host++ = 0;
-			suser = argv[i];
-			if (*suser == '\0')
-                          KOUT(" ");
 		}
 		host = cleanhostname(host);
 		len = strlen(src) + CMDNEEDS + 20;
 		bp = xmalloc(len);
 		(void) snprintf(bp, len, "%s -f %s", cmd, src);
-		if (do_cmd(host, suser, bp, &remin, &remout) < 0) {
+		if (do_cmd(host, bp, &remin, &remout) < 0) {
 			(void) xfree(bp);
 			++errs;
 			continue;
@@ -1067,35 +1040,6 @@ verifydir(char *cp)
 	killchild(0);
 }
 
-int
-okname(char *cp0)
-{
-	int c;
-	char *cp;
-
-	cp = cp0;
-	do {
-		c = (int)*cp;
-		if (c & 0200)
-			goto bad;
-		if (!isalpha(c) && !isdigit(c)) {
-			switch (c) {
-			case '\'':
-			case '"':
-			case '`':
-			case ' ':
-			case '#':
-				goto bad;
-			default:
-				break;
-			}
-		}
-	} while (*++cp);
-	return (1);
-
-bad:	fprintf(stderr, "%s: invalid user name\n", cp0);
-	return (0);
-}
 
 BUF *
 allocbuf(BUF *bp, int blksize)
