@@ -47,7 +47,8 @@
 #include "doors_rpc.h"
 #include "file_read_write.h"
 
-#define DRIVE_PARAMS " -drive file=%s,index=%d,media=disk,if=virtio"
+#define DRIVE_PARAMS " -drive file=%s,index=%d,media=disk,if=virtio,cache=none"
+
 #define VIRTIO_9P " -fsdev local,id=fsdev0,security_model=passthrough,path=%s"\
                   " -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=%s"
 
