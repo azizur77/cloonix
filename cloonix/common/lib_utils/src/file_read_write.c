@@ -57,7 +57,7 @@ void make_config_cloonix_vm_name(char *confpath, char *name)
   char str[MAX_PATH_LEN];
   char path[MAX_PATH_LEN];
   memset(str, 0, MAX_PATH_LEN);
-  snprintf(str, MAX_PATH_LEN-1, "[%s>", name);
+  snprintf(str, MAX_PATH_LEN-1, "%s", name);
   memset(path, 0, MAX_PATH_LEN);
   snprintf(path, MAX_PATH_LEN-1, "%s/cloonix_vm_name", confpath);
   if (write_whole_file(path, str, strlen(str), err))

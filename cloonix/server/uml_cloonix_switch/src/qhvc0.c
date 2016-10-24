@@ -79,8 +79,6 @@
   "p9_host_share=$(cat ${CONFIG}/cloonix_vm_p9_host_share)\n"\
   "if [ \"${p9_host_share}\" = \"yes\" ]; then\n"\
   "  name=$(cat ${CONFIG}/cloonix_vm_name)\n"\
-  "  name=${name%%\\>}\n"\
-  "  name=${name##\\[}\n"\
   "  SHRED=/mnt/p9_host_share\n"\
   "  mkdir -p ${SHRED}\n"\
   "  mount -t 9p -o trans=virtio,version=9p2000.L $name ${SHRED}\n"\
