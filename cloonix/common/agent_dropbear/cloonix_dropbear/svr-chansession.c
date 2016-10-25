@@ -247,16 +247,19 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
 {
   char *argv[7];
   char *baseshell = NULL;
+  char *cmd_sleep;
   unsigned int i;
   int len;
   baseshell = basename(usershell);
   if (cmd != NULL) 
     {
+    cmd_sleep = m_malloc(strlen(cmd) + 30);
+    sprintf(cmd_sleep, "%s ; sleep 0.01", cmd);
     argv[0] = baseshell;
     argv[1] = "--noprofile";
     argv[2] = "--norc";
     argv[3] = "-c";
-    argv[4] = (char*)cmd;
+    argv[4] = (char*)cmd_sleep;
     argv[5] = NULL;
     } 
   else 
