@@ -11,4 +11,4 @@ CLOONIX_VERSION=${CLOONIX_VERSION#*=}
 ./allclean
 ./build
 ./pack
-./install cloonix-${CLOONIX_VERSION}.tar.gz
+sudo ./install cloonix-${CLOONIX_VERSION}.tar.gz

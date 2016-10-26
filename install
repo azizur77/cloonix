@@ -19,14 +19,14 @@ for i in  cloonix_cli \
           cloonix_scp \
           cloonix_ssh \
           cloonix_zor ; do
-  sudo rm -f /usr/local/bin/${i}
+  rm -f /usr/local/bin/${i}
 done
-sudo rm -rf /usr/local/bin/cloonix
+rm -rf /usr/local/bin/cloonix
 #----------------------------------------------------------
 cd /usr/local/bin
-sudo tar zxvf ${HERE}/${CLOONIX}
-sudo chown -R root:root /usr/local/bin/cloonix*
+tar zxvf ${HERE}/${CLOONIX}
+chown -R root:root /usr/local/bin/cloonix*
 
 MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
-sudo chmod u+s ${MUTAP}
+chmod u+s ${MUTAP}
 #----------------------------------------------------------
