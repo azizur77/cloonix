@@ -13,20 +13,10 @@ if [ ! -e $CLOONIX ]; then
   exit
 fi
 #----------------------------------------------------------
-for i in  cloonix_cli \
-          cloonix_gui \
-          cloonix_net \
-          cloonix_scp \
-          cloonix_ssh \
-          cloonix_zor ; do
-  rm -f /usr/local/bin/${i}
-done
-rm -rf /usr/local/bin/cloonix
-#----------------------------------------------------------
+rm -rf /usr/local/bin/cloonix*
 cd /usr/local/bin
 tar zxvf ${HERE}/${CLOONIX}
 chown -R root:root /usr/local/bin/cloonix*
-
 MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
 chmod u+s ${MUTAP}
 #----------------------------------------------------------

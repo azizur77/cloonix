@@ -1,0 +1,188 @@
+#!/bin/bash
+#--------------------------------------------------------------------------
+if [ $# == 1 ]; then
+  action=$1 
+  case "$1" in
+    "run")
+      printf "\n\tPackages to run cloonix will be installed.\n\n"
+      depends_build=0
+    ;;
+    "build")
+      printf "\n\tPackages to build cloonix will be installed.\n\n"
+      depends_build=1
+    ;;
+    *)
+     echo ERROR: bad input param \"run\" \"build\"
+     exit
+  esac
+else
+  echo
+  echo ERROR: missing input param \"run\" or \"build\"
+  echo if you want to compile cloonix choose build.
+  echo
+  exit
+fi
+#--------------------------------------------------------------------------
+if [ ! -e /etc/os-release ]; then 
+  printf "\n\tERROR: Not able to determine your distribution."
+  printf "\n\tYou must install the packages by hand.\n\n"
+  exit
+fi
+#--------------------------------------------------------------------------
+name=$(cat /etc/os-release |grep PRETTY_NAME)
+name=${name#*\"}
+name=${name%% *}
+#--------------------------------------------------------------------------
+if [ -z $name ]; then
+  printf "\n\tERROR: Not able to determine your distribution from os-release."
+  printf "\n\tYou must install the packages by hand.\n\n"
+  exit
+fi
+#--------------------------------------------------------------------------
+fct_build_get_debian_packages()
+{
+  apt-get -y install \
+             git tmux genisoimage rxvt-unicode bc build-essential \
+             gcc-multilib libncurses5-dev libpulse-dev libssl-dev \
+             libgtk-3-dev libcap-dev libevent-dev libreadline-dev \
+             libsdl1.2-dev libogg-dev libsasl2-dev intltool \
+             libjpeg-dev python-pyparsing libsoup2.4 libusb-1.0-0-dev \
+             libgudev-1.0-dev libopus-dev python-six \
+             libtext-csv-perl libepoxy-dev libegl1-mesa-dev
+}
+#--------------------------------------------------------------------------
+fct_run_get_debian_packages()
+{
+  apt-get -y install \
+             tmux genisoimage rxvt-unicode libevent-2.0-5 \
+             libpulse0 libusb-1.0 libopus0 e2fsprogs \
+             libsdl1.2debian libasound2 libcurl3-gnutls \
+             ttf-dejavu libgtk-3-0 libpulse-mainloop-glib0 \
+             libepoxy0 libegl1-mesa
+}
+#--------------------------------------------------------------------------
+fct_build_get_centos_packages()
+{
+  yum -y install \
+         git tmux genisoimage tar xterm make gcc gcc-c++ m4 bc \
+         glibc-devel.i686 glibc-devel.x86_64 libstdc++-devel.i686 \
+         flex bison  bzip2 patch diffutils gtk3-devel \
+         dejavu-serif-fonts SDL-devel libcap-devel ncurses-devel \
+         readline-devel libevent-devel e2fsprogs alsa-lib-devel \
+         opus-devel pulseaudio-libs-devel libsoup-devel pyparsing \
+         libusb-devel libgudev1-devel libgusb-devel intltool \
+         openssl-devel pulseaudio-libs-devel pixman-devel \
+         gobject-introspection-devel libjpeg-turbo-devel \
+         zlib-devel cyrus-sasl-devel gtk-doc python-six \
+         cpan libepoxy-devel
+
+  export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
+}
+#--------------------------------------------------------------------------
+fct_run_get_centos_packages()
+{
+  yum -y install \
+         tmux genisoimage tar gtk3 rxvt-unicode libevent \
+         pulseaudio-libs libusb opus e2fsprogs \
+         libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
+         pulseaudio-libs-glib2 libepoxy
+}
+#--------------------------------------------------------------------------
+fct_build_get_fedora_packages()
+{
+  dnf -y install \
+         git tmux genisoimage tar rxvt-unicode make gcc gcc-c++ m4 bc \
+         glibc-devel.i686 glibc-devel.x86_64 libstdc++-devel.i686 \
+         flex bison  bzip2 patch diffutils gtk3-devel \
+         dejavu-serif-fonts SDL-devel libcap-devel ncurses-devel \
+         readline-devel libevent-devel e2fsprogs alsa-lib-devel \
+         opus-devel pulseaudio-libs-devel libsoup-devel pyparsing \
+         libusb-devel libgudev1-devel libgusb-devel intltool \
+         openssl-devel pulseaudio-libs-devel pixman-devel \
+         gobject-introspection-devel libjpeg-turbo-devel \
+         zlib-devel cyrus-sasl-devel gtk-doc python-six \
+         perl-Text-CSV libepoxy-devel
+}
+#--------------------------------------------------------------------------
+fct_run_get_fedora_packages()
+{
+  dnf -y install \
+         tmux genisoimage tar gtk3 rxvt-unicode libevent \
+         pulseaudio-libs libusb opus e2fsprogs \
+         libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
+         pulseaudio-libs-glib2 libepoxy
+}
+#--------------------------------------------------------------------------
+fct_build_get_opensuse_packages()
+{
+  zypper --non-interactive install \
+         git tmux genisoimage tar rxvt-unicode make \
+         gcc gcc-c++ m4 bc gcc-32bit flex \
+         bison e2fsprogs bzip2 patch diffutils libopenssl-devel \
+         gtk3-devel dejavu-fonts libcap-devel \
+         ncurses-devel readline-devel libevent-devel libSDL-devel \
+         python-gtk-devel python-pyparsing libjpeg62-devel \
+         libogg-devel cyrus-sasl-devel alsa-devel libpulse-devel \
+         intltool libsoup-devel libXrandr-devel libusb-devel \
+         libgudev-1_0-devel libopus-devel python-six \
+         perl-Text-CSV libepoxy-devel
+}
+#--------------------------------------------------------------------------
+fct_run_get_opensuse_packages()
+{
+  zypper --non-interactive install \
+         tmux genisoimage tar gtk3 libgtk-2_0-0 \
+         rxvt-unicode libevent \
+         libpulse-mainloop-glib0 libpulse0 \
+         libusb libopus0 e2fsprogs libjpeg62  \
+         libSDL-1_2-0 alsa-lib gnutls dejavu-fonts \
+         libusbredirparser1 libgthread-2_0-0 libepoxy0
+}
+#--------------------------------------------------------------------------
+if [ $UID != 0 ]; then
+  printf "\n\tERROR: root privileges needed to install packages.\n\n"
+  exit
+fi
+case "$name" in
+  "Debian" | "Ubuntu")
+    printf "\n\tInstall tool is apt-get.\n\n"
+    if [ $depends_build = 1 ]; then
+      fct_build_get_debian_packages
+    else
+      fct_run_get_debian_packages
+    fi
+  ;;
+  "CentOS")
+    printf "\n\tInstall tool is yum.\n\n"
+    if [ $depends_build = 1 ]; then
+      fct_build_get_centos_packages
+    else
+      fct_run_get_centos_packages
+    fi
+  ;;
+  "Fedora")
+    printf "\n\tInstall tool is dnf.\n\n"
+    if [ $depends_build = 1 ]; then
+      fct_build_get_fedora_packages
+    else
+      fct_run_get_fedora_packages
+    fi
+  ;;
+  "openSUSE")
+    printf "\n\tInstall tool is zypper.\n\n"
+    if [ $depends_build = 1 ]; then
+      fct_build_get_opensuse_packages
+    else
+      fct_run_get_opensuse_packages
+    fi
+  ;;
+  *)
+  printf "\n\tERROR: Your distribution: $name is not supported"
+  printf "\n\tYou must install the packages by hand.\n\n"
+  exit
+  ;;
+esac
+#--------------------------------------------------------------------------
+
+
+

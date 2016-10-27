@@ -6,9 +6,9 @@ if [ ! -e $CLOONIX_CONFIG ]; then
   echo $CLOONIX_CONFIG
   exit
 fi
-CLOONIX_VERSION=$(cat ./cloonix/cloonix_config | grep CLOONIX_VERSION)
-CLOONIX_VERSION=${CLOONIX_VERSION#*=}
+VERSION=$(cat ./cloonix/cloonix_config | grep CLOONIX_VERSION)
+VERSION=${VERSION#*=}
 ./allclean
 ./build
 ./pack
-sudo ./install cloonix-${CLOONIX_VERSION}.tar.gz
+sudo ./install_cloonix cloonix-${VERSION}.tar.gz

@@ -8,42 +8,60 @@ See cloonix.fr for more documentation.
 -----------------------------------------------------------------------------
 
 
+--------------------------------------
 Build and install from github sources:
 --------------------------------------
 
-  For each distribution, packets have to be installed for the build, see the
-  "REQUIRED PACKETS FOR BUILD" chapter for the list.
+         git clone https://github.com/clownix/cloonix.git
+         cd cloonix
+         ./install_depends build
+         ./doitall
+
+  For each distribution, packets have to be installed for the build,
+  a script has been written for this task, look into the
+  install_depends file and launch it as root with build as input
+  parameter.
   
   Then then a call to ./doitall does the build, pack and install of the 
   binaries in /usr/local/bin.
-  Note that you have to have the sudo in your host and be in the sudoers to
-  be able to write in the /usr/local/bin where cloonix is installed.
+  Note that the "sudo" in the doitall is there to give the root
+  privileges to be able to write in the /usr/local/bin where cloonix
+  is installed.
+
+  If you do not have sudo or are not in the sudoers, you must be root
+  to call: ./install_cloonix cloonix-${VERSION}.tar.gz
 
   Be aware that cloonix_config must be saved because it is overwritten
   with each new install.
 
 -----------------------------------------------------------------------------
 
+
+
+
+-----------------------------------------------------------
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
+         wget http://cloonix.fr/bin_stored/jessie-cloonix-33-00.tar.gz
+         wget http://cloonix.fr/bin_stored/install_depends
+         wget http://cloonix.fr/bin_stored/install_cloonix
+         ./install_depends run
+         ./install_cloonix jessie-cloonix-33-00.tar.gz
+
   To run the pre-compiled software, the host needs a subset of the packets
-  needed for the build, see "REQUIRED PACKETS FOR RUN" for the list.
+  needed for the build, the script used for the build:
+  install_depends can be launched with run as input to install the
+  sub-set needed for the run. It must be run with root privilege.
 
-  To install the cloonix in a jessie for example, do as root:
-
-         cd /usr/local/bin
-         tar zxvf ${HOME}/jessie-cloonix-${VERSION}.tar.gz
-         chown -R root:root /usr/local/bin/cloonix*
-
-  If you need to create a tap with the cloonix server, you must add:
-
-         MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
-         chmod u+s ${MUTAP}
-  
 
 To use the software, a virtual machine qcow2 is necessary:
 ----------------------------------------------------------
+       
+         wget http://cloonix.fr/bulk_stored/jessie.qcow2.xz
+         mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
+         cd ${HOME}/cloonix_data/bulk
+         xz -d jessie.qcow2.xz
 
   After the install, download one of the virtual machines provided at
   cloonix.fr, choose the jessie.qcow2, and put it in your "bulk" directory,
@@ -53,118 +71,14 @@ To use the software, a virtual machine qcow2 is necessary:
 Use a demo script to begin using cloonix:
 -----------------------------------------
 
+         wget http://cloonix.fr/demo_stored/ping.sh
+         chmod +x ping.sh 
+         ./ping.sh
+
   Download one of the demo scripts provided at cloonix.fr, choose the 
   "ping.sh" script because it is the simplest one and launch it.
   
 
-
-----------------------------
-REQUIRED PACKETS FOR BUILD:
-----------------------------
-
-stretch jessie xenial
-=====================
-
-    apt-get install \
-            tmux genisoimage rxvt-unicode bc build-essential \
-            gcc-multilib libncurses5-dev libpulse-dev libssl-dev \
-            libgtk-3-dev libcap-dev libevent-dev libreadline-dev \
-            libsdl1.2-dev libogg-dev libsasl2-dev intltool \
-            libjpeg-dev python-pyparsing libsoup2.4 libusb-1.0-0-dev \
-            libgudev-1.0-dev libopus-dev python-six \
-            libtext-csv-perl libepoxy-dev libegl1-mesa-dev
-
-
-centos-7
-========
-
-    yum -y install \
-           tmux genisoimage tar xterm make gcc gcc-c++ m4 bc \
-           glibc-devel.i686 glibc-devel.x86_64 libstdc++-devel.i686 \
-           flex bison  bzip2 patch diffutils gtk3-devel \
-           dejavu-serif-fonts SDL-devel libcap-devel ncurses-devel \
-           readline-devel libevent-devel e2fsprogs alsa-lib-devel \
-           opus-devel pulseaudio-libs-devel libsoup-devel pyparsing \
-           libusb-devel libgudev1-devel libgusb-devel intltool \
-           openssl-devel pulseaudio-libs-devel pixman-devel \
-           gobject-introspection-devel libjpeg-turbo-devel \
-           zlib-devel cyrus-sasl-devel gtk-doc python-six \
-           cpan libepoxy-devel"
-
-      export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
-
-
-
-
-fedora-24
-=========
-
-    dnf -y install \
-           tmux genisoimage tar rxvt-unicode make gcc gcc-c++ m4 bc \
-           glibc-devel.i686 glibc-devel.x86_64 libstdc++-devel.i686 \
-           flex bison  bzip2 patch diffutils gtk3-devel \
-           dejavu-serif-fonts SDL-devel libcap-devel ncurses-devel \
-           readline-devel libevent-devel e2fsprogs alsa-lib-devel \
-           opus-devel pulseaudio-libs-devel libsoup-devel pyparsing \
-           libusb-devel libgudev1-devel libgusb-devel intltool \
-           openssl-devel pulseaudio-libs-devel pixman-devel \
-           gobject-introspection-devel libjpeg-turbo-devel \
-           zlib-devel cyrus-sasl-devel gtk-doc python-six \
-           perl-Text-CSV libepoxy-devel
-
-
-opensuse-42-2
-=============
-
-    zypper install \
-           tmux genisoimage tar rxvt-unicode make \
-           gcc gcc-c++ m4 bc gcc-32bit flex \
-           bison e2fsprogs bzip2 patch diffutils libopenssl-devel \
-           gtk3-devel dejavu-fonts libcap-devel \
-           ncurses-devel readline-devel libevent-devel libSDL-devel \
-           python-gtk-devel python-pyparsing libjpeg62-devel \
-           libogg-devel cyrus-sasl-devel alsa-devel libpulse-devel \
-           intltool libsoup-devel libXrandr-devel libusb-devel \
-           libgudev-1_0-devel libopus-devel python-six \
-           perl-Text-CSV libepoxy-devel
-
-
-----------------------------
-REQUIRED PACKETS FOR BUILD:
-----------------------------
-
-stretch jessie xenial
-=====================
-
-   apt-get install \
-           tmux genisoimage rxvt-unicode libevent-2.0-5 \
-           libpulse0 libusb-1.0 libopus0 e2fsprogs \
-           libsdl1.2debian libasound2 libcurl3-gnutls \
-           ttf-dejavu libgtk-3-0 libpulse-mainloop-glib0 \
-           libepoxy0 libegl1-mesa
-
-
-    yum install \
-           tmux genisoimage tar gtk3 rxvt-unicode libevent \
-           pulseaudio-libs libusb opus e2fsprogs \
-           libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-           pulseaudio-libs-glib2 libepoxy
-
-
-    dnf install \
-           tmux genisoimage tar gtk3 rxvt-unicode libevent \
-           pulseaudio-libs libusb opus e2fsprogs \
-           libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-           pulseaudio-libs-glib2 libepoxy
-
-  
-    zypper install \
-           tmux genisoimage tar gtk3 libgtk-2_0-0 \
-           rxvt-unicode libevent \
-           libpulse-mainloop-glib0 libpulse0 \
-           libusb libopus0 e2fsprogs libjpeg62  \
-           libSDL-1_2-0 alsa-lib gnutls dejavu-fonts \
-           libusbredirparser1 libgthread-2_0-0 libepoxy0
 
 
 NOTE:
