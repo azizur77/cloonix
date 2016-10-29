@@ -526,7 +526,7 @@ static void arm_utils_finish_vm_init(char *name)
   nm = (char *) clownix_malloc(MAX_NAME_LEN, 9);
   memset(nm, 0, MAX_NAME_LEN);
   strncpy(nm, name, MAX_NAME_LEN-1);
-  clownix_timeout_add(2000, utils_finish_vm_init, (void *) nm, NULL, NULL);
+  clownix_timeout_add(4000, utils_finish_vm_init, (void *) nm, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 
