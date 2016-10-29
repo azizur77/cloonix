@@ -17,7 +17,7 @@
 /*                                                                          */
 /****************************************************************************/
 void qmp_begin_qemu_unix(char *name);
-void qmp_end_qemu_unix(char *name);
+int qmp_end_qemu_unix(char *name);
 int  qmp_still_present(void);
 void qmp_vm_delete(char *name);
 void qmp_agent_sysinfo(char *name, int used_mem_agent);

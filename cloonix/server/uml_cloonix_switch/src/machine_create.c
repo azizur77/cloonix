@@ -50,7 +50,6 @@
 #include "qmp.h"
 #include "qhvc0.h"
 #include "doorways_mngt.h"
-#include "timeout_service.h"
 #include "c2c.h"
 #include "mueth_mngt.h"
 #include "stats_counters.h"
@@ -159,7 +158,7 @@ static void timeout_erase_dir_zombie(int vm_id, char *name)
   memset(act, 0, sizeof(t_action_rm_dir));
   act->vm_id = vm_id; 
   strcpy(act->name, name);
-  clownix_timeout_add(50, action_rm_dir_timed, (void *) act, NULL, NULL);
+  clownix_timeout_add(200, action_rm_dir_timed, (void *) act, NULL, NULL);
   inc_lock_self_destruction_dir();
 }
 /*---------------------------------------------------------------------------*/
@@ -202,31 +201,16 @@ static void delayed_vm_cutoff(void *data)
 
 
 /*****************************************************************************/
-static void arm_delayed_vm_cutoff(char *name)
+static void arm_delayed_vm_cutoff(char *name, int val)
 {
   char *vmn;
   vmn = clownix_malloc(MAX_NAME_LEN, 13);
   memset (vmn, 0, MAX_NAME_LEN);
   strncpy(vmn, name, MAX_NAME_LEN-1);
-  clownix_timeout_add(300, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
+  clownix_timeout_add(val, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
     
-/*****************************************************************************/
-static void machine_recv_del_vm(t_vm *vm)
-{
-  int pid;
-  if (!vm)
-    KOUT(" ");
-  pid = utils_get_pid_of_machine(vm);
-  if (pid)
-    {
-    event_print("POLITE DESTRUCT SIGNAL TO KVM %s PID %d",
-                 vm->vm_params.name, pid);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
 /*****************************************************************************/
 void timeout_start_vm_create_automaton(void *data)
 {
@@ -368,56 +352,6 @@ void machine_recv_add_vm(int llid, int tid, t_vm_params *vm_params, int vm_id)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void timeout_service2(int job_idx, int is_timeout, void *opaque)
-{
-  t_opaque_agent_req *agent_req = (t_opaque_agent_req *) opaque;
-  qhvc0_end_qemu_unix(agent_req->name);
-  qmp_end_qemu_unix(agent_req->name);
-  qmonitor_end_qemu_unix(agent_req->name);
-  arm_delayed_vm_cutoff(agent_req->name);
-  doors_send_del_vm(get_doorways_llid(), 0, agent_req->name);
-  clownix_free(opaque, __FUNCTION__);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void timeout_service1(int job_idx, int is_timeout, void *opaque)
-{
-  t_opaque_agent_req *agent_req = (t_opaque_agent_req *) opaque;
-  if (is_timeout)
-    {
-    qhvc0_end_qemu_unix(agent_req->name);
-    qmp_end_qemu_unix(agent_req->name);
-    qmonitor_end_qemu_unix(agent_req->name);
-    arm_delayed_vm_cutoff(agent_req->name);
-    doors_send_del_vm(get_doorways_llid(), 0, agent_req->name);
-    clownix_free(opaque, __FUNCTION__);
-    }
-  else
-    timeout_service_alloc(timeout_service2, opaque, 500);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-static void try_shutdown_with_agent_first(char *name)
-{
-  char buf[MAX_NAME_LEN];
-  t_opaque_agent_req *opaque;
-  int job_idx;
-  opaque = (void *) clownix_malloc(sizeof(t_opaque_agent_req), 9);
-  memset(opaque, 0, sizeof(t_opaque_agent_req));
-  strncpy(opaque->name, name, MAX_NAME_LEN-1);
-  strncpy(opaque->action, "poweroff", MAX_NAME_LEN-1);
-  job_idx = timeout_service_alloc(timeout_service1, (void *)opaque, 300);
-  memset(buf, 0, MAX_NAME_LEN);
-  snprintf(buf, MAX_NAME_LEN-1, HALT_REQUEST, job_idx);
-  doors_send_command(get_doorways_llid(), 0, name, buf);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
 static void stop_mueth_qemu(t_vm *vm)
 {
   int i;
@@ -449,16 +383,24 @@ int machine_death( char *name, int error_death)
     }
   if (vm->vm_to_be_killed == 0)
     {
-    doors_send_del_vm(get_doorways_llid(), 0, name);
     vm->vm_to_be_killed = 1;
     stop_mueth_qemu(vm);
+    doors_send_del_vm(get_doorways_llid(), 0, name);
+    qhvc0_end_qemu_unix(name);
+    qmonitor_end_qemu_unix(name);
+    if (qmp_end_qemu_unix(name))
+      {
+      KERR("QMP FAILED REQUESTING SHUTDOWN");
+      arm_delayed_vm_cutoff(name, 10);
+      }
+    else
+      arm_delayed_vm_cutoff(name, 400);
     if (vm->pid_of_cp_clone)
       {
       KERR("CP ROOTFS SIGKILL %s, PID %d", name, vm->pid_of_cp_clone);
       kill(vm->pid_of_cp_clone, SIGKILL);
       vm->pid_of_cp_clone = 0;
       }
-    try_shutdown_with_agent_first(name);
     if (!cfg_is_a_zombie(name))
       {
       result = 0;
@@ -470,7 +412,6 @@ int machine_death( char *name, int error_death)
         if (vm->wake_up_eths != NULL)
           KOUT(" ");
         timeout_erase_dir_zombie(vm->vm_id, name);
-        machine_recv_del_vm(vm);
         }
       else
         {

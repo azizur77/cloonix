@@ -447,7 +447,10 @@ static void last_kill_action(char *name)
   if (qvm)
     {
     if (qvm->pid)
-      kill(qvm->pid, SIGKILL);
+      {
+      if (!kill(qvm->pid, SIGKILL))
+        KERR("Brutalkill of vm");
+      }
     wrapper_call_machine_death(qvm, 1);
     vm_release(qvm);
     }
@@ -655,6 +658,7 @@ static int vm_rx_cb(void *ptr, int llid, int fd)
     if (len < 0)
       {
       len = 0;
+      KERR(" ");
       process_llid_error(qvm);
       }
     else
@@ -791,8 +795,9 @@ int qmp_request_qemu_stop_cont(char *name, int cont)
 
 
 /****************************************************************************/
-void qmp_end_qemu_unix(char *name)
+int qmp_end_qemu_unix(char *name)
 {
+  int result = -1;
   t_qmp_vm *qvm = vm_get_with_name(name);
   if (qvm)
     {
@@ -806,6 +811,7 @@ void qmp_end_qemu_unix(char *name)
                             &(qvm->delete_abeat_timer),
                             &(qvm->delete_ref_timer));
         qvm->request_shutdown = 1;
+        result = 0;
         }
       else if (!qvm->connect_abeat_timer)
         {
@@ -828,6 +834,7 @@ void qmp_end_qemu_unix(char *name)
                           &(qvm->delete_ref_timer));
       }
     }
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 
