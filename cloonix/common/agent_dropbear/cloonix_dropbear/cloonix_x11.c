@@ -43,7 +43,7 @@ static t_x11_ctx *dido_llid_2_ctx[CLOWNIX_MAX_CHANNELS];
 /*****************************************************************************/
 static char *get_cloonix_config_path(void)
 {
-  return ("/mnt/cloonix_config_fs/config");
+  return ("/mnt/cloonix_config_fs");
 }
 /*---------------------------------------------------------------------------*/
 

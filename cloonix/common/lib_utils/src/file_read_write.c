@@ -39,14 +39,14 @@
 /*****************************************************************************/
 char *get_cloonix_config_path(void)
 {
-  return ("/mnt/cloonix_config_fs/config");
+  return ("/mnt/cloonix_config_fs");
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static char *get_cloonix_config_path_name(void)
 {
-  return ("/mnt/cloonix_config_fs/config/cloonix_vm_name");
+  return ("/mnt/cloonix_config_fs/cloonix_vm_name");
 }
 /*---------------------------------------------------------------------------*/
 
@@ -109,7 +109,7 @@ int i_am_inside_cloonix(char *name)
 {
   int result, len;
   char err[MAX_PATH_LEN];
-  char *buf, *ptr, *endptr;
+  char *buf;
   memset(name, 0, MAX_NAME_LEN);
   result = file_exists(get_cloonix_config_path_name(), F_OK);
   if (result)
@@ -122,32 +122,7 @@ int i_am_inside_cloonix(char *name)
       }
     else
       {
-      ptr = strchr(buf, '[');
-      if (!ptr)
-        {
-        KERR(" ");
-        result = 0;
-        }
-      else
-        { 
-        endptr = strchr(ptr, '>');
-        if (!endptr)
-          {
-          KERR(" ");
-          result = 0;
-          }
-        else
-          {
-          *endptr = 0;
-          if (strlen(ptr+1) <= 2)
-            {
-            KERR(" ");
-            result = 0;
-            }
-          else
-            strncpy(name, ptr+1, MAX_NAME_LEN-1);
-          }
-        }
+      strncpy(name, buf, MAX_NAME_LEN-1);
       clownix_free(buf, __FILE__);
       }
     }
