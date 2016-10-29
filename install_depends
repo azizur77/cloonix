@@ -132,7 +132,7 @@ fct_run_get_opensuse_packages()
 {
   zypper --non-interactive install \
          tmux genisoimage tar gtk3 libgtk-2_0-0 \
-         rxvt-unicode libevent \
+         rxvt-unicode libevent  glibc-locale \
          libpulse-mainloop-glib0 libpulse0 \
          libusb libopus0 e2fsprogs libjpeg62  \
          libSDL-1_2-0 alsa-lib gnutls dejavu-fonts \
