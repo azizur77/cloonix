@@ -735,6 +735,14 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
       result = -1;
       }
     }
+  if (vm_params->vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
+    {
+    if (!file_exists(vm_params->cdrom, F_OK))
+      {
+      sprintf(info, "File: \"%s\" not found\n", vm_params->cdrom);
+      result = -1;
+      }
+    }
   if (result == 0)
     {
     memset(rootfs, 0, MAX_PATH_LEN);

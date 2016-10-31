@@ -50,6 +50,7 @@ void to_cloonix_switch_delete_sat_edge(char *name, char *lan,
 void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
                                      char *rootfs_sod, 
                                      char *rootfs_backing_file, 
+                                     char *node_cdrom,
                                      char *node_bdisk,
                                      int qty_eth, int vm_id, 
                                      int vm_config_flags); 

@@ -245,7 +245,7 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
   static char text[MAX_TEXT];
   int is_persistent, is_backed, is_inside_cloonix;
   int has_p9_host_share; 
-  int vm_config_flags, has_bdisk;
+  int vm_config_flags, has_bdisk, has_cdrom;
   int is_full_virt, len = 0;
   bitem = look_for_node_with_id(pm->name);
   if (bitem)
@@ -260,6 +260,7 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     is_backed   = vm_config_flags & VM_FLAG_DERIVED_BACKING;
     is_inside_cloonix = vm_config_flags & VM_FLAG_IS_INSIDE_CLOONIX;
     has_bdisk = vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK;
+    has_cdrom = vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM;
     has_p9_host_share = vm_config_flags & VM_CONFIG_FLAG_9P_SHARED;
 
     if (has_p9_host_share)
@@ -289,6 +290,10 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     if (has_bdisk)
       len += sprintf(text + len, "\n BDISK: %s", 
                      bitem->pbi.pbi_node->node_bdisk);
+    if (has_cdrom)
+      len += sprintf(text + len, "\n CDROM: %s",
+                     bitem->pbi.pbi_node->node_cdrom);
+
 
     display_info(title, text);
     }

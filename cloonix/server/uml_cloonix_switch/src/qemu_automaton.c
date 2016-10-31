@@ -55,8 +55,10 @@
 #define CDROM " -drive file=%s,index=%d,media=cdrom,if=virtio"
 
 #define DRIVE_FULL_VIRT " -drive file=%s,index=%d,media=disk,if=ide"
-//#define CDROM_FULL_VIRT " -cdrom %s"
+
 #define CDROM_FULL_VIRT " -drive file=%s,media=cdrom,if=ide"
+
+#define INSTALL_CDROM " -no-reboot -boot d -drive file=%s,index=%d,media=disk,if=virtio,cache=none -cdrom %s"
 
 typedef struct t_cprootfs_config
 {
@@ -324,7 +326,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   char option_kvm_txt[MAX_NAME_LEN];
   char cmd_start[3*MAX_PATH_LEN];
   char cpu_type[MAX_NAME_LEN];
-  char *rootfs, *bdisk, *gname;
+  char *rootfs, *install_cdrom, *bdisk, *gname;
   char *spice_path, *cdrom;
   if (!vm)
     KOUT(" ");
@@ -385,20 +387,27 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   rootfs = vm->vm_params.rootfs_used;
   bdisk = vm->vm_params.bdisk;
 
-  if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
-    len += sprintf(linux_cmd+len, DRIVE_FULL_VIRT, rootfs, 0);
+  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
+    {
+    install_cdrom = vm->vm_params.cdrom;
+    len += sprintf(linux_cmd+len, INSTALL_CDROM, rootfs, 0, install_cdrom);
+    }
   else
-    len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
-
-  cdrom = utils_get_cdrom_path_name(vm->vm_id);
-  if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
-    len += sprintf(linux_cmd+len, CDROM_FULL_VIRT, cdrom);
-  else
-    len += sprintf(linux_cmd+len, CDROM, cdrom, 1);
-
-  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK)
-    len += sprintf(linux_cmd+len, DRIVE_PARAMS, bdisk, 2);
-
+    {
+    if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
+      len += sprintf(linux_cmd+len, DRIVE_FULL_VIRT, rootfs, 0);
+    else
+      len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
+  
+    cdrom = utils_get_cdrom_path_name(vm->vm_id);
+    if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
+      len += sprintf(linux_cmd+len, CDROM_FULL_VIRT, cdrom);
+    else
+      len += sprintf(linux_cmd+len, CDROM, cdrom, 1);
+  
+    if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK)
+      len += sprintf(linux_cmd+len, DRIVE_PARAMS, bdisk, 2);
+    }
 
   for (i=0; i<vm->vm_params.nb_eth; i++)
     {

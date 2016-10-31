@@ -27,6 +27,7 @@
 #include "bank.h"
 #include "timeout_start_resp.h"
 #include "popup.h"
+#include "interface.h"
 
 /****************************************************************************/
 static void gene_delete_item(int bank_type, char *name)
@@ -71,7 +72,7 @@ static void gene_delete_edge(int bank_type, char *name, char *lan, int num)
 /****************************************************************************/
 void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
                                      char *rootfs_sod, char *rootfs_backing,
-                                     char *node_bdisk,
+                                     char *node_cdrom, char *node_bdisk,
                                      int qty_eth, int vm_id, int vm_config_flags)
 {
   t_create_item_node_resp *pa;
@@ -83,6 +84,7 @@ void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
   pa->vm_id = vm_id;
   strncpy(pa->rootfs_sod, rootfs_sod, MAX_PATH_LEN-1);
   strncpy(pa->rootfs_backing_file, rootfs_backing, MAX_PATH_LEN-1);
+  strncpy(pa->node_cdrom, node_cdrom, MAX_PATH_LEN-1);
   strncpy(pa->node_bdisk, node_bdisk, MAX_PATH_LEN-1);
   if (kernel)
     strncpy(pa->kernel, kernel, MAX_NAME_LEN-1);

@@ -44,6 +44,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\t[options]");
   printf("\n\t       --persistent ");
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
+  printf("\n\t       --install_cdrom=<cdrom_file_path>");
   printf("\n\t       --fullvirt");
   printf("\n\t       --balloon");
   printf("\n\tnote: for the --persistent option, the rootfs must be a full");
@@ -67,6 +68,7 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
   int i, result = 0, prop_flags = 0; 
   char *img_linux = NULL;
   char *p9_host_shared=NULL;
+  char *cdrom=NULL;
   char *bdisk=NULL;
   prop_flags |= VM_CONFIG_FLAG_EVANESCENT;
   for (i=0; i<argc; i++)
@@ -85,6 +87,11 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
       prop_flags |= VM_CONFIG_FLAG_9P_SHARED;
       p9_host_shared = argv[i] + strlen("--9p_share=");
       }
+    else if (!strncmp(argv[i], "--install_cdrom=", strlen("--install_cdrom=")))
+      {
+      prop_flags |= VM_CONFIG_FLAG_INSTALL_CDROM;
+      cdrom = argv[i] + strlen("--install_cdrom=");
+      }
     else
       {
       printf("\nERROR: %s not an option\n\n", argv[i]);
@@ -96,7 +103,7 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
     {
     init_connection_to_uml_cloonix_switch();
     client_add_vm(0, callback_end, name, eth, prop_flags, cpu, mem,
-                  img_linux, rootfs, bdisk, p9_host_shared);
+                  img_linux, rootfs, cdrom, bdisk, p9_host_shared);
     }
   return result;
 }

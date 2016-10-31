@@ -426,7 +426,7 @@ void client_req_eventfull(t_eventfull_cb cb)
 void client_add_vm(int tid, t_end_cb cb, char *nm, 
                    int nb_eth, int vm_config_flags,
                    int cpu_qty, int mem_qty, 
-                   char *kernel, char *root_fs, 
+                   char *kernel, char *root_fs, char *cdrom, 
                    char *bdisk, char *p9_host_share)
 {
   t_vm_params vm_params;
@@ -445,6 +445,8 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
   if (kernel)
     strncpy(vm_params.linux_kernel, kernel, MAX_NAME_LEN - 1);
   strncpy(vm_params.rootfs_input, root_fs, MAX_PATH_LEN - 1);
+  if (cdrom)
+    strncpy(vm_params.cdrom, cdrom, MAX_PATH_LEN - 1);
   if (bdisk)
     strncpy(vm_params.bdisk, bdisk, MAX_PATH_LEN - 1);
   if (p9_host_share)

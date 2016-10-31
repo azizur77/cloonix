@@ -49,7 +49,7 @@ void timer_create_item_node_resp(void *data)
                       tx, ty, thidden_on_graph);
   bank_node_create(pa->name, pa->ip, pa->kernel, pa->rootfs_sod, 
                    pa->rootfs_backing_file,  
-                   pa->node_bdisk,
+                   pa->node_cdrom, pa->node_bdisk,
                    pa->bank_type, pa->num_eth, pa->mutype,
                    color_choice, pa->vm_id, pa->vm_config_flags,
                    x, y, hidden_on_graph, tx, ty, thidden_on_graph);

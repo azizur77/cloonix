@@ -32,7 +32,7 @@ void selectioned_item_delete(t_bank_item *bitem);
 /*--------------------------------------------------------------------------*/
 int add_new_node(char *name, char *ip, char *kernel, char *rootfs_sod,
                  char *rootfs_backing_file,  
-                 char *node_bdisk,
+                 char *node_cdrom, char *node_bdisk,
                  int bank_type, double x, double y, int hidden_on_graph, 
                  int color_choice, int vm_id, int vm_config_flags);
 int add_new_eth(char *name, int num, int type, int mutype,

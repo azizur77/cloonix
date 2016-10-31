@@ -112,6 +112,7 @@ void topo_info_update(t_topo_info *topo)
 void timer_create_item_node_req(void *data)
 {
   char *ptr_bdisk = NULL;
+  char *ptr_cdrom = NULL;
   char *ptr_p9_host_share = NULL;
   int thidden_on_graph[MAX_PERIPH_VM];
   int vm_config_flags;
@@ -123,6 +124,8 @@ void timer_create_item_node_req(void *data)
     KOUT("%d", cust_vm->nb_eth);
   if (cust_vm->has_bdisk)
     ptr_bdisk = cust_vm->kvm_static_bdisk;
+  if (cust_vm->has_cdrom)
+    ptr_cdrom = cust_vm->cdrom;
   if (cust_vm->has_p9_host_share)
     ptr_p9_host_share = cust_vm->kvm_p9_host_share;
   if (cust_vm->kvm_used_rootfs[0])
@@ -132,7 +135,7 @@ void timer_create_item_node_req(void *data)
                         pa->tx, pa->ty, thidden_on_graph);
     client_add_vm(0, callback_end, cust_vm->name, cust_vm->nb_eth, 
                   vm_config_flags, cust_vm->cpu, cust_vm->mem,  
-                  NULL, cust_vm->kvm_used_rootfs,  
+                  NULL, cust_vm->kvm_used_rootfs, ptr_cdrom, 
                   ptr_bdisk, ptr_p9_host_share);
     }
   else

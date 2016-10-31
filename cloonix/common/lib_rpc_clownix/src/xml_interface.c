@@ -719,6 +719,7 @@ static int topo_vmit_format(char *buf, t_vm_item *vmit)
     strcpy(vmit->vm_params.rootfs_backing, NO_DEFINED_VALUE);
 
   len = sprintf(buf, TOPO_VM_O, vmit->vm_params.name, 
+                                vmit->vm_params.cdrom,  
                                 vmit->vm_params.bdisk,  
                                 vmit->vm_params.p9_host_share,  
                                 vmit->vm_params.linux_kernel, 
@@ -733,7 +734,7 @@ static int topo_vmit_format(char *buf, t_vm_item *vmit)
     nb = vmit->lan_eth[i].nb_lan;
     len += sprintf(buf+len, TOPO_ETH_O, i, nb);
     len += make_one_eth_param(buf+len, vmit->vm_params.eth_params[i].mac_addr,
-                                       vmit->vm_params.eth_params[i].is_promisc);
+                                      vmit->vm_params.eth_params[i].is_promisc);
     len += topo_lan_format(buf+len, nb, vmit->lan_eth[i].lan); 
     len += sprintf(buf+len, TOPO_ETH_C);
     }
@@ -1071,9 +1072,11 @@ static int make_eth_params(char *buf, int nb, t_eth_params *eth_params)
 void send_add_vm(int llid, int tid, t_vm_params *vm_params) 
 {
   int len = 0;
+  char cdrom[MAX_PATH_LEN];
   char bdisk[MAX_PATH_LEN];
   char p9_host_share[MAX_PATH_LEN];
   char linux_kernel[MAX_NAME_LEN];
+  memset(cdrom, 0, MAX_PATH_LEN);
   memset(bdisk, 0, MAX_PATH_LEN);
   memset(p9_host_share, 0, MAX_PATH_LEN);
   memset(linux_kernel, 0, MAX_NAME_LEN);
@@ -1083,6 +1086,8 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
       (strlen(vm_params->rootfs_input) >= MAX_PATH_LEN))
     KOUT(" ");
   if (strlen(vm_params->linux_kernel) >= MAX_NAME_LEN)
+    KOUT(" ");
+  if (strlen(vm_params->cdrom) >= MAX_PATH_LEN)
     KOUT(" ");
   if (strlen(vm_params->bdisk) >= MAX_PATH_LEN)
     KOUT(" ");
@@ -1098,6 +1103,11 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
     strcpy(linux_kernel, NO_DEFINED_VALUE);
   else
     strcpy(linux_kernel, vm_params->linux_kernel);
+
+  if (vm_params->cdrom[0] == 0)
+    strcpy(cdrom, NO_DEFINED_VALUE);
+  else
+    strcpy(cdrom, vm_params->cdrom);
 
   if (vm_params->bdisk[0] == 0)
     strcpy(bdisk, NO_DEFINED_VALUE);
@@ -1115,7 +1125,7 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
   len += make_eth_params(sndbuf+len,vm_params->nb_eth, vm_params->eth_params);
   len += sprintf(sndbuf+len, ADD_VM_C, linux_kernel, 
                              vm_params->rootfs_input, 
-                             bdisk, p9_host_share);
+                             cdrom, bdisk, p9_host_share);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -1551,6 +1561,7 @@ static void helper_fill_topo_vm_item(char *msg, t_vm_item *vmit)
   int i, unused;
   char *ptr = msg;
   if (sscanf(msg, TOPO_VM_O, vmit->vm_params.name, 
+                             vmit->vm_params.cdrom,  
                              vmit->vm_params.bdisk,  
                              vmit->vm_params.p9_host_share,  
                              vmit->vm_params.linux_kernel,  
@@ -1560,7 +1571,7 @@ static void helper_fill_topo_vm_item(char *msg, t_vm_item *vmit)
                              &(vmit->vm_params.vm_config_flags),  
                              &(vmit->vm_params.nb_eth),
                              &(vmit->vm_params.mem), 
-                             &(vmit->vm_params.cpu)) != 11)
+                             &(vmit->vm_params.cpu)) != 12)
     KOUT("%s ", msg);
   for (i=0; i<vmit->vm_params.nb_eth; i++)
     {
@@ -2112,8 +2123,9 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
         KOUT("%s", msg);
       if (sscanf(ptr, ADD_VM_C, vm_params.linux_kernel, 
                                 vm_params.rootfs_input, 
+                                vm_params.cdrom, 
                                 vm_params.bdisk, 
-                                vm_params.p9_host_share) != 4) 
+                                vm_params.p9_host_share) != 5) 
         KOUT("%s", msg);
       recv_add_vm(llid, tid, &vm_params);
       break;

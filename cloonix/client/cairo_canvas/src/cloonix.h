@@ -24,6 +24,7 @@ typedef struct t_custom_vm
 {
   char name[MAX_NAME_LEN];
   char kvm_used_rootfs[MAX_PATH_LEN];
+  char cdrom[MAX_PATH_LEN];
   char kvm_static_bdisk[MAX_PATH_LEN];
   char kvm_p9_host_share[MAX_PATH_LEN];
   int  type;
@@ -31,8 +32,10 @@ typedef struct t_custom_vm
   int  is_full_virt;
   int  is_persistent;
   int  is_sda_disk;
+  int  has_cdrom;
   int  has_bdisk;
   int  has_p9_host_share;
+  int  has_install_cdrom;
   int  add_number;
   int  current_number;
   int  cpu;
