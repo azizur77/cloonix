@@ -748,8 +748,17 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
     memset(rootfs, 0, MAX_PATH_LEN);
     if (vm_params->vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
       {
-      strncpy(rootfs, vm_params->rootfs_input, MAX_PATH_LEN-1);
-      strncpy(vm_params->rootfs_used, rootfs, MAX_PATH_LEN-1);
+      if (file_exists(vm_params->rootfs_input, F_OK))
+        {
+        strncpy(rootfs, vm_params->rootfs_input, MAX_PATH_LEN-1);
+        strncpy(vm_params->rootfs_used, rootfs, MAX_PATH_LEN-1);
+        }
+      else
+        {
+        snprintf(rootfs, MAX_PATH_LEN-1, "%s/%s", 
+                 cfg_get_bulk(), vm_params->rootfs_input);
+        strncpy(vm_params->rootfs_used, rootfs, MAX_PATH_LEN-1);
+        }
       }
     else if (vm_params->vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
       {
@@ -781,7 +790,7 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
                                           vm_params->linux_kernel, 
                                           info, has_kvm_virt);
       }
-      }
+    }
     if (result == 0)
       sprintf(info, "Rx Req add kvm machine %s with %d eth , FLAGS:%s",
               vm_params->name, vm_params->nb_eth, 
