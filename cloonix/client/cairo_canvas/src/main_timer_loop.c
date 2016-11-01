@@ -189,7 +189,7 @@ gboolean refresh_request_timeout (gpointer data)
   if (g_one_eventfull_has_arrived)
     {
     glob_eventfull_has_arrived++;
-    if (glob_eventfull_has_arrived >= 30)
+    if (glob_eventfull_has_arrived >= 60)
       KOUT("CONTACT LOST");
     }
   return TRUE;
