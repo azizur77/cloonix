@@ -552,7 +552,6 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
       break;
 
     case state_closed:
-      KERR("MUST WORKAROUND");
       break;
 
     default:
