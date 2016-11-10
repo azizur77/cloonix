@@ -56,7 +56,7 @@ char *cloonix_get_short(const char *full_name);
 #define MAX_PATH_LEN       300 
 #define MAX_NAME_LEN       64
 #define CLOWNIX_MAX_CHANNELS 10000
-#define MAX_SELECT_CHANNELS 500
+#define MAX_SELECT_CHANNELS 1000
 
 
 #define QEMU_ETH_FORMAT "%s_%d"
