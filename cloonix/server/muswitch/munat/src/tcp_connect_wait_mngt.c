@@ -306,6 +306,8 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
       getsockopt(ctx->fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
       if (so_error == 0) 
         {
+        if ((ctx->fd < 0) || (ctx->fd >= MAX_SELECT_CHANNELS-1))
+          KOUT("%d", ctx->fd);
         llid = msg_watch_fd(get_all_ctx(), ctx->fd, 
                             tcp_rx_from_out, tcp_err_from_out);
         if (llid <= 0)

@@ -134,6 +134,8 @@ static int wif_raw_socket_open(t_all_ctx *all_ctx)
     if (!result)
       {
       g_fd_wif = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+      if ((g_fd_wif < 0) || (g_fd_wif >= MAX_SELECT_CHANNELS-1))
+        KOUT("%d", g_fd_wif);
       g_llid_wif = msg_watch_fd(all_ctx,g_fd_wif,rx_from_wif,err_wif);
       nonblock_fd(g_fd_wif);
       }

@@ -118,6 +118,9 @@ int tap_fd_open(t_all_ctx *all_ctx, char *tap_name)
     KERR("TAP OPEN ERROR %s", tap_name);
   else
     {
+    if ((g_fd_tap < 0) || (g_fd_tap >= MAX_SELECT_CHANNELS-1))
+      KOUT("%d", g_fd_tap);
+
     g_llid_tap = msg_watch_fd(all_ctx, g_fd_tap, rx_from_tap, err_cb_tap);
     if (g_llid_tap <= 0)
       KERR("TAP FD ERROR %s", tap_name);

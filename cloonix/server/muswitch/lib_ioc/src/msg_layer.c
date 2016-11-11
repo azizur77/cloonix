@@ -239,6 +239,8 @@ static int server_has_new_connect_from_client(void *ptr, int id, int fd)
   util_fd_accept(fd, &fd_new, __FUNCTION__);
   if (fd_new >= 0)
     {
+    if (fd_new >= MAX_SELECT_CHANNELS-1)
+      KOUT("%d", fd_new);
     llid = channel_create(all_ctx, 0, fd_new, rx_dchan_cb, 
                           tx_dchan_cb, err_dchan_cb, (char *) __FUNCTION__);
     if (!llid)
@@ -318,6 +320,8 @@ int msg_watch_fd(t_all_ctx *all_ctx, int fd,
     KOUT(" ");
   if (!err)
     KOUT(" ");
+  if ((fd < 0) || (fd >= MAX_SELECT_CHANNELS-1))
+    KOUT("%d", fd);
   llid = channel_create(all_ctx, 0, fd, rx_data, 
                         tx_dchan_cb, err_dchan_cb, (char *) __FUNCTION__);
   if (!llid)
@@ -343,6 +347,8 @@ int string_server_unix(t_all_ctx *all_ctx, char *pname, t_fd_connect connect_cb)
   listen_fd = utilx_socket_listen_unix(pname);
   if (listen_fd >= 0)
     {
+    if (listen_fd >= MAX_SELECT_CHANNELS-1)
+      KOUT("%d", listen_fd);
     llid = channel_create(all_ctx, 0, listen_fd,  
                           server_has_new_connect_from_client, 
                           NULL, default_err_kill, (char *) __FUNCTION__);
@@ -371,6 +377,8 @@ int  string_client_unix(t_all_ctx *all_ctx, char *pname,
       KOUT(" ");
     if (!rx_cb)
       KOUT(" ");
+    if ((fd < 0) || (fd >= MAX_SELECT_CHANNELS-1))
+      KOUT("%d", fd);
     llid = channel_create(all_ctx, 0, fd, rx_dchan_cb,
                           tx_dchan_cb, err_dchan_cb, (char *) __FUNCTION__);
     if (!llid)

@@ -295,6 +295,8 @@ static int udp_attach(int *ret_fd)
       close(fd);
     else
       {
+      if ((fd < 0) || (fd >= MAX_SELECT_CHANNELS-1))
+        KOUT("%d", fd);
       result = msg_watch_fd(get_all_ctx(), fd, rx_udp_so, err_udp_so);
       if (result <= 0)
         KOUT(" ");
@@ -429,7 +431,7 @@ t_machine_sock *machine_get_udp_sock(t_machine *machine,
                         ms->timer_killer_abs_beat, ms->timer_killer_ref,
                         __FILE__, __LINE__);
     clownix_timeout_add(get_all_ctx(), 
-                        10000, timer_killer_machine_sock, (void *) ms,
+                        10, timer_killer_machine_sock, (void *) ms,
                         &(ms->timer_killer_abs_beat), &(ms->timer_killer_ref));
     }
   return ms;

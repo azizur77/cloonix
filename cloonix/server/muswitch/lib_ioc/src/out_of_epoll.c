@@ -81,6 +81,8 @@ void init_wake_out_epoll(t_all_ctx *all_ctx)
   nonblock_fd(fds[0]);
   nonblock_fd(fds[1]);
   all_ctx->g_out_evt_fd = fds[1];
+  if ((fds[0] < 0) || (fds[0] >= MAX_SELECT_CHANNELS-1))
+    KOUT("%d", fds[0]);
   msg_watch_fd(all_ctx, fds[0], rx_wake_out, err_wake_out);
 }
 /*---------------------------------------------------------------------------*/

@@ -615,6 +615,8 @@ void clownix_real_timer_init(t_all_ctx *all_ctx)
   nonblock_fd(fds[0]);
   nonblock_fd(fds[1]);
   g_real_timer->real_time_event_fd = fds[1];
+  if ((fds[0] < 0) || (fds[0] >= MAX_SELECT_CHANNELS-1))
+    KOUT("%d", fds[0]);
   msg_watch_fd(all_ctx, fds[0], rx_event_cb, err_event_cb);
   for (i=1; i<MAX_REAL_TIMER; i++)
     start_real_timer_item(i, &(g_real_timer->tstore[i]));

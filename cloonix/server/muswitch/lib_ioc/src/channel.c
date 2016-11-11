@@ -316,8 +316,6 @@ static int alloc_cidx(t_all_ctx *all_ctx, int fd)
   int cidx;
   t_ioc_ctx *ioc_ctx = all_ctx->ctx_head.ioc_ctx;
   ioc_ctx->g_channel_modification_occurence = 1;
-  if ((fd < 0) || (fd >= MAX_SELECT_CHANNELS-1))
-    KOUT("%d", fd);
   cidx = fd + 1;
   if (ioc_ctx->g_cidx_2_llid[cidx])
     KOUT("%d %d %d", fd, cidx, ioc_ctx->g_cidx_2_llid[cidx]);
@@ -692,6 +690,8 @@ int blkd_channel_create(void *ptr, int fd,
                         t_fd_error err, 
                         char *from)
 {
+  if ((fd < 0) || (fd >= MAX_SELECT_CHANNELS-1))
+    KOUT("%d", fd);
   return channel_create((t_all_ctx *)ptr, 1, fd, rx, tx, err, from); 
 }
 /*---------------------------------------------------------------------------*/
