@@ -43,11 +43,11 @@ Build and install from github sources:
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
-         wget http://cloonix.fr/bin_stored/jessie-cloonix-33-00.tar.gz
-         wget http://cloonix.fr/bin_stored/install_depends
-         wget http://cloonix.fr/bin_stored/install_cloonix
+         wget http://cloonix.fr/archive/v-33-01/jessie-cloonix-33-01.tar.gz
+         wget http://cloonix.fr/archive/v-33-01/install_depends
+         wget http://cloonix.fr/archive/v-33-01/install_cloonix
          ./install_depends run
-         ./install_cloonix jessie-cloonix-33-00.tar.gz
+         ./install_cloonix jessie-cloonix-33-01.tar.gz
 
   To run the pre-compiled software, the host needs a subset of the packets
   needed for the build, the script used for the build:
