@@ -173,6 +173,7 @@ static int spawn_command( struct ChanSess *chansess,
 	const int FDIN = 0;
 	const int FDOUT = 1;
 
+	prctl(PR_SET_PDEATHSIG, SIGKILL);
 	/* redirect stdin/stdout/stderr */
 	if (pipe(infds) != 0) {
                 KERR(" ");
@@ -194,6 +195,8 @@ static int spawn_command( struct ChanSess *chansess,
 
 	if (!pid) {
 		/* child */
+
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
 
 		/* redirect stdin/stdout */
 
@@ -250,6 +253,7 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
   char *cmd_sleep;
   unsigned int i;
   int len;
+  int is_login=0;
   baseshell = basename(usershell);
   if (cmd != NULL) 
     {
@@ -266,14 +270,12 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
     {
     if (login)
       {
-      len =  strlen(login) + 20;
-      argv[0] = baseshell;
-      argv[1] = "--noprofile";
-      argv[2] = "--norc";
-      argv[3] = "-c";
-      argv[4] = (char*)m_malloc(len);
-      argv[5] = NULL;
-      snprintf(argv[4], len, "%s -p -f root", login);
+      is_login = 1;
+      argv[0] = login;
+      argv[1] = "-p";
+      argv[2] = "-f";
+      argv[3] = "root";
+      argv[4] = NULL;
       }
     else
       {
@@ -291,7 +293,10 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
     {
     m_close(i);
     }
-  execv(usershell, argv);
+  if (is_login)
+    execv(login, argv);
+  else
+    execv(usershell, argv);
 }
 
 
@@ -769,11 +774,13 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess)
     }
   else
     {
+    prctl(PR_SET_PDEATHSIG, SIGKILL);
     pid = fork();
     if (pid < 0)
       KERR("Bad fork");
     else if (pid == 0)
       {
+      prctl(PR_SET_PDEATHSIG, SIGKILL);
       close(chansess->master);
       pty_make_controlling_tty(&chansess->slave, chansess->tty);
       if ((chansess->cloonix_xauth_cookie_key) && (chansess->cloonix_display))

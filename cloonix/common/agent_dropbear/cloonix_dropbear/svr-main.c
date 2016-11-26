@@ -173,6 +173,8 @@ void main_noinetd() {
 			goto out;
 		}
 
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
+
 		fork_ret = fork();
 		if (fork_ret < 0) {
 			KERR("Error forking: %s", strerror(errno));
@@ -193,9 +195,9 @@ break;
                  }
 
 		} else {
-
 			/* child */
 
+			prctl(PR_SET_PDEATHSIG, SIGKILL);
 			if (setsid() < 0) {
 				KOUT("setsid: %s", strerror(errno));
 			}

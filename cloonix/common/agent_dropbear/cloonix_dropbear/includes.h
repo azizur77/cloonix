@@ -68,6 +68,8 @@
 #include <shadow.h>
 #include <libgen.h>
 #include <sys/uio.h>
+#include <sys/prctl.h>
+
 #include "compat.h"
 
 #ifndef LOG_AUTHPRIV
