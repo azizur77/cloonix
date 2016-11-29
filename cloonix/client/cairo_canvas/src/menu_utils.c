@@ -398,7 +398,8 @@ void start_wireshark(char *name, t_bank_item *bitem)
   snprintf(bin_path,  MAX_PATH_LEN-1,
                       "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh",
                       get_local_cloonix_tree());
-  snprintf(cmd, 2*MAX_PATH_LEN-1, "%s -r %s", WIRESHARK_BINARY, recpath);
+  snprintf(cmd, 2*MAX_PATH_LEN-1, "%s -r %s", 
+           get_wireshark_present_in_server(), recpath);
   if (check_before_start_launch(argv))
     launch_pid_wait(type_pid_wireshark, name, argv);
 }

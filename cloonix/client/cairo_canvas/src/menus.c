@@ -554,8 +554,9 @@ static void sat_item_wireshark(GtkWidget *mn, t_item_ident *pm)
         {
         memset(err, 0, MAX_PATH_LEN);
         snprintf(err, MAX_PATH_LEN-1, 
-                 "%s NOT ON SERVER %s AT SERVER START", 
-                 WIRESHARK_BINARY, get_doors_client_addr()); 
+                 "%s or %s NOT ON SERVER %s AT SERVER START", 
+                 WIRESHARK_BINARY_QT, WIRESHARK_BINARY, 
+                 get_doors_client_addr()); 
         insert_next_warning(err, 1);
         }
       else
@@ -666,7 +667,10 @@ void sat_ctx_menu(t_bank_item *bitem)
   if (bitem->pbi.mutype == musat_type_snf)
     {
     memset(cmd, 0, MAX_PATH_LEN);
-    snprintf(cmd, MAX_PATH_LEN-1, "wireshark-qt");
+    if (wireshark_qt_present_in_server())
+      snprintf(cmd, MAX_PATH_LEN-1, "wireshark-qt");
+    else
+      snprintf(cmd, MAX_PATH_LEN-1, "wireshark");
     item_wireshark = gtk_menu_item_new_with_label(cmd);
     }
   item_hidden = gtk_menu_item_new_with_label("Hidden/Visible");

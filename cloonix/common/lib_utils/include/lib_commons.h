@@ -33,8 +33,10 @@
 #define VM_FLAG_CLOONIX_AGENT_PING_OK  0x80000
 
 
-#define WIRESHARK_BINARY "/usr/bin/wireshark-qt"
+#define WIRESHARK_BINARY_QT "/usr/bin/wireshark-qt"
+#define WIRESHARK_BINARY "/usr/bin/wireshark"
 #define FLAGS_CONFIG_WIRESHARK_QT_PRESENT 0x0001
+#define FLAGS_CONFIG_WIRESHARK_PRESENT 0x0002
 
 
 /*---------------------------------------------------------------------------*/
