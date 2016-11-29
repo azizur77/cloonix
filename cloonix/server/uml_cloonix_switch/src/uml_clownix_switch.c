@@ -153,8 +153,10 @@ static void  check_used_binaries_presence(t_cloonix_config *conf)
     printf("\"%s\" not found or not executable\n", path);
     KOUT("\"%s\" not found or not executable\n", path);
     }
-  if (file_exists(WIRESHARK_BINARY, X_OK))
+  if (file_exists(WIRESHARK_BINARY_QT, X_OK))
     conf->flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;
+  else if (file_exists(WIRESHARK_BINARY, X_OK))
+    conf->flags_config |= FLAGS_CONFIG_WIRESHARK_PRESENT;
 }
 /*--------------------------------------------------------------------------*/
 

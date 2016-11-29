@@ -81,12 +81,35 @@ static char g_password[MSG_DIGEST_LEN];
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+int wireshark_qt_present_in_server(void)
+{
+  int result = 0;
+  if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) 
+    result = 1;
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 int wireshark_present_in_server(void)
 {
   int result = 0;
-  if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT)
+  if ((g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) ||
+      (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT))
     result = 1;
   return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+char *get_wireshark_present_in_server(void)
+{
+  if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT)
+    return (WIRESHARK_BINARY_QT);
+  else if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT)
+    return (WIRESHARK_BINARY);
+  else
+    KERR("NO WIRESHARK ON SERVER");
 }
 /*--------------------------------------------------------------------------*/
 
