@@ -537,7 +537,10 @@ void topo_save(GtkWidget *mn)
   dialog = gtk_dialog_new_with_buttons ("Path of directory",
                                         GTK_WINDOW (parent),
                                         GTK_DIALOG_MODAL,
-                                        "OK",GTK_RESPONSE_ACCEPT,
+                                        "_OK",
+                                        GTK_RESPONSE_ACCEPT,
+                                        "_Cancel",
+                                        GTK_RESPONSE_REJECT,
                                         NULL);
   gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 20);
   entry_rootfs = gtk_entry_new();
@@ -546,7 +549,7 @@ void topo_save(GtkWidget *mn)
                      entry_rootfs, TRUE, TRUE, 0);
   gtk_widget_show_all(dialog);
   response = gtk_dialog_run(GTK_DIALOG (dialog));
-  if (response == GTK_RESPONSE_OK)
+  if (response == GTK_RESPONSE_ACCEPT)
     {
     tmp = (char *) gtk_entry_get_text(GTK_ENTRY(entry_rootfs));
     memset(g_sav_dir, 0, MAX_PATH_LEN);
