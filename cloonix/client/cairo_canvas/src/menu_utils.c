@@ -391,8 +391,7 @@ void start_wireshark(char *name, t_bank_item *bitem)
   char *doors = get_doors_client_addr();
   char *password = get_password();
   char *recpath = bitem->pbi.pbi_sat->snf_info.recpath;
-  char *argv[] = {bin_path, doors, password,
-                  "-t", "local_host_dropbear", cmd, NULL}; 
+  char *argv[] = {bin_path, doors, password, "local_host_dropbear", cmd, NULL}; 
   memset(bin_path, 0, MAX_PATH_LEN);
   memset(cmd, 0, 2*MAX_PATH_LEN);
   snprintf(bin_path,  MAX_PATH_LEN-1,
