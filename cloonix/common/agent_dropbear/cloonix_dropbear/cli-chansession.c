@@ -90,7 +90,7 @@ static void cli_closechansess(struct Channel *channel)
 static void cli_tty_setup() 
 {
   struct termios tio;
-  if (cli_opts.cmd) 
+  if (!cli_opts.wantpty)
     cli_ses.tty_raw_mode = 1;
   if (cli_ses.tty_raw_mode != 1)
     {
@@ -117,7 +117,7 @@ static void cli_tty_setup()
 
 void cli_tty_cleanup()
 {
-  if (cli_opts.cmd) 
+  if (!cli_opts.wantpty)
     cli_ses.tty_raw_mode = 0;
   if (cli_ses.tty_raw_mode != 0) 
     { 

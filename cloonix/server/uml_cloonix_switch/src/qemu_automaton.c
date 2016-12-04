@@ -292,7 +292,7 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
 /****************************************************************************/
 #define QEMU_OPTS \
    " -L %s/server/qemu/%s -m %d"\
-   " -serial stdio"\
+   " -serial mon:stdio"\
    " -nographic"\
    " -nodefaults"\
    " -name %s"\

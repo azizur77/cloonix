@@ -254,17 +254,28 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
   unsigned int i;
   int len;
   int is_login=0;
+
   baseshell = basename(usershell);
   if (cmd != NULL) 
     {
-    cmd_sleep = m_malloc(strlen(cmd) + 30);
-    sprintf(cmd_sleep, "%s ; sleep 0.01", cmd);
-    argv[0] = baseshell;
-    argv[1] = "--noprofile";
-    argv[2] = "--norc";
-    argv[3] = "-c";
-    argv[4] = (char*)cmd_sleep;
-    argv[5] = NULL;
+    if (!strncmp(cmd, "/usr/bin/tmux", strlen("/usr/bin/tmux")))
+      { 
+      argv[0] = baseshell;
+      argv[1] = "-c";
+      argv[2] = (char*) cmd;
+      argv[3] = NULL;
+      }
+    else
+      {
+      cmd_sleep = m_malloc(strlen(cmd) + 30);
+      sprintf(cmd_sleep, "%s ; sleep 0.01", cmd);
+      argv[0] = baseshell;
+      argv[1] = "--noprofile";
+      argv[2] = "--norc";
+      argv[3] = "-c";
+      argv[4] = (char*)cmd_sleep;
+      argv[5] = NULL;
+      }
     } 
   else 
     {
@@ -863,15 +874,10 @@ static void execchild(struct ChanSess *chansess)
     if (chdir("/root") < 0)
       KOUT("Error changing directory");
     if (!access("/bin/login", X_OK))
-      {
-      if (access("/etc/coreos", F_OK))
-        login = m_strdup("/bin/login");
-      }
+      login = m_strdup("/bin/login");
     }
   else
     {
-    addnewvar("USER", getenv("USER"));
-    addnewvar("HOME", getenv("HOME"));
     unsetenv("PATH");
     addnewvar("PATH", pth); 
     addnewvar("TERM", "xterm");
