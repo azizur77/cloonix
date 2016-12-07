@@ -19,7 +19,7 @@ for i in patched_create; do
   fi
 done
 
-for i in mkpatch patched_create .gitignore; do
+for i in mkpatch patched_create; do
   sed -i s"/${OLD_SNAPSHOT}/${NEW_SNAPSHOT}/" $i
 done
 

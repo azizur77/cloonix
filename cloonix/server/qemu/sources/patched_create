@@ -1,7 +1,7 @@
 #!/bin/bash
 HERE=`pwd`
-QEMU_NAME=qemu-1b0d384
-QEMU_TAR_NAME=qemu-1b0d384.tar.gz
+QEMU_NAME=qemu-a92f7fe
+QEMU_TAR_NAME=qemu-a92f7fe.tar.gz
 rm -rf $QEMU_NAME
 
 if [ -e tainted_qemu ]; then
