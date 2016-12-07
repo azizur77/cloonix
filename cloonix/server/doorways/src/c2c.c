@@ -308,7 +308,9 @@ void c2c_from_switch_req_idx(char *name)
   int idx;
   t_c2c *c2c = find_with_name(name);
   if (c2c)
-    send_to_switch_resp_idx(name, 0);
+    {
+    send_to_switch_resp_idx(name, c2c->local_idx);
+    }
   else
     {
     idx = alloc_c2c(name);

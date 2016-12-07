@@ -203,10 +203,7 @@ void recv_c2c_peer_delete(int llid, int tid, char *name)
   t_sc2c *c2c = c2c_find(name);
   if (c2c)
     {
-    if (llid != c2c->peer_switch_llid)
-      KERR("%s", name);
-    else
-      c2c_free_ctx(name);
+    c2c_free_ctx(name);
     }
 }
 /*-------------------------------------------------------------------------*/
@@ -303,14 +300,10 @@ void rx_c2c_event_conx_from_doors(char *name, int fd,  int status)
           KERR("%s", name);
         c2c_globtopo_small_event(name, c2c->master_cloonix, 
                                  c2c->slave_cloonix, c2c_evt_mod_master_slave);
-        if (fd_ready_doors_clone_has_arrived(name, fd))
-          KERR("%s %d", name, fd);
+        fd_ready_doors_clone_has_arrived(name, fd);
         }
       else
-        {
-        if (fd_ready_doors_clone_has_arrived(name, fd))
-          KERR("%s %d", name, fd);
-        }
+        fd_ready_doors_clone_has_arrived(name, fd);
       }
     else
       KERR("%s", name);

@@ -936,9 +936,7 @@ int fd_ready_doors_clone_has_arrived(char *name, int doors_fd)
   t_musat *mu = musat_find_with_name(name);
   if (mu)
     {
-    if (mu->doors_fd_ready)
-      KERR("%s %d", name, doors_fd);
-    else
+    if (!mu->doors_fd_ready)
       {
       mu->doors_fd_ready = 1;
       mu->doors_fd_value = doors_fd;

@@ -330,10 +330,7 @@ static void ping_timer(void *data)
         {
         if (cur->peer_switch_llid)
           {
-//          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
-//          doorways_clean_llid(cur->peer_switch_llid);
-//          if (cur->peer_switch_llid) 
-            llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
+          llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
           cur->peer_switch_llid = 0;
           cur->master_idx = 0;
           cur->slave_idx = 0;
@@ -347,10 +344,7 @@ static void ping_timer(void *data)
         {
         if (cur->peer_switch_llid)
           {
-//          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
-//          doorways_clean_llid(cur->peer_switch_llid);
-//          if (cur->peer_switch_llid) 
-            llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
+          llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
           cur->peer_switch_llid = 0;
           cur->master_idx = 0;
           cur->slave_idx = 0;
@@ -504,7 +498,6 @@ static int callback_connect(void *ptr, int llid, int fd)
         buf = clownix_malloc(10, 7);
         strcpy(buf, "OK");
         doorways_tx(doors_llid,0,doors_type_switch,doors_val_init_link,3,buf);
-        KERR("CALLBACK_CONNEC");
         }
       }
     else
