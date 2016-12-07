@@ -247,7 +247,8 @@ int musat_mngt_is_tap(int type)
 {
   int result = 0;
   if ((type == musat_type_tap)  || 
-      (type == musat_type_wif)) 
+      (type == musat_type_raw)  || 
+      (type == musat_type_wif))
     result = 1;
   return result;
 }
@@ -321,6 +322,9 @@ static int trace_alloc(t_musat *mu)
     if (mu->musat_type == musat_type_a2b)
       llid_trace_alloc(llid, mu->name, 0, 0, type_llid_trace_musat_a2b);
     else 
+    if (mu->musat_type == musat_type_raw)
+      llid_trace_alloc(llid, mu->name, 0, 0, type_llid_trace_musat_raw);
+    else
     if (mu->musat_type == musat_type_wif)
       llid_trace_alloc(llid, mu->name, 0, 0, type_llid_trace_musat_wif);
     else
@@ -629,6 +633,7 @@ void musat_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
       }
     else if ((!strcmp(line, "cloonix_resp_tap_ok"))  ||
              (!strcmp(line, "cloonix_resp_wif_ok"))  ||
+             (!strcmp(line, "cloonix_resp_raw_ok"))  ||
              (!strcmp(line, "cloonix_resp_snf_ok"))  ||
              (!strcmp(line, "cloonix_resp_c2c_ok"))  ||
              (!strcmp(line, "cloonix_resp_nat_ok"))  ||
@@ -640,6 +645,7 @@ void musat_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
       }
     else if ((!strcmp(line, "cloonix_resp_tap_ko"))  ||
              (!strcmp(line, "cloonix_resp_wif_ko"))  ||
+             (!strcmp(line, "cloonix_resp_raw_ko"))  ||
              (!strcmp(line, "cloonix_resp_snf_ko"))  ||
              (!strcmp(line, "cloonix_resp_c2c_ko"))  ||
              (!strcmp(line, "cloonix_resp_nat_ko"))  ||
@@ -710,6 +716,8 @@ static void send_type_req(t_musat *cur)
     try_send_musat(cur, "cloonix_req_tap");
   else if (cur->musat_type == musat_type_wif)
     try_send_musat(cur, "cloonix_req_wif");
+  else if (cur->musat_type == musat_type_raw)
+    try_send_musat(cur, "cloonix_req_raw");
   else if (cur->musat_type == musat_type_snf)
     try_send_musat(cur, "cloonix_req_snf");
   else if (cur->musat_type == musat_type_c2c)

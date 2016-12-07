@@ -54,6 +54,7 @@ int is_a_snf(t_bank_item *bitem)
   int result;
   if ((bitem->pbi.mutype == musat_type_tap) ||
       (bitem->pbi.mutype == musat_type_wif) ||
+      (bitem->pbi.mutype == musat_type_raw) ||
       (bitem->pbi.mutype == musat_type_c2c) ||
       (bitem->pbi.mutype == musat_type_nat) ||
       (bitem->pbi.mutype == musat_type_a2b))
@@ -76,6 +77,7 @@ int is_a_nat(t_bank_item *bitem)
   int result;
   if ((bitem->pbi.mutype == musat_type_tap) ||
       (bitem->pbi.mutype == musat_type_wif) ||
+      (bitem->pbi.mutype == musat_type_raw) ||
       (bitem->pbi.mutype == musat_type_c2c) ||
       (bitem->pbi.mutype == musat_type_snf) ||
       (bitem->pbi.mutype == musat_type_a2b))
@@ -98,6 +100,7 @@ int is_a_c2c(t_bank_item *bitem)
   int result;
   if ((bitem->pbi.mutype == musat_type_tap) ||
       (bitem->pbi.mutype == musat_type_wif) ||
+      (bitem->pbi.mutype == musat_type_raw) ||
       (bitem->pbi.mutype == musat_type_snf) ||
       (bitem->pbi.mutype == musat_type_nat) ||
       (bitem->pbi.mutype == musat_type_a2b))
@@ -120,6 +123,7 @@ int is_a_a2b(t_bank_item *bitem)
   int result;
   if ((bitem->pbi.mutype == musat_type_tap) ||
       (bitem->pbi.mutype == musat_type_wif) ||
+      (bitem->pbi.mutype == musat_type_raw) ||
       (bitem->pbi.mutype == musat_type_snf) ||
       (bitem->pbi.mutype == musat_type_nat) ||
       (bitem->pbi.mutype == musat_type_c2c))

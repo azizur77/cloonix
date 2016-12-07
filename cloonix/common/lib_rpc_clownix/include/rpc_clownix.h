@@ -109,6 +109,7 @@ enum
   type_llid_trace_musat_c2c,
   type_llid_trace_musat_nat,
   type_llid_trace_musat_a2b,
+  type_llid_trace_musat_raw,
   type_llid_trace_musat_wif,
   type_llid_trace_jfs,
   type_llid_trace_unix_qmonitor,

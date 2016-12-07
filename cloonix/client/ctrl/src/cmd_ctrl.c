@@ -142,6 +142,8 @@ static void callback_topo_topo(int tid, t_topo_info *topo)
       printf("\n%s \n    lan:", topo->sati[i].name);
     else if (sat_type == musat_type_wif) 
       printf("\n%s wif\n    lan:", topo->sati[i].name);
+    else if (sat_type == musat_type_raw) 
+      printf("\n%s raw\n    lan:", topo->sati[i].name);
     else
       KOUT("%d", sat_type);
     for (k=0; k < topo->sati[i].lan0_sat.nb_lan; k++)
@@ -404,6 +406,20 @@ int cmd_add_wif(int argc, char **argv)
     result = 0;
     init_connection_to_uml_cloonix_switch();
     client_add_sat(0, callback_end, argv[0], musat_type_wif, NULL);
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int cmd_add_raw(int argc, char **argv)
+{
+  int result = -1;
+  if (argc == 1)
+    {
+    result = 0;
+    init_connection_to_uml_cloonix_switch();
+    client_add_sat(0, callback_end, argv[0], musat_type_raw, NULL);
     }
   return result;
 }

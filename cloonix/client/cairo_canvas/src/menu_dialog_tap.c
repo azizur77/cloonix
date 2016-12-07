@@ -32,6 +32,7 @@
 
 GtkWidget *get_main_window(void);
 
+GtkWidget *g_numadd, *g_entry_name;
 static t_custom_tap g_custom_tap;
 
 
@@ -42,8 +43,13 @@ t_custom_tap *get_custom_tap (void)
   memcpy(&cust, &g_custom_tap, sizeof(t_custom_tap));
   if (g_custom_tap.append_number)
     {
-    g_custom_tap.number += 1;
-    sprintf(cust.name, "%s%d", g_custom_tap.name, g_custom_tap.number);
+    if (g_custom_tap.mutype == musat_type_tap)
+      {
+      g_custom_tap.number += 1;
+      sprintf(cust.name, "%s%d", g_custom_tap.name, g_custom_tap.number);
+      }
+    else
+      sprintf(cust.name, "%s", g_custom_tap.name);
     cust.mutype = g_custom_tap.mutype;
     }
   else
@@ -69,7 +75,11 @@ static void append_grid(GtkWidget *grid, GtkWidget *entry, char *lab, int ln)
 /****************************************************************************/
 static void numadd_toggle(GtkToggleButton *togglebutton, gpointer user_data)
 {
-  if (gtk_toggle_button_get_active(togglebutton))
+  if (g_custom_tap.mutype != musat_type_tap)
+    {
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(togglebutton), FALSE);
+    }
+  else if (gtk_toggle_button_get_active(togglebutton))
     g_custom_tap.append_number = 1;
   else
     g_custom_tap.append_number = 0;
@@ -81,6 +91,22 @@ static void rad_tap_type_cb(GtkWidget *check, gpointer user_data)
 {
   unsigned long tap_type = (unsigned long) user_data;
   g_custom_tap.mutype = tap_type;
+  if (g_custom_tap.mutype == musat_type_tap)
+    {
+    if (g_custom_tap.append_number)
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), TRUE);
+    else
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), FALSE);
+    }
+  else
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), FALSE);
+
+  if (g_custom_tap.mutype == musat_type_tap)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), g_custom_tap.name);
+  else if (g_custom_tap.mutype == musat_type_raw)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), "eth0");
+  else if (g_custom_tap.mutype == musat_type_wif)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), "wlan0");
 }
 /*--------------------------------------------------------------------------*/
 
@@ -89,26 +115,29 @@ static void flags_tap_check_button(GtkWidget *grid, int *line_nb)
 {
   unsigned long int i;
   GtkWidget *rad[4];
-  char *lib[4] = {"tap", "wif"}; 
-  unsigned long int musat_type[2] = {musat_type_tap, musat_type_wif};
+  char *lib[5] = {"tap", "raw", "wif"}; 
+  unsigned long int musat_type[3] = {musat_type_tap, musat_type_raw, 
+                                     musat_type_wif};
   GtkWidget *hbox;
   GSList *group = NULL;
   char label[MAX_NAME_LEN];
   memset(label, 0, MAX_NAME_LEN);
   sprintf(label, "tap_type");
 
-  for (i=0; i<2; i++)
+  for (i=0; i<3; i++)
     {
     rad[i] = gtk_radio_button_new_with_label(group, lib[i]);
     group  = gtk_radio_button_get_group(GTK_RADIO_BUTTON(rad[i]));
     }
   if (g_custom_tap.mutype == musat_type_tap)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rad[0]),TRUE);
-  else if (g_custom_tap.mutype == musat_type_wif)
+  else if (g_custom_tap.mutype == musat_type_raw)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rad[1]),TRUE);
+  else if (g_custom_tap.mutype == musat_type_wif)
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rad[2]),TRUE);
 
   hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  for (i=0; i<2; i++)
+  for (i=0; i<3; i++)
     {
     gtk_box_pack_start(GTK_BOX(hbox), rad[i], TRUE, TRUE, 10);
     g_signal_connect(G_OBJECT(rad[i]),"clicked",
@@ -121,19 +150,17 @@ static void flags_tap_check_button(GtkWidget *grid, int *line_nb)
 
 
 /****************************************************************************/
-static void update_tap_cust(t_custom_tap *cust, 
-                            GtkWidget *name, 
-                            GtkWidget *numadd)
+static void update_tap_cust(GtkWidget *name) 
 {
   char *tmp;
   tmp = (char *) gtk_entry_get_text(GTK_ENTRY(name));
-  memset(cust->name, 0, MAX_NAME_LEN);
-  strncpy(cust->name, tmp, MAX_NAME_LEN-1);
+  memset(g_custom_tap.name, 0, MAX_NAME_LEN);
+  strncpy(g_custom_tap.name, tmp, MAX_NAME_LEN-1);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void custom_tap_dialog(t_custom_tap *cust)
+static void custom_tap_dialog(void)
 {
   int response, line_nb = 0;
   GtkWidget *grid, *dialog, *numadd,  *entry_name;
@@ -149,13 +176,28 @@ static void custom_tap_dialog(t_custom_tap *cust)
                                         NULL);
   gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 20);
   entry_name = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(entry_name), cust->name);
+  g_entry_name = entry_name;
+
+  if (g_custom_tap.mutype == musat_type_tap)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), g_custom_tap.name);
+  else if (g_custom_tap.mutype == musat_type_raw)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), "eth0");
+  else if (g_custom_tap.mutype == musat_type_wif)
+    gtk_entry_set_text(GTK_ENTRY(g_entry_name), "wlan0");
+
   append_grid(grid, entry_name, "name:", line_nb++);
   numadd = gtk_check_button_new_with_label("add number at end");
-  if (g_custom_tap.append_number)
-    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(numadd), TRUE);
+  g_numadd = numadd;
+  if (g_custom_tap.mutype == musat_type_tap)
+    {
+    if (g_custom_tap.append_number)
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), TRUE);
+    else
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), FALSE);
+    }
   else
-    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(numadd), FALSE);
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(g_numadd), FALSE);
+
   g_signal_connect(numadd, "toggled", G_CALLBACK(numadd_toggle), NULL);
   append_grid(grid, numadd, "Append:", line_nb++);
   flags_tap_check_button(grid, &line_nb);
@@ -166,7 +208,7 @@ static void custom_tap_dialog(t_custom_tap *cust)
   gtk_widget_show_all(dialog);
   response = gtk_dialog_run(GTK_DIALOG(dialog));
   if (response == GTK_RESPONSE_ACCEPT)
-    update_tap_cust(cust, entry_name, numadd);
+    update_tap_cust(entry_name);
   gtk_widget_destroy(dialog);
 }
 /*--------------------------------------------------------------------------*/
@@ -174,7 +216,7 @@ static void custom_tap_dialog(t_custom_tap *cust)
 /****************************************************************************/
 void menu_choice_tap_params(void)
 {
-  custom_tap_dialog(&g_custom_tap);
+  custom_tap_dialog();
 }
 /*--------------------------------------------------------------------------*/
 

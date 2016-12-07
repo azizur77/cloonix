@@ -330,9 +330,10 @@ static void ping_timer(void *data)
         {
         if (cur->peer_switch_llid)
           {
-          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
-          doorways_clean_llid(cur->peer_switch_llid);
-          llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
+//          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
+//          doorways_clean_llid(cur->peer_switch_llid);
+//          if (cur->peer_switch_llid) 
+            llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
           cur->peer_switch_llid = 0;
           cur->master_idx = 0;
           cur->slave_idx = 0;
@@ -346,9 +347,10 @@ static void ping_timer(void *data)
         {
         if (cur->peer_switch_llid)
           {
-          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
-          doorways_clean_llid(cur->peer_switch_llid);
-          llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
+//          doors_send_c2c_req_free(get_doorways_llid(), 0, name);
+//          doorways_clean_llid(cur->peer_switch_llid);
+//          if (cur->peer_switch_llid) 
+            llid_trace_free(cur->peer_switch_llid, 0, __FUNCTION__);
           cur->peer_switch_llid = 0;
           cur->master_idx = 0;
           cur->slave_idx = 0;
@@ -481,6 +483,7 @@ static void time_resp_idx_from_doors(t_sc2c *c2c)
 static int callback_connect(void *ptr, int llid, int fd)
 {
   int doors_llid;
+  char *buf;
   t_sc2c *c2c = c2c_find_with_connect_llid(llid);
   if (c2c)
     {
@@ -498,7 +501,10 @@ static int callback_connect(void *ptr, int llid, int fd)
         c2c_set_state(c2c, state_master_waiting_idx);
         c2c_tx_req_idx_to_doors(c2c->name);
         c2c_arm_timer(c2c, 1500, time_resp_idx_from_doors);
-        doorways_tx(doors_llid,0,doors_type_switch,doors_val_init_link,3,"OK");
+        buf = clownix_malloc(10, 7);
+        strcpy(buf, "OK");
+        doorways_tx(doors_llid,0,doors_type_switch,doors_val_init_link,3,buf);
+        KERR("CALLBACK_CONNEC");
         }
       }
     else

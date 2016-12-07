@@ -108,12 +108,26 @@ void help_add_sat(char *line)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+void help_add_raw(char *line)
+{
+  printf("\n\n\n%s <name>\n\n", line);
+  printf("\n%s eth0\n\n", line);
+  printf("  Specifique to have a raw socket to an interface\n");
+  printf("  real hardware host interface, the name of the\n");
+  printf("  real interface must be given. \n");
+  printf("  This interface is made promiscuous.\n\n\n");
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void help_add_wif(char *line)
 {
   printf("\n\n\n%s <name>\n\n", line);
+  printf("\n%s wlan0\n\n", line);
   printf("  Specifique to have a raw socket to a wlan\n");
-  printf("  real hardware host interface, the name of the.\n");
+  printf("  real hardware host interface, the name of the\n");
   printf("  real interface must be given. \n");
+  printf("  Swaps mac address to show the real wlan mac to the outside\n");
   printf("  Do not use wif, hack for personal use.\n\n\n");
 }
 /*---------------------------------------------------------------------------*/

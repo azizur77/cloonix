@@ -89,6 +89,9 @@ static int build_add_tap_cmd(int offset, t_list_commands *hlist, t_tux *tux)
     else if (tux->musat_type == musat_type_wif)
       sprintf(list->cmd, "cloonix_cli %s add wif %s", 
                          cfg_get_cloonix_name(), tux->name);
+    else if (tux->musat_type == musat_type_raw)
+      sprintf(list->cmd, "cloonix_cli %s add raw %s", 
+                         cfg_get_cloonix_name(), tux->name);
     else
       KERR("%d", tux->musat_type);
     result += 1;

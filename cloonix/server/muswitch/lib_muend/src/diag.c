@@ -32,6 +32,7 @@
 
 int  tap_fd_open(t_all_ctx *all_ctx, char *tap_name);
 int  wif_fd_open(t_all_ctx *all_ctx, char *tap_name);
+int  raw_fd_open(t_all_ctx *all_ctx, char *tap_name);
 
 
 typedef struct t_timer_data
@@ -63,6 +64,7 @@ static int our_mutype_is_qemu(void *ptr)
     }
   else 
   if ((our_mutype == musat_type_tap) ||
+      (our_mutype == musat_type_raw) ||
       (our_mutype == musat_type_wif) ||
       (our_mutype == musat_type_snf) ||
       (our_mutype == musat_type_c2c) ||
@@ -490,6 +492,16 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
       }
     else
       snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_wif_ok");
+    }
+  else if (!mycmp(line, "cloonix_req_raw"))
+    {
+    if (raw_fd_open(all_ctx, all_ctx->g_name))
+      {
+      snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_raw_ko");
+      KERR(" ");
+      }
+    else
+      snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_raw_ok");
     }
   else if (!mycmp(line, "cloonix_req_snf"))
     {

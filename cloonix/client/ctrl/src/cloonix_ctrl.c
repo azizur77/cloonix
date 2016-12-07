@@ -92,8 +92,10 @@ struct cmd_struct level_add_cmd[] = {
 {"c2c",  "Add c2c (cloonix to cloonix cable)",NULL,cmd_add_c2c,help_add_c2c},
 {"nat",  "Add nat (slirp to access ip)",NULL, cmd_add_nat, help_add_sat},
 {"a2b",  "Add a2b (traffic shaping)",NULL, cmd_add_a2b, help_add_sat},
-{"wif",  "Add wif (special interface for private use)",  NULL, cmd_add_wif, 
-                                                               help_add_wif},
+{"raw",  "Add raw (raw socket to the interface)",  NULL, cmd_add_raw, 
+                                                         help_add_raw},
+{"wif",  "Add wif (special interface for wlan use)",  NULL, cmd_add_wif, 
+                                                            help_add_wif},
 {"help",  "",                     level_add_cmd, NULL, NULL},
 };
 /*---------------------------------------------------------------------------*/

@@ -245,6 +245,7 @@ char *utils_get_musat_bin_path(int type)
 {
   static char path[MAX_PATH_LEN];
   if ((type == musat_type_tap)  || 
+      (type == musat_type_raw)  ||
       (type == musat_type_wif))
     sprintf(path, "%s/server/muswitch/mutap/cloonix_mutap", cfg_get_bin_dir());
   else if (type == musat_type_snf)

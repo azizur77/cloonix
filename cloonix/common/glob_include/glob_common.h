@@ -100,6 +100,7 @@ enum {
   musat_type_eth,
   musat_type_tap,
   musat_type_wif,
+  musat_type_raw,
   musat_type_snf,
   musat_type_c2c,
   musat_type_a2b,

@@ -369,6 +369,7 @@ void musat_event_admin_add_lan(int llid, int tid,
            (musat_type != musat_type_c2c) &&
            (musat_type != musat_type_nat) &&
            (musat_type != musat_type_a2b) &&
+           (musat_type != musat_type_raw) &&
            (musat_type != musat_type_wif))
     KOUT("%d", musat_type);
   else if (!musat_mngt_connection_state_is_restfull(name))
@@ -459,6 +460,7 @@ void musat_event_connect_OK(char *name, char *lan, int num, int rank)
            (musat_type != musat_type_c2c) &&
            (musat_type != musat_type_nat) &&
            (musat_type != musat_type_a2b) &&
+           (musat_type != musat_type_raw) && 
            (musat_type != musat_type_wif)) 
     KERR("%s %s", name, lan);
   else

@@ -221,6 +221,7 @@ static void alloc_record_sat(t_record_net *net, char *name, int type)
   send_evt_stats_sat_sub(net->llid, 0, name, 1);
   if ((type == musat_type_tap)  ||
       (type == musat_type_wif)  || 
+      (type == musat_type_raw)  || 
       (type == musat_type_c2c)  ||
       (type == musat_type_nat)  ||
       (type == musat_type_snf)  ||
@@ -240,6 +241,7 @@ static void free_record_sat(t_record_net *net, t_record_sat *sat)
     net->head_sat = sat->next;
   if ((sat->type == musat_type_tap) ||
       (sat->type == musat_type_wif)  || 
+      (sat->type == musat_type_raw)  || 
       (sat->type == musat_type_c2c)  ||
       (sat->type == musat_type_nat)  ||
       (sat->type == musat_type_snf)  ||
@@ -509,6 +511,7 @@ void recv_evt_stats_sat(int llid, int tid, char *net_name, char *name,
     {
     if ((sat->type == musat_type_tap) ||
         (sat->type == musat_type_wif) ||
+        (sat->type == musat_type_raw) ||
         (sat->type == musat_type_c2c) ||
         (sat->type == musat_type_nat) ||
         (sat->type == musat_type_snf) ||

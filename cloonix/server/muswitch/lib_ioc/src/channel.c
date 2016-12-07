@@ -575,6 +575,7 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
     case musat_type_eth:
     case musat_type_tap:
     case musat_type_wif:
+    case musat_type_raw:
     case musat_type_snf:
     case musat_type_c2c:
     case musat_type_nat:

@@ -110,6 +110,7 @@ char *get_wireshark_present_in_server(void)
     return (WIRESHARK_BINARY);
   else
     KERR("NO WIRESHARK ON SERVER");
+  return "NO_WIRESHARK";
 }
 /*--------------------------------------------------------------------------*/
 

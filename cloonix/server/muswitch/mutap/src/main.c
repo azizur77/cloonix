@@ -34,6 +34,7 @@
 
 #include "ioc.h"
 #include "wif_fd.h"
+#include "raw_fd.h"
 #include "sock_fd.h"
 #include "tap_fd.h"
 #include "tun_tap.h"
@@ -61,6 +62,8 @@ void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
     tap_fd_tx(all_ctx, bd);
   else if (type == musat_type_wif)
     wif_fd_tx(all_ctx, bd);
+  else if (type == musat_type_raw)
+    raw_fd_tx(all_ctx, bd);
   else
     KOUT("%d", type);
 }
@@ -78,6 +81,7 @@ int main (int argc, char *argv[])
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
   if ((tap_type != musat_type_tap) &&
+      (tap_type != musat_type_raw) &&
       (tap_type != musat_type_wif))
     KOUT("%d", tap_type);
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
@@ -87,6 +91,7 @@ int main (int argc, char *argv[])
   blkd_set_our_mutype((void *) all_ctx, tap_type);
   tap_fd_init(all_ctx);
   wif_fd_init(all_ctx);
+  raw_fd_init(all_ctx);
   seteuid(getuid());
   sock_fd_init(all_ctx);
   msg_mngt_loop(all_ctx);

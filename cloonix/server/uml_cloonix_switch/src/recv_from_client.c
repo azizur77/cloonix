@@ -1181,6 +1181,7 @@ void recv_add_sat(int llid, int tid, char *name, int mutype,
            (mutype != musat_type_c2c) &&
            (mutype != musat_type_nat) &&
            (mutype != musat_type_a2b) &&
+           (mutype != musat_type_raw) &&
            (mutype != musat_type_wif))
     {
     sprintf(info, "%s Bad type: %d", name, mutype);

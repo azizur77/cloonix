@@ -14,6 +14,7 @@ VPATH=src
 SRC = main.c \
       tap_fd.c \
       wif_fd.c \
+      raw_fd.c \
       tun_tap.c \
       packet_arp_mangle.c
 
