@@ -63,7 +63,14 @@ static void rx_traf_cb(void *ptr, int llid)
     {
     if (nb_llid > 0)
       {
-      blkd_put_tx(ptr, nb_llid, llid_tab, blkd);
+      if ((blkd->payload_len >= PAYLOAD_BLKD_SIZE) || 
+          (blkd->payload_len <=0))
+        {
+        KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len);
+        blkd_free(ptr, blkd);
+        }
+      else
+        blkd_put_tx(ptr, nb_llid, llid_tab, blkd);
       }
     blkd = blkd_get_rx(ptr, llid);
     }

@@ -235,8 +235,17 @@ void sock_fd_tx(t_all_ctx *all_ctx, int idx, t_blkd *blkd)
   int is_blkd, cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
   if (cidx)
     {
-    main_tx_arrival(all_ctx, idx, 1, blkd->payload_len);
-    blkd_put_tx((void *) all_ctx, 1, &llid, blkd);
+    if ((blkd->payload_len >= PAYLOAD_BLKD_SIZE) ||
+        (blkd->payload_len <=0))
+      {
+      KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len);
+      blkd_free((void *) all_ctx, blkd);
+      }
+    else
+      {
+      main_tx_arrival(all_ctx, idx, 1, blkd->payload_len);
+      blkd_put_tx((void *) all_ctx, 1, &llid, blkd);
+      }
     if (idx == 0)
       {
       blkd_get_tx_rx_queues((void *) all_ctx, llid, &tx_queued, &rx_queued);

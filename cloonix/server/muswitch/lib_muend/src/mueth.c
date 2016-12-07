@@ -115,7 +115,16 @@ static void tx_all_chain(t_all_ctx *all_ctx, t_blkd_chain *cur, int llid)
   while(cur)
     {
     next = cur->next; 
-    blkd_put_tx((void *) all_ctx, 1, &llid, cur->blkd);
+    if ((cur->blkd->payload_len >= PAYLOAD_BLKD_SIZE) ||
+        (cur->blkd->payload_len <=0))
+      {
+      KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, cur->blkd->payload_len);
+      blkd_free((void *) all_ctx, cur->blkd);
+      }
+    else
+      {
+      blkd_put_tx((void *) all_ctx, 1, &llid, cur->blkd);
+      }
     free(cur);
     cur = next;
     }
