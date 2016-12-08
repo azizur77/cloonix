@@ -71,12 +71,18 @@ static int get_intf_ifindex(t_all_ctx *all_ctx, char *name)
     else
       {
       glob_ifindex = ifr.ifr_ifindex;
-      ifr.ifr_flags |= IFF_PROMISC;
-      io = ioctl(s, SIOCSIFFLAGS, &ifr);
+      io = ioctl (s, SIOCGIFFLAGS, &ifr);
       if(io != 0)
         KERR("Error %s line %d errno %d\n",__FUNCTION__,__LINE__,errno);
       else
-        result = 0;
+        {
+        ifr.ifr_flags |= IFF_PROMISC;
+        io = ioctl(s, SIOCSIFFLAGS, &ifr);
+        if(io != 0)
+          KERR("Error %s line %d errno %d\n",__FUNCTION__,__LINE__,errno);
+        else
+          result = 0;
+        }
       }
     close(s);
     }

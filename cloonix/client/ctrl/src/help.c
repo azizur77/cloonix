@@ -115,7 +115,8 @@ void help_add_raw(char *line)
   printf("  Specifique to have a raw socket to an interface\n");
   printf("  real hardware host interface, the name of the\n");
   printf("  real interface must be given. \n");
-  printf("  This interface is made promiscuous.\n\n\n");
+  printf("  This interface is made promiscuous.\n");
+  printf("  The interface is left in promiscuous mode after use.\n\n\n");
 }
 /*---------------------------------------------------------------------------*/
 
