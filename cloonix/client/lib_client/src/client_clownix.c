@@ -427,7 +427,8 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
                    int nb_eth, int vm_config_flags,
                    int cpu_qty, int mem_qty, 
                    char *kernel, char *root_fs, char *cdrom, 
-                   char *bdisk, char *p9_host_share)
+                   char *bdisk, char *p9_host_share,
+                   t_eth_params *eth_params)
 {
   t_vm_params vm_params;
   int new_tid;
@@ -442,6 +443,8 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
   vm_params.cpu = cpu_qty;
   vm_params.mem = mem_qty;
   vm_params.nb_eth = nb_eth;
+  if (eth_params)
+    memcpy(vm_params.eth_params, eth_params, MAX_ETH_VM * sizeof(t_eth_params));
   if (kernel)
     strncpy(vm_params.linux_kernel, kernel, MAX_NAME_LEN - 1);
   strncpy(vm_params.rootfs_input, root_fs, MAX_PATH_LEN - 1);

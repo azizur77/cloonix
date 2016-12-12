@@ -46,6 +46,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
   printf("\n\t       --install_cdrom=<cdrom_file_path>");
   printf("\n\t       --fullvirt");
+  printf("\n\t       --mac_addr=eth%%d:%%02x:%%02x:%%02x:%%02x:%%02x:%%02x");
   printf("\n\t       --balloon");
   printf("\n\tnote: for the --persistent option, the rootfs must be a full");
   printf("\n\t      path to a file system. If not set, the rootfs writes are");
@@ -62,14 +63,57 @@ void help_add_vm_kvm(char *line)
 /*-------------------------------------------------------------------------*/
 
 /***************************************************************************/
+static int fill_eth_params_from_argv(char *input, int eth_max,
+                                     t_eth_params *eth_params)
+{
+  int num, i, result = -1;
+  char *ptr;
+  char str[MAX_NAME_LEN];
+  int mac[MAC_ADDR_LEN];
+  memset(str, 0, MAX_NAME_LEN);
+  strncpy(str, input, MAX_NAME_LEN-1);
+  ptr = strchr(str, ':');
+  if (ptr)
+    {
+    *ptr = 0;
+    ptr++;
+    if (sscanf(str, "--mac_addr=eth%d", &num) == 1)
+      {
+      if ((num < 0) || (num >= eth_max))
+        printf("\nBad interface number\n");
+      else
+        {
+        if (sscanf(ptr, "%02x:%02x:%02x:%02x:%02x:%02x",
+            &(mac[0]), &(mac[1]), &(mac[2]), 
+            &(mac[3]), &(mac[4]), &(mac[5])) == MAC_ADDR_LEN) 
+          {
+          for (i=0; i<MAC_ADDR_LEN; i++)
+            eth_params[num].mac_addr[i] = mac[i] & 0xFF;
+          result = 0;
+          }
+        else
+          printf("\nBad scan of %s", ptr);
+        }
+      }
+    else
+      printf("\nBad scan of %s", str);
+    }
+  return result;
+}
+/*-------------------------------------------------------------------------*/
+
+/***************************************************************************/
 static int local_add_kvm(char *name, int mem, int cpu, int eth, 
                          char *rootfs, int argc, char **argv)
 {
-  int i, result = 0, prop_flags = 0; 
+  int i, result = 0, prop_flags = 0;
   char *img_linux = NULL;
   char *p9_host_shared=NULL;
   char *cdrom=NULL;
   char *bdisk=NULL;
+  t_eth_params eth_params[MAX_ETH_VM];
+
+  memset(eth_params, 0, MAX_ETH_VM * sizeof(t_eth_params));
   prop_flags |= VM_CONFIG_FLAG_EVANESCENT;
   for (i=0; i<argc; i++)
     {
@@ -92,6 +136,15 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
       prop_flags |= VM_CONFIG_FLAG_INSTALL_CDROM;
       cdrom = argv[i] + strlen("--install_cdrom=");
       }
+    else if (!strncmp(argv[i], "--mac_addr=eth", strlen("--mac_addr=eth")))
+      {
+      if (fill_eth_params_from_argv(argv[i], eth, eth_params))
+        {
+        printf("\nERROR: %s\n\n", argv[i]);
+        result = -1;
+        break;
+        }
+      }
     else
       {
       printf("\nERROR: %s not an option\n\n", argv[i]);
@@ -103,7 +156,8 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
     {
     init_connection_to_uml_cloonix_switch();
     client_add_vm(0, callback_end, name, eth, prop_flags, cpu, mem,
-                  img_linux, rootfs, cdrom, bdisk, p9_host_shared);
+                  img_linux, rootfs, cdrom, bdisk, p9_host_shared,
+                  eth_params);
     }
   return result;
 }

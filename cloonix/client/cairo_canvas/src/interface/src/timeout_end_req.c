@@ -136,7 +136,7 @@ void timer_create_item_node_req(void *data)
     client_add_vm(0, callback_end, cust_vm->name, cust_vm->nb_eth, 
                   vm_config_flags, cust_vm->cpu, cust_vm->mem,  
                   NULL, cust_vm->kvm_used_rootfs, ptr_cdrom, 
-                  ptr_bdisk, ptr_p9_host_share);
+                  ptr_bdisk, ptr_p9_host_share, NULL);
     }
   else
     insert_next_warning("rootfs is empty!", 1);
