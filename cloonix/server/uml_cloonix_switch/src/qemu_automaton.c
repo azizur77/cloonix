@@ -390,6 +390,10 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   rootfs = vm->vm_params.rootfs_used;
   bdisk = vm->vm_params.bdisk;
 
+  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT)
+    {
+    len += sprintf(linux_cmd+len, " -no-reboot");
+    }
   if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
     {
     len += sprintf(linux_cmd+len, INSTALL_CDROM, rootfs, 0);

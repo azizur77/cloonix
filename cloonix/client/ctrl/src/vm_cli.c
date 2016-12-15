@@ -45,6 +45,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\t       --persistent ");
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
   printf("\n\t       --install_cdrom=<cdrom_file_path>");
+  printf("\n\t       --no_reboot");
   printf("\n\t       --added_cdrom=<cdrom_file_path>");
   printf("\n\t       --fullvirt");
   printf("\n\t       --mac_addr=eth%%d:%%02x:%%02x:%%02x:%%02x:%%02x:%%02x");
@@ -137,6 +138,11 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
       {
       prop_flags |= VM_CONFIG_FLAG_INSTALL_CDROM;
       install_cdrom = argv[i] + strlen("--install_cdrom=");
+      }
+    else if (!strncmp(argv[i], "--no_reboot", strlen("--no_reboot")))
+      {
+      prop_flags |= VM_CONFIG_FLAG_NO_REBOOT;
+      install_cdrom = argv[i] + strlen("--no_reboot");
       }
     else if (!strncmp(argv[i], "--added_cdrom=", strlen("--added_cdrom=")))
       {

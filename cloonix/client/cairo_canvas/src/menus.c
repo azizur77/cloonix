@@ -246,7 +246,7 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
   int is_persistent, is_backed, is_inside_cloonix;
   int has_p9_host_share; 
   int vm_config_flags, has_bdisk, has_install_cdrom, has_added_cdrom;
-  int is_full_virt, len = 0;
+  int is_full_virt, has_no_reboot, len = 0;
   bitem = look_for_node_with_id(pm->name);
   if (bitem)
     {
@@ -261,6 +261,7 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     is_inside_cloonix = vm_config_flags & VM_FLAG_IS_INSIDE_CLOONIX;
     has_bdisk = vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK;
     has_install_cdrom = vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM;
+    has_no_reboot = vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT;
     has_added_cdrom = vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM;
     has_p9_host_share = vm_config_flags & VM_CONFIG_FLAG_9P_SHARED;
 
@@ -294,6 +295,8 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     if (has_install_cdrom)
       len += sprintf(text + len, "\n INSTALL_CDROM: %s",
                      bitem->pbi.pbi_node->install_cdrom);
+    if (has_no_reboot)
+      len += sprintf(text + len, "\n NO_REBOOT");
     if (has_added_cdrom)
       len += sprintf(text + len, "\n ADDED_CDROM: %s",
                      bitem->pbi.pbi_node->added_cdrom);
