@@ -152,7 +152,8 @@ t_topo_node_chain *topo_get_node_chain(t_topo_info *topo)
     strncpy(cur->rootfs_backing, 
             topo->vmit[i].vm_params.rootfs_backing, MAX_PATH_LEN-1);
 
-    strncpy(cur->node_cdrom, topo->vmit[i].vm_params.cdrom, MAX_PATH_LEN-1);
+    strncpy(cur->install_cdrom, topo->vmit[i].vm_params.install_cdrom, MAX_PATH_LEN-1);
+    strncpy(cur->added_cdrom, topo->vmit[i].vm_params.added_cdrom, MAX_PATH_LEN-1);
     strncpy(cur->node_bdisk, topo->vmit[i].vm_params.bdisk, MAX_PATH_LEN-1);
     cur->vm_id = topo->vmit[i].vm_id;
     cur->num_eth = topo->vmit[i].vm_params.nb_eth;

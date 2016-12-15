@@ -737,9 +737,17 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
     }
   if (vm_params->vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
     {
-    if (!file_exists(vm_params->cdrom, F_OK))
+    if (!file_exists(vm_params->install_cdrom, F_OK))
       {
-      sprintf(info, "File: \"%s\" not found\n", vm_params->cdrom);
+      sprintf(info, "File: \"%s\" not found\n", vm_params->install_cdrom);
+      result = -1;
+      }
+    }
+  if (vm_params->vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)
+    {
+    if (!file_exists(vm_params->added_cdrom, F_OK))
+      {
+      sprintf(info, "File: \"%s\" not found\n", vm_params->added_cdrom);
       result = -1;
       }
     }

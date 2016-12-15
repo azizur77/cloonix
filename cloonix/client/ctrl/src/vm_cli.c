@@ -45,6 +45,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\t       --persistent ");
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
   printf("\n\t       --install_cdrom=<cdrom_file_path>");
+  printf("\n\t       --added_cdrom=<cdrom_file_path>");
   printf("\n\t       --fullvirt");
   printf("\n\t       --mac_addr=eth%%d:%%02x:%%02x:%%02x:%%02x:%%02x:%%02x");
   printf("\n\t       --balloon");
@@ -109,7 +110,8 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
   int i, result = 0, prop_flags = 0;
   char *img_linux = NULL;
   char *p9_host_shared=NULL;
-  char *cdrom=NULL;
+  char *install_cdrom=NULL;
+  char *added_cdrom=NULL;
   char *bdisk=NULL;
   t_eth_params eth_params[MAX_ETH_VM];
 
@@ -134,7 +136,12 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
     else if (!strncmp(argv[i], "--install_cdrom=", strlen("--install_cdrom=")))
       {
       prop_flags |= VM_CONFIG_FLAG_INSTALL_CDROM;
-      cdrom = argv[i] + strlen("--install_cdrom=");
+      install_cdrom = argv[i] + strlen("--install_cdrom=");
+      }
+    else if (!strncmp(argv[i], "--added_cdrom=", strlen("--added_cdrom=")))
+      {
+      prop_flags |= VM_CONFIG_FLAG_ADDED_CDROM;
+      added_cdrom = argv[i] + strlen("--added_cdrom=");
       }
     else if (!strncmp(argv[i], "--mac_addr=eth", strlen("--mac_addr=eth")))
       {
@@ -156,8 +163,8 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
     {
     init_connection_to_uml_cloonix_switch();
     client_add_vm(0, callback_end, name, eth, prop_flags, cpu, mem,
-                  img_linux, rootfs, cdrom, bdisk, p9_host_shared,
-                  eth_params);
+                  img_linux, rootfs, install_cdrom, added_cdrom,
+                  bdisk, p9_host_shared, eth_params);
     }
   return result;
 }

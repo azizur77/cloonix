@@ -340,8 +340,6 @@ void menu_dialog_vm_init(void)
     snprintf(custom_vm.name, MAX_NAME_LEN-3, "IN_%s_n", name);
   else
     strcpy(custom_vm.name, "Cloon");
-  strcpy(custom_vm.cdrom, "/home/perrier/cdrom");
-  strcpy(custom_vm.kvm_static_bdisk, "/home/perrier/bdisk");
   strcpy(custom_vm.kvm_used_rootfs, "jessie.qcow2");
   custom_vm.current_number = 0;
   custom_vm.add_number = 1;
@@ -350,8 +348,6 @@ void menu_dialog_vm_init(void)
   custom_vm.is_ballooning = 0;
   custom_vm.is_full_virt = 0;
   custom_vm.has_p9_host_share = 0;
-  custom_vm.has_cdrom = 0;
-  custom_vm.has_bdisk = 0;
   custom_vm.cpu = 4;
   custom_vm.mem = 2000;
   custom_vm.nb_eth = 3;

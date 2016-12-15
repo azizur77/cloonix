@@ -79,15 +79,16 @@ void bank_edge_sat_create(char *name, char *lan, int num)
 /****************************************************************************/
 void bank_node_create(char *name, char *ip, char *kernel,
                       char *rootfs_sod, char *rootfs_backing_file,
-                      char *node_cdrom, char *node_bdisk, 
-                      int bank_type, int num_eth, int *mutype, 
+                      char *install_cdrom, char *added_cdrom, 
+                      char *node_bdisk, int bank_type, 
+                      int num_eth, int *mutype, 
                       int color_choice, int vm_id, int vm_config_flags,
                       double x, double y, int hidden_on_graph,
                       double *tx, double *ty, int *thidden_on_graph)
 {
   int i;
   add_new_node(name, ip, kernel, rootfs_sod, rootfs_backing_file,
-               node_cdrom, node_bdisk,  
+               install_cdrom, added_cdrom, node_bdisk,  
                bank_type, x, y, hidden_on_graph, color_choice, 
                vm_id, vm_config_flags);
   if (num_eth < 1)

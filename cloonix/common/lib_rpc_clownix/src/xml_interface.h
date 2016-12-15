@@ -155,7 +155,8 @@
 
 #define ADD_VM_C         "  <linux_kernel> %s </linux_kernel>\n"\
                          "  <rootfs_input> %s </rootfs_input>\n"\
-                         "  <cdrom> %s </cdrom>\n"\
+                         "  <install_cdrom> %s </install_cdrom>\n"\
+                         "  <added_cdrom> %s </added_cdrom>\n"\
                          "  <bdisk> %s </bdisk>\n"\
                          "  <p9_host_share> %s </p9_host_share>\n"\
                          "</add_vm>"
@@ -347,7 +348,8 @@
 
 #define TOPO_VM_O        "  <vm>\n"\
                          "    name: %s \n"\
-                         "    cdrom: %s \n"\
+                         "    install_cdrom: %s \n"\
+                         "    added_cdrom: %s \n"\
                          "    bdisk: %s \n"\
                          "    p9_host_share: %s \n"\
                          "    linux_kernel: %s \n"\

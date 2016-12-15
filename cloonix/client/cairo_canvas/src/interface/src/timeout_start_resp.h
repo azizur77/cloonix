@@ -23,7 +23,8 @@ typedef struct t_create_item_node_resp
   char kernel[MAX_NAME_LEN];
   char rootfs_sod[MAX_PATH_LEN];
   char rootfs_backing_file[MAX_PATH_LEN];
-  char node_cdrom[MAX_PATH_LEN];
+  char install_cdrom[MAX_PATH_LEN];
+  char added_cdrom[MAX_PATH_LEN];
   char node_bdisk[MAX_PATH_LEN];
   char ip[MAX_NAME_LEN];
   int num_eth;

@@ -157,8 +157,6 @@ int get_vm_config_flags(t_custom_vm *cust_vm)
     vm_config_flags &= ~VM_CONFIG_FLAG_PERSISTENT;
     vm_config_flags |= VM_CONFIG_FLAG_EVANESCENT;
     }
-  if (cust_vm->has_bdisk)
-    vm_config_flags |= VM_CONFIG_FLAG_HAS_BDISK;
   if (cust_vm->has_p9_host_share)
     vm_config_flags |= VM_CONFIG_FLAG_9P_SHARED;
   return vm_config_flags;

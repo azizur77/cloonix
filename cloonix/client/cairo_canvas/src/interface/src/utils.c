@@ -42,7 +42,8 @@ void process_all_diffs(t_topo_differences *diffs)
     from_cloonix_switch_create_node(node->name, node->ip, node->kernel,
                                     node->rootfs_used, 
                                     node->rootfs_backing, 
-                                    node->node_cdrom, 
+                                    node->install_cdrom, 
+                                    node->added_cdrom, 
                                     node->node_bdisk, 
                                     node->num_eth, 
                                     node->vm_id, node->vm_config_flags);
