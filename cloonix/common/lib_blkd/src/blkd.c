@@ -532,8 +532,9 @@ t_blkd *blkd_create_tx_empty(int llid, int type, int val)
   blkd_group->head_data = (char *) malloc(MAX_TOTAL_BLKD_SIZE);
   cur->qemu_group_rank = 0;
   cur->usec = cloonix_get_usec();
+  cur->header_blkd_len = HEADER_BLKD_SIZE;
   cur->header_blkd = blkd_group->head_data;
-  cur->payload_blkd = cur->header_blkd + HEADER_BLKD_SIZE;
+  cur->payload_blkd = cur->header_blkd + cur->header_blkd_len;
   cur->group = blkd_group;
   return cur;
 }
@@ -547,26 +548,31 @@ t_blkd *blkd_create_tx_qemu_group(t_blkd_group **ptr_group,
                                    int llid, int type, int val)
 {
   t_blkd_group *blkd_group = *ptr_group;
-  int headlen = MAX_QEMU_BLKD_IN_GROUP * HEADER_BLKD_SIZE;
   t_blkd *cur = malloc(sizeof(t_blkd));
   memset(cur, 0, sizeof(t_blkd));
   if (blkd_group == NULL)
     {
+    cur->header_blkd_len = HEADER_BLKD_SIZE;
     (*ptr_group) = (t_blkd_group *) malloc(sizeof(t_blkd_group));
     blkd_group = *ptr_group;
     memset(blkd_group, 0, sizeof(t_blkd_group));
-    blkd_group->head_data = (char *) malloc(headlen);
+    blkd_group->head_data = (char *) malloc(cur->header_blkd_len);
     if ((!qemu_group_cb) || (!data))
       KOUT(" ");
     blkd_group->qemu_group_cb = qemu_group_cb;
     blkd_group->data = data;
+    cur->header_blkd = blkd_group->head_data;
+    blkd_group->qemu_total_payload_len = len;
     }
   else
     {
     if ((qemu_group_cb) || (data))
       KOUT(" ");
+    cur->header_blkd = NULL;
+    cur->header_blkd_len = 0;
+    blkd_group->qemu_total_payload_len += len;
     }
-  blkd_group->count_blkd_tied += 1;
+  __sync_fetch_and_add(&(blkd_group->count_blkd_tied), 1);
   if (blkd_group->count_blkd_tied >= MAX_QEMU_BLKD_IN_GROUP)
     KOUT("%d %d", blkd_group->count_blkd_tied, len);
   if (len >= PAYLOAD_BLKD_SIZE)
@@ -576,8 +582,6 @@ t_blkd *blkd_create_tx_qemu_group(t_blkd_group **ptr_group,
   cur->qemu_group_rank = blkd_group->count_blkd_tied;
   cur->usec = cloonix_get_usec();
   cur->payload_len = len;
-  cur->header_blkd = blkd_group->head_data + blkd_group->qemu_write_offset;
-  blkd_group->qemu_write_offset += HEADER_BLKD_SIZE;
   cur->payload_blkd = buf;
   cur->group = blkd_group;
   return cur;
@@ -601,8 +605,9 @@ t_blkd *blkd_create_tx_full_copy(int len, char *buf,
   cur->qemu_group_rank = 0;
   cur->usec = cloonix_get_usec();
   cur->payload_len = len;
+  cur->header_blkd_len = HEADER_BLKD_SIZE;
   cur->header_blkd = blkd_group->head_data;
-  cur->payload_blkd = cur->header_blkd + HEADER_BLKD_SIZE;
+  cur->payload_blkd = cur->header_blkd + cur->header_blkd_len;
   cur->group = blkd_group;
   memcpy(cur->payload_blkd, buf, len);
   return cur;
@@ -620,12 +625,13 @@ void blkd_free(void *ptr, t_blkd *blkd)
     KOUT(" ");
   if (blkd_group->count_blkd_tied <= 0)
     KOUT("%d", blkd_group->count_blkd_tied);
-  blkd_group->count_blkd_tied -= 1;
+  __sync_fetch_and_sub(&(blkd_group->count_blkd_tied), 1);
   if (blkd_group->count_blkd_tied == 0) 
     {
     if (blkd_group->qemu_group_cb)
       blkd_group->qemu_group_cb(ptr, blkd_group->data);
     free(blkd_group->head_data);
+    memset(blkd_group, 0, sizeof(t_blkd_group));
     free(blkd_group);
     }
   memset(blkd, 0, sizeof(t_blkd));
@@ -680,9 +686,9 @@ void blkd_header_rx_extract(t_blkd_record *rec)
                                 head[2]&0xFF, head[3]&0xFF);
   rec->len_to_do = ((head[4] & 0xFF) << 8);
   rec->len_to_do += (head[5] & 0xFF);
-  if(rec->len_to_do <= HEADER_BLKD_SIZE)
-    KOUT("%d", rec->len_to_do);
-  rec->blkd->payload_len = rec->len_to_do - HEADER_BLKD_SIZE;
+  if(rec->len_to_do <= rec->blkd->header_blkd_len)
+    KOUT("%d %d", rec->len_to_do, rec->blkd->header_blkd_len);
+  rec->blkd->payload_len = rec->len_to_do - rec->blkd->header_blkd_len;
   rec->blkd->llid = ((head[6] & 0xFF) << 8);
   rec->blkd->llid += (head[7] & 0xFF);
   rec->blkd->type = ((head[8] & 0xFF) << 8);
@@ -696,36 +702,40 @@ void blkd_header_rx_extract(t_blkd_record *rec)
 /*****************************************************************************/
 void blkd_header_tx_setup(t_blkd_record *rec)
 {
-  int llid = rec->blkd->llid;
-  int type = rec->blkd->type;
-  int val =  rec->blkd->val;
-  int offset, qemu_group_rank = rec->blkd->qemu_group_rank;
-  int len =  rec->blkd->payload_len + HEADER_BLKD_SIZE;
-  long long usec = rec->blkd->usec;
+  int llid, type, val;
+  long long usec;
   char *head;
-  if (qemu_group_rank)
-    offset = rec->blkd->group->qemu_read_offset;
+  int len;
+  if (rec->blkd->header_blkd_len)
+    {
+    rec->len_to_do = rec->blkd->payload_len + rec->blkd->header_blkd_len;
+    if (!rec->blkd->header_blkd)
+      KOUT(" ");
+    llid = rec->blkd->llid;
+    type = rec->blkd->type;
+    val =  rec->blkd->val;
+    usec = rec->blkd->usec;
+    head = rec->blkd->header_blkd;
+    if (rec->blkd->qemu_group_rank)
+      len = rec->blkd->group->qemu_total_payload_len + rec->blkd->header_blkd_len;
+    else
+      len = rec->blkd->payload_len + rec->blkd->header_blkd_len;
+    head[0]  = 0xCA;
+    head[1]  = 0xFE;
+    head[2]  = 0xBE;
+    head[3]  = 0xEF;
+    head[4]  = ((len & 0xFF00) >> 8) & 0xFF;
+    head[5]  = len & 0xFF;
+    head[6]  = ((llid & 0xFF00) >> 8) & 0xFF;
+    head[7]  = llid & 0xFF;
+    head[8]  = ((type & 0xFF00) >> 8) & 0xFF;
+    head[9]  = type & 0xFF;
+    head[10] = ((val & 0xFF00) >> 8) & 0xFF;
+    head[11] = val & 0xFF;
+    memcpy(&(head[12]), &(usec), sizeof(long long));
+    }
   else
-    offset = 0;
-  if (rec->blkd->header_blkd == NULL)
-    KOUT(" ");
-  head = rec->blkd->header_blkd + offset;
-  rec->len_to_do = len;
-  head[0]  = 0xCA;
-  head[1]  = 0xFE;
-  head[2]  = 0xBE;
-  head[3]  = 0xEF;
-  head[4]  = ((len & 0xFF00) >> 8) & 0xFF;
-  head[5]  = len & 0xFF;
-  head[6]  = ((llid & 0xFF00) >> 8) & 0xFF;
-  head[7]  = llid & 0xFF;
-  head[8]  = ((type & 0xFF00) >> 8) & 0xFF;
-  head[9]  = type & 0xFF;
-  head[10] = ((val & 0xFF00) >> 8) & 0xFF;
-  head[11] = val & 0xFF;
-  memcpy(&(head[12]), &(usec), sizeof(long long));
-  if (qemu_group_rank)
-    rec->blkd->group->qemu_read_offset = HEADER_BLKD_SIZE;
+    rec->len_to_do = rec->blkd->payload_len;
 }
 /*---------------------------------------------------------------------------*/
 

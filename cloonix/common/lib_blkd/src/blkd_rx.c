@@ -72,8 +72,9 @@ static t_blkd *malloc_create_new_blkd(t_blkd_group *group)
     KOUT("%d %d", group->len_data_read, group->len_data_done);
   cur = malloc(sizeof(t_blkd));
   memset(cur, 0, sizeof(t_blkd));
+  cur->header_blkd_len = HEADER_BLKD_SIZE;
   cur->header_blkd = group->head_data + group->len_data_done;
-  cur->payload_blkd = cur->header_blkd + HEADER_BLKD_SIZE;
+  cur->payload_blkd = cur->header_blkd + cur->header_blkd_len;
   cur->group = group;
   group->count_blkd_tied += 1;
   return cur;
@@ -154,15 +155,15 @@ static t_blkd *pool_rx_get(t_blkd_fifo_rx *pool)
 static int get_rec_state(t_blkd_record *rec)
 {
   int result;
-  if (((rec->len_done) < HEADER_BLKD_SIZE) ||
-      (((rec->len_done) == HEADER_BLKD_SIZE) &&
+  if (((rec->len_done) <  rec->blkd->header_blkd_len) ||
+      (((rec->len_done) == rec->blkd->header_blkd_len) &&
        (!rec->len_to_do)))
     result = blkd_read_head;
   else if ((rec->len_to_do) &&
            ((rec->len_to_do) ==
             (rec->len_done)))
     result = blkd_all_done;
-  else if ((rec->len_done >= HEADER_BLKD_SIZE) &&
+  else if ((rec->len_done >= rec->blkd->header_blkd_len) &&
            (rec->len_to_do))
     result = blkd_read_body;
   else
@@ -212,18 +213,18 @@ static int auto_extract_header(t_blkd_fifo_rx *pool,
                                t_blkd_record *rec) 
 {
   int len, result = -1;
-  if (rec->len_done == HEADER_BLKD_SIZE)
+  if (rec->len_done == rec->blkd->header_blkd_len)
     {
     blkd_header_rx_extract(rec);
     result = 0;
     }
   else
     {
-    len = group_read_up(group, HEADER_BLKD_SIZE - rec->len_done);
+    len = group_read_up(group, rec->blkd->header_blkd_len - rec->len_done);
     if (len >= 0)
       {
       rec->len_done += len;
-      if (rec->len_done == HEADER_BLKD_SIZE)
+      if (rec->len_done == rec->blkd->header_blkd_len)
         {
         blkd_header_rx_extract(rec);
         result = 0;
@@ -293,7 +294,7 @@ static int auto_fill_body(t_blkd_fifo_rx *pool,
       {
       maybe_new_group(pool, group);
       pool->rx_queued_bytes += rec->len_to_do;
-      data_len = rec->len_to_do - HEADER_BLKD_SIZE;
+      data_len = rec->len_to_do - rec->blkd->header_blkd_len;
       pool->slot_bandwidth[pool->current_slot] += data_len;
       if (pool->qty > pool->slot_qty[pool->current_slot])
         pool->slot_qty[pool->current_slot] = pool->qty;

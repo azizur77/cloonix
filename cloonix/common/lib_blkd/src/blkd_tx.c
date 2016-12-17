@@ -54,7 +54,7 @@ static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
     KOUT(" ");
   pool->rec[pool->put].blkd = blkd;
   pool->slot_bandwidth[pool->current_slot] += blkd->payload_len;
-  pool->tx_queued_bytes += HEADER_BLKD_SIZE + blkd->payload_len;
+  pool->tx_queued_bytes += blkd->header_blkd_len + blkd->payload_len;
   pool->rec[pool->put].len_to_do = 0;
   pool->rec[pool->put].len_done = 0;
   idx = pool->put;
@@ -96,7 +96,7 @@ static t_blkd *pool_tx_free(t_blkd_fifo_tx *pool)
     blkd = pool->rec[pool->get].blkd;
     if (!blkd)
       KOUT(" ");
-    pool->tx_queued_bytes -= HEADER_BLKD_SIZE + blkd->payload_len;
+    pool->tx_queued_bytes -= blkd->header_blkd_len + blkd->payload_len;
     pool->rec[pool->get].blkd = NULL;
     pool->rec[pool->get].len_to_do = 0;
     pool->rec[pool->get].len_done = 0;
@@ -115,16 +115,16 @@ static int try_sending(int fd, t_blkd_record *rec, int *get_out)
   int qemu_group_rank = rec->blkd->qemu_group_rank;
   if (qemu_group_rank)
     {
-    if (rec->len_done < HEADER_BLKD_SIZE)
+    if (rec->len_done < rec->blkd->header_blkd_len)
       {
-      len_to_tx = HEADER_BLKD_SIZE - rec->len_done;
+      len_to_tx = rec->blkd->header_blkd_len - rec->len_done;
       ptr_to_tx = rec->blkd->header_blkd + rec->len_done;
       len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
       }
     else
       {
       len_to_tx = rec->len_to_do - rec->len_done;
-      ptr_to_tx = rec->blkd->payload_blkd + rec->len_done - HEADER_BLKD_SIZE;
+      ptr_to_tx = rec->blkd->payload_blkd + rec->len_done - rec->blkd->header_blkd_len;
       len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
       }
     }

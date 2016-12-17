@@ -59,13 +59,12 @@ typedef struct t_blkd_item
 /*---------------------------------------------------------------------------*/
 typedef struct t_blkd_group
 {
-  int qemu_write_offset;
-  int qemu_read_offset;
-  int count_blkd_tied;
+  uint32_t volatile count_blkd_tied;
   int len_data_done;
   int len_data_read;
   int len_data_max;
   char *head_data; 
+  int qemu_total_payload_len;
   t_qemu_group qemu_group_cb;
   void *data;
 } t_blkd_group;
@@ -79,6 +78,7 @@ typedef struct t_blkd
   int   type;
   int   val;
   long long usec;
+  int  header_blkd_len;
   int   payload_len;
   char  *header_blkd;
   char  *payload_blkd;
