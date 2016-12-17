@@ -486,7 +486,7 @@ void llid_traf_tx_to_client(char *name, int dido_llid,
         }
       }
     else
-      KOUT("%d", lt->auto_state);
+      KERR("%d", lt->auto_state);
     }
 }
 /*--------------------------------------------------------------------------*/
