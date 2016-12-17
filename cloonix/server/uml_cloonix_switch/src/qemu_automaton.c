@@ -56,9 +56,7 @@
 
 #define DRIVE_FULL_VIRT " -drive file=%s,index=%d,media=disk,if=ide"
 
-#define CDROM_FULL_VIRT " -drive file=%s,media=cdrom,if=ide"
-
-#define INSTALL_CDROM " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
+#define INSTALL_DISK " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
 
 #define ADDED_CDROM " -drive file=%s,media=cdrom"
 
@@ -312,7 +310,7 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
 #define QEMU_SPICE \
    " -balloon virtio"\
    " -device virtio-rng-pci"\
-   " -soundhw ac97"\
+   " -soundhw all"\
    " -usb"\
    " -chardev spicevmc,id=charredir0,name=usbredir"\
    " -device usb-redir,chardev=charredir0,id=redir0"\
@@ -396,7 +394,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     }
   if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
     {
-    len += sprintf(linux_cmd+len, INSTALL_CDROM, rootfs, 0);
+    len += sprintf(linux_cmd+len, INSTALL_DISK, rootfs, 0);
     len += sprintf(linux_cmd+len, ADDED_CDROM, vm->vm_params.install_cdrom);
     }
   else
@@ -407,13 +405,10 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
       len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
   
     cdrom = utils_get_cdrom_path_name(vm->vm_id);
-    if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
-      len += sprintf(linux_cmd+len, CDROM_FULL_VIRT, cdrom);
-    else
-      len += sprintf(linux_cmd+len, CDROM, cdrom, 1);
+    len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
   
     if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK)
-      len += sprintf(linux_cmd+len, DRIVE_PARAMS, bdisk, 2);
+      len += sprintf(linux_cmd+len, DRIVE_PARAMS, bdisk, 1);
     }
 
   if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)

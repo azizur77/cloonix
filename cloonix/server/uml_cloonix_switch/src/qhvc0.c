@@ -966,12 +966,8 @@ static void scheduler_heartbeat(t_qhvc0_vm *cvm)
         (cvm->in_guest_cloonix_agent_start_done > 20))
       {
       cvm->in_guest_cloonix_agent_start_done = 1;
-      if (cvm->vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
-        snprintf(script_start_dropbear, MAX_LEN_DROPBEAR, 
-                 CMD_START_DROPBEAR_CLOONIX, "sr0");
-      else
-        snprintf(script_start_dropbear, MAX_LEN_DROPBEAR, 
-                 CMD_START_DROPBEAR_CLOONIX, "vdb");
+      snprintf(script_start_dropbear, MAX_LEN_DROPBEAR, 
+               CMD_START_DROPBEAR_CLOONIX, "sr0");
       begin_and_send(cvm, script_start_dropbear);
       }
     cvm->in_guest_cloonix_agent_start_done++;
