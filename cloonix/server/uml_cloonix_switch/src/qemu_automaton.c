@@ -296,7 +296,6 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
    " -nographic"\
    " -nodefaults"\
    " -name %s"\
-   " -device virtio-scsi-pci"\
    " -device virtio-serial-pci"\
    " -chardev socket,id=mon1,path=%s,server"\
    " -mon chardev=mon1,mode=readline"\
