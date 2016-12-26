@@ -309,7 +309,7 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
 #define QEMU_SPICE \
    " -balloon virtio"\
    " -device virtio-rng-pci"\
-   " -soundhw all"\
+   " -soundhw hda"\
    " -usb"\
    " -chardev spicevmc,id=charredir0,name=usbredir"\
    " -device usb-redir,chardev=charredir0,id=redir0"\
