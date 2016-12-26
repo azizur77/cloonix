@@ -19,4 +19,6 @@ tar zxvf ${HERE}/${CLOONIX}
 chown -R root:root /usr/local/bin/cloonix*
 MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
 chmod u+s ${MUTAP}
+USBHELP=/usr/local/bin/cloonix/common/spice/spice_lib/spice-client-glib-usb-acl-helper
+chmod u+s ${USBHELP}
 #----------------------------------------------------------

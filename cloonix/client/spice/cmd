@@ -21,7 +21,9 @@ cd ${TARGET}/spice_client
 PKG_CONFIG_PATH=${TARGET}/pkgconfig \
 ./configure --prefix=${TARGET} \
             --libdir=${TARGET} \
-            --disable-polkit \
+            --datarootdir=${TARGET} \
+            --with-usb-acl-helper-dir=/usr/local/bin/cloonix/common/spice/spice_lib \
+            --enable-polkit \
             --enable-usbredir \
             --enable-gtk-doc=no \
             --enable-gtk-doc-html=no \
@@ -33,9 +35,12 @@ PKG_CONFIG_PATH=${TARGET}/pkgconfig \
             --enable-smartcard=no \
             --enable-lz4=no
 
-
 make clean
 make
+for i in Makefile doc/Makefile data/Makefile man/Makefile src/Makefile src/controller/Makefile; do
+  sed -i s"%POLICYDIR = .*%POLICYDIR = ${TARGET}%" $i
+  sed -i s"%ACL_HELPER_DIR = .*%ACL_HELPER_DIR = ${TARGET}%" $i
+done
 make install
 
 
