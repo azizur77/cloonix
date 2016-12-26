@@ -48,7 +48,8 @@ fct_build_get_debian_packages()
              libsdl1.2-dev libogg-dev libsasl2-dev intltool \
              libjpeg-dev python-pyparsing libsoup2.4 libusb-1.0-0-dev \
              libgudev-1.0-dev libopus-dev python-six \
-             libtext-csv-perl libepoxy-dev libegl1-mesa-dev
+             libtext-csv-perl libepoxy-dev libegl1-mesa-dev \
+             libpolkit-gobject-1-dev libacl1-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -58,7 +59,8 @@ fct_run_get_debian_packages()
              libpulse0 libusb-1.0 libopus0 e2fsprogs \
              libsdl1.2debian libasound2 libcurl3-gnutls \
              ttf-dejavu libgtk-3-0 libpulse-mainloop-glib0 \
-             libepoxy0 libegl1-mesa
+             libepoxy0 libegl1-mesa \
+             libpolkit-gobject-1-0 libacl1
 }
 #--------------------------------------------------------------------------
 fct_build_get_centos_packages()
@@ -74,7 +76,8 @@ fct_build_get_centos_packages()
          openssl-devel pulseaudio-libs-devel pixman-devel \
          gobject-introspection-devel libjpeg-turbo-devel \
          zlib-devel cyrus-sasl-devel gtk-doc python-six \
-         cpan libepoxy-devel
+         cpan libepoxy-devel \
+         polkit-devel libacl-devel
 
   export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
 }
@@ -85,7 +88,8 @@ fct_run_get_centos_packages()
          tmux genisoimage tar gtk3 rxvt-unicode libevent \
          pulseaudio-libs libusb opus e2fsprogs \
          libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-         pulseaudio-libs-glib2 libepoxy
+         pulseaudio-libs-glib2 libepoxy \
+         polkit libacl
 }
 #--------------------------------------------------------------------------
 fct_build_get_fedora_packages()
@@ -101,7 +105,8 @@ fct_build_get_fedora_packages()
          openssl-devel pulseaudio-libs-devel pixman-devel \
          gobject-introspection-devel libjpeg-turbo-devel \
          zlib-devel cyrus-sasl-devel gtk-doc python-six \
-         perl-Text-CSV libepoxy-devel
+         perl-Text-CSV libepoxy-devel \
+         polkit-devel libacl-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
@@ -110,7 +115,8 @@ fct_run_get_fedora_packages()
          tmux genisoimage tar gtk3 rxvt-unicode libevent \
          pulseaudio-libs libusb opus e2fsprogs \
          libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-         pulseaudio-libs-glib2 libepoxy
+         pulseaudio-libs-glib2 libepoxy \
+         polkit libacl
 }
 #--------------------------------------------------------------------------
 fct_build_get_opensuse_packages()
@@ -125,7 +131,8 @@ fct_build_get_opensuse_packages()
          libogg-devel cyrus-sasl-devel alsa-devel libpulse-devel \
          intltool libsoup-devel libXrandr-devel libusb-devel \
          libgudev-1_0-devel libopus-devel python-six \
-         perl-Text-CSV libepoxy-devel
+         perl-Text-CSV libepoxy-devel \
+         polkit-devel libacl-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
@@ -136,7 +143,8 @@ fct_run_get_opensuse_packages()
          libpulse-mainloop-glib0 libpulse0 \
          libusb libopus0 e2fsprogs libjpeg62  \
          libSDL-1_2-0 alsa-lib gnutls dejavu-fonts \
-         libusbredirparser1 libgthread-2_0-0 libepoxy0
+         libusbredirparser1 libgthread-2_0-0 libepoxy0 \
+         polkit libacl
 }
 #--------------------------------------------------------------------------
 if [ $UID != 0 ]; then
