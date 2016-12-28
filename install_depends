@@ -39,6 +39,36 @@ if [ -z $name ]; then
   exit
 fi
 #--------------------------------------------------------------------------
+fct_build_get_arch_packages()
+{
+  sed -i s"%#\[multilib\]%\[multilib\]\nInclude = /etc/pacman.d/mirrorlist%" /etc/pacman.conf
+  pacman --noconfirm -Syu \
+             rxvt-unicode base-devel readline libevent \
+             gtk3 python2 ttf-dejavu alsa-lib \
+             python2-pyparsing intltool pygtk libsoup \
+             pulseaudio opus python2-six tmux cdrkit \
+             polkit acl
+
+  yes | pacman -Sy gcc-multilib
+
+  ln -s /usr/bin/python2 /usr/bin/python
+
+  export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
+}
+#--------------------------------------------------------------------------
+fct_run_get_arch_packages()
+{
+  pacman --noconfirm -Sy gtk3 rxvt-unicode libevent pulseaudio \
+                         libusb opus libjpeg-turbo alsa-lib \
+                         tmux cdrkit polkit acl ttf-dejavu
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
+}
+#--------------------------------------------------------------------------
 fct_build_get_debian_packages()
 {
   apt-get -y install \
@@ -182,6 +212,14 @@ case "$name" in
       fct_build_get_opensuse_packages
     else
       fct_run_get_opensuse_packages
+    fi
+  ;;
+  "Arch")
+    printf "\n\tInstall tool is pacman.\n\n"
+    if [ $depends_build = 1 ]; then
+      fct_build_get_arch_packages
+    else
+      fct_run_get_arch_packages
     fi
   ;;
   *)
