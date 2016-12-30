@@ -156,7 +156,7 @@ void * m_malloc(size_t size) {
 
 }
 
-void * m_strdup(const char * str) {
+char * m_strdup(char * str) {
 	char* ret;
 
 	ret = strdup(str);

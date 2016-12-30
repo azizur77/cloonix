@@ -22,7 +22,7 @@
 int main_i_run_in_kvm(void);
 
 static void send_msg_channel_open_failure(unsigned int remotechan, int reason,
-		const unsigned char *text, const unsigned char *lang);
+		                          char *text, char *lang);
 static void send_msg_channel_open_confirmation(struct Channel* channel,
 		unsigned int recvwindow, 
 		unsigned int recvmaxpacket);
@@ -131,6 +131,7 @@ void check_close(struct Channel *channel)
       {
       send_msg_channel_close(channel);
       }
+KERR(" ");
     remove_channel(channel);
     return;
     }
@@ -179,7 +180,7 @@ void check_close(struct Channel *channel)
       && close_allowed
       && !write_pending(channel))
     {
-    exit(0);
+    wrapper_exit(0, (char *)__FILE__, __LINE__);
     }
 }
 
@@ -198,6 +199,7 @@ void check_in_progress(struct Channel *channel) {
 		send_msg_channel_open_failure(channel->remotechan,
 				SSH_OPEN_CONNECT_FAILED, "", "");
 		close(channel->writefd);
+KERR(" ");
 		remove_channel(channel);
 	} else {
 		chan_initwritebuf(channel);
@@ -211,6 +213,7 @@ void check_in_progress(struct Channel *channel) {
 /* Send the close message and set the channel as closed */
 static void send_msg_channel_close(struct Channel *channel) 
 {
+KERR(" ");
   if (channel->ctype->closehandler 
       && !channel->close_handler_done) 
     {
@@ -231,6 +234,7 @@ KERR(" ");
 /* call this when trans/eof channels are closed */
 static void send_msg_channel_eof(struct Channel *channel) 
 {
+KERR(" ");
   buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_EOF);
   buf_putint(ses.writepayload, channel->remotechan);
   encrypt_packet();
@@ -337,7 +341,6 @@ if (channel)
  * channel close */
 static void remove_channel(struct Channel * channel) 
 {
-
 if (channel->init_done)
 {
   cbuf_free(channel->writebuf);
@@ -364,7 +367,7 @@ if (channel->init_done)
 }
   memset(channel, 0, sizeof(struct Channel)); 
 
-  exit(0);
+  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 
 /* Handle channel specific requests, passing off to corresponding handlers
@@ -564,7 +567,7 @@ static void send_msg_channel_window_adjust(struct Channel* channel,
 /* Handle a new channel request, performing any channel-type-specific setup */
 void recv_msg_channel_open() 
 {
-  unsigned char *type;
+  char *type;
   unsigned int typelen, transmaxpacket;
   struct Channel *channel = &ses.channel;
   unsigned int errtype = SSH_OPEN_UNKNOWN_CHANNEL_TYPE;
@@ -645,7 +648,7 @@ void send_msg_channel_success(struct Channel *channel) {
 /* Send a channel open failure message, with a corresponding reason
  * code (usually resource shortage or unknown chan type) */
 static void send_msg_channel_open_failure(unsigned int remotechan, 
-		int reason, const unsigned char *text, const unsigned char *lang) {
+		int reason, char *text, char *lang) {
 
 	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_OPEN_FAILURE);
 	buf_putint(ses.writepayload, remotechan);
@@ -793,12 +796,15 @@ struct Channel* get_any_ready_channel()
     return NULL;
 }
 
-void start_send_channel_request(struct Channel *channel, 
-		unsigned char *type) {
-
+void start_send_channel_request(struct Channel *channel, char *type) 
+{
 	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
 	buf_putint(ses.writepayload, channel->remotechan);
-
 	buf_putstring(ses.writepayload, type, strlen(type));
+}
 
+void wrapper_exit(int val, char *file, int line)
+{
+  KERR("%s %d", file, line); 
+  exit(val);
 }

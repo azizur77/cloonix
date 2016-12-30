@@ -80,6 +80,6 @@ static void svr_remoteclosed()
 {
   if (!isempty(&ses.writequeue))
     KERR("Not empty ");
-  exit(0);
+  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 

@@ -30,7 +30,7 @@
 
 struct buf {
 
-	unsigned char * data;
+	char * data;
 	unsigned int len; /* the used size */
 	unsigned int pos;
 	unsigned int size; /* the memory size */
@@ -53,13 +53,12 @@ unsigned char buf_getbool(buffer* buf);
 void buf_putbyte(buffer* buf, unsigned char val);
 unsigned char* buf_getptr(buffer* buf, unsigned int len);
 unsigned char* buf_getwriteptr(buffer* buf, unsigned int len);
-unsigned char* buf_getstring(buffer* buf, unsigned int *retlen);
-buffer * buf_getstringbuf(buffer *buf);
+char* buf_getstring(buffer* buf, unsigned int *retlen);
 void buf_eatstring(buffer *buf);
 void buf_putint(buffer* buf, unsigned int val);
-void buf_putstring(buffer* buf, const unsigned char* str, unsigned int len);
+void buf_putstring(buffer* buf, char* str, unsigned int len);
 void buf_putbufstring(buffer *buf, const buffer* buf_str);
-void buf_putbytes(buffer *buf, const unsigned char *bytes, unsigned int len);
+void buf_putbytes(buffer *buf, char *bytes, unsigned int len);
 unsigned int buf_getint(buffer* buf);
 
 #endif /* _BUFFER_H_ */

@@ -44,6 +44,7 @@ struct ChanType;
 
 struct Channel {
 int init_done;
+int timeout_end_done;
 	unsigned int remotechan;
 	unsigned int recvwindow, transwindow;
 	unsigned int recvdonelen;
@@ -110,10 +111,10 @@ extern const struct ChanType clichansess;
 int send_msg_channel_open_init(int fd);
 void recv_msg_channel_open_confirmation();
 void recv_msg_channel_open_failure();
-void start_send_channel_request(struct Channel *channel, unsigned char *type);
+void start_send_channel_request(struct Channel *channel, char *type);
 
 void send_msg_request_success();
 void send_msg_request_failure();
-
+void wrapper_exit(int val, char *file, int line);
 
 #endif /* _CHANNEL_H_ */

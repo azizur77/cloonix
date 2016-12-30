@@ -37,6 +37,7 @@
 #include "runopts.h"
 
 #include "io_clownix.h"
+#include "cloonix_timer.h"
 
 /* Handles sessions (either shells or programs) requested by the client */
 
@@ -157,14 +158,15 @@ static void sesssigchild_handler(int UNUSED(dummy))
       }
     }
   errno = saved_errno;
-  exit(0);
+  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 
 
 
 static int spawn_command( struct ChanSess *chansess,
                           int *ret_writefd, int *ret_readfd, 
-                          int *ret_errfd, pid_t *ret_pid) {
+                          int *ret_errfd, pid_t *ret_pid) 
+{
 	int infds[2];
 	int outfds[2];
 	int errfds[2];
@@ -240,17 +242,17 @@ static int spawn_command( struct ChanSess *chansess,
 		}
 		return DROPBEAR_SUCCESS;
 	}
+  return DROPBEAR_FAILURE; 
 }
 
 /* Runs a command with "sh -c". Will close FDs (except stdin/stdout/stderr) and
  * re-enabled SIGPIPE. If cmd is NULL, will run a login shell.
  */
-static void run_shell_command(const char *cmd, unsigned int maxfd, 
-                       char *usershell, char *login) 
+static void run_shell_command(char *cmd, unsigned int maxfd, 
+                              char *usershell, char *login) 
 {
   char *argv[7];
   char *baseshell = NULL;
-  char *cmd_sleep;
   unsigned int i;
   int len;
   int is_login=0;
@@ -258,24 +260,10 @@ static void run_shell_command(const char *cmd, unsigned int maxfd,
   baseshell = basename(usershell);
   if (cmd != NULL) 
     {
-    if (!strncmp(cmd, "/usr/bin/tmux", strlen("/usr/bin/tmux")))
-      { 
-      argv[0] = baseshell;
-      argv[1] = "-c";
-      argv[2] = (char*) cmd;
-      argv[3] = NULL;
-      }
-    else
-      {
-      cmd_sleep = m_malloc(strlen(cmd) + 30);
-      sprintf(cmd_sleep, "%s ; sleep 0.01", cmd);
-      argv[0] = baseshell;
-      argv[1] = "--noprofile";
-      argv[2] = "--norc";
-      argv[3] = "-c";
-      argv[4] = (char*)cmd_sleep;
-      argv[5] = NULL;
-      }
+    argv[0] = baseshell;
+    argv[1] = "-c";
+    argv[2] = (char *) cmd;
+    argv[3] = NULL;
     } 
   else 
     {
@@ -420,14 +408,19 @@ KOUT("%p", channel->typedata);
 
 }
 
+/*****************************************************************************/
 /* clean a session channel */
-static void closechansess(struct Channel *channel)
+/*****************************************************************************/
+static void delayed_close(void *data)
 {
+  struct Channel *channel = (struct Channel *) data;
   struct ChanSess *chansess;
   unsigned int i;
+  KERR("END %p", channel);
   chansess = (struct ChanSess*)channel->typedata;
   if (chansess != NULL) 
     {
+    KERR("SEND %p", chansess);
     send_exitsignalstatus(channel);
     m_free(chansess->cmd);
     if (chansess->tty) 
@@ -451,6 +444,21 @@ static void closechansess(struct Channel *channel)
     m_free(chansess);
     }
 }
+
+/*****************************************************************************/
+/* clean a session channel */
+/*****************************************************************************/
+static void closechansess(struct Channel *channel)
+{
+  KERR("%p", channel);
+  if (channel->timeout_end_done == 0)
+    {
+    KERR("ARM %p", channel);
+    channel->timeout_end_done = 1;
+    cloonix_timer_add(1, delayed_close, (void *) channel);
+    }
+}
+/*****************************************************************************/
 
 /* Handle requests for a channel. These can be execution requests,
  * or x11/authagent forwarding. These are passed to appropriate handlers */
@@ -662,7 +670,7 @@ void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key);
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
 static int sessionpty(struct ChanSess * chansess) {
 	unsigned int len;
-	unsigned char namebuf[65];
+	char namebuf[65];
         chansess->cloonix_name = buf_getstring(ses.payload, &len);
         chansess->cloonix_display = buf_getstring(ses.payload, &len);
         chansess->cloonix_xauth_cookie_key = buf_getstring(ses.payload, &len);
@@ -673,7 +681,7 @@ static int sessionpty(struct ChanSess * chansess) {
 		KERR("leave sessionpty: failed to allocate pty");
 		return DROPBEAR_FAILURE;
 	}
-	chansess->tty = (char*)m_strdup(namebuf);
+	chansess->tty = m_strdup(namebuf);
 	if (!chansess->tty) {
 		KOUT("Out of memory");
 	}
@@ -885,7 +893,7 @@ static void execchild(struct ChanSess *chansess)
       addnewvar("DISPLAY", chansess->cloonix_display);
     }
   if (chansess->tty)
-    addnewvar("SSH_TTY", chansess->tty);
+    addnewvar("SSH_TTY", (char *) chansess->tty);
 
   if (!access("/bin/bash", X_OK))
     {
@@ -922,7 +930,7 @@ void svr_chansessinitialise() {
 }
 
 /* add a new environment variable, allocating space for the entry */
-void addnewvar(const char* param, const char* var) {
+void addnewvar(char* param, char* var) {
 
 	char* newvar = NULL;
 	int plen, vlen;

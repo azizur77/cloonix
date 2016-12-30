@@ -30,13 +30,13 @@
 #include "ssh.h"
 #include "io_clownix.h"
 
-static void send_msg_service_accept(unsigned char *name, int len);
+static void send_msg_service_accept(char *name, int len);
 
 /* processes a SSH_MSG_SERVICE_REQUEST, returning 0 if finished,
  * 1 if not */
 void recv_msg_service_request() {
 
-	unsigned char * name;
+	char * name;
 	unsigned int len;
 
 	name = buf_getstring(ses.payload, &len);
@@ -68,7 +68,7 @@ void recv_msg_service_request() {
 
 }
 
-static void send_msg_service_accept(unsigned char *name, int len) {
+static void send_msg_service_accept(char *name, int len) {
 	buf_putbyte(ses.writepayload, SSH_MSG_SERVICE_ACCEPT);
 	buf_putstring(ses.writepayload, name, len);
 	encrypt_packet();

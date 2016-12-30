@@ -6,12 +6,11 @@ RPCT=../../lib_rpct
 
 
 LIB_IO_CLOWNIX=$(LIB_CLOWNIX)
-LIBS=-L${LIB_IO_CLOWNIX} -lio_clownix \
-     -L${BLKD} -lblkd \
+LIBS=-L${BLKD} -lblkd \
      -L${RPCT} -lrpct \
      -lutil
 
-LIBSSL=-lssl -lcrypto
+LIBDBCLIENT=-L${LIB_IO_CLOWNIX} -lio_clownix -lssl -lcrypto
 CFLAGS+=-I${LIB_IO_CLOWNIX}/include 
 CFLAGS+=-I${GLOB_INCLUDE} 
 CFLAGS+=-I../cloonix_agent/src 
@@ -22,7 +21,7 @@ COMMONOBJS=dbutil.o buffer.o \
 
 
 SVROBJS= sshpty.o svr-session.o svr-service.o \
-	svr-chansession.o svr-main.o cloonix_serv.o
+	svr-chansession.o svr-main.o cloonix_serv.o cloonix_timer.o
 
 CLIOBJS=cli-main.o \
 		cli-session.o cli-runopts.o cli-chansession.o \
@@ -117,7 +116,7 @@ dropbear: $(HEADERS) $(LIBTOM_DEPS) Makefile
 	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBS)
 
 dbclient: $(HEADERS) $(LIBTOM_DEPS) Makefile
-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBS) $(LIBSSL)
+	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBDBCLIENT) $(LIBS)
 
 
 scp: $(SCPOBJS)  $(HEADERS) Makefile

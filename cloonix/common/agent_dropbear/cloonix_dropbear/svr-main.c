@@ -131,7 +131,7 @@ void main_noinetd() {
 
 		if (exitflag) {
 			unlink(svr_opts.pidfile);
-                        exit(0);
+                        wrapper_exit(0, (char *)__FILE__, __LINE__);
 		}
 		
 		if (val == 0) {

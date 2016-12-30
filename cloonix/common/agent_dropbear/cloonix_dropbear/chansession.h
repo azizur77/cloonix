@@ -38,13 +38,13 @@ struct exitinfo {
 
 struct ChanSess {
 
-	unsigned char * cmd; /* command to exec */
+	char * cmd; /* command to exec */
 	pid_t pid; /* child process pid */
 
 	/* pty details */
 	int master; /* the master terminal fd*/
 	int slave;
-	unsigned char * tty;
+	char * tty;
 
 	/* exit details */
 	struct exitinfo exit;
@@ -63,7 +63,7 @@ struct ChildPid {
 };
 
 
-void addnewvar(const char* param, const char* var);
+void addnewvar(char* param, char* var);
 
 void cli_send_chansess_request();
 void cli_tty_cleanup();

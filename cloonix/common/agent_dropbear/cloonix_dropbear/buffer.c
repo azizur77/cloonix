@@ -62,7 +62,7 @@ buffer* buf_new(unsigned int size) {
 	buf = (buffer*)m_malloc(sizeof(buffer));
 
 	if (size > 0) {
-		buf->data = (unsigned char*)m_malloc(size);
+		buf->data = (char*)m_malloc(size);
 	} else {
 		buf->data = NULL;
 	}
@@ -194,7 +194,7 @@ unsigned char* buf_getptr(buffer* buf, unsigned int len) {
 	if (buf->pos + len > buf->len) {
 		KOUT("Bad buf_getptr");
 	}
-	return &buf->data[buf->pos];
+	return ((unsigned char*) &buf->data[buf->pos]);
 }
 
 /* like buf_getptr, but checks against total size, not used length.
@@ -204,16 +204,16 @@ unsigned char* buf_getwriteptr(buffer* buf, unsigned int len) {
 	if (buf->pos + len > buf->size) {
 		KOUT("Bad buf_getwriteptr");
 	}
-	return &buf->data[buf->pos];
+	return ((unsigned char*) &buf->data[buf->pos]);
 }
 
 /* Return a null-terminated string, it is malloced, so must be free()ed
  * Note that the string isn't checked for null bytes, hence the retlen
  * may be longer than what is returned by strlen */
-unsigned char* buf_getstring(buffer* buf, unsigned int *retlen) {
+char* buf_getstring(buffer* buf, unsigned int *retlen) {
 
 	unsigned int len;
-	unsigned char* ret;
+	char* ret;
 	len = buf_getint(buf);
 	if (len > MAX_STRING_LEN) {
 		KOUT("String too long");
@@ -230,19 +230,6 @@ unsigned char* buf_getstring(buffer* buf, unsigned int *retlen) {
 	return ret;
 }
 
-/* Return a string as a newly allocated buffer */
-buffer * buf_getstringbuf(buffer *buf) {
-	buffer *ret;
-	unsigned char* str;
-	unsigned int len;
-	str = buf_getstring(buf, &len);
-	ret = m_malloc(sizeof(*ret));
-	ret->data = str;
-	ret->len = len;
-	ret->size = len;
-	ret->pos = 0;
-	return ret;
-}
 
 /* Just increment the buffer position the same as if we'd used buf_getstring,
  * but don't bother copying/malloc()ing for it */
@@ -269,7 +256,7 @@ void buf_putint(buffer* buf, int unsigned val) {
 }
 
 /* put a SSH style string into the buffer, increasing buffer len if required */
-void buf_putstring(buffer* buf, const unsigned char* str, unsigned int len) {
+void buf_putstring(buffer* buf, char* str, unsigned int len) {
 	
 	buf_putint(buf, len);
 	buf_putbytes(buf, str, len);
@@ -283,7 +270,7 @@ void buf_putbufstring(buffer *buf, const buffer* buf_str) {
 
 /* put the set of len bytes into the buffer, incrementing the pos, increasing
  * len if required */
-void buf_putbytes(buffer *buf, const unsigned char *bytes, unsigned int len) {
+void buf_putbytes(buffer *buf, char *bytes, unsigned int len) {
 	memcpy(buf_getwriteptr(buf, len), bytes, len);
 	buf_incrwritepos(buf, len);
 }

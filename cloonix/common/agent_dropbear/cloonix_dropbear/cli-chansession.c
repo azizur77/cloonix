@@ -54,7 +54,7 @@ const struct ChanType clichansess = {
 
 static void cli_chansessreq(struct Channel *channel) {
 
-	unsigned char* type = NULL;
+	char* type = NULL;
 	int wantreply;
 
 
@@ -82,7 +82,7 @@ static void cli_closechansess(struct Channel *channel)
   (void) channel;
   if (channel->init_done)
     cli_tty_cleanup(); 
-  exit(0);
+  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 
 /* Taken from OpenSSH's sshtty.c:
@@ -198,7 +198,7 @@ static void send_chansess_pty_req(struct Channel *channel)
 }
 
 static void send_chansess_shell_req(struct Channel *channel) {
-	unsigned char* reqtype = NULL;
+	char* reqtype = NULL;
 	if (cli_opts.cmd) {
 		reqtype = "exec";
 	} else {

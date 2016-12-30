@@ -46,6 +46,7 @@ char *ssh_program;
 /* This is used to store the pid of ssh_program */
 pid_t pid_cmd_do = -1;
 
+
 static void
 killchild(int signo)
 {
@@ -998,7 +999,7 @@ usage(void)
 	    "source and destination are either\n"
 	    " - a host file (or dir) path\n"
 	    " - <cloonix_name>:<path> \n\n");
-	exit(1);
+        exit(1);
 }
 
 void

@@ -14,6 +14,7 @@
 
 
 #include "io_clownix.h"
+#include "cloonix_timer.h"
 #include "util_sock.h"
 #include "queue.h"
 #include "packet.h"
@@ -289,13 +290,39 @@ static void channelio(fd_set *readfds, fd_set *writefds)
 }
 /*--------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static int delta_ms(struct timeval *cur, struct timeval *last)
+{
+  int delta = 0;
+  delta = (cur->tv_sec - last->tv_sec)*1000;
+  delta += cur->tv_usec/1000;
+  delta -= last->tv_usec/1000;
+  return delta;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void my_gettimeofday(struct timeval *tv)
+{
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+    KOUT(" ");
+  tv->tv_sec = ts.tv_sec;
+  tv->tv_usec = ts.tv_nsec/1000;
+}
+/*---------------------------------------------------------------------------*/
+
 /****************************************************************************/
 void cloonix_srv_session_loop(void) 
 {
+  static struct timeval last_heartbeat;
   fd_set readfd, writefd;
-  int val;
+  int val, delta;
   char x;
   struct sshsession *ses = get_srv_session_loop();
+  struct timeval cur;
+  cloonix_timer_init();
+  my_gettimeofday(&last_heartbeat);
   for(;;)
     {
     if ((ses->sock_in == -1) || (ses->sock_out == -1))
@@ -315,23 +342,31 @@ void cloonix_srv_session_loop(void)
       KOUT("Terminated by signal");
     if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
       KOUT("Error in select %d %d %d", errno, ses->sock_in, ses->sock_out);
-    if (FD_ISSET(ses->signal_pipe[0], &readfd))
+    if (val > 0)
       {
-      while (read(ses->signal_pipe[0], &x, 1) > 0) {}
+      if (FD_ISSET(ses->signal_pipe[0], &readfd))
+        {
+        while (read(ses->signal_pipe[0], &x, 1) > 0) {}
+        }
+      if (FD_ISSET(ses->sock_in, &readfd))
+        {
+        if (!ses->remoteident)
+          read_session_identification();
+        else
+          read_packet();
+        }
+      if (ses->payload != NULL)
+        process_packet();
+      maybe_flush_reply_queue();
+      channelio(&readfd, &writefd);
+      if (!isempty(&ses->writequeue))
+        write_packet();
       }
-    if (FD_ISSET(ses->sock_in, &readfd))
-      {
-      if (!ses->remoteident)
-        read_session_identification();
-      else
-        read_packet();
-      }
-    if (ses->payload != NULL)
-      process_packet();
-    maybe_flush_reply_queue();
-    channelio(&readfd, &writefd);
-    if (!isempty(&ses->writequeue))
-      write_packet();
+    my_gettimeofday(&cur);
+    delta = delta_ms(&cur, &last_heartbeat);
+    memcpy(&last_heartbeat, &cur, sizeof(struct timeval));
+    if (delta > 100)
+      cloonix_timer_beat();
     }
 }
 /*--------------------------------------------------------------------------*/

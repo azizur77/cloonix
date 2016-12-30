@@ -59,7 +59,7 @@ pty_release(const char *tty_name)
 
 
 void
-pty_make_controlling_tty(int *ttyfd, const char *tty_name)
+pty_make_controlling_tty(int *ttyfd, char *tty_name)
 {
 	int fd;
 	signal(SIGTTOU, SIG_IGN);

@@ -46,7 +46,7 @@ int buf_getline(buffer * line, FILE * authfile);
 
 void m_close(int fd);
 void * m_malloc(size_t size);
-void * m_strdup(const char * str);
+char * m_strdup(char * str);
 void * m_realloc(void* ptr, size_t size);
 #define m_free(X) do {free(X); (X) = NULL;} while (0); 
 void setnonblocking(int fd);

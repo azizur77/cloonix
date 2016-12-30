@@ -113,7 +113,7 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item) {KOUT(" ");}
 /****************************************************************************/
 static void cli_finished(int line) 
 {
-  (void) line;
+  KERR("%d", line);
   cli_tty_cleanup();
   session_cleanup();
 }
@@ -343,7 +343,7 @@ void cb_doors_end(int llid)
 {
   (void) llid;
   cli_finished(__LINE__); 
-  exit(0);
+  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -549,7 +549,7 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
         }
       if (evt & EPOLLERR)
         {
-        exit(1);
+        wrapper_exit(1, (char *)__FILE__, __LINE__);
         }
       if (evt & EPOLLHUP)
         {
@@ -651,24 +651,24 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
             g_cloonix_name)== 1)
           {
           printf("NOT REACHABLE: %s\n", g_cloonix_name);
-          exit(1);
+          wrapper_exit(1, (char *)__FILE__, __LINE__);
           }
         else if (sscanf(buf,"KO_name_not_found DBSSH_CLI_DOORS_RESP name=%s",
             g_cloonix_name)== 1)
           {
           printf("NOT FOUND: %s\n", g_cloonix_name);
-          exit(1);
+          wrapper_exit(1, (char *)__FILE__, __LINE__);
           }
         else if (sscanf(buf,"KO_bad_connection DBSSH_CLI_DOORS_RESP name=%s",
             g_cloonix_name)== 1)
           {
           printf("BAD CONNECT: %s\n", g_cloonix_name);
-          exit(1);
+          wrapper_exit(1, (char *)__FILE__, __LINE__);
           }
         else
           {
           printf("ERROR: %s %s\n",  buf, g_cloonix_name);
-          exit(1);
+          wrapper_exit(1, (char *)__FILE__, __LINE__);
           }
         }
       else
@@ -700,7 +700,7 @@ void heartbeat(int delta)
       close(get_fd_with_llid(g_connect_llid));
       doorways_sock_client_inet_delete(g_connect_llid);
       printf("\nTimeout during connect: %s\n\n", g_cloonix_doors);
-      exit(-1);
+      wrapper_exit(1, (char *)__FILE__, __LINE__);
       }
     }
   if (!(count%10))
@@ -771,7 +771,7 @@ static int callback_connect(void *ptr, int llid, int fd)
     if (!g_door_llid)
       {
       printf("\nConnect not possible: %s\n\n", g_cloonix_doors);
-      exit(-1);
+      wrapper_exit(1, (char *)__FILE__, __LINE__);
       }
     memset(buf, 0, 2*MAX_XAUTH_COOKIE);
     snprintf(buf, 2*MAX_XAUTH_COOKIE - 1, 
@@ -782,7 +782,7 @@ static int callback_connect(void *ptr, int llid, int fd)
                     doors_val_init_link, strlen(buf)+1, buf))
       {
       printf("ERROR INIT SEQ:\n%d, %s\n\n", (int) strlen(buf), buf);
-      exit(-1);
+      wrapper_exit(1, (char *)__FILE__, __LINE__);
       }
     }
   else
@@ -821,7 +821,7 @@ int cloonix_connect_remote(char *cloonix_doors,
   if (!test_param(cloonix_doors, &ip, &port))
     {
     printf("\nBad address %s\n\n", cloonix_doors);
-    exit(-1);
+    wrapper_exit(1, (char *)__FILE__, __LINE__);
     }
   g_door_llid = 0;
   g_connect_llid = doorways_sock_client_inet_start(ip, port, 
@@ -829,7 +829,7 @@ int cloonix_connect_remote(char *cloonix_doors,
   if (!g_connect_llid)
     {
     printf("\nCannot reach doorways %s\n\n", cloonix_doors);
-    exit(-1);
+    wrapper_exit(1, (char *)__FILE__, __LINE__);
     }
   return 0;
 }
