@@ -36,8 +36,6 @@
 #include "dbutil.h"
 #include "algo.h"
 
-extern int sessinitdone; /* Is set to 0 somewhere */
-extern int exitflag;
 
 void common_session_init(int sock_in, int sock_out);
 void session_loop(void(*loophandler)());
@@ -164,7 +162,7 @@ struct serversession {
 
 	/* Used to avoid a race in the exit returncode handling - see
 	 * svr-chansession.c for details */
-	struct exitinfo lastexit;
+	struct exxitinfo lastexxit;
 
 	/* The resolved remote address, used for lastlog etc */
 	char *vmname;

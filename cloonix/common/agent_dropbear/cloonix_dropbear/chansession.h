@@ -28,12 +28,12 @@
 #include "channel.h"
 #include "listener.h"
 
-struct exitinfo {
+struct exxitinfo {
 
-	int exitpid; /* -1 if not exited */
-	int exitstatus;
-	int exitsignal;
-	int exitcore;
+	int exxitpid; /* -1 if not exited */
+	int exxitstatus;
+	int exxitsignal;
+	int exxitcore;
 };
 
 struct ChanSess {
@@ -46,8 +46,7 @@ struct ChanSess {
 	int slave;
 	char * tty;
 
-	/* exit details */
-	struct exitinfo exit;
+	struct exxitinfo exxit;
 
         char *cloonix_name;
         char *cloonix_display;

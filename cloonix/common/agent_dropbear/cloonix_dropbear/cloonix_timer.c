@@ -117,11 +117,7 @@ void cloonix_timer_add(int beats, t_cloonix_timer_callback cb, void *data)
 /*****************************************************************************/
 void cloonix_timer_beat(void)
 {
-  static int count = 0;
   int idx;
-  count++;
-  if (count == 10)
-    count = 0;
   current_beat++;
   idx = (int) (current_beat % MAX_TIMEOUT_BEATS);
   process_all_current_grape_idx(&(grape[idx]));

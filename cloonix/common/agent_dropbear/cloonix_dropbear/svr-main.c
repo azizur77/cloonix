@@ -30,6 +30,8 @@
 
 #include "io_clownix.h"
 
+extern int exitflag;
+
 svr_runopts svr_opts;
 int cloonix_socket_listen_unix(char *unix_sock);
 static int listensockets(void)

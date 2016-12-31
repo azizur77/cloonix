@@ -34,6 +34,8 @@
 #include "chansession.h"
 #include "io_clownix.h"
 
+extern int sessinitdone;
+
 static void cli_remoteclosed();
 void cli_sessionloop();
 static void cli_session_init();

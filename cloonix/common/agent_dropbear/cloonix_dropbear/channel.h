@@ -44,6 +44,7 @@ struct ChanType;
 
 struct Channel {
 int init_done;
+int check_close_armed;
 int timeout_end_done;
 	unsigned int remotechan;
 	unsigned int recvwindow, transwindow;

@@ -50,6 +50,8 @@ void cli_sessionloop_winchange();
 
 
 
+extern int exitflag;
+
 extern struct sshsession ses; 
 
 #define MAX_XAUTH_COOKIE 300
@@ -113,7 +115,6 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item) {KOUT(" ");}
 /****************************************************************************/
 static void cli_finished(int line) 
 {
-  KERR("%d", line);
   cli_tty_cleanup();
   session_cleanup();
 }
@@ -529,7 +530,7 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
           {
           if (channel->writefd != 1)
             KOUT("%d", channel->writefd);
-          if (writechannel(channel, channel->writefd, channel->writebuf))
+          if (writechannel(channel, channel->writefd, channel->writebuf) == -1)
             {
             KERR(" ");
             cli_finished(__LINE__); 
@@ -539,7 +540,7 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
           {
           if (channel->errfd != 2)
             KOUT("%d", channel->errfd);
-          if (writechannel(channel, channel->errfd, channel->extrabuf))
+          if (writechannel(channel, channel->errfd, channel->extrabuf) ==  -1)
             {
             KERR(" ");
             cli_finished(__LINE__); 

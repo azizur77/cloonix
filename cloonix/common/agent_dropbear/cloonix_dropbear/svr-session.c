@@ -36,6 +36,7 @@
 #include "runopts.h"
 #include "io_clownix.h"
 
+extern int sessinitdone;
 
 static void svr_remoteclosed();
 
@@ -80,6 +81,7 @@ static void svr_remoteclosed()
 {
   if (!isempty(&ses.writequeue))
     KERR("Not empty ");
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
+  else
+    wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 

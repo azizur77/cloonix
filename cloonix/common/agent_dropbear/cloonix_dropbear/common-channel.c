@@ -49,6 +49,8 @@ static void close_chan_fd(struct Channel *channel, int fd);
  */
 #define RECV_MAX_CHANNEL_DATA_LEN (RECV_MAX_PAYLOAD_LEN-(1+4+4))
 
+void delay_before_exit(struct Channel *channel);
+
 
 void chancleanup() 
 {
@@ -112,6 +114,7 @@ void check_close(struct Channel *channel)
       && channel->ctype->check_close(channel))
     {
     channel->flushing = 1;
+KERR("flush ");
     }
 	
 	/* if a type-specific check_close is defined we will only exit
@@ -123,6 +126,7 @@ void check_close(struct Channel *channel)
       || channel->ctype->check_close(channel)) 
     {
     close_allowed = 1;
+KERR("close allowed ");
     }
 
   if (channel->recv_close && !write_pending(channel) && close_allowed) 
@@ -131,7 +135,7 @@ void check_close(struct Channel *channel)
       {
       send_msg_channel_close(channel);
       }
-KERR(" ");
+    KERR(" ");
     remove_channel(channel);
     return;
     }
@@ -139,11 +143,13 @@ KERR(" ");
 	/* have a server "session" and child has exited */
   if (channel->recv_eof && !write_pending(channel))
     {
+KERR("1close channel ");
     close_chan_fd(channel, channel->writefd);
     }
 
   if (channel->ctype->check_close && close_allowed)
     {
+KERR("2close channel ");
     close_chan_fd(channel, channel->writefd);
     }
 
@@ -153,14 +159,17 @@ KERR(" ");
 	   and if there isn't data available, the channel will get closed. */
   if (channel->flushing) 
     {
+KERR("flux ");
     if (channel->readfd >= 0 && channel->transwindow > 0) 
       {
       send_msg_channel_data(channel, 0);
+KERR("flux ");
       }
     if (ERRFD_IS_READ(channel) && channel->errfd >= 0 
         && channel->transwindow > 0) 
       {
       send_msg_channel_data(channel, 1);
+KERR("flux ");
       }
     }
 
@@ -169,6 +178,7 @@ KERR(" ");
        && (channel->readfd == -1) 
        && (ERRFD_IS_WRITE(channel) || channel->errfd == -1)) 
     {
+KERR("send eof ");
     send_msg_channel_eof(channel);
     }
 
@@ -180,7 +190,8 @@ KERR(" ");
       && close_allowed
       && !write_pending(channel))
     {
-    wrapper_exit(0, (char *)__FILE__, __LINE__);
+KERR("DELiA ");
+    delay_before_exit(channel);
     }
 }
 
@@ -199,7 +210,7 @@ void check_in_progress(struct Channel *channel) {
 		send_msg_channel_open_failure(channel->remotechan,
 				SSH_OPEN_CONNECT_FAILED, "", "");
 		close(channel->writefd);
-KERR(" ");
+                KERR(" ");
 		remove_channel(channel);
 	} else {
 		chan_initwritebuf(channel);
@@ -213,11 +224,11 @@ KERR(" ");
 /* Send the close message and set the channel as closed */
 static void send_msg_channel_close(struct Channel *channel) 
 {
-KERR(" ");
+  KERR(" ");
   if (channel->ctype->closehandler 
       && !channel->close_handler_done) 
     {
-KERR(" ");
+    KERR(" ");
     channel->ctype->closehandler(channel);
     channel->close_handler_done = 1;
     }
@@ -234,7 +245,6 @@ KERR(" ");
 /* call this when trans/eof channels are closed */
 static void send_msg_channel_eof(struct Channel *channel) 
 {
-KERR(" ");
   buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_EOF);
   buf_putint(ses.writepayload, channel->remotechan);
   encrypt_packet();
@@ -261,6 +271,8 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
       }
     return result;
     }
+  if (len != maxlen)
+    result = -2;
   cbuf_incrread(cbuf, len);
   channel->recvdonelen += len;
   if (channel->recvdonelen >= RECV_WINDOWEXTEND)
@@ -307,42 +319,39 @@ void setchannelfds(fd_set *readfds, fd_set *writefds)
 /* handle the channel EOF event, by closing the channel filedescriptor. The
  * channel isn't closed yet, it is left until the incoming (from the program
  * etc) FD is also EOF */
-void recv_msg_channel_eof() {
-
-	struct Channel * channel;
-        KERR(" ");
-	channel = getchannel_msg("EOF");
-if (channel)
+void recv_msg_channel_eof() 
 {
-	channel->recv_eof = 1;
-	check_close(channel);
-}
+  struct Channel * channel;
+  KERR(" ");
+  channel = getchannel_msg("EOF");
+  if (channel)
+    {
+    channel->recv_eof = 1;
+    check_close(channel);
+    }
 }
 
 
 /* Handle channel closure(), respond in kind and close the channels */
-void recv_msg_channel_close() {
-
-	struct Channel * channel;
-
-
-        KERR(" ");
-	channel = getchannel_msg("Close");
-if (channel)
+void recv_msg_channel_close() 
 {
-	channel->recv_eof = 1;
-	channel->recv_close = 1;
-
-	check_close(channel);
-}
+  struct Channel * channel;
+  KERR(" ");
+  channel = getchannel_msg("Close");
+  if (channel)
+    {
+    channel->recv_eof = 1;
+    channel->recv_close = 1;
+    check_close(channel);
+    }
 }
 
 /* Remove a channel entry, this is only executed after both sides have sent
  * channel close */
 static void remove_channel(struct Channel * channel) 
 {
-if (channel->init_done)
-{
+  if (channel->init_done)
+  {
   cbuf_free(channel->writebuf);
   channel->writebuf = NULL;
   if (channel->extrabuf)
@@ -364,9 +373,8 @@ if (channel->init_done)
     }
   if (!isempty(&ses.writequeue))
     KERR("not empty");
-}
+  }
   memset(channel, 0, sizeof(struct Channel)); 
-
   wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 
@@ -447,7 +455,7 @@ KOUT(" ");
 
 	if (len <= 0) {
 		if (len == 0 || ((errno != EINTR) && (errno != EAGAIN))) {
-			close_chan_fd(channel, fd);
+                        KERR("%d ", errno);
 		}
 		buf_setpos(ses.writepayload, 0);
 		buf_setlen(ses.writepayload, 0);
@@ -750,7 +758,7 @@ return;
 	if (channel->ctype->inithandler) {
 		ret = channel->ctype->inithandler(channel);
 		if (ret > 0) {
-KERR("%p", channel);
+                        KERR("%p", channel);
 			remove_channel(channel);
 			return;
 		}
@@ -759,31 +767,29 @@ KERR("%p", channel);
 }
 
 /* Notification that our channel open request failed */
-void recv_msg_channel_open_failure() {
-
-	struct Channel * channel;
-
-	channel = getchannel();
-if (!channel)
-return;
-
-	if (!channel->await_open) {
-		KOUT("Unexpected channel reply");
-	}
-	channel->await_open = 0;
-
-KERR("%p", channel);
-	remove_channel(channel);
+void recv_msg_channel_open_failure() 
+{
+  struct Channel * channel;
+  channel = getchannel();
+  KERR("%p", channel);
+  if (!channel)
+    return;
+  if (!channel->await_open) 
+    KOUT("Unexpected channel reply");
+  channel->await_open = 0;
+  remove_channel(channel);
 }
 
-void send_msg_request_success() {
-	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
-	encrypt_packet();
+void send_msg_request_success() 
+{
+  buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
+  encrypt_packet();
 }
 
-void send_msg_request_failure() {
-	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_FAILURE);
-	encrypt_packet();
+void send_msg_request_failure() 
+{
+  buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_FAILURE);
+  encrypt_packet();
 }
 
 struct Channel* get_any_ready_channel() 
@@ -798,9 +804,9 @@ struct Channel* get_any_ready_channel()
 
 void start_send_channel_request(struct Channel *channel, char *type) 
 {
-	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
-	buf_putint(ses.writepayload, channel->remotechan);
-	buf_putstring(ses.writepayload, type, strlen(type));
+  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
+  buf_putint(ses.writepayload, channel->remotechan);
+  buf_putstring(ses.writepayload, type, strlen(type));
 }
 
 void wrapper_exit(int val, char *file, int line)

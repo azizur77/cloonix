@@ -635,8 +635,6 @@ static void helper_rx_virtio_noctx(int dido_llid, int type, int val, char *rx)
   else if ((type==header_type_ctrl_agent) && (val==header_val_ack))
     {
     }
-  else
-    KERR("%d %d", type, val);
 }
 /*--------------------------------------------------------------------------*/
 

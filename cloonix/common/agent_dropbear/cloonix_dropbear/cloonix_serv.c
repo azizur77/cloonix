@@ -38,6 +38,7 @@ void check_close(struct Channel *channel);
 
 struct sshsession *get_srv_session_loop(void);
 
+extern int exitflag;
 
 /*---------------------------------------------------------------------------*/
 void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line){KOUT(" ");}
@@ -173,8 +174,8 @@ static int ident_readln(int fd, char* buf, int count)
         FD_ZERO(&fds);
         while (pos < count-1) {
                 FD_SET(fd, &fds);
-                timeout.tv_sec = 1;
-                timeout.tv_usec = 0;
+                timeout.tv_sec = 0;
+                timeout.tv_usec = 10000;
                 result = select(fd+1, &fds, NULL, NULL, &timeout);
                 if (result < 0) {
                         if ((errno == EINTR) || (errno == EAGAIN)) {
@@ -245,11 +246,32 @@ void read_session_identification()
 }
 /*--------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void delayed_check_close(void *data)
+{
+  struct Channel *channel = (struct Channel *) data;
+  channel->check_close_armed = 0; 
+  check_close(channel);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void delay_before_check_close(struct Channel *channel)
+{
+  if (channel->check_close_armed == 0)
+    {
+    channel->check_close_armed = 1; 
+    cloonix_timer_add(50, delayed_check_close, (void *) channel);
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+
 /****************************************************************************/
 static void channelio(fd_set *readfds, fd_set *writefds)
 {
   struct Channel *channel = &ses.channel;
-  int do_check_close = 0;
+  int wr_result, do_check_close = 0;
   if (channel->init_done)
     {
     if (channel->readfd >= 0 && FD_ISSET(channel->readfd, readfds))
@@ -266,25 +288,26 @@ static void channelio(fd_set *readfds, fd_set *writefds)
       }
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
       {
-      if (writechannel(channel, channel->writefd, channel->writebuf))
-        KOUT(" ");
+      wr_result = writechannel(channel, channel->writefd, channel->writebuf);
+      if (wr_result == -1)
+        KERR(" ");
       do_check_close = 1;
       }
     if ((ERRFD_IS_WRITE(channel)) &&
         (channel->errfd >= 0 && FD_ISSET(channel->errfd, writefds)))
       {
-      if (writechannel(channel, channel->errfd, channel->extrabuf))
-        KOUT(" ");
-      do_check_close = 1;
+      wr_result = writechannel(channel, channel->errfd, channel->extrabuf);
+      if (wr_result == -1)
+        KERR(" ");
       }
     if (ses.channel_signal_pending)
       {
-      do_check_close = 1;
       ses.channel_signal_pending = 0;
+      do_check_close = 1;
       }
     if (do_check_close)
       {
-      check_close(channel);
+      delay_before_check_close(channel);
       }
     }
 }
@@ -321,6 +344,7 @@ void cloonix_srv_session_loop(void)
   char x;
   struct sshsession *ses = get_srv_session_loop();
   struct timeval cur;
+  struct timeval timeout;
   cloonix_timer_init();
   my_gettimeofday(&last_heartbeat);
   for(;;)
@@ -337,7 +361,9 @@ void cloonix_srv_session_loop(void)
       FD_SET(ses->sock_out, &writefd);
     FD_SET(ses->signal_pipe[0], &readfd);
     setchannelfds(&readfd, &writefd);
-    val = select(ses->maxfd+1, &readfd, &writefd, NULL, NULL);
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 10000;
+    val = select(ses->maxfd+1, &readfd, &writefd, NULL, &timeout);
     if (exitflag)
       KOUT("Terminated by signal");
     if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
@@ -364,9 +390,11 @@ void cloonix_srv_session_loop(void)
       }
     my_gettimeofday(&cur);
     delta = delta_ms(&cur, &last_heartbeat);
-    memcpy(&last_heartbeat, &cur, sizeof(struct timeval));
-    if (delta > 100)
+    if (delta > 10)
+      {
       cloonix_timer_beat();
+      memcpy(&last_heartbeat, &cur, sizeof(struct timeval));
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
