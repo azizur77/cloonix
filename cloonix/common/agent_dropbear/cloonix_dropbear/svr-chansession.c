@@ -22,6 +22,7 @@
 
 /*---------------------------------------------------------------------------*/
 void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key);
+void call_child_death_detection(void);
 /*---------------------------------------------------------------------------*/
 static void sesssigchild_handler(int UNUSED(dummy));
 static int sessioncommand(struct Channel *channel, 
@@ -91,17 +92,15 @@ static void svr_sigchild_initialise(void)
 
 
 /*****************************************************************************/
-static void sesssigchild_handler(int UNUSED(dummy))
+void call_child_death_detection(void)
 {
-  int status;
+  int i, status;
   pid_t pid;
-  unsigned int i;
   struct exxitinfo *nexxit = NULL;
-  const int saved_errno = errno;
   KERR(" ");
-  ses.channel_signal_pending = 1;
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
+    KERR("PID: %d", pid);
     nexxit = NULL;
     for (i = 0; i < svr_ses.childpidsize; i++)
       {
@@ -131,9 +130,18 @@ static void sesssigchild_handler(int UNUSED(dummy))
       nexxit->exxitsignal = -1;
       }
     }
-  errno = saved_errno;
 }
 /*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void sesssigchild_handler(int UNUSED(dummy))
+{
+  KERR(" ");
+  ses.channel_signal_pending = 1;
+  call_child_death_detection();
+}
+/*---------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 static int spawn_command( struct ChanSess *chansess,

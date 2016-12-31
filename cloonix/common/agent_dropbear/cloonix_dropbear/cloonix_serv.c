@@ -32,7 +32,7 @@
 #define ERRFD_IS_WRITE(channel) (!ERRFD_IS_READ(channel))
 
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
-void send_msg_channel_data(struct Channel *channel, int isextended);
+int send_msg_channel_data(struct Channel *channel, int isextended);
 void check_close(struct Channel *channel);
 
 
@@ -271,33 +271,33 @@ void delay_before_check_close(struct Channel *channel)
 static void channelio(fd_set *readfds, fd_set *writefds)
 {
   struct Channel *channel = &ses.channel;
-  int wr_result, do_check_close = 0;
+  int do_check_close = 0;
   if (channel->init_done)
     {
     if (channel->readfd >= 0 && FD_ISSET(channel->readfd, readfds))
       {
-      send_msg_channel_data(channel, 0);
+      if (send_msg_channel_data(channel, 0) == -1)
+        KERR(" ");
       do_check_close = 1;
       }
     if ((ERRFD_IS_READ(channel)) && 
         (channel->errfd >= 0) &&
         (FD_ISSET(channel->errfd, readfds))) 
       {
-      send_msg_channel_data(channel, 1);
+      if (send_msg_channel_data(channel, 1) == -1)
+        KERR(" ");
       do_check_close = 1;
       }
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
       {
-      wr_result = writechannel(channel, channel->writefd, channel->writebuf);
-      if (wr_result == -1)
+      if (writechannel(channel, channel->writefd, channel->writebuf) == -1)
         KERR(" ");
       do_check_close = 1;
       }
     if ((ERRFD_IS_WRITE(channel)) &&
         (channel->errfd >= 0 && FD_ISSET(channel->errfd, writefds)))
       {
-      wr_result = writechannel(channel, channel->errfd, channel->extrabuf);
-      if (wr_result == -1)
+      if (writechannel(channel, channel->errfd, channel->extrabuf) == -1)
         KERR(" ");
       }
     if (ses.channel_signal_pending)

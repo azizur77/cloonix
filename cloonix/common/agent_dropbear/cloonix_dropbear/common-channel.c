@@ -31,7 +31,7 @@ static void send_msg_channel_open_confirmation(struct Channel* channel,
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 static void send_msg_channel_window_adjust(struct Channel *channel, 
 		unsigned int incr);
-void send_msg_channel_data(struct Channel *channel, int isextended);
+int send_msg_channel_data(struct Channel *channel, int isextended);
 static void send_msg_channel_eof(struct Channel *channel);
 static void send_msg_channel_close(struct Channel *channel);
 static void remove_channel(struct Channel *channel);
@@ -115,6 +115,7 @@ static unsigned int write_pending(struct Channel * channel)
 void check_close(struct Channel *channel) 
 {
   int close_allowed = 0;
+  call_child_death_detection();
   if ((!channel->flushing) && 
       (!channel->close_handler_done) &&
       (channel->ctype->check_close) &&
@@ -386,9 +387,9 @@ void recv_msg_channel_request()
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void send_msg_channel_data(struct Channel *channel, int isextended)
+int send_msg_channel_data(struct Channel *channel, int isextended)
 {
-  int len;
+  int len, result = 0;
   size_t maxlen, size_pos;
   int fd;
   if(channel->sent_close)
@@ -415,7 +416,11 @@ void send_msg_channel_data(struct Channel *channel, int isextended)
     if (len <= 0)
       {
       if (len == 0 || ((errno != EINTR) && (errno != EAGAIN)))
+        {
         KERR("%d ", errno);
+        close_chan_fd(channel, fd);
+        result = -1;
+        }
       buf_setpos(ses.writepayload, 0);
       buf_setlen(ses.writepayload, 0);
       }
@@ -430,6 +435,7 @@ void send_msg_channel_data(struct Channel *channel, int isextended)
         KERR("%d %d ", len, (int) maxlen);
       }
     }
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 

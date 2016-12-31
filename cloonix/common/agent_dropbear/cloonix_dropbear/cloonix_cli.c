@@ -38,7 +38,7 @@
 
 void read_packet(void);
 void cli_session(int sock_in, int sock_out); 
-void send_msg_channel_data(struct Channel *channel, int isextended);
+int send_msg_channel_data(struct Channel *channel, int isextended);
 void process_packet(void);
 void maybe_flush_reply_queue(void);
 void cli_sessionloop(void);
@@ -514,13 +514,21 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
           {
           if (channel->readfd != 0)
             KOUT("%d", channel->readfd);
-          send_msg_channel_data(channel, 0);
+          if (send_msg_channel_data(channel, 0) == -1)
+            {
+            KERR(" ");
+            cli_finished(__LINE__); 
+            }
           }
         if (fd == channel->errfd)
           {
           if (channel->errfd != 2)
             KOUT("%d", channel->errfd);
-          send_msg_channel_data(channel, 1);
+          if (send_msg_channel_data(channel, 1) == -1)
+            {
+            KERR(" ");
+            cli_finished(__LINE__); 
+            }
           }
         result = 0;
         }

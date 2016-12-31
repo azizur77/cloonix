@@ -36,6 +36,7 @@
 #include "io_clownix.h"
 
 
+void call_child_death_detection(void);
 static void cli_closechansess(struct Channel *channel);
 static int cli_initchansess(struct Channel *channel);
 static void cli_chansessreq(struct Channel *channel);
@@ -52,6 +53,12 @@ const struct ChanType clichansess = {
 	cli_closechansess, /* closehandler */
 };
 
+
+/*****************************************************************************/
+void call_child_death_detection(void)
+{
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 void delay_before_exit(struct Channel *channel)
