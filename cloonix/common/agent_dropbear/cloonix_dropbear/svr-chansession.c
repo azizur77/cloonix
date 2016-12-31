@@ -1,12 +1,10 @@
-
-/*
- * From:
- * Dropbear - a SSH2 server
- * Copyright (c) 2002,2003 Matt Johnston
- * All rights reserved.
-*/
-
-
+/****************************************************************************/
+/* Copy-pasted-modified for cloonix                License GPL-3.0+         */
+/*--------------------------------------------------------------------------*/
+/* Original code from:                                                      */
+/*                            Dropbear SSH                                  */
+/*                            Matt Johnston                                 */
+/****************************************************************************/
 #include "includes.h"
 #include "packet.h"
 #include "buffer.h"
@@ -201,6 +199,7 @@ static int spawn_command( struct ChanSess *chansess,
         result = DROPBEAR_SUCCESS;
         }
     }
+  }
   return result;
 }
 /*---------------------------------------------------------------------------*/
