@@ -261,7 +261,7 @@ void delay_before_check_close(struct Channel *channel)
   if (channel->check_close_armed == 0)
     {
     channel->check_close_armed = 1; 
-    cloonix_timer_add(50, delayed_check_close, (void *) channel);
+    cloonix_timer_add(1, delayed_check_close, (void *) channel);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -299,11 +299,6 @@ static void channelio(fd_set *readfds, fd_set *writefds)
       {
       if (writechannel(channel, channel->errfd, channel->extrabuf) == -1)
         KERR(" ");
-      }
-    if (ses.channel_signal_pending)
-      {
-      ses.channel_signal_pending = 0;
-      do_check_close = 1;
       }
     if (do_check_close)
       {

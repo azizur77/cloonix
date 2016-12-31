@@ -24,7 +24,6 @@
 void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key);
 void call_child_death_detection(void);
 /*---------------------------------------------------------------------------*/
-static void sesssigchild_handler(int UNUSED(dummy));
 static int sessioncommand(struct Channel *channel, 
                           struct ChanSess *chansess, int iscmd);
 static int sessionpty(struct ChanSess * chansess);
@@ -56,39 +55,6 @@ const struct ChanType svrchansess = {
 
 /* required to clear environment */
 extern char** environ;
-
-
-
-
-/*****************************************************************************/
-static void delayed_exit(void *data)
-{
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void delay_before_exit(struct Channel *channel)
-{
-  if (channel->timeout_end_done == 0)
-    {
-    channel->timeout_end_done = 1;
-    cloonix_timer_add(1, delayed_exit, NULL);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void svr_sigchild_initialise(void)
-{
-  struct sigaction sa_chld;
-  sa_chld.sa_handler = sesssigchild_handler;
-  sa_chld.sa_flags = SA_NOCLDSTOP;
-  sigemptyset(&sa_chld.sa_mask);
-  if (sigaction(SIGCHLD, &sa_chld, NULL) < 0)
-    KOUT("signal() error");
-}
-/*---------------------------------------------------------------------------*/
 
 
 /*****************************************************************************/
@@ -132,16 +98,6 @@ void call_child_death_detection(void)
     }
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void sesssigchild_handler(int UNUSED(dummy))
-{
-  KERR(" ");
-  ses.channel_signal_pending = 1;
-  call_child_death_detection();
-}
-/*---------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 static int spawn_command( struct ChanSess *chansess,
@@ -601,7 +557,6 @@ static int sessioncommand(struct Channel *channel,
         return DROPBEAR_FAILURE;
         }
       }
-    svr_sigchild_initialise();
     if (chansess->tty == NULL)
       result = noptycommand(channel, chansess);
     else

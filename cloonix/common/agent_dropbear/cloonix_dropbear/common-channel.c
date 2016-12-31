@@ -20,7 +20,6 @@
 #include "io_clownix.h"
 
 int main_i_run_in_kvm(void);
-void delay_before_exit(struct Channel *channel);
 size_t cloonix_read(int fd, void *ibuf, size_t count);
 size_t cloonix_write(int fd, const void *ibuf, size_t count);
 static void send_msg_channel_open_failure(unsigned int remotechan, int reason,
@@ -178,8 +177,7 @@ KERR("send eof ");
       (close_allowed) &&
       (!write_pending(channel)))
     {
-KERR("DELiA ");
-    delay_before_exit(channel);
+    wrapper_exit(0, (char *)__FILE__, __LINE__);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -487,7 +485,7 @@ void common_recv_msg_channel_data(struct Channel *channel,
       KOUT(" ");
     }
   else
-    KERR(" ");
+    wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 /*--------------------------------------------------------------------------*/
 

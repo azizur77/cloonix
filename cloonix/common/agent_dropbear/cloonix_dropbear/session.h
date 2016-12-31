@@ -142,7 +142,6 @@ struct sshsession {
 
 	struct Channel channel; 
 	const struct ChanType *chantype; 
-	int channel_signal_pending; /* Flag set by sigchld handler */
 
 	/* TCP forwarding - where manage listeners */
 	struct Listener ** listeners;

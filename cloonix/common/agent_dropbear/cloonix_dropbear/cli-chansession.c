@@ -61,13 +61,6 @@ void call_child_death_detection(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void delay_before_exit(struct Channel *channel)
-{
-  KERR("%p", channel);
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
-}
-/*---------------------------------------------------------------------------*/
-
 static void cli_chansessreq(struct Channel *channel) {
 
 	char* type = NULL;
