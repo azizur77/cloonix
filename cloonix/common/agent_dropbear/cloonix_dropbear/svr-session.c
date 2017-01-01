@@ -50,8 +50,6 @@ static const packettype svr_packettypes[] = {
 	{SSH_MSG_SERVICE_REQUEST, recv_msg_service_request}, /* server */
 	{SSH_MSG_CHANNEL_REQUEST, recv_msg_channel_request},
 	{SSH_MSG_CHANNEL_OPEN, recv_msg_channel_open},
-	{SSH_MSG_CHANNEL_EOF, recv_msg_channel_eof},
-	{SSH_MSG_CHANNEL_CLOSE, recv_msg_channel_close},
 	{SSH_MSG_CHANNEL_SUCCESS, ignore_recv_response},
 	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
 	{SSH_MSG_REQUEST_FAILURE, ignore_recv_response}, /* for keepalive */

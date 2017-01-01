@@ -20,6 +20,7 @@
 #include "io_clownix.h"
 
 int main_i_run_in_kvm(void);
+void call_child_death_detection(void);
 size_t cloonix_read(int fd, void *ibuf, size_t count);
 size_t cloonix_write(int fd, const void *ibuf, size_t count);
 static void send_msg_channel_open_failure(unsigned int remotechan, int reason,
@@ -31,11 +32,8 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 static void send_msg_channel_window_adjust(struct Channel *channel, 
 		unsigned int incr);
 int send_msg_channel_data(struct Channel *channel, int isextended);
-static void send_msg_channel_eof(struct Channel *channel);
-static void send_msg_channel_close(struct Channel *channel);
 static void remove_channel(struct Channel *channel);
 void check_in_progress(struct Channel *channel);
-static unsigned int write_pending(struct Channel * channel);
 void check_close(struct Channel *channel);
 static void close_chan_fd(struct Channel *channel, int fd);
 
@@ -93,91 +91,31 @@ struct Channel* getchannel() {
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static unsigned int write_pending(struct Channel * channel) 
-{
-  int result = 0;
-  if (channel->init_done)
-    {
-    if ((channel->writefd >= 0) && 
-        (cbuf_getused(channel->writebuf) > 0)) 
-      result = 1;
-    else if ((channel->errfd >= 0) && 
-             (channel->extrabuf) && 
-             (cbuf_getused(channel->extrabuf) > 0))
-      result = 1;
-    }
-  return result;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 void check_close(struct Channel *channel) 
 {
-  int close_allowed = 0;
   call_child_death_detection();
-  if ((!channel->flushing) && 
-      (!channel->close_handler_done) &&
-      (channel->ctype->check_close) &&
+  if ((channel->ctype->check_close) &&
       (channel->ctype->check_close(channel)))
-    channel->flushing = 1;
-  if ((!channel->ctype->check_close) ||
-      (channel->close_handler_done)  ||
-      (channel->ctype->check_close(channel))) 
-    close_allowed = 1;
-  if ((channel->recv_close) && 
-      (!write_pending(channel)) &&
-      (close_allowed))
     {
-    KERR(" ");
-    if (!channel->sent_close) 
-      send_msg_channel_close(channel);
-    remove_channel(channel);
-    return;
-    }
-  if ((channel->recv_eof) && 
-      (!write_pending(channel)))
-    {
-KERR("1close channel ");
-    close_chan_fd(channel, channel->writefd);
-    }
-  if ((channel->ctype->check_close) && 
-      (close_allowed))
-    {
-KERR("2close channel ");
-    close_chan_fd(channel, channel->writefd);
-    }
-  if (channel->flushing) 
-    {
-KERR("1flux ");
-    if ((channel->readfd >= 0) && 
-        (channel->transwindow > 0)) 
-      {
-      send_msg_channel_data(channel, 0);
-KERR("2flux ");
+    if (channel->flushing == 0)
+      { 
+      if (!((channel->writefd >= 0) && 
+           (cbuf_getused(channel->writebuf) > 0))) 
+        {
+        KERR("%d" , getpid());
+        channel->flushing = 1;
+        close_chan_fd(channel, channel->readfd);
+        close_chan_fd(channel, channel->errfd);
+        close_chan_fd(channel, channel->writefd);
+        }
+      else
+        KERR("%d" , getpid());
       }
-    if ((ERRFD_IS_READ(channel)) && 
-        (channel->errfd >= 0 ) &&
-        (channel->transwindow > 0))
+    else
       {
-      send_msg_channel_data(channel, 1);
-KERR("3flux ");
+      if (isempty(&(ses.writequeue)))
+        wrapper_exit(0, (char *)__FILE__, __LINE__);
       }
-    }
-  if ((!channel->sent_eof) &&
-      (channel->readfd == -1) && 
-      ((ERRFD_IS_WRITE(channel)) || (channel->errfd == -1))) 
-    {
-KERR("send eof ");
-    send_msg_channel_eof(channel);
-    }
-  if ((channel->readfd == -1) &&
-      (channel->writefd == -1) && 
-      ((ERRFD_IS_WRITE(channel)) || (channel->errfd == -1)) &&
-      (!channel->sent_close) &&
-      (close_allowed) &&
-      (!write_pending(channel)))
-    {
-    wrapper_exit(0, (char *)__FILE__, __LINE__);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -204,38 +142,6 @@ void check_in_progress(struct Channel *channel)
                                        channel->recvmaxpacket);
     channel->readfd = channel->writefd;
     }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void send_msg_channel_close(struct Channel *channel) 
-{
-  KERR(" ");
-  if (channel->ctype->closehandler 
-      && !channel->close_handler_done) 
-    {
-    KERR(" ");
-    channel->ctype->closehandler(channel);
-    channel->close_handler_done = 1;
-    }
-  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_CLOSE);
-  buf_putint(ses.writepayload, channel->remotechan);
-  encrypt_packet();
-  channel->sent_eof = 1;
-  channel->sent_close = 1;
-  close_chan_fd(channel, channel->readfd);
-  close_chan_fd(channel, channel->errfd);
-  close_chan_fd(channel, channel->writefd);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void send_msg_channel_eof(struct Channel *channel) 
-{
-  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_EOF);
-  buf_putint(ses.writepayload, channel->remotechan);
-  encrypt_packet();
-  channel->sent_eof = 1;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -301,35 +207,6 @@ void setchannelfds(fd_set *readfds, fd_set *writefds)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void recv_msg_channel_eof() 
-{
-  struct Channel * channel;
-  KERR(" ");
-  channel = getchannel_msg("EOF");
-  if (channel)
-    {
-    channel->recv_eof = 1;
-    check_close(channel);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void recv_msg_channel_close() 
-{
-  struct Channel * channel;
-  KERR(" ");
-  channel = getchannel_msg("Close");
-  if (channel)
-    {
-    channel->recv_eof = 1;
-    channel->recv_close = 1;
-    check_close(channel);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 static void remove_channel(struct Channel * channel) 
 {
   if (channel->init_done)
@@ -369,13 +246,14 @@ void recv_msg_channel_request()
   channel = getchannel();
   if (!channel)
     KERR(" ");
-  else if (channel->sent_close)
-    KERR(" ");
   else if ((channel->ctype->reqhandler) && 
            (!channel->close_handler_done))
+    {
     channel->ctype->reqhandler(channel);
+    }
   else
     {
+    KERR(" ");
     buf_eatstring(ses.payload);
     wantreply = buf_getbool(ses.payload);
     if (wantreply)
@@ -387,11 +265,8 @@ void recv_msg_channel_request()
 /****************************************************************************/
 int send_msg_channel_data(struct Channel *channel, int isextended)
 {
-  int len, result = 0;
+  int err, val, fd, len, result = 0;
   size_t maxlen, size_pos;
-  int fd;
-  if(channel->sent_close)
-    KOUT(" ");
   if (isextended)
     fd = channel->errfd;
   else
@@ -403,34 +278,38 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
                ses.writepayload->size - 1 - 4 - 4 - (isextended ? 4 : 0));
   if (maxlen > 0)
     {
-    buf_putbyte(ses.writepayload, 
-    isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
-    buf_putint(ses.writepayload, channel->remotechan);
-    if (isextended)
-      buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
-    size_pos = ses.writepayload->pos;
-    buf_putint(ses.writepayload, 0);
-    len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
-    if (len <= 0)
+    err = ioctl(fd, SIOCINQ, &val);
+    if ((err != 0) || (val < 0))
       {
-      if (len == 0 || ((errno != EINTR) && (errno != EAGAIN)))
-        {
-        KERR("%d ", errno);
-        close_chan_fd(channel, fd);
-        result = -1;
-        }
-      buf_setpos(ses.writepayload, 0);
-      buf_setlen(ses.writepayload, 0);
+      KERR("%d ", errno);
+      close_chan_fd(channel, fd);
+      result = -1;
       }
-    else
+    if (val > 0)
       {
-      buf_incrwritepos(ses.writepayload, len);
-      buf_setpos(ses.writepayload, size_pos);
-      buf_putint(ses.writepayload, len);
-      channel->transwindow -= len;
-      encrypt_packet();
-      if (channel->flushing && len < (ssize_t)maxlen)
-        KERR("%d %d ", len, (int) maxlen);
+      buf_putbyte(ses.writepayload, 
+      isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
+      buf_putint(ses.writepayload, channel->remotechan);
+      if (isextended)
+        buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
+      size_pos = ses.writepayload->pos;
+      buf_putint(ses.writepayload, 0);
+      len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
+      if (len <= 0)
+        {
+        if (len == 0 || ((errno != EINTR) && (errno != EAGAIN)))
+          KOUT(" ");
+        }
+      else
+        {
+        buf_incrwritepos(ses.writepayload, len);
+        buf_setpos(ses.writepayload, size_pos);
+        buf_putint(ses.writepayload, len);
+        channel->transwindow -= len;
+        encrypt_packet();
+        if (channel->flushing && len < (ssize_t)maxlen)
+          KERR("%d %d ", len, (int) maxlen);
+        }
       }
     }
   return result;
@@ -459,8 +338,6 @@ void common_recv_msg_channel_data(struct Channel *channel,
   unsigned int maxdata;
   unsigned int buflen;
   unsigned int len;
-  if (channel->recv_eof)
-    KOUT("Received data after eof");
   if ((fd >= 0) && (cbuf))
     {
     datalen = buf_getint(ses.payload);
@@ -628,17 +505,13 @@ static void send_msg_channel_open_confirmation(struct Channel* channel,
 /****************************************************************************/
 static void close_chan_fd(struct Channel *channel, int fd)
 {
-  int closein = 0, closeout = 0;
   close(fd);
-  closein = closeout = 1;
-  if (closeout && (fd == channel->readfd))
+  if (fd == channel->readfd)
     channel->readfd = -1;
-  if (closeout && ERRFD_IS_READ(channel) && (fd == channel->errfd))
+  if (fd == channel->errfd)
     channel->errfd = -1;
-  if (closein && fd == channel->writefd)
+  if (fd == channel->writefd)
     channel->writefd = -1;
-  if (closein && ERRFD_IS_WRITE(channel) && (fd == channel->errfd))
-    channel->errfd = -1;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -719,18 +592,6 @@ void send_msg_request_failure()
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-struct Channel* get_any_ready_channel() 
-{
-  struct Channel *chan = &ses.channel;
-  if ((!(chan->sent_eof) || (chan->recv_eof)) &&
-      (!(chan->await_open))) 
-    return chan;
-  else
-    return NULL;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 void start_send_channel_request(struct Channel *channel, char *type) 
 {
   buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
@@ -742,7 +603,7 @@ void start_send_channel_request(struct Channel *channel, char *type)
 /****************************************************************************/
 void wrapper_exit(int val, char *file, int line)
 {
-  KERR("%s %d", file, line); 
+  KERR("%s %d   %d", file, line, getpid()); 
   exit(val);
 }
 /*--------------------------------------------------------------------------*/

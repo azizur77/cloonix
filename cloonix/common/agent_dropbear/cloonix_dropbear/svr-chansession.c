@@ -63,7 +63,6 @@ void call_child_death_detection(void)
   int i, status;
   pid_t pid;
   struct exxitinfo *nexxit = NULL;
-  KERR(" ");
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
     KERR("PID: %d", pid);
@@ -206,8 +205,6 @@ static void run_shell_command(char *cmd, unsigned int maxfd,
       }
     }
   if (signal(SIGPIPE, SIG_DFL) == SIG_ERR)
-    KOUT("signal() error");
-  if (signal(SIGCHLD, SIG_DFL) == SIG_ERR)
     KOUT("signal() error");
   for (i = 3; i <= maxfd; i++)
     {
@@ -368,11 +365,7 @@ static void chansessionrequest(struct Channel *channel)
     else if (strcmp(type, "shell") == 0)
       ret = sessioncommand(channel, chansess, 0);
     else if (strcmp(type, "pty-req") == 0) 
-      {
-      if (signal(SIGCHLD, SIG_DFL) == SIG_ERR)
-        KOUT("signal() error");
       ret = sessionpty(chansess);
-      } 
     else if (strcmp(type, "exec") == 0)
       ret = sessioncommand(channel, chansess, 1);
     else if (strcmp(type, "signal") == 0)
@@ -454,58 +447,59 @@ static void get_termmodes(struct ChanSess *chansess)
   const struct TermCode * termcode;
   unsigned int len;
   len = buf_getint(ses.payload);
-  if (tcgetattr(chansess->master, &termio) != -1)
-    KERR(" ");
-  else if (len != ses.payload->len - ses.payload->pos) 
-    KERR("%d %d %d", len, ses.payload->len, ses.payload->pos);
-  else if (len == 0)
-    KERR(" ");
-  else
+  if (tcgetattr(chansess->master, &termio) == -1)
     {
-    while (((opcode = buf_getbyte(ses.payload)) != 0x00) && opcode <= 159)
-      {
-      value = buf_getint(ses.payload);
-      if (opcode > MAX_TERMCODE)
-        continue;
-      termcode = &termcodes[(unsigned int)opcode];
-      switch (termcode->type)
-        {
-        case TERMCODE_NONE:
-        break;
-        case TERMCODE_CONTROLCHAR:
-          termio.c_cc[termcode->mapcode] = value;
-        break;
-        case TERMCODE_INPUT:
-          if (value)
-            termio.c_iflag |= termcode->mapcode;
-          else
-            termio.c_iflag &= ~(termcode->mapcode);
-        break;
-        case TERMCODE_OUTPUT:
-          if (value)
-            termio.c_oflag |= termcode->mapcode;
-          else
-            termio.c_oflag &= ~(termcode->mapcode);
-        break;
-        case TERMCODE_LOCAL:
-          if (value)
-            termio.c_lflag |= termcode->mapcode;
-          else
-            termio.c_lflag &= ~(termcode->mapcode);
-        break;
-        case TERMCODE_CONTROL:
-          if (value)
-            termio.c_cflag |= termcode->mapcode;
-          else
-            termio.c_cflag &= ~(termcode->mapcode);
-          break;
-        default:
-          KERR(" ");
-        break;
-        }
-      }
-    if (tcsetattr(chansess->master, TCSANOW, &termio) < 0)
+    if (len != ses.payload->len - ses.payload->pos) 
+      KERR("%d %d %d", len, ses.payload->len, ses.payload->pos);
+    else if (len == 0)
       KERR(" ");
+    else
+      {
+      while (((opcode = buf_getbyte(ses.payload)) != 0x00) && opcode <= 159)
+        {
+        value = buf_getint(ses.payload);
+        if (opcode > MAX_TERMCODE)
+          continue;
+        termcode = &termcodes[(unsigned int)opcode];
+        switch (termcode->type)
+          {
+          case TERMCODE_NONE:
+          break;
+          case TERMCODE_CONTROLCHAR:
+            termio.c_cc[termcode->mapcode] = value;
+          break;
+          case TERMCODE_INPUT:
+            if (value)
+              termio.c_iflag |= termcode->mapcode;
+            else
+              termio.c_iflag &= ~(termcode->mapcode);
+          break;
+          case TERMCODE_OUTPUT:
+            if (value)
+              termio.c_oflag |= termcode->mapcode;
+            else
+              termio.c_oflag &= ~(termcode->mapcode);
+          break;
+          case TERMCODE_LOCAL:
+            if (value)
+              termio.c_lflag |= termcode->mapcode;
+            else
+              termio.c_lflag &= ~(termcode->mapcode);
+          break;
+          case TERMCODE_CONTROL:
+            if (value)
+              termio.c_cflag |= termcode->mapcode;
+            else
+              termio.c_cflag &= ~(termcode->mapcode);
+            break;
+          default:
+            KERR(" ");
+          break;
+          }
+        }
+      if (tcsetattr(chansess->master, TCSANOW, &termio) < 0)
+        KERR(" ");
+      }
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -557,6 +551,8 @@ static int sessioncommand(struct Channel *channel,
         return DROPBEAR_FAILURE;
         }
       }
+    if (signal(SIGCHLD, SIG_DFL) == SIG_ERR)
+      KOUT("signal() error");
     if (chansess->tty == NULL)
       result = noptycommand(channel, chansess);
     else
@@ -623,8 +619,6 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess)
         {
         if (strcmp(chansess->cloonix_xauth_cookie_key, "NO_X11_FORWARDING_COOKIE"))
           {
-          if (signal(SIGCHLD, SIG_DFL) == SIG_ERR)
-            KOUT("signal() error");
           cloonix_serv_xauth_cookie_key(chansess->cloonix_display,
                                         chansess->cloonix_xauth_cookie_key);
           }

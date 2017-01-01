@@ -54,8 +54,6 @@ static const packettype cli_packettypes[] = {
 	{SSH_MSG_SERVICE_ACCEPT, recv_msg_service_accept}, /* client */
 	{SSH_MSG_CHANNEL_REQUEST, recv_msg_channel_request},
 	{SSH_MSG_CHANNEL_OPEN, recv_msg_channel_open},
-	{SSH_MSG_CHANNEL_EOF, recv_msg_channel_eof},
-	{SSH_MSG_CHANNEL_CLOSE, recv_msg_channel_close},
 	{SSH_MSG_CHANNEL_OPEN_CONFIRMATION, recv_msg_channel_open_confirmation},
 	{SSH_MSG_CHANNEL_OPEN_FAILURE, recv_msg_channel_open_failure},
 	{SSH_MSG_GLOBAL_REQUEST, recv_msg_global_request_cli},

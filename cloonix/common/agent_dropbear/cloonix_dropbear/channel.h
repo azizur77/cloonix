@@ -44,8 +44,6 @@ struct ChanType;
 
 struct Channel {
 int init_done;
-int check_close_armed;
-int timeout_end_done;
 	unsigned int remotechan;
 	unsigned int recvwindow, transwindow;
 	unsigned int recvdonelen;
@@ -59,10 +57,6 @@ int timeout_end_done;
 							 initially NULL */
 	circbuffer *extrabuf; /* extended-data for the program - used like writebuf
 					     but for stderr */
-
-	/* whether close/eof messages have been exchanged */
-	int sent_close, recv_close;
-	int recv_eof, sent_eof;
 
 	/* Set after running the ChanType-specific close hander
 	 * to ensure we don't run it twice (nor type->checkclose()). */
@@ -94,7 +88,6 @@ struct ChanType {
 void chancleanup();
 void setchannelfds(fd_set *readfd, fd_set *writefd);
 struct Channel* getchannel();
-struct Channel* get_any_ready_channel();
 void recv_msg_channel_open();
 void recv_msg_channel_request();
 void send_msg_channel_failure(struct Channel *channel);
@@ -102,8 +95,6 @@ void send_msg_channel_success(struct Channel *channel);
 void recv_msg_channel_data();
 void recv_msg_channel_extended_data();
 void recv_msg_channel_window_adjust();
-void recv_msg_channel_close();
-void recv_msg_channel_eof();
 
 void common_recv_msg_channel_data(struct Channel *channel, int fd, 
 		circbuffer * buf);

@@ -247,38 +247,24 @@ void read_session_identification()
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void delayed_check_close(void *data)
+static void poll_check_close(void *data)
 {
   struct Channel *channel = (struct Channel *) data;
-  channel->check_close_armed = 0; 
   check_close(channel);
+  cloonix_timer_add(1, poll_check_close, (void *) channel);
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void delay_before_check_close(struct Channel *channel)
-{
-  if (channel->check_close_armed == 0)
-    {
-    channel->check_close_armed = 1; 
-    cloonix_timer_add(1, delayed_check_close, (void *) channel);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
 
 /****************************************************************************/
 static void channelio(fd_set *readfds, fd_set *writefds)
 {
-  struct Channel *channel = &ses.channel;
-  int do_check_close = 0;
+  struct Channel *channel = &(ses.channel);
   if (channel->init_done)
     {
     if (channel->readfd >= 0 && FD_ISSET(channel->readfd, readfds))
       {
       if (send_msg_channel_data(channel, 0) == -1)
         KERR(" ");
-      do_check_close = 1;
       }
     if ((ERRFD_IS_READ(channel)) && 
         (channel->errfd >= 0) &&
@@ -286,23 +272,17 @@ static void channelio(fd_set *readfds, fd_set *writefds)
       {
       if (send_msg_channel_data(channel, 1) == -1)
         KERR(" ");
-      do_check_close = 1;
       }
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
       {
       if (writechannel(channel, channel->writefd, channel->writebuf) == -1)
         KERR(" ");
-      do_check_close = 1;
       }
     if ((ERRFD_IS_WRITE(channel)) &&
         (channel->errfd >= 0 && FD_ISSET(channel->errfd, writefds)))
       {
       if (writechannel(channel, channel->errfd, channel->extrabuf) == -1)
         KERR(" ");
-      }
-    if (do_check_close)
-      {
-      delay_before_check_close(channel);
       }
     }
 }
@@ -337,51 +317,63 @@ void cloonix_srv_session_loop(void)
   fd_set readfd, writefd;
   int val, delta;
   char x;
-  struct sshsession *ses = get_srv_session_loop();
+  struct sshsession *pses = get_srv_session_loop();
   struct timeval cur;
   struct timeval timeout;
   cloonix_timer_init();
+  cloonix_timer_add(1, poll_check_close, (void *) &(pses->channel));
   my_gettimeofday(&last_heartbeat);
   for(;;)
     {
-    if ((ses->sock_in == -1) || (ses->sock_out == -1))
-      KOUT("%d %d", ses->sock_in, ses->sock_out);
-    FD_ZERO(&writefd);
-    FD_ZERO(&readfd);
-    if (ses->payload)
-      KOUT(" ");
-    if (ses->remoteident || isempty(&ses->writequeue))
-      FD_SET(ses->sock_in, &readfd);
-    if (!isempty(&ses->writequeue))
-      FD_SET(ses->sock_out, &writefd);
-    FD_SET(ses->signal_pipe[0], &readfd);
-    setchannelfds(&readfd, &writefd);
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 10000;
-    val = select(ses->maxfd+1, &readfd, &writefd, NULL, &timeout);
-    if (exitflag)
-      KOUT("Terminated by signal");
-    if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
-      KOUT("Error in select %d %d %d", errno, ses->sock_in, ses->sock_out);
-    if (val > 0)
+    if ((pses->sock_in == -1) || (pses->sock_out == -1))
+      KOUT("%d %d", pses->sock_in, pses->sock_out);
+
+    if (pses->channel.flushing == 1)
       {
-      if (FD_ISSET(ses->signal_pipe[0], &readfd))
-        {
-        while (read(ses->signal_pipe[0], &x, 1) > 0) {}
-        }
-      if (FD_ISSET(ses->sock_in, &readfd))
-        {
-        if (!ses->remoteident)
-          read_session_identification();
-        else
-          read_packet();
-        }
-      if (ses->payload != NULL)
-        process_packet();
-      maybe_flush_reply_queue();
-      channelio(&readfd, &writefd);
-      if (!isempty(&ses->writequeue))
+      if (!isempty(&(pses->writequeue)))
         write_packet();
+      else
+        check_close(&(pses->channel));
+      }
+    else
+      {
+      FD_ZERO(&writefd);
+      FD_ZERO(&readfd);
+      if (pses->payload)
+        KOUT(" ");
+      if (pses->remoteident || isempty(&(pses->writequeue)))
+        FD_SET(pses->sock_in, &readfd);
+      if (!isempty(&(pses->writequeue)))
+        FD_SET(pses->sock_out, &writefd);
+      FD_SET(pses->signal_pipe[0], &readfd);
+      setchannelfds(&readfd, &writefd);
+      timeout.tv_sec = 0;
+      timeout.tv_usec = 10000;
+      val = select(pses->maxfd+1, &readfd, &writefd, NULL, &timeout);
+      if (exitflag)
+        KOUT("Terminated by signal");
+      if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
+        KOUT("Error in select %d %d %d", errno, pses->sock_in, pses->sock_out);
+      if (val > 0)
+        {
+        if (FD_ISSET(pses->signal_pipe[0], &readfd))
+          {
+          while (read(pses->signal_pipe[0], &x, 1) > 0) {}
+          }
+        if (FD_ISSET(pses->sock_in, &readfd))
+          {
+          if (!pses->remoteident)
+            read_session_identification();
+          else
+            read_packet();
+          }
+        if (pses->payload != NULL)
+          process_packet();
+        maybe_flush_reply_queue();
+        channelio(&readfd, &writefd);
+        if (!isempty(&(pses->writequeue)))
+          write_packet();
+        }
       }
     my_gettimeofday(&cur);
     delta = delta_ms(&cur, &last_heartbeat);
