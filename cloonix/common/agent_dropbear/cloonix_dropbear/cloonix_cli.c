@@ -488,7 +488,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
   int i, fd;
   uint32_t evt;
   int result = -1;
-  char x;
   if (exitflag)
     {
     cli_finished(__LINE__); 

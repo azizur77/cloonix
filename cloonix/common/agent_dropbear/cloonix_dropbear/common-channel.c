@@ -99,7 +99,6 @@ void check_fd_and_close_on_error(struct Channel *channel)
     err = ioctl(channel->errfd, SIOCINQ, &val);
     if ((err != 0) || (val < 0))
       {
-      KERR("%d ", errno);
       close_chan_fd(channel, channel->errfd);
       }
     }
@@ -108,7 +107,6 @@ void check_fd_and_close_on_error(struct Channel *channel)
     err = ioctl(channel->readfd, SIOCINQ, &val);
     if ((err != 0) || (val < 0))
       {
-      KERR("%d ", errno);
       close_chan_fd(channel, channel->readfd);
       }
     }
@@ -117,7 +115,6 @@ void check_fd_and_close_on_error(struct Channel *channel)
     err = ioctl(channel->writefd, SIOCOUTQ, &val);
     if (err != 0)
       {
-      KERR("%d ", errno);
       close_chan_fd(channel, channel->writefd);
       }
     }
@@ -132,20 +129,9 @@ static int sock_out_is_empty(void)
     {
     err = ioctl(ses.sock_out, SIOCOUTQ, &val);
     if (err != 0)
-      {
-      KERR("%d ", errno); 
       result = 1;
-      }
-    else
-      {
-      if (val != 0)
-        KERR(" ");
-      else
-        {
-        KERR(" ");
-        result = 1;
-        }
-      }
+    else if (val == 0)
+      result = 1;
     }
   return result;
 }
@@ -166,21 +152,16 @@ void check_close(struct Channel *channel)
           (channel->readfd == -1) &&
           (channel->writefd == -1))
         {
-        KERR(" ");
         channel->flushing = 1;
         }
-      else
-        KERR("%d %d %d", channel->errfd, channel->readfd, channel->writefd);
       }
     else if (channel->flushing == 1)
       {
-      KERR(" ");
       if (sock_out_is_empty())
         channel->flushing = 2;
       }
     else if (channel->flushing == 2)
       {
-      KERR(" ");
       wrapper_exit(0, (char *)__FILE__, __LINE__);
       }
     }
@@ -319,7 +300,6 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
   err = ioctl(fd, SIOCINQ, &val);
   if ((err != 0) || (val <= 0))
     {
-    KERR("%d %d", errno, val);
     close_chan_fd(channel, fd);
     result = -1;
     }
@@ -340,7 +320,7 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
     if (len <= 0)
       KOUT(" ");
     if (len < val)
-      KERR("%d %d %d", maxlen, len, val);
+      KERR("%d %d %d", (int) maxlen, len, val);
     buf_incrwritepos(ses.writepayload, len);
     buf_setpos(ses.writepayload, size_pos);
     buf_putint(ses.writepayload, len);
@@ -638,7 +618,7 @@ void start_send_channel_request(struct Channel *channel, char *type)
 /****************************************************************************/
 void wrapper_exit(int val, char *file, int line)
 {
-  KERR("%s %d   %d", file, line, getpid()); 
+//  KERR("%s %d   %d", file, line, getpid()); 
   exit(val);
 }
 /*--------------------------------------------------------------------------*/

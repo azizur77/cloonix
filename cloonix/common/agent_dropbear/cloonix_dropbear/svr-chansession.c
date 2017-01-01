@@ -564,7 +564,7 @@ static int sessioncommand(struct Channel *channel,
 /*****************************************************************************/
 static int noptycommand(struct Channel *channel, struct ChanSess *chansess)
 {
-  int i, result;
+  int result;
   result = spawn_command(chansess, &channel->writefd, &channel->readfd, 
                          &channel->errfd, &chansess->pid);
   if (result == DROPBEAR_SUCCESS)

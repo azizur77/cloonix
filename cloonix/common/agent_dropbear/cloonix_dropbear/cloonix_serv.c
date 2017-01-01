@@ -259,17 +259,11 @@ static void channelio(fd_set *readfds, fd_set *writefds)
   if (channel->init_done)
     {
     if (channel->readfd >= 0 && FD_ISSET(channel->readfd, readfds))
-      {
-      if (send_msg_channel_data(channel, 0) == -1)
-        KERR(" ");
-      }
+      send_msg_channel_data(channel, 0);
     if ((ERRFD_IS_READ(channel)) && 
         (channel->errfd >= 0) &&
         (FD_ISSET(channel->errfd, readfds))) 
-      {
-      if (send_msg_channel_data(channel, 1) == -1)
-        KERR(" ");
-      }
+      send_msg_channel_data(channel, 1);
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
       writechannel(channel, channel->writefd, channel->writebuf);
     if ((ERRFD_IS_WRITE(channel)) &&
@@ -302,40 +296,26 @@ static void my_gettimeofday(struct timeval *tv)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int setchannelfds(fd_set *readfds, fd_set *writefds)
+static void setchannelfds(fd_set *readfds, fd_set *writefds)
 {
-  int result = -1;
   struct Channel *channel = &ses.channel;
   if (channel->init_done)
     {
     if (channel->transwindow > 0)
       {
       if (channel->readfd >= 0)
-        {
         FD_SET(channel->readfd, readfds);
-        result = 0;
-        }
       if (ERRFD_IS_READ(channel) && channel->errfd >= 0)
-        {
         FD_SET(channel->errfd, readfds);
-        result = 0;
-        }
       }
     if ((channel->writefd >= 0) &&
         (cbuf_getused(channel->writebuf) > 0))
-      {
       FD_SET(channel->writefd, writefds);
-      result = 0;
-      }
     if ((ERRFD_IS_WRITE(channel)) &&
         (channel->errfd >= 0) &&
         (cbuf_getused(channel->extrabuf)) > 0)
-      {
       FD_SET(channel->errfd, writefds);
-      result = 0;
-      }
     }
-  return result;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -345,7 +325,6 @@ void cloonix_srv_session_loop(void)
   static struct timeval last_heartbeat;
   fd_set readfd, writefd;
   int val, delta;
-  char x;
   struct sshsession *pses = get_srv_session_loop();
   struct timeval cur;
   struct timeval timeout;
@@ -366,8 +345,7 @@ void cloonix_srv_session_loop(void)
       FD_SET(pses->sock_out, &writefd);
     timeout.tv_sec = 0;
     timeout.tv_usec = 10000;
-    if (setchannelfds(&readfd, &writefd))
-      KERR(" ");
+    setchannelfds(&readfd, &writefd);
     val = select(pses->maxfd+1, &readfd, &writefd, NULL, &timeout);
     if (exitflag)
       KOUT("Terminated by signal");
