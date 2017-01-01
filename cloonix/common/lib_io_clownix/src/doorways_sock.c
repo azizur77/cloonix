@@ -920,6 +920,19 @@ static void doorways_tx_split(t_llid *lid, int cidx, t_data_channel *dchan,
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
+int doorways_tx_get_tot_txq_size(int llid)
+{
+  int result, is_blkd;
+  t_data_channel *dchan;
+  int cidx = channel_check_llid(llid, &is_blkd, __FUNCTION__);
+  dchan = get_dchan(cidx);
+  result = (int) dchan->tot_txq_size;
+  KERR("%d %d %d", llid, cidx, result);
+  return (dchan->tot_txq_size);
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
 int doorways_tx(int llid, int tid, int type, int val, int len, char *buf)
 {
   int cidx, is_blkd, fd, result = -1;
@@ -960,7 +973,7 @@ int doorways_tx(int llid, int tid, int type, int val, int len, char *buf)
              KERR("%d %d", lid->doors_type, type);
           }
         }
-      cidx = channel_check_llid(llid,  &is_blkd,__FUNCTION__);
+      cidx = channel_check_llid(llid, &is_blkd, __FUNCTION__);
       dchan = get_dchan(cidx);
       if (dchan->llid != lid->llid)
         KOUT(" ");
