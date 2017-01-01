@@ -1,0 +1,48 @@
+#!/bin/bash
+HERE=`pwd`
+set -e
+AGENT_BIN_TEST=${HERE}/agent_bin_test/
+AGENT_LIB_TEST=${AGENT_BIN_TEST}/lib_test/
+rm -rf ${AGENT_BIN_TEST}
+mkdir -p ${AGENT_LIB_TEST}
+
+LIB_CLOWNIX=${HERE}/../lib_io_clownix
+BLKD=${HERE}/../lib_blkd
+RPCT=${HERE}/../lib_rpct
+
+cd $LIB_CLOWNIX
+export CFLAGS="-g -ggdb -DNO_HMAC_CIPHER"
+export LDFLAGS="-g -ggdb"
+make clean
+make
+
+cd $BLKD
+export CFLAGS="-g -ggdb -DNO_HMAC_CIPHER"
+export LDFLAGS="-g -ggdb"
+make clean
+make
+
+cd $RPCT
+export CFLAGS="-g -ggdb -DNO_HMAC_CIPHER"
+export LDFLAGS="-g -ggdb"
+make clean
+make
+
+
+cd ${HERE}/cloonix_dropbear
+export CFLAGS="-g -ggdb"
+export LDFLAGS="-g -ggdb"
+make clean
+make dropbear
+
+
+cp dropbear ${AGENT_BIN_TEST}/dropbear_cloonix_sshd
+
+cd ${HERE}/cloonix_agent
+make clean
+make
+
+cp cloonix_agent ${AGENT_BIN_TEST}
+make clean
+
+

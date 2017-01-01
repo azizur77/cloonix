@@ -99,21 +99,14 @@ void check_close(struct Channel *channel)
     {
     if (channel->flushing == 0)
       { 
-      if (!((channel->writefd >= 0) && 
-           (cbuf_getused(channel->writebuf) > 0))) 
-        {
-        KERR("%d" , getpid());
+      if ((channel->errfd == -1) && 
+          (channel->readfd == -1) &&
+          (channel->writefd == -1))
         channel->flushing = 1;
-        close_chan_fd(channel, channel->readfd);
-        close_chan_fd(channel, channel->errfd);
-        close_chan_fd(channel, channel->writefd);
-        }
-      else
-        KERR("%d" , getpid());
       }
     else
       {
-      if (isempty(&(ses.writequeue)))
+      if (isempty(&(ses.writequeue))) 
         wrapper_exit(0, (char *)__FILE__, __LINE__);
       }
     }
@@ -155,7 +148,6 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
     {
     if (len < 0 && ((errno != EINTR) && (errno != EAGAIN))) 
       {
-      KERR("%d", errno);
       result = -1;
       close_chan_fd(channel, fd);
       }
@@ -179,30 +171,6 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
       (channel->recvwindow > cbuf_getavail(channel->extrabuf)))
     KOUT(" ");
   return result;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void setchannelfds(fd_set *readfds, fd_set *writefds) 
-{
-  struct Channel *channel = &ses.channel;
-  if (channel->init_done)
-    {
-    if (channel->transwindow > 0) 
-      {
-      if (channel->readfd >= 0) 
-        FD_SET(channel->readfd, readfds);
-      if (ERRFD_IS_READ(channel) && channel->errfd >= 0) 
-        FD_SET(channel->errfd, readfds);
-      }
-    if ((channel->writefd >= 0) && 
-        (cbuf_getused(channel->writebuf) > 0)) 
-      FD_SET(channel->writefd, writefds);
-    if ((ERRFD_IS_WRITE(channel)) && 
-        (channel->errfd >= 0) && 
-        (cbuf_getused(channel->extrabuf)) > 0) 
-      FD_SET(channel->errfd, writefds);
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -273,44 +241,36 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
     fd = channel->readfd;
   if (fd < 0)
     KOUT(" ");
+  err = ioctl(fd, SIOCINQ, &val);
+  if ((err != 0) || (val < 0))
+    {
+    KERR("%d ", errno);
+    close_chan_fd(channel, fd);
+    result = -1;
+    }
+
   maxlen = MIN(channel->transwindow, channel->transmaxpacket);
   maxlen = MIN(maxlen,
                ses.writepayload->size - 1 - 4 - 4 - (isextended ? 4 : 0));
-  if (maxlen > 0)
+  if ((val > 0) && (maxlen >= val))
     {
-    err = ioctl(fd, SIOCINQ, &val);
-    if ((err != 0) || (val < 0))
-      {
-      KERR("%d ", errno);
-      close_chan_fd(channel, fd);
-      result = -1;
-      }
-    if (val > 0)
-      {
-      buf_putbyte(ses.writepayload, 
-      isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
-      buf_putint(ses.writepayload, channel->remotechan);
-      if (isextended)
-        buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
-      size_pos = ses.writepayload->pos;
-      buf_putint(ses.writepayload, 0);
-      len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
-      if (len <= 0)
-        {
-        if (len == 0 || ((errno != EINTR) && (errno != EAGAIN)))
-          KOUT(" ");
-        }
-      else
-        {
-        buf_incrwritepos(ses.writepayload, len);
-        buf_setpos(ses.writepayload, size_pos);
-        buf_putint(ses.writepayload, len);
-        channel->transwindow -= len;
-        encrypt_packet();
-        if (channel->flushing && len < (ssize_t)maxlen)
-          KERR("%d %d ", len, (int) maxlen);
-        }
-      }
+    buf_putbyte(ses.writepayload, 
+    isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
+    buf_putint(ses.writepayload, channel->remotechan);
+    if (isextended)
+      buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
+    size_pos = ses.writepayload->pos;
+    buf_putint(ses.writepayload, 0);
+    len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
+    if (len <= 0)
+      KOUT(" ");
+    if (len < val)
+      KERR("%d %d %d", maxlen, len, val);
+    buf_incrwritepos(ses.writepayload, len);
+    buf_setpos(ses.writepayload, size_pos);
+    buf_putint(ses.writepayload, len);
+    channel->transwindow -= len;
+    encrypt_packet();
     }
   return result;
 }

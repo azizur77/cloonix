@@ -86,7 +86,6 @@ struct ChanType {
 };
 
 void chancleanup();
-void setchannelfds(fd_set *readfd, fd_set *writefd);
 struct Channel* getchannel();
 void recv_msg_channel_open();
 void recv_msg_channel_request();

@@ -115,8 +115,6 @@ struct sshsession {
 										session, see process-packet.c */
 
 	
-	int signal_pipe[2]; /* stores endpoints of a self-pipe used for
-						   race-free signal handling */
 						
 	/* time of the last packet send/receive, for keepalive. Not real-world clock */
 	time_t last_packet_time_keepalive_sent;
@@ -131,8 +129,6 @@ struct sshsession {
 	struct key_context *keys;
 	buffer *session_id; /* this is the hash from the first kex */
 	buffer *hash; /* the session hash */
-
-	struct packetlist *reply_queue_head, *reply_queue_tail;
 
 	void(*remoteclosed)(); /* A callback to handle closure of the
 									  remote connection */

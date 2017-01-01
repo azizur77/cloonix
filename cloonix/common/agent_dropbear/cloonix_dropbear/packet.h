@@ -35,7 +35,6 @@ void encrypt_packet();
 
 void process_packet();
 
-void maybe_flush_reply_queue();
 typedef struct PacketType {
 	unsigned char type; /* SSH_MSG_FOO */
 	void (*handler)();

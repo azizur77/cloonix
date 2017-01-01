@@ -274,16 +274,10 @@ static void channelio(fd_set *readfds, fd_set *writefds)
         KERR(" ");
       }
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
-      {
-      if (writechannel(channel, channel->writefd, channel->writebuf) == -1)
-        KERR(" ");
-      }
+      writechannel(channel, channel->writefd, channel->writebuf);
     if ((ERRFD_IS_WRITE(channel)) &&
         (channel->errfd >= 0 && FD_ISSET(channel->errfd, writefds)))
-      {
-      if (writechannel(channel, channel->errfd, channel->extrabuf) == -1)
-        KERR(" ");
-      }
+      writechannel(channel, channel->errfd, channel->extrabuf); 
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -310,6 +304,44 @@ static void my_gettimeofday(struct timeval *tv)
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static int setchannelfds(fd_set *readfds, fd_set *writefds)
+{
+  int result = -1;
+  struct Channel *channel = &ses.channel;
+  if (channel->init_done)
+    {
+    if (channel->transwindow > 0)
+      {
+      if (channel->readfd >= 0)
+        {
+        FD_SET(channel->readfd, readfds);
+        result = 0;
+        }
+      if (ERRFD_IS_READ(channel) && channel->errfd >= 0)
+        {
+        FD_SET(channel->errfd, readfds);
+        result = 0;
+        }
+      }
+    if ((channel->writefd >= 0) &&
+        (cbuf_getused(channel->writebuf) > 0))
+      {
+      FD_SET(channel->writefd, writefds);
+      result = 0;
+      }
+    if ((ERRFD_IS_WRITE(channel)) &&
+        (channel->errfd >= 0) &&
+        (cbuf_getused(channel->extrabuf)) > 0)
+      {
+      FD_SET(channel->errfd, writefds);
+      result = 0;
+      }
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
 /****************************************************************************/
 void cloonix_srv_session_loop(void) 
 {
@@ -330,10 +362,12 @@ void cloonix_srv_session_loop(void)
 
     if (pses->channel.flushing == 1)
       {
+KERR("%d", isempty(&(pses->writequeue)));
       if (!isempty(&(pses->writequeue)))
         write_packet();
       else
         check_close(&(pses->channel));
+KERR("%d", isempty(&(pses->writequeue)));
       }
     else
       {
@@ -345,10 +379,10 @@ void cloonix_srv_session_loop(void)
         FD_SET(pses->sock_in, &readfd);
       if (!isempty(&(pses->writequeue)))
         FD_SET(pses->sock_out, &writefd);
-      FD_SET(pses->signal_pipe[0], &readfd);
-      setchannelfds(&readfd, &writefd);
       timeout.tv_sec = 0;
       timeout.tv_usec = 10000;
+      if (setchannelfds(&readfd, &writefd))
+        KERR(" ");
       val = select(pses->maxfd+1, &readfd, &writefd, NULL, &timeout);
       if (exitflag)
         KOUT("Terminated by signal");
@@ -356,10 +390,6 @@ void cloonix_srv_session_loop(void)
         KOUT("Error in select %d %d %d", errno, pses->sock_in, pses->sock_out);
       if (val > 0)
         {
-        if (FD_ISSET(pses->signal_pipe[0], &readfd))
-          {
-          while (read(pses->signal_pipe[0], &x, 1) > 0) {}
-          }
         if (FD_ISSET(pses->sock_in, &readfd))
           {
           if (!pses->remoteident)
@@ -369,7 +399,6 @@ void cloonix_srv_session_loop(void)
           }
         if (pses->payload != NULL)
           process_packet();
-        maybe_flush_reply_queue();
         channelio(&readfd, &writefd);
         if (!isempty(&(pses->writequeue)))
           write_packet();

@@ -247,120 +247,59 @@ void decrypt_packet() {
 }
 
 
-void maybe_flush_reply_queue() 
+void encrypt_packet()
 {
-	struct packetlist *tmp_item = NULL, *curr_item = NULL;
-	for (curr_item = ses.reply_queue_head; curr_item; ) {
-		buf_putbytes(ses.writepayload,
-			curr_item->payload->data, curr_item->payload->len);
-			
-		buf_free(curr_item->payload);
-		tmp_item = curr_item;
-		curr_item = curr_item->next;
-		m_free(tmp_item);
-		encrypt_packet();
-	}
-	ses.reply_queue_head = ses.reply_queue_tail = NULL;
-}
-	
-/* encrypt the writepayload, putting into writebuf, ready for write_packet()
- * to put on the wire */
-void encrypt_packet() {
-
-	unsigned char padlen;
-	unsigned char blocksize, mac_size;
-	buffer * writebuf; /* the packet which will go on the wire. This is 
-	                      encrypted in-place. */
-	unsigned char packet_type;
-	unsigned int len, encrypt_buf_size;
-
-	time_t now;
-	buf_setpos(ses.writepayload, 0);
-	packet_type = buf_getbyte(ses.writepayload);
-	buf_setpos(ses.writepayload, 0);
-
-	blocksize = ses.keys->trans.algo_crypt->blocksize;
-	mac_size = ses.keys->trans.algo_mac->hashsize;
-
-	/* Encrypted packet len is payload+5. We need to then make sure
-	 * there is enough space for padding or MIN_PACKET_LEN. 
-	 * Add extra 3 since we need at least 4 bytes of padding */
-	encrypt_buf_size = (ses.writepayload->len+4+1) 
-		+ MAX(MIN_PACKET_LEN, blocksize) + 3
-	/* add space for the MAC at the end */
-				+ mac_size
-	/* and an extra cleartext (stripped before transmission) byte for the
-	 * packet type */
-				+ 1;
-
-	writebuf = buf_new(encrypt_buf_size);
-	buf_setlen(writebuf, PACKET_PAYLOAD_OFF);
-	buf_setpos(writebuf, PACKET_PAYLOAD_OFF);
-
-	memcpy(buf_getwriteptr(writebuf, ses.writepayload->len),
-			buf_getptr(ses.writepayload, ses.writepayload->len),
-			ses.writepayload->len);
-	buf_incrwritepos(writebuf, ses.writepayload->len);
-
-	/* finished with payload */
-	buf_setpos(ses.writepayload, 0);
-	buf_setlen(ses.writepayload, 0);
-
-	/* length of padding - packet length must be a multiple of blocksize,
-	 * with a minimum of 4 bytes of padding */
-	padlen = blocksize - (writebuf->len) % blocksize;
-	if (padlen < 4) {
-		padlen += blocksize;
-	}
-	/* check for min packet length */
-	if (writebuf->len + padlen < MIN_PACKET_LEN) {
-		padlen += blocksize;
-	}
-
-	buf_setpos(writebuf, 0);
-	/* packet length excluding the packetlength uint32 */
-	buf_putint(writebuf, writebuf->len + padlen - 4);
-
-	/* padding len */
-	buf_putbyte(writebuf, padlen);
-	/* actual padding */
-	buf_setpos(writebuf, writebuf->len);
-	buf_incrlen(writebuf, padlen);
-
-	/* do the actual encryption, in-place */
-	buf_setpos(writebuf, 0);
-	/* encrypt it in-place*/
-	len = writebuf->len;
-	if (ses.keys->trans.crypt_mode->encrypt(
-				buf_getptr(writebuf, len),
-				buf_getwriteptr(writebuf, len),
-				len, NULL)) {
-		KOUT("Error encrypting");
-	}
-	buf_incrpos(writebuf, len);
-
-
-	/* The last byte of the buffer stores the cleartext packet_type. It is not
-	 * transmitted but is used for transmit timeout purposes */
-	buf_putbyte(writebuf, packet_type);
-	/* enqueue the packet for sending. It will get freed after transmission. */
-	buf_setpos(writebuf, 0);
-cloonix_enqueue(&ses.writequeue, (void*)writebuf);
-
-	/* Update counts */
-	ses.transseq++;
-	now = monotonic_now();
-	ses.last_packet_time_any_sent = now;
-	/* idle timeout shouldn't be affected by responses to keepalives.
-	send_msg_keepalive() itself also does tricks with 
-	ses.last_packet_idle_time - read that if modifying this code */
-	if (packet_type != SSH_MSG_REQUEST_FAILURE
-		&& packet_type != SSH_MSG_UNIMPLEMENTED
-		&& packet_type != SSH_MSG_IGNORE) {
-		ses.last_packet_time_idle = now;
-
-	}
-
+  unsigned char padlen;
+  unsigned char blocksize, mac_size;
+  buffer * writebuf;
+  unsigned char packet_type;
+  unsigned int len, encrypt_buf_size;
+  time_t now;
+  buf_setpos(ses.writepayload, 0);
+  packet_type = buf_getbyte(ses.writepayload);
+  buf_setpos(ses.writepayload, 0);
+  blocksize = ses.keys->trans.algo_crypt->blocksize;
+  mac_size = ses.keys->trans.algo_mac->hashsize;
+  encrypt_buf_size = (ses.writepayload->len + 4 + 1) + 
+                      MAX(MIN_PACKET_LEN, blocksize) + 3 +
+                      mac_size + 1;
+  writebuf = buf_new(encrypt_buf_size);
+  buf_setlen(writebuf, PACKET_PAYLOAD_OFF);
+  buf_setpos(writebuf, PACKET_PAYLOAD_OFF);
+  memcpy(buf_getwriteptr(writebuf, ses.writepayload->len),
+                         buf_getptr(ses.writepayload, 
+                                    ses.writepayload->len),
+                                    ses.writepayload->len);
+  buf_incrwritepos(writebuf, ses.writepayload->len);
+  buf_setpos(ses.writepayload, 0);
+  buf_setlen(ses.writepayload, 0);
+  padlen = blocksize - (writebuf->len) % blocksize;
+  if (padlen < 4)
+    padlen += blocksize;
+  if (writebuf->len + padlen < MIN_PACKET_LEN)
+    padlen += blocksize;
+  buf_setpos(writebuf, 0);
+  buf_putint(writebuf, writebuf->len + padlen - 4);
+  buf_putbyte(writebuf, padlen);
+  buf_setpos(writebuf, writebuf->len);
+  buf_incrlen(writebuf, padlen);
+  buf_setpos(writebuf, 0);
+  len = writebuf->len;
+  if (ses.keys->trans.crypt_mode->encrypt(buf_getptr(writebuf, len),
+                                          buf_getwriteptr(writebuf, len),
+                                          len, NULL))
+    KOUT("Error encrypting");
+  buf_incrpos(writebuf, len);
+  buf_putbyte(writebuf, packet_type);
+  buf_setpos(writebuf, 0);
+  cloonix_enqueue(&ses.writequeue, (void*)writebuf);
+  ses.transseq++;
+  now = monotonic_now();
+  ses.last_packet_time_any_sent = now;
+  if ((packet_type != SSH_MSG_REQUEST_FAILURE) &&
+      (packet_type != SSH_MSG_UNIMPLEMENTED) &&
+      (packet_type != SSH_MSG_IGNORE))
+    ses.last_packet_time_idle = now;
 }
 
 

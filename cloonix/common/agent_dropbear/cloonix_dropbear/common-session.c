@@ -1,27 +1,10 @@
-/*
- * Dropbear - a SSH2 server
- * 
- * Copyright (c) 2002,2003 Matt Johnston
- * All rights reserved.
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE. */
-
+/****************************************************************************/
+/* Copy-pasted-modified for cloonix                License GPL-3.0+         */
+/*--------------------------------------------------------------------------*/
+/* Original code from:                                                      */
+/*                            Dropbear SSH                                  */
+/*                            Matt Johnston                                 */
+/****************************************************************************/
 #include "includes.h"
 #include "session.h"
 #include "dbutil.h"
@@ -93,15 +76,6 @@ void common_session_init(int sock_in, int sock_out) {
 	ses.last_packet_time_idle = now;
 	ses.last_packet_time_any_sent = 0;
 	
-	if (pipe(ses.signal_pipe) < 0) {
-		KOUT("Signal pipe failed");
-	}
-	setnonblocking(ses.signal_pipe[0]);
-	setnonblocking(ses.signal_pipe[1]);
-
-	ses.maxfd = MAX(ses.maxfd, ses.signal_pipe[0]);
-	ses.maxfd = MAX(ses.maxfd, ses.signal_pipe[1]);
-	
 	ses.writepayload = buf_new(TRANS_MAX_PAYLOAD_LEN);
 	ses.transseq = 0;
 
@@ -109,8 +83,6 @@ void common_session_init(int sock_in, int sock_out) {
 	ses.payload = NULL;
 	ses.recvseq = 0;
 	initqueue(&ses.writequeue);
-	ses.reply_queue_head = NULL;
-	ses.reply_queue_tail = NULL;
 	ses.keys = (struct key_context*)m_malloc(sizeof(struct key_context));
 	ses.keys->recv.algo_crypt = &dropbear_nocipher;
 	ses.keys->trans.algo_crypt = &dropbear_nocipher;

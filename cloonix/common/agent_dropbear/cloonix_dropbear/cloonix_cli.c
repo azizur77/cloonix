@@ -40,7 +40,6 @@ void read_packet(void);
 void cli_session(int sock_in, int sock_out); 
 int send_msg_channel_data(struct Channel *channel, int isextended);
 void process_packet(void);
-void maybe_flush_reply_queue(void);
 void cli_sessionloop(void);
 void check_in_progress(struct Channel *channel);
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
@@ -77,7 +76,6 @@ static int g_current_rx_buf_len;
 static struct epoll_event g_epev_readfd;
 static struct epoll_event g_epev_writefd;
 static struct epoll_event g_epev_errfd;
-static struct epoll_event g_epev_signal;
 
 
 /*****************************************************************************/
@@ -433,22 +431,15 @@ static void fct_before_epoll(int epollfd)
   memset(&g_epev_readfd, 0, sizeof(struct epoll_event));
   memset(&g_epev_writefd, 0, sizeof(struct epoll_event));
   memset(&g_epev_errfd, 0, sizeof(struct epoll_event));
-  memset(&g_epev_signal, 0, sizeof(struct epoll_event));
   g_epev_readfd.events = 0;
   g_epev_readfd.data.fd = channel->readfd;
   g_epev_writefd.events = 0;
   g_epev_writefd.data.fd = channel->writefd;
   g_epev_errfd.events = 0;
   g_epev_errfd.data.fd = channel->errfd;
-  g_epev_signal.events = 0;
-  g_epev_signal.data.fd = ses.signal_pipe[0];
   epoll_ctl(epollfd, EPOLL_CTL_DEL, channel->readfd, NULL);
   epoll_ctl(epollfd, EPOLL_CTL_DEL, channel->writefd, NULL);
   epoll_ctl(epollfd, EPOLL_CTL_DEL, channel->errfd, NULL);
-  epoll_ctl(epollfd, EPOLL_CTL_DEL, ses.signal_pipe[0], NULL);
-  g_epev_signal.events |= EPOLLIN;
-  if (epoll_ctl(epollfd, EPOLL_CTL_ADD, ses.signal_pipe[0], &g_epev_signal))
-    KOUT(" ");
   if (channel->init_done)
     {
     if (channel->transwindow > 0)
@@ -568,11 +559,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
         {
         if ((!(evt & EPOLLOUT)) && (!(evt & EPOLLIN)))
           KOUT("%X", evt);
-        if (fd == ses.signal_pipe[0])
-          {
-          while (read(ses.signal_pipe[0], &x, 1) > 0) {}
-          result = 0;
-          }
         }
       }
     }
@@ -608,7 +594,6 @@ static void cb_doors_rx_nominal(int len, char *buf)
       process_packet();
     }
 
-  maybe_flush_reply_queue();
   cli_sessionloop();
 }
 /*---------------------------------------------------------------------------*/

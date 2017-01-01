@@ -65,7 +65,6 @@ void call_child_death_detection(void)
   struct exxitinfo *nexxit = NULL;
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
-    KERR("PID: %d", pid);
     nexxit = NULL;
     for (i = 0; i < svr_ses.childpidsize; i++)
       {
