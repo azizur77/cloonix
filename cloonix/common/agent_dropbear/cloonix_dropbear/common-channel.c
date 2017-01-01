@@ -91,6 +91,68 @@ struct Channel* getchannel() {
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+void check_fd_and_close_on_error(struct Channel *channel) 
+{
+  int err, val;
+  if (channel->errfd != -1)
+    {
+    err = ioctl(channel->errfd, SIOCINQ, &val);
+    if ((err != 0) || (val < 0))
+      {
+      KERR("%d ", errno);
+      close_chan_fd(channel, channel->errfd);
+      }
+    }
+  if (channel->readfd != -1)
+    {
+    err = ioctl(channel->readfd, SIOCINQ, &val);
+    if ((err != 0) || (val < 0))
+      {
+      KERR("%d ", errno);
+      close_chan_fd(channel, channel->readfd);
+      }
+    }
+  if (channel->writefd != -1)
+    {
+    err = ioctl(channel->writefd, SIOCOUTQ, &val);
+    if (err != 0)
+      {
+      KERR("%d ", errno);
+      close_chan_fd(channel, channel->writefd);
+      }
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static int sock_out_is_empty(void)
+{ 
+  int err, val, result = 0;
+  if (isempty(&(ses.writequeue)))
+    {
+    err = ioctl(ses.sock_out, SIOCOUTQ, &val);
+    if (err != 0)
+      {
+      KERR("%d ", errno); 
+      result = 1;
+      }
+    else
+      {
+      if (val != 0)
+        KERR(" ");
+      else
+        {
+        KERR(" ");
+        result = 1;
+        }
+      }
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
 void check_close(struct Channel *channel) 
 {
   call_child_death_detection();
@@ -99,15 +161,27 @@ void check_close(struct Channel *channel)
     {
     if (channel->flushing == 0)
       { 
+      check_fd_and_close_on_error(channel); 
       if ((channel->errfd == -1) && 
           (channel->readfd == -1) &&
           (channel->writefd == -1))
+        {
+        KERR(" ");
         channel->flushing = 1;
+        }
+      else
+        KERR("%d %d %d", channel->errfd, channel->readfd, channel->writefd);
       }
-    else
+    else if (channel->flushing == 1)
       {
-      if (isempty(&(ses.writequeue))) 
-        wrapper_exit(0, (char *)__FILE__, __LINE__);
+      KERR(" ");
+      if (sock_out_is_empty())
+        channel->flushing = 2;
+      }
+    else if (channel->flushing == 2)
+      {
+      KERR(" ");
+      wrapper_exit(0, (char *)__FILE__, __LINE__);
       }
     }
 }
@@ -241,10 +315,11 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
     fd = channel->readfd;
   if (fd < 0)
     KOUT(" ");
+
   err = ioctl(fd, SIOCINQ, &val);
-  if ((err != 0) || (val < 0))
+  if ((err != 0) || (val <= 0))
     {
-    KERR("%d ", errno);
+    KERR("%d %d", errno, val);
     close_chan_fd(channel, fd);
     result = -1;
     }

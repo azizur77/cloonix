@@ -9,19 +9,18 @@ LIB_CLOWNIX=${HERE}/../lib_io_clownix
 BLKD=${HERE}/../lib_blkd
 RPCT=${HERE}/../lib_rpct
 
+#export CFLAGS="-g -ggdb"
+export CFLAGS=
 
 cd $LIB_CLOWNIX
-export CFLAGS=
 make clean
 make
 
 cd $BLKD
-export CFLAGS=
 make clean
 make
 
 cd $RPCT
-export CFLAGS=
 make clean
 make
 

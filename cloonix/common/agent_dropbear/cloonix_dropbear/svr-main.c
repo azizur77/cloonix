@@ -42,7 +42,7 @@ static int listensockets(void)
 /*CLOONIX*/
 
 static void sigchld_handler(int dummy);
-static void sigsegv_handler(int);
+//static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
 static void main_noinetd();
 static void commonsetup();
@@ -240,9 +240,9 @@ static void sigchld_handler(int UNUSED(unused)) {
 }
 
 /* catch any segvs */
-static void sigsegv_handler(int UNUSED(unused)) {
-	KOUT("SEGFAULT");
-}
+///static void sigsegv_handler(int UNUSED(unused)) {
+//	KOUT("SEGFAULT");
+//}
 
 /* catch ctrl-c or sigterm */
 static void sigintterm_handler(int UNUSED(unused)) {
@@ -268,9 +268,11 @@ static void commonsetup() {
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		KOUT("signal() error");
 	}
+/*
 	if (signal(SIGSEGV, sigsegv_handler) == SIG_ERR) {
 		KOUT("signal() error");
 	}
+*/
 
 
 }

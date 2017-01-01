@@ -75,10 +75,7 @@ void call_child_death_detection(void)
         }
       }
     if (nexxit == NULL)
-      {
-      KERR("using lastexit");
-      nexxit = &svr_ses.lastexxit;
-      }
+      KOUT(" ");
     nexxit->exxitpid = pid;
     if (WIFEXITED(status))
       {
@@ -220,7 +217,9 @@ static void run_shell_command(char *cmd, unsigned int maxfd,
 static int sesscheckclose(struct Channel *channel) 
 {
   struct ChanSess *chansess = (struct ChanSess*)channel->typedata;
-  int result = (chansess->exxit.exxitpid != -1);
+  int result = 1;
+  if (chansess)
+    result = (chansess->exxit.exxitpid != -1);
   return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -574,20 +573,6 @@ static int noptycommand(struct Channel *channel, struct ChanSess *chansess)
     ses.maxfd = MAX(ses.maxfd, channel->readfd);
     ses.maxfd = MAX(ses.maxfd, channel->errfd);
     addchildpid(chansess, chansess->pid);
-    if (svr_ses.lastexxit.exxitpid != -1)
-      {
-      KERR(" ");
-      for (i = 0; i < svr_ses.childpidsize; i++)
-        {
-        if (svr_ses.childpids[i].pid == svr_ses.lastexxit.exxitpid)
-          {
-          KERR("found match for lastexitpid");
-          svr_ses.childpids[i].chansess->exxit = svr_ses.lastexxit;
-          svr_ses.lastexxit.exxitpid = -1;
-          break;
-          }
-        }
-      }
     }
 return result;
 }
@@ -732,7 +717,6 @@ void svr_chansessinitialise()
   svr_ses.childpids[0].pid = -1;
   svr_ses.childpids[0].chansess = NULL;
   svr_ses.childpidsize = 1;
-  svr_ses.lastexxit.exxitpid = -1;
 }
 /*---------------------------------------------------------------------------*/
 

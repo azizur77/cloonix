@@ -155,10 +155,6 @@ struct serversession {
 	struct ChildPid * childpids; /* array of mappings childpid<->channel */
 	unsigned int childpidsize;
 
-	/* Used to avoid a race in the exit returncode handling - see
-	 * svr-chansession.c for details */
-	struct exxitinfo lastexxit;
-
 	/* The resolved remote address, used for lastlog etc */
 	char *vmname;
 

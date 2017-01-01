@@ -163,51 +163,48 @@ void cloonix_enqueue(struct Queue* queue, void* item)
 /****************************************************************************/
 static int ident_readln(int fd, char* buf, int count) 
 {
-        char in, result;
-        int pos = 0;
-        int num = 0;
-        fd_set fds;
-        struct timeval timeout;
-        if (count < 1) {
-                return -1;
+  char in, ret, result = -1;
+  int pos = 0;
+  int num = 0;
+  fd_set fds;
+  if (count >= 1)
+    {
+    FD_ZERO(&fds);
+    while (pos < count-1)
+      {
+      FD_SET(fd, &fds);
+      ret = select(fd+1, &fds, NULL, NULL, NULL);
+      if ((ret == 0) || 
+          ((ret < 0) && (errno != EINTR) && (errno != EAGAIN))) 
+        {
+        KERR("%d %d", pos, count);
+        break;
         }
-        FD_ZERO(&fds);
-        while (pos < count-1) {
-                FD_SET(fd, &fds);
-                timeout.tv_sec = 0;
-                timeout.tv_usec = 10000;
-                result = select(fd+1, &fds, NULL, NULL, &timeout);
-                if (result < 0) {
-                        if ((errno == EINTR) || (errno == EAGAIN)) {
-                                continue;
-                        }
-                        return -1;
-                KERR("%d %d", pos, count);
-                }
-                if (result == 0)
-                  KERR("%d %d", pos, count);
-                if (FD_ISSET(fd, &fds)) {
-                        num = read(fd, &in, 1);
-                        if (num < 0) {
-                                if ((errno == EINTR) || (errno == EAGAIN)) {
-                                        continue; /* not a real error */
-                                }
-                                return -1;
-                        }
-                        if (num == 0) {
-                                return -1;
-                        }
-                        if (in == '\n') {
-                                break;
-                        }
-                        if (in != '\r') {
-                                buf[pos] = in;
-                                pos++;
-                        }
-                }
+      else if ((ret>0) && (FD_ISSET(fd, &fds)))
+        {
+        num = read(fd, &in, 1);
+        if ((num==0) || 
+            ((num < 0) && ((errno != EINTR) && (errno != EAGAIN))))
+          {
+          KERR("%d %d", pos, count);
+          break;
+          }
+        else 
+          {
+          if (in == '\n')
+            break;
+          if (in != '\r')
+            {
+            buf[pos] = in;
+            pos++;
+            }
+          }
         }
-        buf[pos] = '\0';
-        return pos+1;
+      }
+    buf[pos] = '\0';
+    result = pos+1;
+    }
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -251,7 +248,7 @@ static void poll_check_close(void *data)
 {
   struct Channel *channel = (struct Channel *) data;
   check_close(channel);
-  cloonix_timer_add(1, poll_check_close, (void *) channel);
+  cloonix_timer_add(2, poll_check_close, (void *) channel);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -353,56 +350,43 @@ void cloonix_srv_session_loop(void)
   struct timeval cur;
   struct timeval timeout;
   cloonix_timer_init();
-  cloonix_timer_add(1, poll_check_close, (void *) &(pses->channel));
+  cloonix_timer_add(3, poll_check_close, (void *) &(pses->channel));
   my_gettimeofday(&last_heartbeat);
   for(;;)
     {
     if ((pses->sock_in == -1) || (pses->sock_out == -1))
       KOUT("%d %d", pses->sock_in, pses->sock_out);
-
-    if (pses->channel.flushing == 1)
+    FD_ZERO(&writefd);
+    FD_ZERO(&readfd);
+    if (pses->payload)
+      KOUT(" ");
+    if (pses->remoteident || isempty(&(pses->writequeue)))
+      FD_SET(pses->sock_in, &readfd);
+    if (!isempty(&(pses->writequeue)))
+      FD_SET(pses->sock_out, &writefd);
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 10000;
+    if (setchannelfds(&readfd, &writefd))
+      KERR(" ");
+    val = select(pses->maxfd+1, &readfd, &writefd, NULL, &timeout);
+    if (exitflag)
+      KOUT("Terminated by signal");
+    if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
+      KOUT("Error in select %d %d %d", errno, pses->sock_in, pses->sock_out);
+    if (val > 0)
       {
-KERR("%d", isempty(&(pses->writequeue)));
+      if (FD_ISSET(pses->sock_in, &readfd))
+        {
+        if (!pses->remoteident)
+          read_session_identification();
+        else
+          read_packet();
+        }
+      if (pses->payload != NULL)
+        process_packet();
+      channelio(&readfd, &writefd);
       if (!isempty(&(pses->writequeue)))
         write_packet();
-      else
-        check_close(&(pses->channel));
-KERR("%d", isempty(&(pses->writequeue)));
-      }
-    else
-      {
-      FD_ZERO(&writefd);
-      FD_ZERO(&readfd);
-      if (pses->payload)
-        KOUT(" ");
-      if (pses->remoteident || isempty(&(pses->writequeue)))
-        FD_SET(pses->sock_in, &readfd);
-      if (!isempty(&(pses->writequeue)))
-        FD_SET(pses->sock_out, &writefd);
-      timeout.tv_sec = 0;
-      timeout.tv_usec = 10000;
-      if (setchannelfds(&readfd, &writefd))
-        KERR(" ");
-      val = select(pses->maxfd+1, &readfd, &writefd, NULL, &timeout);
-      if (exitflag)
-        KOUT("Terminated by signal");
-      if (val < 0 && ((errno != EINTR) && (errno != EAGAIN)))
-        KOUT("Error in select %d %d %d", errno, pses->sock_in, pses->sock_out);
-      if (val > 0)
-        {
-        if (FD_ISSET(pses->sock_in, &readfd))
-          {
-          if (!pses->remoteident)
-            read_session_identification();
-          else
-            read_packet();
-          }
-        if (pses->payload != NULL)
-          process_packet();
-        channelio(&readfd, &writefd);
-        if (!isempty(&(pses->writequeue)))
-          write_packet();
-        }
       }
     my_gettimeofday(&cur);
     delta = delta_ms(&cur, &last_heartbeat);
