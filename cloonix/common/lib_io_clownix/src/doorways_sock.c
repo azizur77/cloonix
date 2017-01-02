@@ -927,7 +927,6 @@ int doorways_tx_get_tot_txq_size(int llid)
   int cidx = channel_check_llid(llid, &is_blkd, __FUNCTION__);
   dchan = get_dchan(cidx);
   result = (int) dchan->tot_txq_size;
-  KERR("%d %d %d", llid, cidx, result);
   return (dchan->tot_txq_size);
 }
 /*---------------------------------------------------------------------------*/

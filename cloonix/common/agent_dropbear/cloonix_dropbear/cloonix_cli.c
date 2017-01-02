@@ -109,23 +109,33 @@ void rpct_recv_hop_msg(void *ptr, int llid, int tid,
 void rpct_recv_report(void *ptr, int llid, t_blkd_item *item) {KOUT(" ");}
 /*---------------------------------------------------------------------------*/
 
+/****************************************************************************/
+static void timeout_cli_finished(void *data)
+{
+  struct Channel *channel;
+  channel = &ses.channel;
+  int line = (int) ((unsigned long) data);
+
+  if (((channel->writefd >= 0) && (cbuf_getused(channel->writebuf) > 0)) ||
+      ((ERRFD_IS_WRITE(channel)) && (channel->errfd >= 0) &&
+       (cbuf_getused(channel->extrabuf) > 0)))
+    {
+    clownix_timeout_add(1, timeout_cli_finished, data, NULL, NULL);
+    }
+  else
+    {
+    cli_tty_cleanup();
+    session_cleanup();
+    }
+}
+/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void cli_finished(int line) 
 {
-  cli_tty_cleanup();
-  session_cleanup();
+  clownix_timeout_add(1, timeout_cli_finished, (void *) line, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void timeout_cli_finished(void *data)
-{
-  int line = (int) ((unsigned long) data);
-  cli_finished(line);
-}
-/*--------------------------------------------------------------------------*/
-
 
 /****************************************************************************/
 char *get_cloonix_name_prompt(void)
@@ -350,8 +360,7 @@ static void xauth_extraction(char *cookie_format, char *cookie_key)
 void cb_doors_end(int llid)
 {
   (void) llid;
-  clownix_timeout_add(50, timeout_cli_finished, 
-                     (void *) __LINE__, NULL, NULL);
+  cli_finished(__LINE__); 
 }
 /*---------------------------------------------------------------------------*/
 
@@ -515,7 +524,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
             KOUT("%d", channel->readfd);
           if (send_msg_channel_data(channel, 0) == -1)
             {
-            KERR(" ");
             cli_finished(__LINE__); 
             }
           }
@@ -525,7 +533,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
             KOUT("%d", channel->errfd);
           if (send_msg_channel_data(channel, 1) == -1)
             {
-            KERR(" ");
             cli_finished(__LINE__); 
             }
           }
@@ -539,7 +546,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
             KOUT("%d", channel->writefd);
           if (writechannel(channel, channel->writefd, channel->writebuf) == -1)
             {
-            KERR(" ");
             cli_finished(__LINE__); 
             }
           }
@@ -549,7 +555,6 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
             KOUT("%d", channel->errfd);
           if (writechannel(channel, channel->errfd, channel->extrabuf) ==  -1)
             {
-            KERR(" ");
             cli_finished(__LINE__); 
             }
           }
@@ -557,7 +562,7 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
         }
       if (evt & EPOLLERR)
         {
-        wrapper_exit(1, (char *)__FILE__, __LINE__);
+        cli_finished(__LINE__); 
         }
       if (evt & EPOLLHUP)
         {
@@ -650,9 +655,7 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
         {
         if (get_sessinitdone())
           {
-          KERR(" ");
-          clownix_timeout_add(50, timeout_cli_finished, 
-                              (void *) __LINE__, NULL, NULL);
+          cli_finished(__LINE__); 
           }
         else
           {
@@ -683,8 +686,8 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
         }
       else
         {
+        KERR("%s", buf);
         cli_finished(__LINE__);
-        KOUT("%s",  buf);
         }
       }
     else if (val == doors_val_none)

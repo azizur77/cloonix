@@ -624,6 +624,8 @@ void start_send_channel_request(struct Channel *channel, char *type)
 /****************************************************************************/
 void wrapper_exit(int val, char *file, int line)
 {
+  (void) file;
+  (void) line;
   exit(val);
 }
 /*--------------------------------------------------------------------------*/
