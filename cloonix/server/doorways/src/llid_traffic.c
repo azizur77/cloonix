@@ -268,15 +268,9 @@ static void timer_traf_shutdown(void *data)
   unsigned long ul_llid = (unsigned long) data;
   int dido_llid = (int)ul_llid;
   if (doorways_tx_get_tot_txq_size(dido_llid))
-    {
-KERR(" ");
-    clownix_timeout_add(3, timer_traf_shutdown, (void *)ul_llid,NULL,NULL);
-    }
+    clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
   else
-    {
-KERR(" ");
     traf_shutdown(dido_llid, __LINE__);
-    }
 } 
 /*--------------------------------------------------------------------------*/
     
@@ -442,7 +436,6 @@ void llid_traf_tx_to_client(char *name, int dido_llid,
 {
   t_llid_traf *lt = llid_traf_get(dido_llid);
   int display_sock_x11;
-  unsigned long ullid;
   if (lt)
     {
     if (strcmp(lt->name, name))
@@ -483,9 +476,7 @@ void llid_traf_tx_to_client(char *name, int dido_llid,
         {
         if (strcmp(buf, LABREAK))
           KERR("%s", buf);
-        ullid = (unsigned long) dido_llid;
-        KERR(" ");
-        clownix_timeout_add(500,timer_traf_shutdown,(void *)ullid,NULL,NULL);
+        timer_traf_shutdown((void *)((unsigned long) dido_llid));
         }
       }
     else

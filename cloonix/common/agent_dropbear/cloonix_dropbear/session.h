@@ -37,6 +37,7 @@
 #include "algo.h"
 
 
+int get_sessinitdone(void);
 void common_session_init(int sock_in, int sock_out);
 void session_loop(void(*loophandler)());
 void session_cleanup();

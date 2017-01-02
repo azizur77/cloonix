@@ -113,8 +113,10 @@ unsigned int cbuf_writelen(circbuffer *cbuf)
 /****************************************************************************/
 unsigned char* cbuf_readptr(circbuffer *cbuf, unsigned int len)
 {
+  if (!cbuf)
+    KOUT(" ");
   if (len > cbuf_readlen(cbuf))
-    KOUT("Bad cbuf read");
+    KOUT(" ");
   return &cbuf->data[cbuf->readpos];
 }
 /*--------------------------------------------------------------------------*/
@@ -122,8 +124,10 @@ unsigned char* cbuf_readptr(circbuffer *cbuf, unsigned int len)
 /****************************************************************************/
 unsigned char* cbuf_writeptr(circbuffer *cbuf, unsigned int len)
 {
+  if (!cbuf)
+    KOUT(" ");
   if (len > cbuf_writelen(cbuf))
-    KOUT("Bad cbuf write");
+    KOUT(" ");
   return &cbuf->data[cbuf->writepos];
 }
 /*--------------------------------------------------------------------------*/
@@ -131,8 +135,10 @@ unsigned char* cbuf_writeptr(circbuffer *cbuf, unsigned int len)
 /****************************************************************************/
 void cbuf_incrwrite(circbuffer *cbuf, unsigned int len)
 {
+  if (!cbuf)
+    KOUT(" ");
   if (len > cbuf_writelen(cbuf))
-		KOUT("Bad cbuf write");
+    KOUT(" ");
   cbuf->used += len;
   if (cbuf->used > cbuf->size)
     KOUT(" ");
@@ -143,8 +149,10 @@ void cbuf_incrwrite(circbuffer *cbuf, unsigned int len)
 /****************************************************************************/
 void cbuf_incrread(circbuffer *cbuf, unsigned int len)
 {
+  if (!cbuf)
+    KOUT(" ");
   if (len > cbuf_readlen(cbuf))
-    KOUT("Bad cbuf read");
+    KOUT(" ");
   if (cbuf->used < len)
     KOUT(" ");
   cbuf->used -= len;

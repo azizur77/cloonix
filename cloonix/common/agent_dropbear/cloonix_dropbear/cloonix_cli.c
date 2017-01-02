@@ -119,6 +119,15 @@ static void cli_finished(int line)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void timeout_cli_finished(void *data)
+{
+  int line = (int) ((unsigned long) data);
+  cli_finished(line);
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
 char *get_cloonix_name_prompt(void)
 {
   return g_cloonix_name_prompt;
@@ -341,8 +350,8 @@ static void xauth_extraction(char *cookie_format, char *cookie_key)
 void cb_doors_end(int llid)
 {
   (void) llid;
-  cli_finished(__LINE__); 
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
+  clownix_timeout_add(50, timeout_cli_finished, 
+                     (void *) __LINE__, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -639,29 +648,37 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
         }
       else if (!strncmp(buf, "KO", 2))
         {
-        cli_finished(__LINE__);
-        if (sscanf(buf,"KO_ping_to_agent DBSSH_CLI_DOORS_RESP name=%s",
-            g_cloonix_name)== 1)
+        if (get_sessinitdone())
           {
-          printf("NOT REACHABLE: %s\n", g_cloonix_name);
-          wrapper_exit(1, (char *)__FILE__, __LINE__);
-          }
-        else if (sscanf(buf,"KO_name_not_found DBSSH_CLI_DOORS_RESP name=%s",
-            g_cloonix_name)== 1)
-          {
-          printf("NOT FOUND: %s\n", g_cloonix_name);
-          wrapper_exit(1, (char *)__FILE__, __LINE__);
-          }
-        else if (sscanf(buf,"KO_bad_connection DBSSH_CLI_DOORS_RESP name=%s",
-            g_cloonix_name)== 1)
-          {
-          printf("BAD CONNECT: %s\n", g_cloonix_name);
-          wrapper_exit(1, (char *)__FILE__, __LINE__);
+          KERR(" ");
+          clownix_timeout_add(50, timeout_cli_finished, 
+                              (void *) __LINE__, NULL, NULL);
           }
         else
           {
-          printf("ERROR: %s %s\n",  buf, g_cloonix_name);
-          wrapper_exit(1, (char *)__FILE__, __LINE__);
+          if (sscanf(buf,"KO_ping_to_agent DBSSH_CLI_DOORS_RESP name=%s",
+              g_cloonix_name)== 1)
+            {
+            printf("NOT REACHABLE: %s\n", g_cloonix_name);
+            wrapper_exit(1, (char *)__FILE__, __LINE__);
+            }
+          else if (sscanf(buf,"KO_name_not_found DBSSH_CLI_DOORS_RESP name=%s",
+              g_cloonix_name)== 1)
+            {
+            printf("NOT FOUND: %s\n", g_cloonix_name);
+            wrapper_exit(1, (char *)__FILE__, __LINE__);
+            }
+          else if (sscanf(buf,"KO_bad_connection DBSSH_CLI_DOORS_RESP name=%s",
+              g_cloonix_name)== 1)
+            {
+            printf("BAD CONNECT: %s\n", g_cloonix_name);
+            wrapper_exit(1, (char *)__FILE__, __LINE__);
+            }
+          else
+            {
+            printf("ERROR: %s %s\n",  buf, g_cloonix_name);
+            wrapper_exit(1, (char *)__FILE__, __LINE__);
+            }
           }
         }
       else

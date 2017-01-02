@@ -198,33 +198,37 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
 {
   int len, maxlen, result = 0;
   maxlen = cbuf_readlen(cbuf);
-  len = cloonix_write(fd, cbuf_readptr(cbuf, maxlen), maxlen);
-  if (len <= 0) 
+  if (maxlen > 0)
     {
-    if (len < 0 && ((errno != EINTR) && (errno != EAGAIN))) 
+    len = cloonix_write(fd, cbuf_readptr(cbuf, maxlen), maxlen);
+    if (len <= 0)
       {
-      result = -1;
-      close_chan_fd(channel, fd);
+      if (len < 0 && ((errno != EINTR) && (errno != EAGAIN)))
+        {
+        result = -1;
+        close_chan_fd(channel, fd);
+        }
+      return result;
       }
-    return result;
+    if (len != maxlen)
+      result = -2;
+    cbuf_incrread(cbuf, len);
+    channel->recvdonelen += len;
+    if (channel->recvdonelen >= RECV_WINDOWEXTEND)
+      {
+      send_msg_channel_window_adjust(channel, channel->recvdonelen);
+      channel->recvwindow += channel->recvdonelen;
+      channel->recvdonelen = 0;
+      }
+    if (channel->recvwindow > opts.recv_window)
+      KOUT(" ");
+    if (channel->recvwindow > cbuf_getavail(channel->writebuf))
+      KOUT(" ");
+    if ((channel->extrabuf) &&
+        (channel->recvwindow > cbuf_getavail(channel->extrabuf)))
+      KOUT(" ");
+    fdatasync(fd);
     }
-  if (len != maxlen)
-    result = -2;
-  cbuf_incrread(cbuf, len);
-  channel->recvdonelen += len;
-  if (channel->recvdonelen >= RECV_WINDOWEXTEND)
-    {
-    send_msg_channel_window_adjust(channel, channel->recvdonelen);
-    channel->recvwindow += channel->recvdonelen;
-    channel->recvdonelen = 0;
-    }
-  if (channel->recvwindow > opts.recv_window)
-    KOUT(" ");
-  if (channel->recvwindow > cbuf_getavail(channel->writebuf))
-    KOUT(" ");
-  if ((channel->extrabuf) && 
-      (channel->recvwindow > cbuf_getavail(channel->extrabuf)))
-    KOUT(" ");
   return result;
 }
 /*--------------------------------------------------------------------------*/
@@ -303,29 +307,31 @@ int send_msg_channel_data(struct Channel *channel, int isextended)
     close_chan_fd(channel, fd);
     result = -1;
     }
-
-  maxlen = MIN(channel->transwindow, channel->transmaxpacket);
-  maxlen = MIN(maxlen,
-               ses.writepayload->size - 1 - 4 - 4 - (isextended ? 4 : 0));
-  if ((val > 0) && (maxlen >= val))
+  else
     {
-    buf_putbyte(ses.writepayload, 
-    isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
-    buf_putint(ses.writepayload, channel->remotechan);
-    if (isextended)
-      buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
-    size_pos = ses.writepayload->pos;
-    buf_putint(ses.writepayload, 0);
-    len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
-    if (len <= 0)
-      KOUT(" ");
-    if (len < val)
-      KERR("%d %d %d", (int) maxlen, len, val);
-    buf_incrwritepos(ses.writepayload, len);
-    buf_setpos(ses.writepayload, size_pos);
-    buf_putint(ses.writepayload, len);
-    channel->transwindow -= len;
-    encrypt_packet();
+    maxlen = MIN(channel->transwindow, channel->transmaxpacket);
+    maxlen = MIN(maxlen,
+                 ses.writepayload->size - 1 - 4 - 4 - (isextended ? 4 : 0));
+    if ((val > 0) && (maxlen >= val))
+      {
+      buf_putbyte(ses.writepayload,
+      isextended ? SSH_MSG_CHANNEL_EXTENDED_DATA : SSH_MSG_CHANNEL_DATA);
+      buf_putint(ses.writepayload, channel->remotechan);
+      if (isextended)
+        buf_putint(ses.writepayload, SSH_EXTENDED_DATA_STDERR);
+      size_pos = ses.writepayload->pos;
+      buf_putint(ses.writepayload, 0);
+      len = cloonix_read(fd, buf_getwriteptr(ses.writepayload, maxlen), maxlen);
+      if (len <= 0)
+        KOUT(" ");
+      if (len < val)
+        KERR("%d %d %d", (int) maxlen, len, val);
+      buf_incrwritepos(ses.writepayload, len);
+      buf_setpos(ses.writepayload, size_pos);
+      buf_putint(ses.writepayload, len);
+      channel->transwindow -= len;
+      encrypt_packet();
+      }
     }
   return result;
 }
@@ -618,7 +624,6 @@ void start_send_channel_request(struct Channel *channel, char *type)
 /****************************************************************************/
 void wrapper_exit(int val, char *file, int line)
 {
-//  KERR("%s %d   %d", file, line, getpid()); 
   exit(val);
 }
 /*--------------------------------------------------------------------------*/

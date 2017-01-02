@@ -1,27 +1,10 @@
-/*
- * Dropbear - a SSH2 server
- * 
- * Copyright (c) 2002,2003 Matt Johnston
- * All rights reserved.
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE. */
-
+/****************************************************************************/
+/* Copy-pasted-modified for cloonix                License GPL-3.0+         */
+/*--------------------------------------------------------------------------*/
+/* Original code from:                                                      */
+/*                            Dropbear SSH                                  */
+/*                            Matt Johnston                                 */
+/****************************************************************************/
 #include "includes.h"
 #include "packet.h"
 #include "session.h"
@@ -59,7 +42,7 @@ int write_packet(void)
     written = cloonix_write(ses.sock_out, buf_getptr(writebuf, len), len);
     if (written < 0) 
       {
-      if ((errno != EINTR) && (errno != EAGAIN)) 
+      if ((ses.sock_out != -1) && (errno != EINTR) && (errno != EAGAIN)) 
         KOUT("Error writing: %s", strerror(errno));
       result = -1;
       } 
@@ -84,7 +67,6 @@ int write_packet(void)
   return result;
 }
 /*-------------------------------------------------------------------------*/
-
 
 /***************************************************************************/
 void read_packet()
@@ -122,132 +104,89 @@ void read_packet()
       {
       buf_incrpos(ses.readbuf, len);
       if (len == maxlen) 
-        {
         decrypt_packet();
-        }
       }
     }
 }
+/*-------------------------------------------------------------------------*/
 
-/* Function used to read the initial portion of a packet, and determine the
- * length. Only called during the first BLOCKSIZE of a packet. */
-/* Returns DROPBEAR_SUCCESS if the length is determined, 
- * DROPBEAR_FAILURE otherwise */
-static int read_packet_init() {
-
-	unsigned int maxlen;
-	int slen;
-	unsigned int len;
-	unsigned int blocksize;
-	unsigned int macsize;
-
-
-	blocksize = ses.keys->recv.algo_crypt->blocksize;
-	macsize = ses.keys->recv.algo_mac->hashsize;
-
-	if (ses.readbuf == NULL) {
-		/* start of a new packet */
-		ses.readbuf = buf_new(INIT_READBUF);
-	}
-
-	maxlen = blocksize - ses.readbuf->pos;
-			
-	/* read the rest of the packet if possible */
-	slen = cloonix_read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen), maxlen);
-	if (slen == 0) {
-		ses.remoteclosed();
-	}
-	if (slen < 0) {
-			return DROPBEAR_FAILURE;
-	}
-
-	buf_incrwritepos(ses.readbuf, slen);
-
-	if ((unsigned int)slen != maxlen) {
-		/* don't have enough bytes to determine length, get next time */
-		return DROPBEAR_FAILURE;
-	}
-
-	/* now we have the first block, need to get packet length, so we decrypt
-	 * the first block (only need first 4 bytes) */
-	buf_setpos(ses.readbuf, 0);
-	if (ses.keys->recv.crypt_mode->decrypt(buf_getptr(ses.readbuf, blocksize), 
-				buf_getwriteptr(ses.readbuf, blocksize),
-				blocksize, NULL)) {
-		KOUT("Error decrypting");
-	}
-	len = buf_getint(ses.readbuf) + 4 + macsize;
-
-
-
-	/* check packet length */
-	if ((len > RECV_MAX_PACKET_LEN) ||
-		(len < MIN_PACKET_LEN + macsize) ||
-		((len - macsize) % blocksize != 0)) {
-		KOUT("Integrity error (bad packet size %u)", len);
-	}
-
-	if (len > ses.readbuf->size) {
-		buf_resize(ses.readbuf, len);		
-	}
-	buf_setlen(ses.readbuf, len);
-	buf_setpos(ses.readbuf, blocksize);
-	return DROPBEAR_SUCCESS;
+/***************************************************************************/
+static int read_packet_init(void )
+{
+  int slen, result = DROPBEAR_FAILURE;;
+  unsigned int maxlen;
+  unsigned int len;
+  unsigned int blocksize;
+  unsigned int macsize;
+  blocksize = ses.keys->recv.algo_crypt->blocksize;
+  macsize = ses.keys->recv.algo_mac->hashsize;
+  if (ses.readbuf == NULL)
+    ses.readbuf = buf_new(INIT_READBUF);
+  maxlen = blocksize - ses.readbuf->pos;
+  slen = cloonix_read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen), maxlen);
+  if (slen == 0)
+    ses.remoteclosed();
+  if (slen >= 0)
+    {
+    buf_incrwritepos(ses.readbuf, slen);
+    if ((unsigned int)slen == maxlen)
+      {
+      buf_setpos(ses.readbuf, 0);
+      if (ses.keys->recv.crypt_mode->decrypt
+                         (buf_getptr(ses.readbuf, blocksize), 
+                          buf_getwriteptr(ses.readbuf, blocksize),
+                          blocksize, NULL))
+        KOUT("Error decrypting");
+      len = buf_getint(ses.readbuf) + 4 + macsize;
+      if ((len > RECV_MAX_PACKET_LEN) ||
+          (len < MIN_PACKET_LEN + macsize) ||
+          ((len - macsize) % blocksize != 0))
+        KOUT("Integrity error (bad packet size %u)", len);
+      if (len > ses.readbuf->size)
+        buf_resize(ses.readbuf, len);		
+      buf_setlen(ses.readbuf, len);
+      buf_setpos(ses.readbuf, blocksize);
+      result = DROPBEAR_SUCCESS;
+      }
+    }
+return result;
 }
+/*-------------------------------------------------------------------------*/
 
-/* handle the received packet */
-void decrypt_packet() {
-
-	unsigned char blocksize;
-	unsigned char macsize;
-	unsigned int padlen;
-	unsigned int len;
-
-	blocksize = ses.keys->recv.algo_crypt->blocksize;
-	macsize = ses.keys->recv.algo_mac->hashsize;
-
-
-	/* we've already decrypted the first blocksize in read_packet_init */
-	buf_setpos(ses.readbuf, blocksize);
-
-	/* decrypt it in-place */
-	len = ses.readbuf->len - macsize - ses.readbuf->pos;
-	if (ses.keys->recv.crypt_mode->decrypt(
-				buf_getptr(ses.readbuf, len), 
-				buf_getwriteptr(ses.readbuf, len),
-				len, NULL)) {
-		KOUT("Error decrypting");
-	}
-	buf_incrpos(ses.readbuf, len);
-
-	/* get padding length */
-	buf_setpos(ses.readbuf, PACKET_PADDING_OFF);
-	padlen = buf_getbyte(ses.readbuf);
-		
-	/* payload length */
-	/* - 4 - 1 is for LEN and PADLEN values */
-	len = ses.readbuf->len - padlen - 4 - 1 - macsize;
-	if ((len > RECV_MAX_PAYLOAD_LEN) || (len < 1)) {
-		KOUT("Bad packet size %u", len);
-	}
-
-	buf_setpos(ses.readbuf, PACKET_PAYLOAD_OFF);
-
-	/* copy payload */
-	ses.payload = buf_new(len);
-	memcpy(ses.payload->data, buf_getptr(ses.readbuf, len), len);
-	buf_incrlen(ses.payload, len);
-
-	buf_free(ses.readbuf);
-	ses.readbuf = NULL;
-	buf_setpos(ses.payload, 0);
-
-	ses.recvseq++;
-
+/***************************************************************************/
+void decrypt_packet()
+{
+  unsigned char blocksize;
+  unsigned char macsize;
+  unsigned int padlen;
+  unsigned int len;
+  blocksize = ses.keys->recv.algo_crypt->blocksize;
+  macsize = ses.keys->recv.algo_mac->hashsize;
+  buf_setpos(ses.readbuf, blocksize);
+  len = ses.readbuf->len - macsize - ses.readbuf->pos;
+  if (ses.keys->recv.crypt_mode->decrypt(
+    buf_getptr(ses.readbuf, len), 
+  buf_getwriteptr(ses.readbuf, len), len, NULL))
+    KOUT("Error decrypting");
+  buf_incrpos(ses.readbuf, len);
+  buf_setpos(ses.readbuf, PACKET_PADDING_OFF);
+  padlen = buf_getbyte(ses.readbuf);
+  len = ses.readbuf->len - padlen - 4 - 1 - macsize;
+  if ((len > RECV_MAX_PAYLOAD_LEN) || (len < 1))
+    KOUT("Bad packet size %u", len);
+  buf_setpos(ses.readbuf, PACKET_PAYLOAD_OFF);
+  ses.payload = buf_new(len);
+  memcpy(ses.payload->data, buf_getptr(ses.readbuf, len), len);
+  buf_incrlen(ses.payload, len);
+  buf_free(ses.readbuf);
+  ses.readbuf = NULL;
+  buf_setpos(ses.payload, 0);
+  ses.recvseq++;
 }
+/*-------------------------------------------------------------------------*/
 
-
-void encrypt_packet()
+/***************************************************************************/
+void encrypt_packet(void)
 {
   unsigned char padlen;
   unsigned char blocksize, mac_size;
@@ -301,5 +240,4 @@ void encrypt_packet()
       (packet_type != SSH_MSG_IGNORE))
     ses.last_packet_time_idle = now;
 }
-
-
+/*-------------------------------------------------------------------------*/

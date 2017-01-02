@@ -61,6 +61,10 @@ const struct dropbear_hash dropbear_nohash =
         {0, 0};
 
 
+int get_sessinitdone(void)
+{
+  return sessinitdone;
+}
 
 /* called only at the start of a session, set up initial state */
 void common_session_init(int sock_in, int sock_out) {
