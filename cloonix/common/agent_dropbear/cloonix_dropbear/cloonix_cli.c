@@ -32,9 +32,6 @@
 #define XAUTH_BIN2 "/usr/bin/xauth"
 #define XAUTH_BIN3 "/bin/xauth"
 
-#define ERRFD_IS_READ(channel) ((channel)->extrabuf == NULL)
-#define ERRFD_IS_WRITE(channel) (!ERRFD_IS_READ(channel))
-
 
 void read_packet(void);
 void cli_session(int sock_in, int sock_out); 
@@ -117,8 +114,7 @@ static void timeout_cli_finished(void *data)
   int line = (int) ((unsigned long) data);
 
   if (((channel->writefd >= 0) && (cbuf_getused(channel->writebuf) > 0)) ||
-      ((ERRFD_IS_WRITE(channel)) && (channel->errfd >= 0) &&
-       (cbuf_getused(channel->extrabuf) > 0)))
+      ((channel->errfd >= 0) && (cbuf_getused(channel->extrabuf) > 0)))
     {
     clownix_timeout_add(1, timeout_cli_finished, data, NULL, NULL);
     }
@@ -133,7 +129,8 @@ static void timeout_cli_finished(void *data)
 /****************************************************************************/
 static void cli_finished(int line) 
 {
-  clownix_timeout_add(1, timeout_cli_finished, (void *) line, NULL, NULL);
+  unsigned long uline = (unsigned long) line;
+  clownix_timeout_add(1, timeout_cli_finished, (void *) uline, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -469,14 +466,6 @@ static void fct_before_epoll(int epollfd)
         g_epev_readfd.events |= EPOLLIN;
         epoll_ctl(epollfd, EPOLL_CTL_ADD, channel->readfd, &g_epev_readfd);
         }
-      if (ERRFD_IS_READ(channel) && channel->errfd >= 0)
-        {
-        if (channel->errfd != 2)
-          KOUT("%d", channel->errfd);
-        g_epev_errfd.events |= EPOLLIN;
-        if (epoll_ctl(epollfd, EPOLL_CTL_ADD, channel->errfd, &g_epev_errfd))
-          KOUT(" ");
-        }
       }
     if (channel->writefd >= 0 &&
         cbuf_getused(channel->writebuf) > 0)
@@ -486,14 +475,13 @@ static void fct_before_epoll(int epollfd)
       g_epev_writefd.events |= EPOLLOUT;
       epoll_ctl(epollfd, EPOLL_CTL_ADD, channel->writefd, &g_epev_writefd);
       }
-    if (ERRFD_IS_WRITE(channel) && channel->errfd >= 0
-        && cbuf_getused(channel->extrabuf) > 0)
+    if ((channel->errfd >= 0) && (cbuf_getused(channel->extrabuf) > 0))
       {
       if (channel->errfd != 2)
         KOUT("%d", channel->errfd);
       g_epev_errfd.events |= EPOLLOUT;
       if (epoll_ctl(epollfd, EPOLL_CTL_ADD, channel->errfd, &g_epev_errfd))
-        KOUT(" ");
+        KERR(" ");
       }
   }
 }

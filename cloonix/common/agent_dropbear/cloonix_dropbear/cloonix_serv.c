@@ -28,8 +28,6 @@
 #define MAX_BIN_PATH_LEN 100
 #define XAUTH_CMD_LEN 500
 
-#define ERRFD_IS_READ(channel) ((channel)->extrabuf == NULL)
-#define ERRFD_IS_WRITE(channel) (!ERRFD_IS_READ(channel))
 
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 int send_msg_channel_data(struct Channel *channel, int isextended);
@@ -260,15 +258,10 @@ static void channelio(fd_set *readfds, fd_set *writefds)
     {
     if (channel->readfd >= 0 && FD_ISSET(channel->readfd, readfds))
       send_msg_channel_data(channel, 0);
-    if ((ERRFD_IS_READ(channel)) && 
-        (channel->errfd >= 0) &&
-        (FD_ISSET(channel->errfd, readfds))) 
+    if ((channel->errfd >= 0) && (FD_ISSET(channel->errfd, readfds))) 
       send_msg_channel_data(channel, 1);
     if (channel->writefd >= 0 && FD_ISSET(channel->writefd, writefds)) 
       writechannel(channel, channel->writefd, channel->writebuf);
-    if ((ERRFD_IS_WRITE(channel)) &&
-        (channel->errfd >= 0 && FD_ISSET(channel->errfd, writefds)))
-      writechannel(channel, channel->errfd, channel->extrabuf); 
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -305,16 +298,12 @@ static void setchannelfds(fd_set *readfds, fd_set *writefds)
       {
       if (channel->readfd >= 0)
         FD_SET(channel->readfd, readfds);
-      if (ERRFD_IS_READ(channel) && channel->errfd >= 0)
+      if (channel->errfd >= 0)
         FD_SET(channel->errfd, readfds);
       }
     if ((channel->writefd >= 0) &&
         (cbuf_getused(channel->writebuf) > 0))
       FD_SET(channel->writefd, writefds);
-    if ((ERRFD_IS_WRITE(channel)) &&
-        (channel->errfd >= 0) &&
-        (cbuf_getused(channel->extrabuf)) > 0)
-      FD_SET(channel->errfd, writefds);
     }
 }
 /*---------------------------------------------------------------------------*/
