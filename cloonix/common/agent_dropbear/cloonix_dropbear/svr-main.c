@@ -239,15 +239,11 @@ static void sigchld_handler(int UNUSED(unused)) {
 	errno = saved_errno;
 }
 
-/* catch any segvs */
-///static void sigsegv_handler(int UNUSED(unused)) {
-//	KOUT("SEGFAULT");
-//}
-
 /* catch ctrl-c or sigterm */
 static void sigintterm_handler(int UNUSED(unused)) {
 
-	exitflag = 1;
+  KERR(" ");
+  exitflag = 1;
 }
 
 /* Things used by inetd and non-inetd modes */

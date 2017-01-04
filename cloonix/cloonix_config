@@ -70,8 +70,8 @@ CLOONIX_NET: lolo {
 #-------------------------------------------------
 
 ##################################################
-CLOONIX_NET: eric {
-  cloonix_ip       127.0.0.1
+CLOONIX_NET: ebmr {
+  cloonix_ip       192.168.2.5
   cloonix_port     43219
   cloonix_passwd   eclown
 }

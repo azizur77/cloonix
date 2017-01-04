@@ -111,7 +111,7 @@ static int spawn_command( struct ChanSess *chansess,
     KERR(" ");
   else if (pipe(outfds) != 0)
     KERR(" ");
-  else if (ret_errfd && pipe(errfds) != 0)
+  else if (pipe(errfds) != 0)
     KERR(" ");
   else
     {
@@ -125,36 +125,29 @@ static int spawn_command( struct ChanSess *chansess,
         prctl(PR_SET_PDEATHSIG, SIGKILL);
         if ((dup2(infds[FDIN], STDIN_FILENO) < 0) ||
             (dup2(outfds[FDOUT], STDOUT_FILENO) < 0) ||
-            (ret_errfd && dup2(errfds[FDOUT], STDERR_FILENO) < 0))
+            (dup2(errfds[FDOUT], STDERR_FILENO) < 0))
           KOUT(" ");
         close(infds[FDOUT]);
         close(infds[FDIN]);
         close(outfds[FDIN]);
         close(outfds[FDOUT]);
-        if (ret_errfd)
-          {
-          close(errfds[FDIN]);
-          close(errfds[FDOUT]);
-          }
+        close(errfds[FDIN]);
+        close(errfds[FDOUT]);
         execchild(chansess);
         }
       else
         {
         close(infds[FDIN]);
         close(outfds[FDOUT]);
+        close(errfds[FDOUT]);
         setnonblocking(outfds[FDIN]);
         setnonblocking(infds[FDOUT]);
-        if (ret_errfd)
-          {
-          close(errfds[FDOUT]);
-          setnonblocking(errfds[FDIN]);
-          }
+        setnonblocking(errfds[FDIN]);
         if (ret_pid)
           *ret_pid = pid;
         *ret_writefd = infds[FDOUT];
-        *ret_readfd = outfds[FDIN];
-        if (ret_errfd)
-          *ret_errfd = errfds[FDIN];
+        *ret_readfd  = outfds[FDIN];
+        *ret_errfd   = errfds[FDIN];
         result = DROPBEAR_SUCCESS;
         }
     }
@@ -313,11 +306,9 @@ static void closechansess(struct Channel *channel)
 {
   struct ChanSess *chansess;
   unsigned int i;
-  KERR("END %p", channel);
   chansess = (struct ChanSess*)channel->typedata;
   if (chansess != NULL) 
     {
-    KERR("SEND %p", chansess);
     send_exitsignalstatus(channel);
     m_free(chansess->cmd);
     if (chansess->tty) 
@@ -367,7 +358,10 @@ static void chansessionrequest(struct Channel *channel)
     else if (strcmp(type, "exec") == 0)
       ret = sessioncommand(channel, chansess, 1);
     else if (strcmp(type, "signal") == 0)
+      {
+      KERR(" ");
       ret = sessionsignal(chansess);
+      }
     else
       KERR("%s", type);
     }
@@ -410,7 +404,10 @@ static int sessionsignal(struct ChanSess *chansess)
       if (kill(chansess->pid, sig) < 0)
         KERR(" ");
       else
+        {
+        KERR("%d ",  sig);
         result = DROPBEAR_SUCCESS;
+        }
       }
     }
   return result;

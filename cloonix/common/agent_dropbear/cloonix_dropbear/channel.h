@@ -102,7 +102,6 @@ extern const struct ChanType clichansess;
 int send_msg_channel_open_init(int fd);
 void recv_msg_channel_open_confirmation();
 void recv_msg_channel_open_failure();
-void start_send_channel_request(struct Channel *channel, char *type);
 
 void send_msg_request_success();
 void send_msg_request_failure();

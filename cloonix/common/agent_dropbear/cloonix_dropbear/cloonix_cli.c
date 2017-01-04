@@ -38,7 +38,6 @@ void cli_session(int sock_in, int sock_out);
 int send_msg_channel_data(struct Channel *channel, int isextended);
 void process_packet(void);
 void cli_sessionloop(void);
-void check_in_progress(struct Channel *channel);
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 void session_cleanup(void);
 void cli_tty_cleanup(void);
@@ -442,6 +441,8 @@ static int set_remoteident(char *buf)
 static void fct_before_epoll(int epollfd)
 {
   struct Channel *channel;
+  if (!(get_sessinitdone()))
+    KOUT(" ");
   channel = &ses.channel;
   memset(&g_epev_readfd, 0, sizeof(struct epoll_event));
   memset(&g_epev_writefd, 0, sizeof(struct epoll_event));
@@ -481,7 +482,7 @@ static void fct_before_epoll(int epollfd)
         KOUT("%d", channel->errfd);
       g_epev_errfd.events |= EPOLLOUT;
       if (epoll_ctl(epollfd, EPOLL_CTL_ADD, channel->errfd, &g_epev_errfd))
-        KERR(" ");
+        KOUT(" ");
       }
   }
 }

@@ -52,7 +52,8 @@ static void cli_chansessreq(struct Channel *channel)
   int wantreply;
   type = buf_getstring(ses.payload, NULL);
   wantreply = buf_getbool(ses.payload);
-KERR("%s  %d", type, wantreply);
+  if (cli_ses.retval != 42)
+    KERR("%d", cli_ses.retval);
   if (strcmp(type, "exit-status") == 0)
     cli_ses.retval = buf_getint(ses.payload);
   else if (strcmp(type, "exit-signal") == 0)
@@ -72,7 +73,7 @@ static void cli_closechansess(struct Channel *channel)
   (void) channel;
   if (channel->init_done)
     cli_tty_cleanup(); 
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
+  wrapper_exit(cli_ses.retval, (char *)__FILE__, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -167,7 +168,10 @@ static void send_chansess_pty_req(struct Channel *channel)
   char *cloonix_name = get_cloonix_name_prompt();
   char *cloonix_display = get_cloonix_display();
   char *cloonix_xauth_cookie_key = get_cloonix_xauth_cookie_key();
-  start_send_channel_request(channel, "pty-req");
+  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
+  buf_putint(ses.writepayload, channel->remotechan);
+  buf_putstring(ses.writepayload, "pty-req", strlen("pty-req"));
+
   buf_putbyte(ses.writepayload, 0);
   if (!strcmp(ses.remoteident, LOCAL_IDENT))
     {
@@ -193,7 +197,9 @@ static void send_chansess_shell_req(struct Channel *channel)
     reqtype = "exec";
   else
     reqtype = "shell";
-  start_send_channel_request(channel, reqtype);
+  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
+  buf_putint(ses.writepayload, channel->remotechan);
+  buf_putstring(ses.writepayload, reqtype, strlen(reqtype));
   buf_putbyte(ses.writepayload, 0); /* Don't want replies */
   if (cli_opts.cmd)
     buf_putstring(ses.writepayload, cli_opts.cmd, strlen(cli_opts.cmd));

@@ -94,7 +94,7 @@ static void cli_session_init() {
 	cli_ses.stderrcopy = dup(STDERR_FILENO);
 	cli_ses.stderrflags = fcntl(STDERR_FILENO, F_GETFL, 0);
 
-	cli_ses.retval = EXIT_SUCCESS; 
+        cli_ses.retval = 42;
 
 
 	/* For printing "remote host closed" for the user */

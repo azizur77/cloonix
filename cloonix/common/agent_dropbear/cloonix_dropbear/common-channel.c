@@ -33,13 +33,10 @@ static void send_msg_channel_window_adjust(struct Channel *channel,
 		unsigned int incr);
 int send_msg_channel_data(struct Channel *channel, int isextended);
 static void remove_channel(struct Channel *channel);
-void check_in_progress(struct Channel *channel);
 void check_close(struct Channel *channel);
 static void close_chan_fd(struct Channel *channel, int fd);
 
 
-#define ERRFD_IS_READ(channel) ((channel)->extrabuf == NULL)
-#define ERRFD_IS_WRITE(channel) (!ERRFD_IS_READ(channel))
 
 /* allow space for:
  * 1 byte  byte      SSH_MSG_CHANNEL_DATA
@@ -152,6 +149,7 @@ void check_close(struct Channel *channel)
           (channel->readfd == -1) &&
           (channel->writefd == -1))
         {
+        session_cleanup();
         channel->flushing = 1;
         }
       }
@@ -164,31 +162,6 @@ void check_close(struct Channel *channel)
       {
       wrapper_exit(0, (char *)__FILE__, __LINE__);
       }
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void check_in_progress(struct Channel *channel)
-{
-  int val;
-  socklen_t vallen = sizeof(val);
-  if ((getsockopt(channel->writefd, SOL_SOCKET, SO_ERROR, &val, &vallen))|| 
-      (val != 0))
-    {
-    KERR(" ");
-    send_msg_channel_open_failure(channel->remotechan,
-    SSH_OPEN_CONNECT_FAILED, "", "");
-    close(channel->writefd);
-    remove_channel(channel);
-    }
-  else
-    {
-    chan_initwritebuf(channel);
-    send_msg_channel_open_confirmation(channel,
-                                       channel->recvwindow,
-                                       channel->recvmaxpacket);
-    channel->readfd = channel->writefd;
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -238,14 +211,7 @@ static void remove_channel(struct Channel * channel)
 {
   if (channel->init_done)
   {
-  cbuf_free(channel->writebuf);
-  channel->writebuf = NULL;
-  if (channel->extrabuf)
-    {
-    cbuf_free(channel->extrabuf);
-    channel->extrabuf = NULL;
-    }
-  if (IS_DROPBEAR_SERVER || (channel->writefd != STDOUT_FILENO)) 
+  if (!channel->extrabuf)
     {
     close(channel->writefd);
     close(channel->readfd);
@@ -257,11 +223,7 @@ static void remove_channel(struct Channel * channel)
     channel->ctype->closehandler(channel);
     channel->close_handler_done = 1;
     }
-  if (!isempty(&ses.writequeue))
-    KERR("not empty");
   }
-  memset(channel, 0, sizeof(struct Channel)); 
-  wrapper_exit(0, (char *)__FILE__, __LINE__);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -609,15 +571,6 @@ void send_msg_request_failure()
 {
   buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_FAILURE);
   encrypt_packet();
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void start_send_channel_request(struct Channel *channel, char *type) 
-{
-  buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
-  buf_putint(ses.writepayload, channel->remotechan);
-  buf_putstring(ses.writepayload, type, strlen(type));
 }
 /*--------------------------------------------------------------------------*/
 
