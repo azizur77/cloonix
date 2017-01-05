@@ -552,10 +552,12 @@ static int fct_after_epoll(int nb, struct epoll_event *events)
       if (evt & EPOLLERR)
         {
         cli_finished(__LINE__); 
+        result = 0;
         }
       if (evt & EPOLLHUP)
         {
         cli_finished(__LINE__); 
+        result = 0;
         }
       else if (evt)
         {

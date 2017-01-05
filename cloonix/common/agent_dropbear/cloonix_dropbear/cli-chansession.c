@@ -81,23 +81,22 @@ static void cli_closechansess(struct Channel *channel)
 static void cli_tty_setup(void) 
 {
   struct termios tio;
-  if (!cli_opts.wantpty)
-    cli_ses.tty_raw_mode = 1;
   if (cli_ses.tty_raw_mode != 1)
     {
-    if (tcgetattr(STDIN_FILENO, &tio) == -1)
-      KOUT("Failed to set raw TTY mode");
-    cli_ses.saved_tio = tio;
-    tio.c_iflag |= IGNPAR;
-    tio.c_iflag &= ~(ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXANY | IXOFF);
-    tio.c_iflag &= ~IUCLC;
-    tio.c_lflag &= ~(ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHONL);
-    tio.c_lflag &= ~IEXTEN;
-    tio.c_oflag &= ~OPOST;
-    tio.c_cc[VMIN] = 1;
-    tio.c_cc[VTIME] = 0;
-    if (tcsetattr(STDIN_FILENO, TCSADRAIN, &tio) == -1)
-      KOUT("Failed to set raw TTY mode");
+    if (tcgetattr(STDIN_FILENO, &tio) != -1)
+      {
+      cli_ses.saved_tio = tio;
+      tio.c_iflag |= IGNPAR;
+      tio.c_iflag &= ~(ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXANY | IXOFF);
+      tio.c_iflag &= ~IUCLC;
+      tio.c_lflag &= ~(ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHONL);
+      tio.c_lflag &= ~IEXTEN;
+      tio.c_oflag &= ~OPOST;
+      tio.c_cc[VMIN] = 1;
+      tio.c_cc[VTIME] = 0;
+      if (tcsetattr(STDIN_FILENO, TCSADRAIN, &tio) == -1)
+        KOUT("Failed to set raw TTY mode");
+      }
     cli_ses.tty_raw_mode = 1;
     }
 }
@@ -106,12 +105,9 @@ static void cli_tty_setup(void)
 /*****************************************************************************/
 void cli_tty_cleanup(void)
 {
-  if (!cli_opts.wantpty)
-    cli_ses.tty_raw_mode = 0;
   if (cli_ses.tty_raw_mode != 0) 
     { 
-    if (tcsetattr(STDIN_FILENO, TCSADRAIN, &cli_ses.saved_tio) == -1) 
-      KERR("Failed restoring TTY");
+    tcsetattr(STDIN_FILENO, TCSADRAIN, &cli_ses.saved_tio);
     cli_ses.tty_raw_mode = 0; 
     }
   unsetnonblocking(STDOUT_FILENO);
