@@ -63,7 +63,7 @@ static void rx_traf_cb(void *ptr, int llid)
     {
     if (nb_llid > 0)
       {
-      if ((blkd->payload_len >= PAYLOAD_BLKD_SIZE) || 
+      if ((blkd->payload_len > PAYLOAD_BLKD_SIZE) || 
           (blkd->payload_len <=0))
         {
         KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len);

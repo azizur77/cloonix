@@ -115,7 +115,7 @@ static void tx_all_chain(t_all_ctx *all_ctx, t_blkd_chain *cur, int llid)
   while(cur)
     {
     next = cur->next; 
-    if ((cur->blkd->payload_len >= PAYLOAD_BLKD_SIZE) ||
+    if ((cur->blkd->payload_len > PAYLOAD_BLKD_SIZE) ||
         (cur->blkd->payload_len <=0))
       {
       KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, cur->blkd->payload_len);

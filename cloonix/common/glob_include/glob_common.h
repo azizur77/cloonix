@@ -84,7 +84,7 @@ char *cloonix_get_short(const char *full_name);
 #define MAX_MUTXT_LEN      2500
 
 #define HEADER_BLKD_SIZE (4 + 8 + sizeof(long long))
-#define PAYLOAD_BLKD_SIZE 2000
+#define PAYLOAD_BLKD_SIZE 1524
 #define MAX_TOTAL_BLKD_SIZE (HEADER_BLKD_SIZE+PAYLOAD_BLKD_SIZE)
 #define GROUP_BLKD_MAX_SIZE (20 * MAX_TOTAL_BLKD_SIZE)
 #define MAX_QEMU_BLKD_IN_GROUP 10

@@ -35,6 +35,8 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 #include <signal.h>
+#include <linux/sockios.h>
+
 
 
 #include "ioc.h"
@@ -45,13 +47,50 @@
 static int glob_ifindex;
 static int g_llid_raw;
 static int g_fd_raw;
+static int g_fd_raw_tx;
 static char g_raw_name[MAX_NAME_LEN];
-static struct sockaddr_ll raw_sockaddr;
-static socklen_t raw_socklen;
+static struct sockaddr_ll g_raw_sockaddr_rx;
+static struct sockaddr_ll g_raw_sockaddr_tx;
+static socklen_t g_raw_socklen_rx;
+static socklen_t g_raw_socklen_tx;
 /*--------------------------------------------------------------------------*/
 static int rx_from_raw(void *ptr, int llid, int fd);
 static void err_raw (void *ptr, int llid, int err, int from);
 /*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void init_raw_sockaddr(int is_tx)
+{
+  if (is_tx)
+    {
+    memset(&g_raw_sockaddr_tx, 0, sizeof(struct sockaddr_ll));
+    g_raw_sockaddr_tx.sll_family = AF_PACKET;
+    g_raw_sockaddr_tx.sll_protocol = htons(ETH_P_ALL);
+    g_raw_sockaddr_tx.sll_ifindex = glob_ifindex;
+    g_raw_sockaddr_tx.sll_pkttype = PACKET_OUTGOING;
+    g_raw_socklen_tx = sizeof(struct sockaddr_ll);
+    }
+  else
+    {
+    memset(&g_raw_sockaddr_rx, 0, sizeof(struct sockaddr_ll));
+    g_raw_sockaddr_rx.sll_family = AF_PACKET;
+    g_raw_sockaddr_rx.sll_protocol = htons(ETH_P_ALL);
+    g_raw_sockaddr_rx.sll_ifindex = glob_ifindex;
+    g_raw_sockaddr_rx.sll_pkttype = PACKET_HOST;
+    g_raw_socklen_rx = sizeof(struct sockaddr_ll);
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static int bind_raw_sock(int fd)
+{
+  int result;
+  init_raw_sockaddr(0);
+  result = bind(fd, (struct sockaddr*) &g_raw_sockaddr_rx, g_raw_socklen_rx); 
+  return result;
+}
+/*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static int get_intf_ifindex(t_all_ctx *all_ctx, char *name)
@@ -99,9 +138,16 @@ static int raw_socket_open(t_all_ctx *all_ctx)
   result = get_intf_ifindex(all_ctx, g_raw_name);
   if (!result)
     {
-    g_fd_raw = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    g_fd_raw_tx = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    g_fd_raw = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (g_fd_raw_tx < 0)
+      KOUT("%d %d", g_fd_raw_tx, errno);
     if ((g_fd_raw < 0) || (g_fd_raw >= MAX_SELECT_CHANNELS-1))
-      KOUT("%d", g_fd_raw);
+      KOUT("%d %d", g_fd_raw, errno);
+    if (bind_raw_sock(g_fd_raw))
+      KOUT("%d %d", g_fd_raw, errno);
+    if (bind_raw_sock(g_fd_raw_tx))
+      KOUT("%d %d", g_fd_raw_tx, errno);
     g_llid_raw = msg_watch_fd(all_ctx, g_fd_raw, rx_from_raw, err_raw);
     nonblock_fd(g_fd_raw);
     }
@@ -109,38 +155,15 @@ static int raw_socket_open(t_all_ctx *all_ctx)
 }
 /*--------------------------------------------------------------------------*/
 
-/*****************************************************************************/
-static void init_raw_sockaddr(int is_tx)
-{
-  memset(&raw_sockaddr, 0, sizeof(struct sockaddr_ll));
-  raw_sockaddr.sll_family = htons(PF_PACKET);
-  raw_sockaddr.sll_protocol = htons(ETH_P_ALL);
-  raw_sockaddr.sll_halen = 6;
-  raw_sockaddr.sll_ifindex = glob_ifindex;
-  raw_socklen = sizeof(struct sockaddr_ll);
-  if (is_tx)
-    raw_sockaddr.sll_pkttype = PACKET_OUTGOING;
-}
-/*---------------------------------------------------------------------------*/
-
 /****************************************************************************/
 void raw_fd_tx(t_all_ctx *all_ctx, t_blkd *blkd)
 {
-  int len, fd;
-  fd = get_fd_with_llid(all_ctx, g_llid_raw);
-  if (fd < 0)
-   KOUT(" ");
-  else if (g_fd_raw != fd)
-    KOUT("%d %d", g_fd_raw, fd);
-  else
-    {
-    init_raw_sockaddr(1);
-    len = sendto(fd, blkd->payload_blkd, blkd->payload_len, 0,
-                    (struct sockaddr *)&(raw_sockaddr),
-                    raw_socklen);
-    if(blkd->payload_len != len)
-      KERR("%d %d", blkd->payload_len, len);
-    }
+  int len;
+  init_raw_sockaddr(1);
+  len = sendto(g_fd_raw_tx, blkd->payload_blkd, blkd->payload_len, 0,
+              (struct sockaddr *)&(g_raw_sockaddr_tx), g_raw_socklen_tx);
+  if(blkd->payload_len != len)
+    KERR("%d %d", blkd->payload_len, len);
   blkd_free((void *)all_ctx, blkd);
 }
 /*---------------------------------------------------------------------------*/
@@ -168,42 +191,45 @@ static int rx_from_raw(void *ptr, int llid, int fd)
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
   t_blkd *bd;
   char *data;
-  int len;
-  init_raw_sockaddr(0);
-
+  int len, queue_size;
   bd = blkd_create_tx_empty(0,0,0);
   data = bd->payload_blkd;
-  len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0, 
-                 (struct sockaddr *)&(raw_sockaddr), &raw_socklen);
-  while(1)
+  if (ioctl(fd, SIOCINQ, &queue_size))
+    KERR(" ");
+  else
     {
-    if (len == 0)
-      KOUT(" ");
-    if (len < 0)
+    if (queue_size > PAYLOAD_BLKD_SIZE)
+      KERR("Socket packet size:%d Limit:%d  (ethtool -K eth0 gro off)", 
+      queue_size, PAYLOAD_BLKD_SIZE);
+    }
+  init_raw_sockaddr(0);
+  len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0, 
+                 (struct sockaddr *)&(g_raw_sockaddr_rx),
+                 &g_raw_socklen_rx);
+  if (len == 0)
+    KOUT(" ");
+  if (len < 0)
+    {
+    if ((errno == EAGAIN) || (errno ==EINTR))
+      len = 0;
+    else
+      KOUT("%d ", errno);
+    blkd_free(ptr, bd);
+    }
+  else 
+    {
+    if (((g_raw_sockaddr_rx.sll_pkttype == PACKET_HOST) || 
+         (g_raw_sockaddr_rx.sll_pkttype == PACKET_BROADCAST) || 
+         (g_raw_sockaddr_rx.sll_pkttype == PACKET_MULTICAST) || 
+         (g_raw_sockaddr_rx.sll_pkttype == PACKET_OTHERHOST)) &&
+        (g_raw_sockaddr_rx.sll_ifindex == glob_ifindex))
       {
-      if ((errno == EAGAIN) || (errno ==EINTR))
-        len = 0;
-      else
-        KOUT("%d ", errno);
-      blkd_free(ptr, bd);
-      break;
+      bd->payload_len = len;
+      sock_fd_tx(all_ctx, 0, bd);
       }
-    else 
+    else
       {
-      if ((raw_sockaddr.sll_pkttype != PACKET_OUTGOING) &&
-          (raw_sockaddr.sll_ifindex == glob_ifindex))
-        {
-        if (llid != g_llid_raw)
-          KOUT(" ");
-        bd->payload_len = len;
-        sock_fd_tx(all_ctx, 0, bd);
-        }
-      else
-        blkd_free(ptr, bd);
-      bd = blkd_create_tx_empty(0,0,0);
-      data = bd->payload_blkd;
-      len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0, 
-                     (struct sockaddr *)&(raw_sockaddr), &raw_socklen);
+      blkd_free(ptr, bd);
       }
     }
   return len;
@@ -229,8 +255,7 @@ void raw_fd_init(t_all_ctx *all_ctx)
   glob_ifindex = 0;
   g_llid_raw = 0;
   memset(g_raw_name, 0, MAX_NAME_LEN);
-  memset(&raw_sockaddr, 0, sizeof(struct sockaddr_ll));
-  raw_socklen = 0;
   g_fd_raw = -1;
+  g_fd_raw_tx = -1;
 }
 /*---------------------------------------------------------------------------*/

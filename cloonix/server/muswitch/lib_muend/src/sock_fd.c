@@ -235,7 +235,7 @@ void sock_fd_tx(t_all_ctx *all_ctx, int idx, t_blkd *blkd)
   int is_blkd, cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
   if (cidx)
     {
-    if ((blkd->payload_len >= PAYLOAD_BLKD_SIZE) ||
+    if ((blkd->payload_len > PAYLOAD_BLKD_SIZE) ||
         (blkd->payload_len <=0))
       {
       KERR("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len);

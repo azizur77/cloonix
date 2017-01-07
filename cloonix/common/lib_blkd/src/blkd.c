@@ -415,7 +415,7 @@ void blkd_put_tx(void *ptr, int nb, int *llid, t_blkd *blkd)
 {
   int i;
   t_llid_blkd *cur;
-  if (blkd->payload_len >= PAYLOAD_BLKD_SIZE)
+  if (blkd->payload_len > PAYLOAD_BLKD_SIZE)
     KOUT("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len); 
   if (blkd->payload_len <=0)
     KOUT("%d", blkd->payload_len); 
@@ -575,7 +575,7 @@ t_blkd *blkd_create_tx_qemu_group(t_blkd_group **ptr_group,
   __sync_fetch_and_add(&(blkd_group->count_blkd_tied), 1);
   if (blkd_group->count_blkd_tied >= MAX_QEMU_BLKD_IN_GROUP)
     KOUT("%d %d", blkd_group->count_blkd_tied, len);
-  if (len >= PAYLOAD_BLKD_SIZE)
+  if (len > PAYLOAD_BLKD_SIZE)
     KOUT("%d %d", (int) PAYLOAD_BLKD_SIZE, len);
   if (len <=0)
     KOUT("%d", len);
@@ -598,7 +598,7 @@ t_blkd *blkd_create_tx_full_copy(int len, char *buf,
   memset(cur, 0, sizeof(t_blkd));
   blkd_group->count_blkd_tied = 1;
   blkd_group->head_data = (char *) malloc(MAX_TOTAL_BLKD_SIZE);
-  if (len >= PAYLOAD_BLKD_SIZE)
+  if (len > PAYLOAD_BLKD_SIZE)
     KOUT("%d %d", (int) PAYLOAD_BLKD_SIZE, len); 
   if (len <=0)
     KOUT("%d", len); 
