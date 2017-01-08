@@ -119,25 +119,28 @@ static int sock_out_is_empty(void)
 /****************************************************************************/
 void check_close(struct Channel *channel) 
 {
-  int result = call_child_death_detection();
-  if (result)  
-    {
-    if (channel->flushing == 0)
-      { 
+  int result;
+  if (channel->flushing == 0)
+    { 
+    result = call_child_death_detection();
+    if (result)  
+      {
       close_while_flushing(channel); 
       session_cleanup();
       channel->flushing = 1;
       }
-    else if (channel->flushing == 1)
-      {
-      if (sock_out_is_empty())
-        channel->flushing = 2;
-      }
-    else if (channel->flushing == 2)
-      {
-      wrapper_exit(0, (char *)__FILE__, __LINE__);
-      }
     }
+  else if (channel->flushing == 1)
+    {
+    if (sock_out_is_empty())
+      channel->flushing = 2;
+    }
+  else if (channel->flushing == 2)
+    {
+    wrapper_exit(0, (char *)__FILE__, __LINE__);
+    }
+  else
+    KOUT(" ");
 }
 /*--------------------------------------------------------------------------*/
 
@@ -186,12 +189,6 @@ static void remove_channel(struct Channel * channel)
 {
   if (channel->init_done)
   {
-  if (!channel->extrabuf)
-    {
-    close(channel->writefd);
-    close(channel->readfd);
-    close(channel->errfd);
-    }
   if (!(channel->close_handler_done) &&
        (channel->ctype->closehandler))
     {
