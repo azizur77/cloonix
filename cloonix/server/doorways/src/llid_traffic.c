@@ -207,35 +207,18 @@ static void clean_auto_timer(t_llid_traf *lt)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void timer_close_dido_llid(void *data)
-{
-  unsigned long ul_llid = (unsigned long) data;
-  int dido_llid = (int)ul_llid;
-  doorways_clean_llid(dido_llid);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void differed_dido_llid_end(int dido_llid)
-{
-  unsigned long ul_llid = (unsigned long) dido_llid;
-  clownix_timeout_add(10,timer_close_dido_llid,(void *)ul_llid,NULL,NULL);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 static void traf_shutdown(int dido_llid, int line)
 {
   t_llid_traf *lt = llid_traf_get(dido_llid);
   int  headsize = sock_header_get_size();
   if (lt)
     {
-    differed_dido_llid_end(lt->dido_llid);
-    if (lt->backdoor_llid)
-      x11_close(lt->backdoor_llid, lt->dido_llid);
     if (lt->being_destroyed)
       return;
     lt->being_destroyed = 1;
+    doorways_clean_llid(dido_llid);
+    if (lt->backdoor_llid)
+      x11_close(lt->backdoor_llid, lt->dido_llid);
     if (lt->is_associated)
       {
       if (lt->backdoor_llid)
@@ -268,9 +251,13 @@ static void timer_traf_shutdown(void *data)
   unsigned long ul_llid = (unsigned long) data;
   int dido_llid = (int)ul_llid;
   if (doorways_tx_get_tot_txq_size(dido_llid))
+    {
     clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+    }
   else
+    {
     traf_shutdown(dido_llid, __LINE__);
+    }
 } 
 /*--------------------------------------------------------------------------*/
     
