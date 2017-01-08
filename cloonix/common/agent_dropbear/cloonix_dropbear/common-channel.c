@@ -20,7 +20,7 @@
 #include "io_clownix.h"
 
 int main_i_run_in_kvm(void);
-void call_child_death_detection(void);
+int call_child_death_detection(void);
 size_t cloonix_read(int fd, void *ibuf, size_t count);
 size_t cloonix_write(int fd, const void *ibuf, size_t count);
 static void send_msg_channel_open_failure(unsigned int remotechan, int reason,
@@ -88,7 +88,7 @@ struct Channel* getchannel() {
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void check_fd_and_close_on_error(struct Channel *channel) 
+static void check_fd_and_close_on_error(struct Channel *channel) 
 {
   int err, val;
   if (channel->errfd != -1)
@@ -138,20 +138,14 @@ static int sock_out_is_empty(void)
 /****************************************************************************/
 void check_close(struct Channel *channel) 
 {
-  call_child_death_detection();
-  if ((channel->ctype->check_close) &&
-      (channel->ctype->check_close(channel)))
+  int result = call_child_death_detection();
+  if (result)  
     {
     if (channel->flushing == 0)
       { 
       check_fd_and_close_on_error(channel); 
-      if ((channel->errfd == -1) && 
-          (channel->readfd == -1) &&
-          (channel->writefd == -1))
-        {
-        session_cleanup();
-        channel->flushing = 1;
-        }
+      session_cleanup();
+      channel->flushing = 1;
       }
     else if (channel->flushing == 1)
       {

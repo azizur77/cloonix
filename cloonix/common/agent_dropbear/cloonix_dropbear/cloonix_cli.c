@@ -110,8 +110,6 @@ static void timeout_cli_finished(void *data)
 {
   struct Channel *channel;
   channel = &ses.channel;
-  int line = (int) ((unsigned long) data);
-
   if (((channel->writefd >= 0) && (cbuf_getused(channel->writebuf) > 0)) ||
       ((channel->errfd >= 0) && (cbuf_getused(channel->extrabuf) > 0)))
     {

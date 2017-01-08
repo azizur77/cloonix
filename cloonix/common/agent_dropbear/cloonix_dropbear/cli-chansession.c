@@ -18,7 +18,7 @@
 #include "io_clownix.h"
 
 
-void call_child_death_detection(void);
+int call_child_death_detection(void);
 char *get_cloonix_name_prompt(void);
 char *get_cloonix_display(void);
 char *get_cloonix_xauth_cookie_key(void);
@@ -33,15 +33,15 @@ static void cli_tty_setup();
 const struct ChanType clichansess = {
 	"session", /* name */
 	cli_initchansess, /* inithandler */
-	NULL, /* checkclosehandler */
 	cli_chansessreq, /* reqhandler */
 	cli_closechansess, /* closehandler */
 };
 
 
 /*****************************************************************************/
-void call_child_death_detection(void)
+int call_child_death_detection(void)
 {
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 

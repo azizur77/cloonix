@@ -80,7 +80,6 @@ struct ChanType {
 
 	char *name;
 	int (*inithandler)(struct Channel*);
-	int (*check_close)(struct Channel*);
 	void (*reqhandler)(struct Channel*);
 	void (*closehandler)(struct Channel*);
 };

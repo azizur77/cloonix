@@ -246,7 +246,7 @@ static void poll_check_close(void *data)
 {
   struct Channel *channel = (struct Channel *) data;
   check_close(channel);
-  cloonix_timer_add(2, poll_check_close, (void *) channel);
+  cloonix_timer_add(1, poll_check_close, (void *) channel);
 }
 /*---------------------------------------------------------------------------*/
 

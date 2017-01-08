@@ -22,7 +22,7 @@
 
 /*---------------------------------------------------------------------------*/
 void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key);
-void call_child_death_detection(void);
+int call_child_death_detection(void);
 /*---------------------------------------------------------------------------*/
 static int sessioncommand(struct Channel *channel, 
                           struct ChanSess *chansess, int iscmd);
@@ -36,7 +36,6 @@ static void addchildpid(struct ChanSess *chansess, pid_t pid);
 static void closechansess(struct Channel *channel);
 static int newchansess(struct Channel *channel);
 static void chansessionrequest(struct Channel *channel);
-static int sesscheckclose(struct Channel *channel);
 
 static void send_exitsignalstatus(struct Channel *channel);
 static void send_msg_chansess_exitstatus(struct Channel * channel,
@@ -48,7 +47,6 @@ static void get_termmodes(struct ChanSess *chansess);
 const struct ChanType svrchansess = {
         "session", /* name */
         newchansess, /* inithandler */
-        sesscheckclose, /* checkclosehandler */
         chansessionrequest, /* reqhandler */
         closechansess, /* closehandler */
 };
@@ -58,12 +56,12 @@ extern char** environ;
 
 
 /*****************************************************************************/
-void call_child_death_detection(void)
+int call_child_death_detection(void)
 {
-  int i, status;
+  int i, status, result = 0;
   pid_t pid;
   struct exxitinfo *nexxit = NULL;
-  while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+  if ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
     nexxit = NULL;
     for (i = 0; i < svr_ses.childpidsize; i++)
@@ -77,6 +75,7 @@ void call_child_death_detection(void)
     if (nexxit == NULL)
       KOUT(" ");
     nexxit->exxitpid = pid;
+    result = (int) pid;
     if (WIFEXITED(status))
       {
       nexxit->exxitstatus = WEXITSTATUS(status);
@@ -91,6 +90,7 @@ void call_child_death_detection(void)
       nexxit->exxitsignal = -1;
       }
     }
+  return result;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -203,17 +203,6 @@ static void run_shell_command(char *cmd, unsigned int maxfd,
     execv(login, argv);
   else
     execv(usershell, argv);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static int sesscheckclose(struct Channel *channel) 
-{
-  struct ChanSess *chansess = (struct ChanSess*)channel->typedata;
-  int result = 1;
-  if (chansess)
-    result = (chansess->exxit.exxitpid != -1);
-  return result;
 }
 /*---------------------------------------------------------------------------*/
 
