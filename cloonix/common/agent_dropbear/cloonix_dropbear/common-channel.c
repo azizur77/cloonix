@@ -88,33 +88,14 @@ struct Channel* getchannel() {
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void check_fd_and_close_on_error(struct Channel *channel) 
+static void close_while_flushing(struct Channel *channel) 
 {
-  int err, val;
   if (channel->errfd != -1)
-    {
-    err = ioctl(channel->errfd, SIOCINQ, &val);
-    if ((err != 0) || (val < 0))
-      {
-      close_chan_fd(channel, channel->errfd);
-      }
-    }
+    close_chan_fd(channel, channel->errfd);
   if (channel->readfd != -1)
-    {
-    err = ioctl(channel->readfd, SIOCINQ, &val);
-    if ((err != 0) || (val < 0))
-      {
-      close_chan_fd(channel, channel->readfd);
-      }
-    }
+    close_chan_fd(channel, channel->readfd);
   if (channel->writefd != -1)
-    {
-    err = ioctl(channel->writefd, SIOCOUTQ, &val);
-    if (err != 0)
-      {
-      close_chan_fd(channel, channel->writefd);
-      }
-    }
+    close_chan_fd(channel, channel->writefd);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -143,7 +124,7 @@ void check_close(struct Channel *channel)
     {
     if (channel->flushing == 0)
       { 
-      check_fd_and_close_on_error(channel); 
+      close_while_flushing(channel); 
       session_cleanup();
       channel->flushing = 1;
       }

@@ -40,7 +40,6 @@ void process_packet(void);
 void cli_sessionloop(void);
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 void session_cleanup(void);
-void cli_tty_cleanup(void);
 void cli_sessionloop_winchange();
 
 
@@ -117,7 +116,6 @@ static void timeout_cli_finished(void *data)
     }
   else
     {
-    cli_tty_cleanup();
     session_cleanup();
     }
 }
