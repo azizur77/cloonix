@@ -72,8 +72,7 @@ int write_packet(void)
 void read_packet()
 {
   int ret, len, maxlen;
-  unsigned char blocksize;
-  blocksize = ses.keys->recv.algo_crypt->blocksize;
+  unsigned char blocksize = MIN_PACKET_LEN;
   if (ses.readbuf == NULL || ses.readbuf->len < blocksize) 
     {
     ret = read_packet_init();
@@ -116,10 +115,9 @@ static int read_packet_init(void )
   int slen, result = DROPBEAR_FAILURE;;
   unsigned int maxlen;
   unsigned int len;
-  unsigned int blocksize;
-  unsigned int macsize;
-  blocksize = ses.keys->recv.algo_crypt->blocksize;
-  macsize = ses.keys->recv.algo_mac->hashsize;
+  unsigned char blocksize = MIN_PACKET_LEN;
+  unsigned int macsize = 0;
+  unsigned char *in, *out;
   if (ses.readbuf == NULL)
     ses.readbuf = buf_new(INIT_READBUF);
   maxlen = blocksize - ses.readbuf->pos;
@@ -132,11 +130,12 @@ static int read_packet_init(void )
     if ((unsigned int)slen == maxlen)
       {
       buf_setpos(ses.readbuf, 0);
-      if (ses.keys->recv.crypt_mode->decrypt
-                         (buf_getptr(ses.readbuf, blocksize), 
-                          buf_getwriteptr(ses.readbuf, blocksize),
-                          blocksize, NULL))
-        KOUT("Error decrypting");
+
+      in = buf_getptr(ses.readbuf, blocksize);
+      out = buf_getwriteptr(ses.readbuf, blocksize);
+      memmove(out, in, blocksize);
+
+
       len = buf_getint(ses.readbuf) + 4 + macsize;
       if ((len > RECV_MAX_PACKET_LEN) ||
           (len < MIN_PACKET_LEN + macsize) ||
@@ -156,18 +155,18 @@ return result;
 /***************************************************************************/
 void decrypt_packet()
 {
-  unsigned char blocksize;
-  unsigned char macsize;
+  unsigned char blocksize = MIN_PACKET_LEN;
+  unsigned char macsize = 0;
   unsigned int padlen;
   unsigned int len;
-  blocksize = ses.keys->recv.algo_crypt->blocksize;
-  macsize = ses.keys->recv.algo_mac->hashsize;
+  unsigned char *in, *out;
   buf_setpos(ses.readbuf, blocksize);
   len = ses.readbuf->len - macsize - ses.readbuf->pos;
-  if (ses.keys->recv.crypt_mode->decrypt(
-    buf_getptr(ses.readbuf, len), 
-  buf_getwriteptr(ses.readbuf, len), len, NULL))
-    KOUT("Error decrypting");
+
+  in = buf_getptr(ses.readbuf, len);
+  out = buf_getwriteptr(ses.readbuf, len);
+  memmove(out, in, len);
+
   buf_incrpos(ses.readbuf, len);
   buf_setpos(ses.readbuf, PACKET_PADDING_OFF);
   padlen = buf_getbyte(ses.readbuf);
@@ -189,16 +188,16 @@ void decrypt_packet()
 void encrypt_packet(void)
 {
   unsigned char padlen;
-  unsigned char blocksize, mac_size;
+  unsigned char blocksize = MIN_PACKET_LEN;
+  unsigned char mac_size = 0;
   buffer * writebuf;
   unsigned char packet_type;
   unsigned int len, encrypt_buf_size;
   time_t now;
+  unsigned char *in, *out;
   buf_setpos(ses.writepayload, 0);
   packet_type = buf_getbyte(ses.writepayload);
   buf_setpos(ses.writepayload, 0);
-  blocksize = ses.keys->trans.algo_crypt->blocksize;
-  mac_size = ses.keys->trans.algo_mac->hashsize;
   encrypt_buf_size = (ses.writepayload->len + 4 + 1) + 
                       MAX(MIN_PACKET_LEN, blocksize) + 3 +
                       mac_size + 1;
@@ -224,10 +223,11 @@ void encrypt_packet(void)
   buf_incrlen(writebuf, padlen);
   buf_setpos(writebuf, 0);
   len = writebuf->len;
-  if (ses.keys->trans.crypt_mode->encrypt(buf_getptr(writebuf, len),
-                                          buf_getwriteptr(writebuf, len),
-                                          len, NULL))
-    KOUT("Error encrypting");
+
+  in = buf_getptr(writebuf, len);
+  out = buf_getwriteptr(writebuf, len);
+  memmove(out, in, len);
+
   buf_incrpos(writebuf, len);
   buf_putbyte(writebuf, packet_type);
   buf_setpos(writebuf, 0);
