@@ -263,8 +263,11 @@ static void timer_traf_shutdown(void *data)
 { 
   unsigned long ul_llid = (unsigned long) data;
   int dido_llid = (int)ul_llid;
-  if (doorways_tx_get_tot_txq_size(dido_llid))
+  if (doorways_tx_or_rx_still_in_queue(dido_llid))
+    {
     clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+KERR(" ");
+    }
   else
     traf_shutdown(dido_llid, __LINE__);
 } 

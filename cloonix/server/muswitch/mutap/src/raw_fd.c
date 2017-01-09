@@ -185,29 +185,142 @@ static void err_raw (void *ptr, int llid, int err, int from)
 }
 /*-------------------------------------------------------------------------*/
 
+
+/*****************************************************************************/
+static int is_an_ip_packet(char *data)
+{ 
+  int result = 0;
+  if ((data[12] == 0x08) && 
+      (data[13] == 0x00) &&
+      (data[14] == 0x45))
+    result = 1;
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*
+void my_ip_seg(void)
+{
+  struct ip_hdr *iphdr;
+  memcpy(iphdr, p->payload, IP_HLEN);
+
+  tmp = ntohs(IPH_OFFSET(iphdr));
+  ofo = tmp & IP_OFFMASK;
+  omf = tmp & IP_MF;
+
+
+
+  left = p->tot_len - IP_HLEN;
+
+  while (left) {
+    last = (left <= mtu - IP_HLEN);
+
+    ofo += nfb;
+    tmp = omf | (IP_OFFMASK & (ofo));
+    if (!last)
+      tmp = tmp | IP_MF;
+    IPH_OFFSET_SET(iphdr, htons(tmp));
+
+    nfb = (mtu - IP_HLEN) / 8;
+    cop = last ? left : nfb * 8;
+    p = copy_from_pbuf(p, &poff, (u8_t *) iphdr + IP_HLEN, cop);
+
+    IPH_LEN_SET(iphdr, htons(cop + IP_HLEN));
+    IPH_CHKSUM_SET(iphdr, 0);
+    IPH_CHKSUM_SET(iphdr, inet_chksum(iphdr, IP_HLEN));
+
+    if (last)
+      pbuf_realloc(rambuf, left + IP_HLEN);
+    header = pbuf_alloc(PBUF_LINK, 0, PBUF_RAM);
+    if (header != NULL) {
+      pbuf_chain(header, rambuf);
+      netif->output(netif, header, dest);
+      IPFRAG_STATS_INC(ip_frag.xmit);
+      pbuf_free(header);
+    } else {
+      pbuf_free(rambuf);
+      return ERR_MEM;
+    }
+    left -= cop;
+  }
+*/
+
+/****************************************************************************/
+static void ip_fragmentation_tx(t_all_ctx *all_ctx, int len, 
+                                char *buf, t_blkd *first_bd)
+{
+  t_blkd *bd = first_bd;
+  char *data = bd->payload_blkd;
+  int i, nb_64_blocks = 22;
+  int nb_oct_per_frag = nb_64_blocks*64;
+  int div = len/nb_oct_per_frag;
+  int left = len%nb_oct_per_frag;
+  int tot_head = 12 + 2 + 20;
+  if (left == 0)
+    {
+    if (div <= 0)
+      KOUT("%d", div);
+    div -= 1;
+    left = nb_oct_per_frag;
+    }
+  for (i = 0; i < div; i++)
+    {
+    memcpy(data, buf, tot_head);
+    memcpy(data + tot_head, buf+(i*nb_oct_per_frag), nb_oct_per_frag);
+    bd->payload_len = nb_oct_per_frag + tot_head;
+    sock_fd_tx(all_ctx, 0, bd);
+    bd = blkd_create_tx_empty(0,0,0);
+    data = bd->payload_blkd;
+    }
+  memcpy(data, buf, tot_head);
+  memcpy(data + tot_head, buf+(i*nb_oct_per_frag), left);
+  bd->payload_len = left;
+  sock_fd_tx(all_ctx, 0, bd);
+}
+/*-------------------------------------------------------------------------*/
+
+
 /****************************************************************************/
 static int rx_from_raw(void *ptr, int llid, int fd)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
   t_blkd *bd;
   char *data;
+  char *tmpbuf = NULL;
   int len, queue_size;
+  if (ioctl(fd, SIOCINQ, &queue_size))
+    {
+    KERR("DROP");
+    return 0;
+    }
+  if (queue_size > PAYLOAD_BLKD_SIZE)
+    tmpbuf = (char *) malloc(queue_size);
   bd = blkd_create_tx_empty(0,0,0);
   data = bd->payload_blkd;
-  if (ioctl(fd, SIOCINQ, &queue_size))
-    KERR(" ");
+  init_raw_sockaddr(0);
+  if (tmpbuf == NULL)
+    {
+    len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0, 
+                   (struct sockaddr *)&(g_raw_sockaddr_rx),
+                   &g_raw_socklen_rx);
+    if (len == 0)
+      KOUT(" ");
+    }
   else
     {
-    if (queue_size > PAYLOAD_BLKD_SIZE)
-      KERR("Socket packet size:%d Limit:%d  (ethtool -K eth0 gro off)", 
-      queue_size, PAYLOAD_BLKD_SIZE);
+    len = recvfrom(fd, tmpbuf, queue_size, 0,  
+                   (struct sockaddr *)&(g_raw_sockaddr_rx),
+                   &g_raw_socklen_rx);
+    if (len == 0)
+      KOUT(" ");
+    if ((len != queue_size) || (!is_an_ip_packet(tmpbuf)))
+      {
+      KERR("len: %d size:%d Limit:%d", len, queue_size, PAYLOAD_BLKD_SIZE);
+      blkd_free(ptr, bd);
+      len = 0;
+      }
     }
-  init_raw_sockaddr(0);
-  len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0, 
-                 (struct sockaddr *)&(g_raw_sockaddr_rx),
-                 &g_raw_socklen_rx);
-  if (len == 0)
-    KOUT(" ");
   if (len < 0)
     {
     if ((errno == EAGAIN) || (errno ==EINTR))
@@ -215,23 +328,32 @@ static int rx_from_raw(void *ptr, int llid, int fd)
     else
       KOUT("%d ", errno);
     blkd_free(ptr, bd);
+    KERR(" ");
     }
-  else 
+  else if (len > 0) 
     {
-    if (((g_raw_sockaddr_rx.sll_pkttype == PACKET_HOST) || 
-         (g_raw_sockaddr_rx.sll_pkttype == PACKET_BROADCAST) || 
-         (g_raw_sockaddr_rx.sll_pkttype == PACKET_MULTICAST) || 
-         (g_raw_sockaddr_rx.sll_pkttype == PACKET_OTHERHOST)) &&
-        (g_raw_sockaddr_rx.sll_ifindex == glob_ifindex))
-      {
-      bd->payload_len = len;
-      sock_fd_tx(all_ctx, 0, bd);
-      }
-    else
+    if (((g_raw_sockaddr_rx.sll_pkttype != PACKET_HOST)      &&
+         (g_raw_sockaddr_rx.sll_pkttype != PACKET_BROADCAST) &&
+         (g_raw_sockaddr_rx.sll_pkttype != PACKET_MULTICAST) &&
+         (g_raw_sockaddr_rx.sll_pkttype != PACKET_OTHERHOST)) ||
+        (g_raw_sockaddr_rx.sll_ifindex != glob_ifindex))
       {
       blkd_free(ptr, bd);
       }
+    else
+      {
+      if (tmpbuf == NULL)
+        {
+        bd->payload_len = len;
+        sock_fd_tx(all_ctx, 0, bd);
+        }
+      else
+        {
+        ip_fragmentation_tx(all_ctx, len, tmpbuf, bd);
+        }
+      }
     }
+  free(tmpbuf);
   return len;
 }
 /*--------------------------------------------------------------------------*/

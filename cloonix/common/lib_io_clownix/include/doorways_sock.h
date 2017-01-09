@@ -33,7 +33,7 @@ int doorways_sock_server_inet(int ip, int port, char *passwd,
                               t_doorways_llid cb_llid,
                               t_doorways_end cb_end, t_doorways_rx cb_rx_fct);
 /*--------------------------------------------------------------------------*/
-int doorways_tx_get_tot_txq_size(int llid);
+int doorways_tx_or_rx_still_in_queue(int llid);
 /*--------------------------------------------------------------------------*/
 int doorways_tx(int llid, int tid, int type, int val, int len, char *buf);
 /*---------------------------------------------------------------------------*/

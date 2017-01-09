@@ -195,17 +195,13 @@ void doorways_sock_address_detect(char *doors_client_addr, int *ip, int *port)
 static void clean_llid(int llid)
 {
   t_llid *lid = g_llid_data[llid];
-  int tx_queued;
   if (lid)
     {
     g_llid_data[llid] = NULL;
     if (!lid->cb_end)
       KOUT(" ");
-    tx_queued = doorways_tx_get_tot_txq_size(llid);
-    if (tx_queued)
-      KERR("TX QUEUE: %d", tx_queued);
-    if ((lid->rx_pktbuf.offset) || (lid->rx_pktbuf.paylen))
-      KERR("RX QUEUE: %d %d", lid->rx_pktbuf.offset, lid->rx_pktbuf.paylen);
+    if (doorways_tx_or_rx_still_in_queue(llid))
+      KERR("Q  %d %d", lid->rx_pktbuf.offset, lid->rx_pktbuf.paylen);
     lid->cb_end(llid);
     clownix_free(lid, __FUNCTION__);
     }
@@ -926,13 +922,20 @@ static void doorways_tx_split(t_llid *lid, int cidx, t_data_channel *dchan,
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int doorways_tx_get_tot_txq_size(int llid)
+int doorways_tx_or_rx_still_in_queue(int llid)
 {
-  int result, is_blkd;
+  int result = 0, is_blkd;
   t_data_channel *dchan;
   int cidx = channel_check_llid(llid, &is_blkd, __FUNCTION__);
+  t_llid *lid = g_llid_data[llid];
   dchan = get_dchan(cidx);
-  result = (int) dchan->tot_txq_size;
+  if (dchan->tot_txq_size)
+    result = 1;
+  else if (lid)
+    {
+    if ((lid->rx_pktbuf.offset) || (lid->rx_pktbuf.paylen))
+      result = 1;
+    }
   return (result);
 }
 /*---------------------------------------------------------------------------*/
