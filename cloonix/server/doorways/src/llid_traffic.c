@@ -270,12 +270,10 @@ static void timer_traf_shutdown(void *data)
     if (lt->two_zeros_in_a_raw == 0)
       {
       if (doorways_tx_or_rx_still_in_queue(dido_llid))
-        {
         lt->two_zeros_in_a_raw = 0;
-        clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
-        }
       else
         lt->two_zeros_in_a_raw = 1;
+      clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
       }
     else
       {
