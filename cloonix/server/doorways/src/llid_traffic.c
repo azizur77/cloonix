@@ -63,6 +63,7 @@ typedef struct t_llid_traf
   int  auto_must_send_resp;
   int  auto_state;
   int  auto_timer_ref;
+  int  two_zeros_in_a_raw;
   long long auto_timer_abs;
   unsigned long long prev_oct_data2dbclient;
   unsigned long long oct_data2dbclient;
@@ -263,13 +264,35 @@ static void timer_traf_shutdown(void *data)
 { 
   unsigned long ul_llid = (unsigned long) data;
   int dido_llid = (int)ul_llid;
-  if (doorways_tx_or_rx_still_in_queue(dido_llid))
+  t_llid_traf *lt = llid_traf_get(dido_llid);
+  if (lt)
     {
-    clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
-KERR(" ");
+    if (lt->two_zeros_in_a_raw == 0)
+      {
+      if (doorways_tx_or_rx_still_in_queue(dido_llid))
+        {
+        lt->two_zeros_in_a_raw = 0;
+        clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+        }
+      else
+        lt->two_zeros_in_a_raw = 1;
+      }
+    else
+      {
+      if (doorways_tx_or_rx_still_in_queue(dido_llid))
+        {
+        lt->two_zeros_in_a_raw = 0;
+        clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+        }
+      else
+        traf_shutdown(dido_llid, __LINE__);
+      }
     }
   else
+    {
+    KERR(" ");
     traf_shutdown(dido_llid, __LINE__);
+    }
 } 
 /*--------------------------------------------------------------------------*/
     
