@@ -267,20 +267,20 @@ static void timer_traf_shutdown(void *data)
   t_llid_traf *lt = llid_traf_get(dido_llid);
   if (lt)
     {
-    if (lt->zero_queue_series < 5)
+    if (lt->zero_queue_series < 6)
       {
       if (doorways_tx_or_rx_still_in_queue(dido_llid))
         lt->zero_queue_series = 0;
       else
         lt->zero_queue_series += 1;
-      clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+      clownix_timeout_add(2, timer_traf_shutdown, data, NULL, NULL);
       }
     else
       {
       if (doorways_tx_or_rx_still_in_queue(dido_llid))
         {
         lt->zero_queue_series = 0;
-        clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
+        clownix_timeout_add(2, timer_traf_shutdown, data, NULL, NULL);
         }
       else
         traf_shutdown(dido_llid, __LINE__);
