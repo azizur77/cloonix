@@ -64,7 +64,6 @@ typedef struct t_llid_traf
   int  auto_state;
   int  auto_timer_ref;
   long long auto_timer_abs;
-  int being_destroyed;
   unsigned long long prev_oct_data2dbclient;
   unsigned long long oct_data2dbclient;
   unsigned long long oct_data2dbserv;
@@ -207,16 +206,31 @@ static void clean_auto_timer(t_llid_traf *lt)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void timer_close_dido_llid(void *data)
+{
+  unsigned long ul_llid = (unsigned long) data;
+  int dido_llid = (int)ul_llid;
+  doorways_clean_llid(dido_llid);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void differed_dido_llid_end(int dido_llid)
+{
+  unsigned long ul_llid = (unsigned long) dido_llid;
+  clownix_timeout_add(2,timer_close_dido_llid,(void *)ul_llid,NULL,NULL);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static void traf_shutdown(int dido_llid, int line)
 {
   t_llid_traf *lt = llid_traf_get(dido_llid);
   int  headsize = sock_header_get_size();
   if (lt)
     {
-    if (lt->being_destroyed)
-      return;
-    lt->being_destroyed = 1;
-    doorways_clean_llid(dido_llid);
+    g_llid_traf[dido_llid] = NULL;
+    differed_dido_llid_end(lt->dido_llid);
     if (lt->backdoor_llid)
       x11_close(lt->backdoor_llid, lt->dido_llid);
     if (lt->is_associated)
@@ -239,7 +253,6 @@ static void traf_shutdown(int dido_llid, int line)
       send_to_traf_client(lt->dido_llid, doors_val_init_link_ko,
                           strlen(lt->auto_resp) + 1, lt->auto_resp);
       }
-    g_llid_traf[dido_llid] = NULL;
     clownix_free(lt, __FUNCTION__);
     }
 }
@@ -251,13 +264,9 @@ static void timer_traf_shutdown(void *data)
   unsigned long ul_llid = (unsigned long) data;
   int dido_llid = (int)ul_llid;
   if (doorways_tx_get_tot_txq_size(dido_llid))
-    {
     clownix_timeout_add(1, timer_traf_shutdown, data, NULL, NULL);
-    }
   else
-    {
     traf_shutdown(dido_llid, __LINE__);
-    }
 } 
 /*--------------------------------------------------------------------------*/
     

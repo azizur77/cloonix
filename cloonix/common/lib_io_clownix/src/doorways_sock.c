@@ -195,11 +195,17 @@ void doorways_sock_address_detect(char *doors_client_addr, int *ip, int *port)
 static void clean_llid(int llid)
 {
   t_llid *lid = g_llid_data[llid];
+  int tx_queued;
   if (lid)
     {
     g_llid_data[llid] = NULL;
     if (!lid->cb_end)
       KOUT(" ");
+    tx_queued = doorways_tx_get_tot_txq_size(llid);
+    if (tx_queued)
+      KERR("TX QUEUE: %d", tx_queued);
+    if ((lid->rx_pktbuf.offset) || (lid->rx_pktbuf.paylen))
+      KERR("RX QUEUE: %d %d", lid->rx_pktbuf.offset, lid->rx_pktbuf.paylen);
     lid->cb_end(llid);
     clownix_free(lid, __FUNCTION__);
     }
