@@ -47,7 +47,7 @@ fct_build_get_arch_packages()
              gtk3 python2 ttf-dejavu alsa-lib \
              python2-pyparsing intltool pygtk libsoup \
              opus python2-six tmux cdrkit \
-             polkit acl
+             polkit acl gst-plugins-base
 
   yes | pacman -Sy gcc-multilib
 
@@ -63,7 +63,8 @@ fct_run_get_arch_packages()
 {
   pacman --noconfirm -Sy gtk3 rxvt-unicode libevent \
                          libusb opus libjpeg-turbo alsa-lib \
-                         tmux cdrkit polkit acl ttf-dejavu
+                         tmux cdrkit polkit acl ttf-dejavu \
+                         gst-plugins-base
   if ! tmux -c ls 1>/dev/null 2>&1 ; then
     localedef -f UTF-8 -i en_US en_US.UTF-8
   fi
@@ -79,12 +80,8 @@ fct_build_get_debian_packages()
              libjpeg-dev python-pyparsing libsoup2.4 libusb-1.0-0-dev \
              libgudev-1.0-dev libopus-dev python-six \
              libtext-csv-perl libepoxy-dev libegl1-mesa-dev \
-             libpolkit-gobject-1-dev libacl1-dev
-
-libgstreamer1.0-dev
-apt-get install libgstreamer-plugins-base1.0-dev
-
-
+             libpolkit-gobject-1-dev libacl1-dev \
+             libgstreamer-plugins-base1.0-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -93,9 +90,9 @@ fct_run_get_debian_packages()
              tmux locales-all genisoimage rxvt-unicode libevent-2.0-5 \
              libusb-1.0 libopus0 e2fsprogs \
              libsdl1.2debian libasound2 libcurl3-gnutls \
-             ttf-dejavu libgtk-3-0 \
-             libepoxy0 libegl1-mesa \
-             libpolkit-gobject-1-0 libacl1
+             ttf-dejavu libgtk-3-0 libepoxy0 libegl1-mesa \
+             libpolkit-gobject-1-0 libacl1 \
+             libgstreamer-plugins-base1.0
 }
 #--------------------------------------------------------------------------
 fct_build_get_centos_packages()
@@ -111,9 +108,8 @@ fct_build_get_centos_packages()
          openssl-devel pixman-devel \
          gobject-introspection-devel libjpeg-turbo-devel \
          zlib-devel cyrus-sasl-devel gtk-doc python-six \
-         cpan libepoxy-devel \
-         polkit-devel libacl-devel
-
+         cpan libepoxy-devel polkit-devel libacl-devel \
+         gstreamer1-plugins-base-devel
   export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
 }
 #--------------------------------------------------------------------------
@@ -121,10 +117,9 @@ fct_run_get_centos_packages()
 {
   yum -y install \
          tmux genisoimage tar gtk3 rxvt-unicode libevent \
-         libusb opus e2fsprogs \
-         libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-         libepoxy \
-         polkit libacl
+         libusb opus e2fsprogs libjpeg SDL alsa-lib \
+         gnutls dejavu-serif-fonts libepoxy \
+         polkit libacl gstreamer1-plugins-base
 }
 #--------------------------------------------------------------------------
 fct_build_get_fedora_packages()
@@ -135,39 +130,36 @@ fct_build_get_fedora_packages()
          flex bison  bzip2 patch diffutils gtk3-devel \
          dejavu-serif-fonts SDL-devel libcap-devel ncurses-devel \
          readline-devel libevent-devel e2fsprogs alsa-lib-devel \
-         opus-devel libsoup-devel pyparsing \
-         libusb-devel libgudev1-devel libgusb-devel intltool \
-         openssl-devel pixman-devel \
-         gobject-introspection-devel libjpeg-turbo-devel \
+         opus-devel libsoup-devel pyparsing libusb-devel \
+         libgudev1-devel libgusb-devel intltool openssl-devel \
+         pixman-devel gobject-introspection-devel libjpeg-turbo-devel \
          zlib-devel cyrus-sasl-devel gtk-doc python-six \
-         perl-Text-CSV libepoxy-devel \
-         polkit-devel libacl-devel
+         perl-Text-CSV libepoxy-devel polkit-devel libacl-devel \
+         gstreamer1-plugins-base-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
 {
   dnf -y install \
          tmux genisoimage tar gtk3 rxvt-unicode libevent \
-         libusb opus e2fsprogs \
-         libjpeg SDL alsa-lib gnutls dejavu-serif-fonts \
-         libepoxy \
-         polkit libacl
+         libusb opus e2fsprogs libjpeg SDL alsa-lib gnutls \
+         dejavu-serif-fonts libepoxy polkit libacl \
+         gstreamer1-plugins-base
 }
 #--------------------------------------------------------------------------
 fct_build_get_opensuse_packages()
 {
   zypper --non-interactive install \
          tmux glibc-locale genisoimage tar rxvt-unicode make \
-         gcc gcc-c++ m4 bc gcc-32bit flex bison \
-         e2fsprogs bzip2 patch diffutils libopenssl-devel \
-         gtk3-devel dejavu-fonts libcap-devel \
-         ncurses-devel readline-devel libevent-devel libSDL-devel \
-         python-gtk-devel python-pyparsing libjpeg62-devel \
-         libogg-devel cyrus-sasl-devel alsa-devel \
-         intltool libsoup-devel libXrandr-devel libusb-devel \
-         libgudev-1_0-devel libopus-devel python-six \
-         perl-Text-CSV libepoxy-devel \
-         polkit-devel libacl-devel
+         gcc gcc-c++ m4 bc gcc-32bit flex bison e2fsprogs \
+         bzip2 patch diffutils libopenssl-devel gtk3-devel \
+         dejavu-fonts libcap-devel ncurses-devel readline-devel \
+         libevent-devel libSDL-devel python-gtk-devel \
+         python-pyparsing libjpeg62-devel libogg-devel \
+         cyrus-sasl-devel alsa-devel intltool libsoup-devel \
+         libXrandr-devel libusb-devel libgudev-1_0-devel \
+         libopus-devel python-six perl-Text-CSV libepoxy-devel \
+         polkit-devel libacl-devel gstreamer-plugins-base-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
@@ -178,7 +170,7 @@ fct_run_get_opensuse_packages()
          libusb libopus0 e2fsprogs libjpeg62  \
          libSDL-1_2-0 alsa-lib gnutls dejavu-fonts \
          libusbredirparser1 libgthread-2_0-0 libepoxy0 \
-         polkit libacl
+         polkit libacl gstreamer-plugins-base
 }
 #--------------------------------------------------------------------------
 if [ $UID != 0 ]; then
