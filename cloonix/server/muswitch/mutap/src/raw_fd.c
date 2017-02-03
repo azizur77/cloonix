@@ -194,6 +194,30 @@ static void timer_inhibit_kerr(t_all_ctx *all_ctx, void *data)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void purge_raw_sock(void *ptr, int fd)
+{
+  t_blkd *bd;
+  char *data;
+  int len;
+  bd = blkd_create_tx_empty(0,0,0);
+  data = bd->payload_blkd;
+  init_raw_sockaddr(0);
+  len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0,
+                 (struct sockaddr *)&(g_raw_sockaddr_rx),
+                 &g_raw_socklen_rx);
+  while (len > 0)
+    {
+    KERR("%d", len);
+    len = recvfrom(fd, data, PAYLOAD_BLKD_SIZE, 0,
+                   (struct sockaddr *)&(g_raw_sockaddr_rx),
+                   &g_raw_socklen_rx);
+    }
+  KERR("%d", len);
+  blkd_free(ptr, bd);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static int rx_from_raw(void *ptr, int llid, int fd)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
@@ -213,6 +237,7 @@ static int rx_from_raw(void *ptr, int llid, int fd)
       KERR("DROP  Probable offloading! Do \"ethtool -K ethx gro/gso off\"");
       clownix_timeout_add(all_ctx, 500, timer_inhibit_kerr, NULL, NULL, NULL);
       }
+    purge_raw_sock(ptr, fd);
     return 0;
     }
   bd = blkd_create_tx_empty(0,0,0);
