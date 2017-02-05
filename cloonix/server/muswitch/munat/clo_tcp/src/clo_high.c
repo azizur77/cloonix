@@ -237,6 +237,16 @@ static void async_fct_call(int num_fct, int id, t_tcp_id *tcpid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void break_of_com_kill_both_sides(t_clo *clo, int line)
+{
+  if (line)
+    KERR("TRAP BREAK %d", line);
+  async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 0, NULL);
+  local_send_reset_state_closed(clo);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void local_rx_data_purge(t_clo *clo)
 {
   int len, res;
@@ -260,6 +270,8 @@ static void local_rx_data_purge(t_clo *clo)
     util_extract_ldata(&(clo->head_ldata), cur);
     cur = next;
     }
+  if (res == -1)
+    break_of_com_kill_both_sides(clo, 0);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -598,7 +610,7 @@ void clo_low_input(int mac_len, u8_t *mac_data)
               {
               res = fct_high_data_rx_possible(&(clo->tcpid));
               if (res == -1)
-                KERR(" ");
+                break_of_com_kill_both_sides(clo, __LINE__);
               if (res == 1)
                 {
                 change = clo_mngt_adjust_loc_wnd(clo, TCP_WND);
@@ -661,7 +673,7 @@ static void receive_all_local_data(void)
       {
       res = fct_high_data_rx_possible(&(cur->tcpid));
       if (res == -1)
-        KERR(" ");
+        break_of_com_kill_both_sides(cur, __LINE__);
       if (res == 1)
         {
         if (!clo_mngt_get_new_rxdata(cur, &len, &data))
@@ -723,7 +735,7 @@ static void send_wnd_modif(void)
       {
       res = fct_high_data_rx_possible(&(cur->tcpid));
       if (res == -1)
-        KERR(" ");
+        break_of_com_kill_both_sides(cur, __LINE__);
       if (res == 1)
         change = clo_mngt_adjust_loc_wnd(cur, TCP_WND);
       else  
