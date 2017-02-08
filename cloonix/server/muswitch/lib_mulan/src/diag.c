@@ -72,6 +72,8 @@ static void rx_traf_cb(void *ptr, int llid)
       else
         blkd_put_tx(ptr, nb_llid, llid_tab, blkd);
       }
+    else
+      blkd_free(ptr, blkd);
     blkd = blkd_get_rx(ptr, llid);
     }
   free(llid_tab);
