@@ -22,6 +22,7 @@ typedef enum
   rx_type_listen,
   rx_type_ascii_start,
   rx_type_open_bound_found,
+  rx_type_rawdata,
 } t_rx_type;
 
 t_data_channel *get_dchan(t_ioc_ctx *ioc_ctx, int cidx);

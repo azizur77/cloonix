@@ -16,36 +16,9 @@
 /*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 /*                                                                          */
 /****************************************************************************/
-typedef struct t_head_bank
-{
-  t_bank_item *head;
-  int count_nb_items;
-} t_head_bank;
+void cisco_close_tcpid(t_tcp_id *tcpid);
+void cisco_arp_resp(char *mac, char *ip);
+int cisco_ssh_syn_ack_arrival(t_tcp_id *tcp_id);
+void cisco_init(t_all_ctx *all_ctx);
 /*--------------------------------------------------------------------------*/
-void bank_add_item(int bank_type, char *name, char *lan, int num,
-                   t_bank_item *intf, t_bank_item *blan, int eorig);
-void bank_del_item(t_bank_item *bank_item, int eorig);
-void delete_bitem(t_bank_item *bitem);
-/*--------------------------------------------------------------------------*/
-void selectioned_item_init(void);
-void selectioned_item_delete(t_bank_item *bitem);
-/*--------------------------------------------------------------------------*/
-int add_new_node(char *name, char *ip, char *kernel, char *rootfs_sod,
-                 char *rootfs_backing_file,  char *install_cdrom, 
-                 char *added_cdrom, char *added_disk, int bank_type, 
-                 double x, double y, int hidden_on_graph, 
-                 int color_choice, int vm_id, int vm_config_flags);
-int add_new_eth(char *name, int num, int type, int mutype,
-                 double x, double y, int hidden_on_graph);
-int add_new_lan(char *name, double x, double y, int hidden_on_graph);
-int add_new_sat(char *name, int mutype,
-                t_snf_info *snf_info, t_c2c_info *c2c_info,
-                double x, double y, int hidden_on_graph);
-void add_new_edge(t_bank_item *bi_eth, t_bank_item *bi_lan, int eorig);
-
-/*--------------------------------------------------------------------------*/
-
-
-
-
 

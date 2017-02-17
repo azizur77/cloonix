@@ -89,7 +89,6 @@ char *used_binaries[] =
   "/bin/chmod",
   "/bin/cp",
   "/bin/ln",
-  "/sbin/mke2fs",
   NULL,
 };
 /*--------------------------------------------------------------------------*/
@@ -523,13 +522,11 @@ static char **save_environ(void)
   snprintf(home, MAX_PATH_LEN-1, "HOME=%s", getenv("HOME"));
   memset(username, 0, MAX_NAME_LEN);
   snprintf(username, MAX_NAME_LEN-1, "USER=%s", getenv("USER"));
-  if (!spice_libs_exists())
+  if (spice_libs_exists())
     {
-    printf("%s %d\n", __FUNCTION__, __LINE__);
-    KOUT(" ");
+    snprintf(lib_path,MAX_PATH_LEN-1,
+             "LD_LIBRARY_PATH=%s/common/spice/spice_lib", cfg_get_bin_dir());
     }
-  snprintf(lib_path,MAX_PATH_LEN-1,
-           "LD_LIBRARY_PATH=%s/common/spice/spice_lib", cfg_get_bin_dir());
   return environ;
 }
 /*---------------------------------------------------------------------------*/
@@ -582,11 +579,6 @@ int main (int argc, char *argv[])
   doorways_sock_init();
   doorways_init(cfg_get_root_work(), cfg_get_server_port(), conf->password);
   eventfull_init();
-  if (!spice_libs_exists())
-    {
-    printf("\n\nSpice libs are required.\n\n"); 
-    KOUT("\n\nSpice libs are required.\n\n"); 
-    }
   if (!file_exists(get_doorways_bin(), X_OK))
     {
     printf("\n\nFile: \"%s\" not found or not executable\n\n", 

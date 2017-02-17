@@ -244,9 +244,9 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
   static char title[MAX_TITLE];
   static char text[MAX_TEXT];
   int is_persistent, is_backed, is_inside_cloonix;
-  int has_p9_host_share; 
-  int vm_config_flags, has_bdisk, has_install_cdrom, has_added_cdrom;
-  int is_full_virt, has_no_reboot, len = 0;
+  int has_p9_host_share, is_cisco; 
+  int vm_config_flags, has_install_cdrom, has_added_cdrom;
+  int is_full_virt, has_no_reboot, has_added_disk, len = 0;
   bitem = look_for_node_with_id(pm->name);
   if (bitem)
     {
@@ -259,12 +259,15 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     is_full_virt  = vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT;
     is_backed   = vm_config_flags & VM_FLAG_DERIVED_BACKING;
     is_inside_cloonix = vm_config_flags & VM_FLAG_IS_INSIDE_CLOONIX;
-    has_bdisk = vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK;
     has_install_cdrom = vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM;
     has_no_reboot = vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT;
     has_added_cdrom = vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM;
+    has_added_disk = vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK;
+    is_cisco = vm_config_flags & VM_CONFIG_FLAG_CISCO;
     has_p9_host_share = vm_config_flags & VM_CONFIG_FLAG_9P_SHARED;
 
+    if (is_cisco)
+      len += sprintf(text + len, "\n\t\tCISCO");
     if (has_p9_host_share)
       len += sprintf(text + len, "\n\t\tP9_HOST_SHARE");
     if (is_persistent)
@@ -289,9 +292,6 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
       }
     if (is_inside_cloonix)
       len += sprintf(text + len, "\n\t\tIS INSIDE CLOONIX");
-    if (has_bdisk)
-      len += sprintf(text + len, "\n BDISK: %s", 
-                     bitem->pbi.pbi_node->node_bdisk);
     if (has_install_cdrom)
       len += sprintf(text + len, "\n INSTALL_CDROM: %s",
                      bitem->pbi.pbi_node->install_cdrom);
@@ -300,6 +300,10 @@ static void node_item_info(GtkWidget *mn, t_item_ident *pm)
     if (has_added_cdrom)
       len += sprintf(text + len, "\n ADDED_CDROM: %s",
                      bitem->pbi.pbi_node->added_cdrom);
+    if (has_added_disk)
+      len += sprintf(text + len, "\n ADDED_DISK: %s",
+                     bitem->pbi.pbi_node->added_disk);
+
 
     display_info(title, text);
     }

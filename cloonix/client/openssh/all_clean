@@ -1,0 +1,3 @@
+#!/bin/bash
+rm -rf openssh-7.4p1
+rm -rf tainted_openssh

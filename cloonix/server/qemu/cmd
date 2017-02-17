@@ -4,8 +4,9 @@ HERE=`pwd`
 CLOONIX_COMMON=${HERE}/../../../cloonix/common
 SPICE_LIB=${CLOONIX_COMMON}/spice/spice_lib/pkgconfig
 if [ ! -e ${SPICE_LIB} ]; then
-  echo SPICE IS A MUST!
-  exit 1
+  ABLE="disable"
+else
+  ABLE="enable"
 fi
 MUETH=${HERE}/../../
 QEMU_NAME=qemu-627eae7
@@ -20,8 +21,8 @@ cd ${HERE}/qemu_bin/tainted_qemu
  CONFIGURATION_OPTS="--prefix=/usr/local
                      --target-list=x86_64-softmmu
                      --enable-kvm
-                     --enable-spice
-                     --enable-usb-redir
+                     --${ABLE}-spice
+                     --${ABLE}-usb-redir
                      --enable-linux-user
                      --disable-gtk
                      --disable-virtfs
@@ -76,7 +77,11 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --enable-mueth
                      --muethdir=${MUETH}"
 
-PKG_CONFIG_PATH=${SPICE_LIB} ./configure  $CONFIGURATION_OPTS
+if [ "${ABLE}" = "enable" ]; then
+  PKG_CONFIG_PATH=${SPICE_LIB} ./configure  $CONFIGURATION_OPTS
+else
+  ./configure  $CONFIGURATION_OPTS
+fi
 
 make clean
 make -j 5

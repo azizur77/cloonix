@@ -29,6 +29,7 @@ LIBS = -L${BLKD} -lblkd \
        -L${IOC} -lioc \
        -L${RPCT} -lrpct \
        -L${LIB_MUEND} -lmuend \
+       -lrt
 
 
 CFLAGS+= -g $(WARNINGS) $(INCLUDES)

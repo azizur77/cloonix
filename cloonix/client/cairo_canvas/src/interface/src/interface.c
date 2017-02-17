@@ -37,6 +37,8 @@
 #include "layout_rpc.h"
 #include "utils.h"
 
+int check_before_start_launch(char **argv);
+
 /*--------------------------------------------------------------------------*/
 static t_topo_info *current_topo = NULL;
 static int g_not_first_callback_topo;
@@ -69,32 +71,6 @@ int get_vm_id_from_topo(char *name)
 /*--------------------------------------------------------------------------*/
 
 
-/*****************************************************************************/
-static int file_exists_exec(char *path)
-{
-  int err, result = 0;
-  err = access(path, X_OK);
-  if (!err)
-    result = 1;
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static int check_before_start_launch(char **argv)
-{
-  int result = 0;
-  char info[MAX_PRINT_LEN];
-  if (file_exists_exec(argv[0]))
-    result = 1;
-  else
-    {
-    sprintf(info, "File: %s Problem\n", argv[0]);
-    insert_next_warning(info, 1);
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static int start_launch(void *ptr)
@@ -119,13 +95,24 @@ void launch_xterm_double_click(char *name_vm, int vm_config_flags)
   memset(name, 0, MAX_NAME_LEN);
   cloonix_get_xvt(xvt);
   strcpy(name, name_vm);
-  snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", local_get_cloonix_name(), name);
-  snprintf(cmd, 2*MAX_PATH_LEN-1, 
-           "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh %s %s root@%s",
-           get_local_cloonix_tree(),  get_doors_client_addr(), 
-           get_password(), name); 
+
+  if (vm_config_flags & VM_CONFIG_FLAG_CISCO)
+    {
+    snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", local_get_cloonix_name(), name);
+    sprintf(cmd, "%s/server/qmonitor/qmonitor %s %s %s; sleep 5",
+                 get_distant_cloonix_tree(), get_doors_client_addr(),
+                 get_password(), name);
+    }
+  else
+    {
+    snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", local_get_cloonix_name(), name);
+    snprintf(cmd, 2*MAX_PATH_LEN-1,
+             "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh %s %s %s",
+             get_local_cloonix_tree(),  get_doors_client_addr(),
+             get_password(), name);
+    }
   if (check_before_start_launch(argv))
-    pid_clone_launch(start_launch, NULL, NULL, (void *)(argv), 
+    pid_clone_launch(start_launch, NULL, NULL, (void *)(argv),
                      NULL, NULL, name_vm, -1, 0);
 }
 /*--------------------------------------------------------------------------*/

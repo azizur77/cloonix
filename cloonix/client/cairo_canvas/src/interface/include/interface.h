@@ -51,7 +51,7 @@ void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
                                      char *rootfs_sod, 
                                      char *rootfs_backing_file, 
                                      char *install_cdrom, char *added_cdrom,
-                                     char *node_bdisk,
+                                     char *added_disk,
                                      int qty_eth, int vm_id, 
                                      int vm_config_flags); 
 /*--------------------------------------------------------------------------*/

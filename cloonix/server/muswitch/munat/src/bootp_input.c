@@ -243,9 +243,10 @@ char *get_name_with_mac(char *mac)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int get_dhcp_addr(int *addr, char *mac)
+static int get_dhcp_addr(uint32_t *addr, char *mac)
 {
-  int our_ip_gw, result = -1;
+  uint32_t our_ip_gw;
+  int result = -1;
   t_active_mac *act;
   t_stored_mac *cur = find_mac_in_stored_mac(mac);
   if (!cur)
@@ -256,7 +257,7 @@ static int get_dhcp_addr(int *addr, char *mac)
     if (act)
       free_active_mac(act);
     alloc_active_mac(cur->name, mac);
-    if (ip_string_to_int (&our_ip_gw, get_gw_given2guests()))
+    if (ip_string_to_int (&our_ip_gw, get_gw_ip()))
       KOUT(" ");
     *addr = our_ip_gw + cur->vm_id + 2; 
     result = 0;
@@ -266,7 +267,7 @@ static int get_dhcp_addr(int *addr, char *mac)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void dhcp_decode(int len, char *data, int *type, int *addr)
+static void dhcp_decode(int len, char *data, int *type, uint32_t *addr)
 {
   char *p, *p_end;
   int lng, tag;
@@ -318,15 +319,16 @@ static void dhcp_decode(int len, char *data, int *type, int *addr)
 
 /*****************************************************************************/
 static int format_rbp(struct bootp_t *bp, struct bootp_t *rbp, 
-                      int addr, int type)
+                      uint32_t addr, int type)
 {
-  int our_ip_gw, our_ip_dns, our_default_route, len;
+  uint32_t our_ip_gw, our_ip_dns, our_default_route;
+  int len;
   char *q;
-  if (ip_string_to_int (&our_ip_gw, get_gw_given2guests()))
+  if (ip_string_to_int (&our_ip_gw, get_gw_ip()))
     KOUT(" ");
-  if (ip_string_to_int (&our_default_route, get_gw_given2guests()))
+  if (ip_string_to_int (&our_default_route, get_gw_ip()))
     KOUT(" ");
-  if (ip_string_to_int (&our_ip_dns, get_dns_given2guests()))
+  if (ip_string_to_int (&our_ip_dns, get_dns_ip()))
     KOUT(" ");
   rbp->bp_op = BOOTP_REPLY;
   rbp->bp_xid = bp->bp_xid;
@@ -380,7 +382,7 @@ static int format_rbp(struct bootp_t *bp, struct bootp_t *rbp,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int bootp_format_reply(int len, int *addr,
+static int bootp_format_reply(int len, uint32_t *addr,
                               struct bootp_t *bp, struct bootp_t *rbp)
 {
   int result = -1;
@@ -408,7 +410,8 @@ void packet_bootp_input(t_machine *machine, char *src_mac, char *dst_mac,
   char alloc_ip[MAX_NAME_LEN];
   struct bootp_t *bp = (struct bootp_t *)data;
   static char resp[MAC_HEADER+IP_HEADER+UDP_HEADER+sizeof(struct bootp_t)];
-  int addr, resp_len;
+  uint32_t addr;
+  int resp_len;
   struct bootp_t *rbp;
   rbp = (struct bootp_t *) &(resp[MAC_HEADER+IP_HEADER+UDP_HEADER]); 
   if (bp->bp_op == BOOTP_REQUEST)
@@ -418,10 +421,10 @@ void packet_bootp_input(t_machine *machine, char *src_mac, char *dst_mac,
       {
       int_to_ip_string (addr, alloc_ip);
       machine_boop_alloc(machine, alloc_ip);
-      fill_mac_ip_header(resp, get_gw_given2guests(), src_mac);
+      fill_mac_ip_header(resp, get_gw_ip(), src_mac);
       fill_ip_ip_header((IP_HEADER + UDP_HEADER + resp_len), 
                          &(resp[MAC_HEADER]), 
-                         get_gw_given2guests(),"255.255.255.255", IPPROTO_UDP);
+                         get_gw_ip(),"255.255.255.255", IPPROTO_UDP);
       fill_udp_ip_header((UDP_HEADER + resp_len), 
                           &(resp[MAC_HEADER+IP_HEADER]), 
                           BOOTP_SERVER, BOOTP_CLIENT);

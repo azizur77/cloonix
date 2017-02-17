@@ -1,0 +1,13 @@
+#!/bin/bash
+HERE=`pwd`
+OPENSSH=openssh-7.4p1
+rm -rf $OPENSSH
+if [ -e tainted_openssh ]; then
+  echo remove tainted_openssh directory and start again
+  exit 1
+fi
+tar xvf ${OPENSSH}.tar.gz
+mv ${OPENSSH} tainted_openssh
+cd tainted_openssh
+patch -f -p1 < ../openssh.patch
+

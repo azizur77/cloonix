@@ -428,7 +428,7 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
                    int cpu_qty, int mem_qty, 
                    char *kernel, char *root_fs, 
                    char *install_cdrom, char *added_cdrom, 
-                   char *bdisk, char *p9_host_share,
+                   char *added_disk, char *p9_host_share,
                    t_eth_params *eth_params)
 {
   t_vm_params vm_params;
@@ -453,8 +453,8 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
     strncpy(vm_params.install_cdrom, install_cdrom, MAX_PATH_LEN - 1);
   if (added_cdrom)
     strncpy(vm_params.added_cdrom, added_cdrom, MAX_PATH_LEN - 1);
-  if (bdisk)
-    strncpy(vm_params.bdisk, bdisk, MAX_PATH_LEN - 1);
+  if (added_disk)
+    strncpy(vm_params.added_disk, added_disk, MAX_PATH_LEN - 1);
   if (p9_host_share)
     strncpy(vm_params.p9_host_share, p9_host_share, MAX_PATH_LEN - 1);
   send_add_vm(g_llid, new_tid, &vm_params);

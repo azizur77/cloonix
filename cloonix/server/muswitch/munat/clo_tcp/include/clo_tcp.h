@@ -18,6 +18,7 @@
 /****************************************************************************/
 #define OUR_MAC_GW   "42:CA:FE:13:07:02"
 #define OUR_MAC_DNS  "42:CA:FE:13:07:03"
+#define OUR_MAC_CISCO "42:CA:FE:13:07:13"
 
 #define MAC_ADDR_LEN 6 
 #define MAC_HLEN     14
@@ -136,6 +137,7 @@ typedef struct t_clo
 {
   t_tcp_id tcpid;
   int closed_state_count;
+  int closed_state_count_initialised;
   int id_tcpid;
   int has_been_closed_from_outside_socket;
   int state;

@@ -498,8 +498,9 @@ void chunk_chain_delete(t_data_channel *dchan)
       KOUT(" ");
     free_boundary(dchan);
     }
-  else if ((dchan->decoding_state == rx_type_listen)           ||
-           (dchan->decoding_state == rx_type_watch))
+  else if ((dchan->decoding_state == rx_type_listen) ||
+           (dchan->decoding_state == rx_type_watch)  ||
+           (dchan->decoding_state == rx_type_rawdata))
     {
     }
   else

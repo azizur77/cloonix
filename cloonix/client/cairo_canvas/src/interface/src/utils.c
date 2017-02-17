@@ -44,7 +44,7 @@ void process_all_diffs(t_topo_differences *diffs)
                                     node->rootfs_backing, 
                                     node->install_cdrom, 
                                     node->added_cdrom, 
-                                    node->node_bdisk, 
+                                    node->added_disk, 
                                     node->num_eth, 
                                     node->vm_id, node->vm_config_flags);
     node = node->next;

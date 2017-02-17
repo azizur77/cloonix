@@ -21,14 +21,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 #include "ioc.h"
 #include "machine.h"
-#include "utils.h"
 #include "clo_tcp.h"
+#include "utils.h"
 
 static struct timeval start_time;
 static void put_ip(char *ip, char *buf);
@@ -38,9 +38,10 @@ static void put_dst_mac(char *mac, char *data);
 
 static char g_our_ip_dns[MAX_NAME_LEN];
 static char g_our_ip_gw[MAX_NAME_LEN];
+static char g_our_ip_cisco[MAX_NAME_LEN];
 
 /*****************************************************************************/
-int ip_string_to_int (int *inet_addr, char *ip_string)
+int ip_string_to_int (uint32_t *inet_addr, char *ip_string)
 {
   int result = -1;
   unsigned int part[4];
@@ -64,7 +65,7 @@ int ip_string_to_int (int *inet_addr, char *ip_string)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void int_to_ip_string (int addr, char *ip_string)
+void int_to_ip_string (uint32_t addr, char *ip_string)
 {
   sprintf(ip_string, "%d.%d.%d.%d", (int) ((addr >> 24) & 0xff),
           (int)((addr >> 16) & 0xff), (int)((addr >> 8) & 0xff),
@@ -94,18 +95,26 @@ char *flags_to_ascii(char flags)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-char *get_dns_given2guests(void)
+char *get_dns_ip(void)
 {
   return (g_our_ip_dns);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-char *get_gw_given2guests(void)
+char *get_gw_ip(void)
 {
   return (g_our_ip_gw);
 }
 /*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+char *get_cisco_ip(void)
+{
+  return (g_our_ip_cisco);
+}
+/*--------------------------------------------------------------------------*/
+
 
 
 
@@ -198,7 +207,7 @@ int format_icmp_tx_buf(char *mac_dst_ascii, char *ip_dst_ascii,
   tx_buf[24] = 0x00;
   tx_buf[25] = 0x00;
 
-  put_ip(get_gw_given2guests(), &(tx_buf[26]));
+  put_ip(get_gw_ip(), &(tx_buf[26]));
   put_ip(ip_dst_ascii, &(tx_buf[30]));
 
   checksum = in_cksum((u_short *) &(tx_buf[14]), 20);
@@ -322,7 +331,7 @@ static void put_dst_mac(char *mac, char *data)
 /*****************************************************************************/
 static void put_ip(char *ip, char *buf)
 {
-  int inet_addr;
+  uint32_t inet_addr;
   if (ip_string_to_int (&inet_addr, ip))
     KOUT("%s", ip);
   buf[0] = (inet_addr >> 24) & 0xFF;
@@ -332,6 +341,39 @@ static void put_ip(char *ip, char *buf)
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+int format_arp_req(char *sip, char *tip, char **resp_data)
+{
+  static char resp[MAC_HEADER+ARP_HEADER];
+  char *our_mac;
+  int resp_len = MAC_HEADER+ARP_HEADER;
+  *resp_data = resp;
+  if (!strcmp(tip, get_gw_ip())) 
+    our_mac = OUR_MAC_GW;
+  else if (!strcmp(tip, get_dns_ip())) 
+    our_mac = OUR_MAC_DNS;
+  else
+    our_mac = OUR_MAC_CISCO;
+  memset(resp, 0, resp_len);
+  put_src_mac(our_mac, resp);
+  put_dst_mac("FF:FF:FF:FF:FF:FF", resp);
+  resp[12] = 0x08;
+  resp[13] = 0x06;
+  resp[14] = 0x00;
+  resp[15] = 0x01;
+  resp[16] = 0x08;
+  resp[17] = 0x00;
+  resp[18] = 0x06;
+  resp[19] = 0x04;
+  resp[20] = 0x00;
+  resp[21] = 0x01;
+  put_dst_mac(our_mac, &(resp[22]));
+  put_ip(sip, &(resp[28]));
+  put_dst_mac("00:00:00:00:00:00", &(resp[32]));
+  put_ip(tip, &(resp[38]));
+  return resp_len;
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int format_arp_resp(char *mac, char *sip, char *tip, char **resp_data)
@@ -340,10 +382,12 @@ int format_arp_resp(char *mac, char *sip, char *tip, char **resp_data)
   char *our_mac;
   int resp_len = MAC_HEADER+ARP_HEADER;
   *resp_data = resp;
-  if (!strcmp(tip, get_gw_given2guests())) 
+  if (!strcmp(tip, get_gw_ip()))
     our_mac = OUR_MAC_GW;
-  else if (!strcmp(tip, get_dns_given2guests())) 
+  else if (!strcmp(tip, get_dns_ip()))
     our_mac = OUR_MAC_DNS;
+  else if (!strcmp(tip, get_cisco_ip()))
+    our_mac = OUR_MAC_CISCO;
   else
     KOUT("%s", tip);
   memset(resp, 0, resp_len);
@@ -371,12 +415,14 @@ int format_arp_resp(char *mac, char *sip, char *tip, char **resp_data)
 void fill_mac_ip_header(char *data, char *sip, char *dmac)
 {
   char *our_mac;
-  if (!strcmp(sip, get_gw_given2guests()))
+  if (!strcmp(sip, get_gw_ip()))
     our_mac = OUR_MAC_GW;
-  else if (!strcmp(sip, get_dns_given2guests()))
+  else if (!strcmp(sip, get_dns_ip()))
     our_mac = OUR_MAC_DNS;
+  else if (!strcmp(sip, get_cisco_ip()))
+    our_mac = OUR_MAC_CISCO;
   else
-    our_mac = OUR_MAC_GW;
+    KOUT("%s", sip);
   put_src_mac(our_mac, data);
   put_dst_mac(dmac, data);
   data[12] = 0x08;
@@ -389,7 +435,7 @@ void fill_ip_ip_header(int len, char *data, char *sip, char *dip, int proto)
 {
   unsigned short checksum;
   static unsigned short identification = 0;
-  int src_ip, dst_ip;
+  uint32_t src_ip, dst_ip;
   if (ip_string_to_int (&src_ip, sip))
     KOUT(" ");
   if (ip_string_to_int (&dst_ip, dip))
@@ -436,12 +482,14 @@ void fill_udp_ip_header(int len, char *data, int sport, int dport)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void init_utils(char *our_ip_dns, char *our_ip_gw)
+void init_utils(char *our_ip_dns, char *our_ip_gw, char *our_ip_cisco)
 {
   gettimeofday(&start_time, NULL);
   memset(g_our_ip_dns, 0, MAX_NAME_LEN);
   strncpy(g_our_ip_dns, our_ip_dns, MAX_NAME_LEN - 1);
   memset(g_our_ip_gw, 0, MAX_NAME_LEN);
   strncpy(g_our_ip_gw, our_ip_gw, MAX_NAME_LEN - 1);
+  memset(g_our_ip_cisco, 0, MAX_NAME_LEN);
+  strncpy(g_our_ip_cisco, our_ip_cisco, MAX_NAME_LEN - 1);
 }
 /*---------------------------------------------------------------------------*/

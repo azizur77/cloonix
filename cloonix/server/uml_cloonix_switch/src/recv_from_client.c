@@ -727,14 +727,6 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
     vm_params->cpu =  1;
   if (vm_params->mem == 0)
     vm_params->mem =  128;
-  if (vm_params->vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK)
-    {
-    if (!file_exists(vm_params->bdisk, F_OK))
-      {
-      sprintf(info, "File: \"%s\" not found\n", vm_params->bdisk);
-      result = -1;
-      }
-    }
   if (vm_params->vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
     {
     if (!file_exists(vm_params->install_cdrom, F_OK))
@@ -748,6 +740,14 @@ static int test_vm_params(t_vm_params *vm_params, int vm_id,
     if (!file_exists(vm_params->added_cdrom, F_OK))
       {
       sprintf(info, "File: \"%s\" not found\n", vm_params->added_cdrom);
+      result = -1;
+      }
+    }
+  if (vm_params->vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
+    {
+    if (!file_exists(vm_params->added_disk, F_OK))
+      {
+      sprintf(info, "File: \"%s\" not found\n", vm_params->added_disk);
       result = -1;
       }
     }

@@ -721,7 +721,7 @@ static int topo_vmit_format(char *buf, t_vm_item *vmit)
   len = sprintf(buf, TOPO_VM_O, vmit->vm_params.name, 
                                 vmit->vm_params.install_cdrom,  
                                 vmit->vm_params.added_cdrom,  
-                                vmit->vm_params.bdisk,  
+                                vmit->vm_params.added_disk,  
                                 vmit->vm_params.p9_host_share,  
                                 vmit->vm_params.linux_kernel, 
                                 vmit->vm_params.rootfs_used,  
@@ -1075,12 +1075,12 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
   int len = 0;
   char install_cdrom[MAX_PATH_LEN];
   char added_cdrom[MAX_PATH_LEN];
-  char bdisk[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
   char p9_host_share[MAX_PATH_LEN];
   char linux_kernel[MAX_NAME_LEN];
   memset(install_cdrom, 0, MAX_PATH_LEN);
   memset(added_cdrom, 0, MAX_PATH_LEN);
-  memset(bdisk, 0, MAX_PATH_LEN);
+  memset(added_disk, 0, MAX_PATH_LEN);
   memset(p9_host_share, 0, MAX_PATH_LEN);
   memset(linux_kernel, 0, MAX_NAME_LEN);
   if ((vm_params->name[0] == 0) || (strlen(vm_params->name) >= MAX_NAME_LEN))
@@ -1094,7 +1094,7 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
     KOUT(" ");
   if (strlen(vm_params->added_cdrom) >= MAX_PATH_LEN)
     KOUT(" ");
-  if (strlen(vm_params->bdisk) >= MAX_PATH_LEN)
+  if (strlen(vm_params->added_disk) >= MAX_PATH_LEN)
     KOUT(" ");
   if (strlen(vm_params->p9_host_share) >= MAX_PATH_LEN)
     KOUT(" ");
@@ -1119,10 +1119,10 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
   else
     strcpy(added_cdrom, vm_params->added_cdrom);
 
-  if (vm_params->bdisk[0] == 0)
-    strcpy(bdisk, NO_DEFINED_VALUE);
+  if (vm_params->added_disk[0] == 0)
+    strcpy(added_disk, NO_DEFINED_VALUE);
   else
-    strcpy(bdisk, vm_params->bdisk);
+    strcpy(added_disk, vm_params->added_disk);
 
   if (vm_params->p9_host_share[0] == 0)
     strcpy(p9_host_share, NO_DEFINED_VALUE);
@@ -1136,7 +1136,7 @@ void send_add_vm(int llid, int tid, t_vm_params *vm_params)
   len += sprintf(sndbuf+len, ADD_VM_C, linux_kernel, 
                              vm_params->rootfs_input, 
                              install_cdrom, added_cdrom,
-                             bdisk, p9_host_share);
+                             added_disk, p9_host_share);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -1574,7 +1574,7 @@ static void helper_fill_topo_vm_item(char *msg, t_vm_item *vmit)
   if (sscanf(msg, TOPO_VM_O, vmit->vm_params.name, 
                              vmit->vm_params.install_cdrom,  
                              vmit->vm_params.added_cdrom,  
-                             vmit->vm_params.bdisk,  
+                             vmit->vm_params.added_disk,  
                              vmit->vm_params.p9_host_share,  
                              vmit->vm_params.linux_kernel,  
                              vmit->vm_params.rootfs_used,  
@@ -2137,7 +2137,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
                                 vm_params.rootfs_input, 
                                 vm_params.install_cdrom, 
                                 vm_params.added_cdrom, 
-                                vm_params.bdisk, 
+                                vm_params.added_disk, 
                                 vm_params.p9_host_share) != 6) 
         KOUT("%s", msg);
       recv_add_vm(llid, tid, &vm_params);

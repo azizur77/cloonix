@@ -60,6 +60,7 @@
 
 #define ADDED_CDROM " -drive file=%s,media=cdrom"
 
+
 typedef struct t_cprootfs_config
 {
   char name[MAX_NAME_LEN];
@@ -326,7 +327,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   char option_kvm_txt[MAX_NAME_LEN];
   char cmd_start[3*MAX_PATH_LEN];
   char cpu_type[MAX_NAME_LEN];
-  char *rootfs, *bdisk, *gname;
+  char *rootfs, *added_disk, *gname;
   char *spice_path, *cdrom;
   if (!vm)
     KOUT(" ");
@@ -385,7 +386,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     }
 
   rootfs = vm->vm_params.rootfs_used;
-  bdisk = vm->vm_params.bdisk;
+  added_disk = vm->vm_params.added_disk;
 
   if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT)
     {
@@ -406,8 +407,8 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     cdrom = utils_get_cdrom_path_name(vm->vm_id);
     len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
   
-    if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_HAS_BDISK)
-      len += sprintf(linux_cmd+len, DRIVE_PARAMS, bdisk, 1);
+    if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
+      len += sprintf(linux_cmd+len, DRIVE_PARAMS, added_disk, 1);
     }
 
   if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)

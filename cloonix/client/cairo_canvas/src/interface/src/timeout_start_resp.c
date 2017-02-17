@@ -73,7 +73,7 @@ static void gene_delete_edge(int bank_type, char *name, char *lan, int num)
 void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
                                      char *rootfs_sod, char *rootfs_backing,
                                      char *install_cdrom, char *added_cdrom, 
-                                     char *node_bdisk, int qty_eth, 
+                                     char *added_disk, int qty_eth, 
                                      int vm_id, int vm_config_flags)
 {
   t_create_item_node_resp *pa;
@@ -87,7 +87,7 @@ void from_cloonix_switch_create_node(char *name, char *ip, char *kernel,
   strncpy(pa->rootfs_backing_file, rootfs_backing, MAX_PATH_LEN-1);
   strncpy(pa->install_cdrom, install_cdrom, MAX_PATH_LEN-1);
   strncpy(pa->added_cdrom, added_cdrom, MAX_PATH_LEN-1);
-  strncpy(pa->node_bdisk, node_bdisk, MAX_PATH_LEN-1);
+  strncpy(pa->added_disk, added_disk, MAX_PATH_LEN-1);
   if (kernel)
     strncpy(pa->kernel, kernel, MAX_NAME_LEN-1);
   strncpy(pa->ip, ip, MAX_NAME_LEN-1);

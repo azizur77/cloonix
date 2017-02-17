@@ -1,0 +1,79 @@
+#!/bin/bash
+set -e
+HERE=`pwd`
+TMPBUILD=${HERE}/tmpbuild
+CLOONIX_COMMON=${TMPBUILD}/cloonix/common
+CLOONIX_SERVER=${TMPBUILD}/cloonix/server
+#----------------------------------------------------------
+echo TARGET:
+echo $TMPBUILD
+#----------------------------------------------------------
+rm -rf ${TMPBUILD}
+mkdir -p ${TMPBUILD}
+cp -r ${HERE}/cloonix ${TMPBUILD}
+#----------------------------------------------------------
+mv ${TMPBUILD}/cloonix/cloonix_net ${TMPBUILD}
+#----------------------------------------------------------
+  echo
+  echo BUILDING COMMON
+  echo
+  sleep 1
+#----------------------------------------------------------
+  cd ${CLOONIX_COMMON}/agent_dropbear
+  ./cmd_alien
+  ./cmd
+#----------------------------------------------------------
+  for i in lib_rpc_clownix \
+           lib_utils \
+           lib_rpc_qmonitor \
+           lib_rpc_doors \
+           lib_rpc_c2c \
+           lib_rpc_layout ; do
+
+    cd ${CLOONIX_COMMON}/${i}
+    echo
+    echo DOING:
+    echo ${CLOONIX_COMMON}/${i}
+    echo
+    echo
+    make clean
+    make -j 5
+
+  done
+#----------------------------------------------------------
+  echo
+  echo BUILDING SERVER
+  echo
+  sleep 1
+#----------------------------------------------------------
+  for i in  doorways \
+            uml_cloonix_switch \
+            qmonitor \
+            muswitch/lib_ioc \
+            muswitch/lib_mulan \
+            muswitch/lib_muend \
+            muswitch/mutap \
+            muswitch/musnf \
+            muswitch/munat/clo_tcp \
+            muswitch/munat \
+            muswitch/muc2c \
+            muswitch/mua2b \
+            muswitch/mulan ; do
+
+    echo
+    echo DOING:
+    echo ${CLOONIX_SERVER}/${i}
+    echo
+    echo
+    cd ${CLOONIX_SERVER}/${i}
+    make clean
+    make -j 5
+
+  done
+
+
+  cd ${CLOONIX_SERVER}/qemu
+  ./cmd
+
+#----------------------------------------------------------
+

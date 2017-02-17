@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <arpa/inet.h>
 #include <time.h>
 #include <errno.h>
@@ -174,7 +174,7 @@ static t_machine_sock *find_machine_sock(t_machine *machine, int is_type_sock,
                                          char *fip, short fport)
 {
   t_machine_sock *result;
-  int lip_int, fip_int;
+  uint32_t lip_int, fip_int;
   if (ip_string_to_int(&lip_int, lip))
     KOUT("%s", lip);
   if (ip_string_to_int(&fip_int, fip))
@@ -191,7 +191,7 @@ static t_machine_sock *alloc_machine_sock(t_machine *machine, int is_type_sock,
                                           int llid, int fd)
 {
   t_machine_sock *ms;
-  int lip_int, fip_int;
+  uint32_t lip_int, fip_int;
   if (ip_string_to_int(&lip_int, lip))
     KOUT("%s", lip);
   if (ip_string_to_int(&fip_int, fip))

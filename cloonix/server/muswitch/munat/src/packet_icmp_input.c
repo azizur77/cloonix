@@ -76,8 +76,9 @@ void packet_icmp_input(t_machine *machine, char *src_mac, char *dst_mac,
     {
     if (data[0] == ICMP_ECHO)
       {
-      if ((!strcmp(dip, get_gw_given2guests())) ||
-          (!strcmp(dip, get_dns_given2guests())))
+      if ((!strcmp(dip, get_gw_ip())) ||
+          (!strcmp(dip, get_dns_ip())) ||
+          (!strcmp(dip, get_cisco_ip())))
         {
         packet_icmp_echoreply(src_mac, dst_mac, sip, dip, len, data);
         }

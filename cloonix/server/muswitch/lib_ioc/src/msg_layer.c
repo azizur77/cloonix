@@ -122,8 +122,17 @@ static int rx_dchan_cb(void *ptr, int llid, int fd)
     {
     correct_recv = len;
     ioc_ctx->g_first_rx_buf[len] = 0;
-    new_rx_to_process(all_ctx, &(ioc_ctx->g_dchan[cidx]), 
-                      len, ioc_ctx->g_first_rx_buf);
+    if (ioc_ctx->g_dchan[cidx].decoding_state == rx_type_rawdata)
+      {
+      ioc_ctx->g_dchan[cidx].rx_callback(all_ctx, llid, len, 
+                                         ioc_ctx->g_first_rx_buf);
+      free(ioc_ctx->g_first_rx_buf);
+      }
+    else
+      {  
+      new_rx_to_process(all_ctx, &(ioc_ctx->g_dchan[cidx]), 
+                        len, ioc_ctx->g_first_rx_buf);
+      }
     }
   return correct_recv;
 }
@@ -251,7 +260,10 @@ static int server_has_new_connect_from_client(void *ptr, int id, int fd)
     if (!ioc_ctx->g_dchan[serv_cidx].server_connect_callback)
       KOUT(" ");
     memset(&ioc_ctx->g_dchan[cidx], 0, sizeof(t_data_channel));
-    ioc_ctx->g_dchan[cidx].decoding_state = rx_type_ascii_start;
+    if (ioc_ctx->g_dchan[serv_cidx].decoding_state == rx_type_rawdata)
+      ioc_ctx->g_dchan[cidx].decoding_state = rx_type_rawdata;
+    else
+      ioc_ctx->g_dchan[cidx].decoding_state = rx_type_ascii_start;
     ioc_ctx->g_dchan[cidx].llid = llid;
     ioc_ctx->g_dchan[cidx].fd = fd_new;
     ioc_ctx->g_dchan[serv_cidx].server_connect_callback(all_ctx, id, llid);
@@ -340,7 +352,8 @@ int msg_watch_fd(t_all_ctx *all_ctx, int fd,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int string_server_unix(t_all_ctx *all_ctx, char *pname, t_fd_connect connect_cb) 
+static int local_string_server_unix(t_all_ctx *all_ctx, char *pname, 
+                                    int type_raw, t_fd_connect connect_cb)
 {
   int is_blkd, llid=0, cidx, listen_fd;
   t_ioc_ctx *ioc_ctx = all_ctx->ctx_head.ioc_ctx;
@@ -349,8 +362,8 @@ int string_server_unix(t_all_ctx *all_ctx, char *pname, t_fd_connect connect_cb)
     {
     if (listen_fd >= MAX_SELECT_CHANNELS-1)
       KOUT("%d", listen_fd);
-    llid = channel_create(all_ctx, 0, listen_fd,  
-                          server_has_new_connect_from_client, 
+    llid = channel_create(all_ctx, 0, listen_fd,
+                          server_has_new_connect_from_client,
                           NULL, default_err_kill, (char *) __FUNCTION__);
     if (!llid)
       KOUT(" ");
@@ -358,10 +371,29 @@ int string_server_unix(t_all_ctx *all_ctx, char *pname, t_fd_connect connect_cb)
     if (is_blkd)
       KOUT(" ");
     memset(&ioc_ctx->g_dchan[cidx], 0, sizeof(t_data_channel));
-    ioc_ctx->g_dchan[cidx].decoding_state = rx_type_ascii_start;
+    if (type_raw)
+      ioc_ctx->g_dchan[cidx].decoding_state = rx_type_rawdata;
+    else
+      ioc_ctx->g_dchan[cidx].decoding_state = rx_type_ascii_start;
     ioc_ctx->g_dchan[cidx].server_connect_callback = connect_cb;
     }
   return llid;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int string_server_unix(t_all_ctx *all_ctx, char *pname, 
+                       t_fd_connect connect_cb) 
+{
+  return local_string_server_unix(all_ctx, pname, 0, connect_cb); 
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int rawdata_server_unix(t_all_ctx *all_ctx, char *pname, 
+                        t_fd_connect connect_cb)
+{ 
+  return local_string_server_unix(all_ctx, pname, 1, connect_cb);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -463,7 +495,7 @@ static void signal_pipe(int no_use)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void watch_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx)
+void data_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx)
 {
   char *ntx;
   int cidx, is_blkd;
@@ -477,7 +509,8 @@ void watch_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx)
       KOUT(" ");
     if (ioc_ctx->g_dchan[cidx].llid != llid)
       KOUT(" ");
-    if (ioc_ctx->g_dchan[cidx].decoding_state != rx_type_watch)
+    if ((ioc_ctx->g_dchan[cidx].decoding_state != rx_type_watch) &&
+        (ioc_ctx->g_dchan[cidx].decoding_state != rx_type_rawdata))
       KOUT(" ");
     if (ioc_ctx->g_dchan[cidx].tot_txq_size < MAX_TOT_LEN_QDAT)
       {

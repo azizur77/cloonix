@@ -42,7 +42,7 @@ static void transfert_onto_udp(t_machine *machine,
                                int len, char *data)
 {
   t_machine_sock *udp_sock;
-  int dst_addr;
+  uint32_t dst_addr;
   struct sockaddr_in addr;
   if (ip_string_to_int (&dst_addr, dip))
     KOUT(" ");
@@ -70,7 +70,8 @@ static void transfert_onto_udp(t_machine *machine,
 void packet_udp_input(t_machine *machine, char *src_mac, char *dst_mac,
                       char *sip, char *dip, int len, char *data)
 {
-  int  udp_len, dst_addr, our_addr;
+  int udp_len;
+  uint32_t dst_addr, our_addr;
   short sport, dport;
   sport = ((data[0] << 8) & 0xFF00) + (data[1] & 0xFF);
   dport = ((data[2] << 8) & 0xFF00) + (data[3] & 0xFF);
@@ -86,19 +87,19 @@ void packet_udp_input(t_machine *machine, char *src_mac, char *dst_mac,
       {
       if (ip_string_to_int (&dst_addr, dip))
         KOUT(" ");
-      if (ip_string_to_int (&our_addr, get_gw_given2guests()))
+      if (ip_string_to_int (&our_addr, get_gw_ip()))
         KOUT(" ");
       if ((dst_addr & 0xFFFFFF00) == (our_addr & 0xFFFFFF00))
         {
-        if (!strcmp(dip, get_dns_given2guests()))
+        if (!strcmp(dip, get_dns_ip()))
           transfert_onto_udp(machine, src_mac, dst_mac, sip, 
                              get_dns_from_resolv(), sport, dport, dip,
                              len - UDP_HEADER, data + UDP_HEADER);
-        if (!strcmp(dip, get_gw_given2guests()))
+        if (!strcmp(dip, get_gw_ip()))
           {
-          if (!strcmp(get_dns_from_resolv(), get_dns_given2guests()))
+          if (!strcmp(get_dns_from_resolv(), get_dns_ip()))
             transfert_onto_udp(machine, src_mac, dst_mac, sip, 
-                               get_gw_given2guests(), sport, dport, dip, 
+                               get_gw_ip(), sport, dport, dip, 
                                len - UDP_HEADER, data + UDP_HEADER);
           else
             transfert_onto_udp(machine, src_mac, dst_mac, sip, 

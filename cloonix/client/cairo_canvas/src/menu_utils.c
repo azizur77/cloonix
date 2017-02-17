@@ -348,7 +348,7 @@ static void launch_pid_wait(int type, char *nm, char **argv)
 
 
 /*****************************************************************************/
-static int check_before_start_launch(char **argv)
+int check_before_start_launch(char **argv)
 {
   int result = 0;
   char info[MAX_PRINT_LEN];

@@ -24,7 +24,7 @@ typedef struct t_pbi_node
   char node_rootfs_backing_file[MAX_PATH_LEN];
   char install_cdrom[MAX_PATH_LEN];
   char added_cdrom[MAX_PATH_LEN];
-  char node_bdisk[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
   int  node_vm_id;
   int  node_vm_config_flags;
   int  node_ram;
@@ -163,7 +163,7 @@ t_bank_item *look_for_edge_with_id(int bank_type, char *name,
 void bank_node_create(char *name, char *ip, char *kernel,
                       char *rootfs_sod, char *rootfs_backing_file, 
                       char *install_cdrom,  char *added_cdrom, 
-                      char *node_bdisk, int bank_type, 
+                      char *added_disk, int bank_type, 
                       int num_eth, int *mutype, 
                       int color_choice, int vm_id, int vm_config_flags,
                       double x, double y, int hidden_on_graph,

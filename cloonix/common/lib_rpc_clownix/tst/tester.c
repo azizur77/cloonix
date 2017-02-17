@@ -1611,7 +1611,7 @@ void recv_add_vm(int llid, int itid, t_vm_params *ivm_params)
     random_choice_str(vm_params.name, MAX_NAME_LEN);
     random_choice_str(vm_params.install_cdrom, MAX_PATH_LEN);
     random_choice_str(vm_params.added_cdrom, MAX_PATH_LEN);
-    random_choice_str(vm_params.bdisk, MAX_PATH_LEN);
+    random_choice_str(vm_params.added_disk, MAX_PATH_LEN);
     random_choice_str(vm_params.p9_host_share, MAX_PATH_LEN);
     random_choice_str(vm_params.linux_kernel, MAX_NAME_LEN);
     random_choice_str(vm_params.rootfs_input, MAX_PATH_LEN);

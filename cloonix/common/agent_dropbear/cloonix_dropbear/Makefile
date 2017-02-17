@@ -10,7 +10,7 @@ LIBS=-L${BLKD} -lblkd \
      -L${RPCT} -lrpct \
      -lutil
 
-LIBDBCLIENT=-L${LIB_IO_CLOWNIX} -lio_clownix -lssl -lcrypto
+LIBDBCLIENT=-L${LIB_IO_CLOWNIX} -lio_clownix -lssl -lcrypto -lrt
 CFLAGS+=-I${LIB_IO_CLOWNIX}/include 
 CFLAGS+=-I${GLOB_INCLUDE} 
 CFLAGS+=-I../cloonix_agent/src 

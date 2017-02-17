@@ -91,7 +91,7 @@ t_topo_info *random_topo_gen(void)
     random_choice_str(vmit[i].vm_params.name, MAX_NAME_LEN);
     random_choice_str(vmit[i].vm_params.install_cdrom, MAX_PATH_LEN);
     random_choice_str(vmit[i].vm_params.added_cdrom, MAX_PATH_LEN);
-    random_choice_str(vmit[i].vm_params.bdisk, MAX_PATH_LEN);
+    random_choice_str(vmit[i].vm_params.added_disk, MAX_PATH_LEN);
     random_choice_str(vmit[i].vm_params.p9_host_share, MAX_PATH_LEN);
     random_choice_str(vmit[i].vm_params.linux_kernel, MAX_NAME_LEN);
 
@@ -224,8 +224,8 @@ int topo_info_diff(t_topo_info *topo, t_topo_info *ref)
 
 
 
-    ptr1 = strrchr(topo->vmit[i].vm_params.bdisk, '/');
-    ptr2 = strrchr(ref->vmit[i].vm_params.bdisk, '/');
+    ptr1 = strrchr(topo->vmit[i].vm_params.added_disk, '/');
+    ptr2 = strrchr(ref->vmit[i].vm_params.added_disk, '/');
     if ((ptr1 && !ptr2) || (ptr2 && !ptr1))
       return 12;
     if (ptr1 && (strcmp(ptr1, ptr2)))

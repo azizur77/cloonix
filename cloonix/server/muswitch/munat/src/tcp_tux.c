@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -31,26 +31,22 @@
 
 
 #include "ioc.h"
-//#include "sock_fd.h"
-#include "main.h"
 #include "machine.h"
-#include "utils.h"
-//#include "bootp_input.h"
-//#include "packets_io.h"
-//#include "llid_slirptux.h"
 #include "clo_tcp.h"
+#include "utils.h"
+#include "main.h"
 #include "tcp_tux.h"
 
 void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
                                  struct sockaddr *addr, int addr_len);
 
 /*****************************************************************************/
-static int get_out_ip_addr(u32_t local_ip)
+static uint32_t get_out_ip_addr(uint32_t local_ip)
 {
-  int out_ip_addr, our_ip_dns, our_ip_gw, host_ip_dns;
-  if (ip_string_to_int (&our_ip_dns, get_dns_given2guests()))
+  uint32_t out_ip_addr, our_ip_dns, our_ip_gw, host_ip_dns;
+  if (ip_string_to_int (&our_ip_dns, get_dns_ip()))
     KOUT(" ");
-  if (ip_string_to_int (&our_ip_gw, get_gw_given2guests()))
+  if (ip_string_to_int (&our_ip_gw, get_gw_ip()))
     KOUT(" ");
   if ((int) local_ip ==  our_ip_dns)
     {
@@ -60,8 +56,8 @@ static int get_out_ip_addr(u32_t local_ip)
     }
   else if ((int) local_ip == our_ip_gw)
     {
-    if (!strcmp(get_dns_from_resolv(), get_dns_given2guests()))
-      ip_string_to_int(&out_ip_addr, get_gw_given2guests());
+    if (!strcmp(get_dns_from_resolv(), get_dns_ip()))
+      ip_string_to_int(&out_ip_addr, get_gw_ip());
     else
       ip_string_to_int(&out_ip_addr, "127.0.0.1");
     }

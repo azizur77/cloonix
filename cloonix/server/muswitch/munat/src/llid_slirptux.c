@@ -33,6 +33,7 @@
 #include "packets_io.h"
 #include "llid_slirptux.h"
 #include "tcp_tux.h"
+#include "cisco.h"
 
 
 void packet_output_to_slirptux(int len, char *data);
@@ -42,6 +43,7 @@ void packet_output_to_slirptux(int len, char *data);
 void llid_clo_high_close_rx(t_tcp_id *tcpid)
 {
   t_clo *clo;
+  cisco_close_tcpid(tcpid);
   clo = util_get_fast_clo(tcpid);
 
   if (clo)
@@ -143,7 +145,7 @@ void llid_clo_data_rx(t_tcp_id *tcpid, int len, u8_t *data)
   int is_blkd;
   if (msg_exist_channel(get_all_ctx(), tcpid->llid, &is_blkd, __FUNCTION__))
     {
-    watch_tx(get_all_ctx(), tcpid->llid, len, (char *)data);
+    data_tx(get_all_ctx(), tcpid->llid, len, (char *)data);
     }
   else
     KERR("%d ", len);
@@ -189,9 +191,13 @@ void llid_clo_high_synack_rx(t_tcp_id *tcpid)
 {
   t_clo *clo;
   clo = util_get_fast_clo(tcpid);
-  if (clo)
+  if (!clo)
+    KERR(" ");
+  else if (cisco_ssh_syn_ack_arrival(tcpid))
+    {
+    KERR(" ");
     llid_clo_high_close_rx(tcpid);
-  KERR("%p", clo);
+    }
 }
 /*---------------------------------------------------------------------------*/
 

@@ -362,8 +362,8 @@ t_clo *util_insert_clo(t_clo **head, t_tcp_id *tcpid)
   static int id_tcpid = 0;
   t_clo *clo = (t_clo *) malloc(sizeof(t_clo));
   memset(clo, 0, sizeof(t_clo));
-  if (tcpid->llid != 0) 
-    KOUT(" %d", tcpid->llid);
+  if (tcpid->llid != 0)
+    KOUT(" ");
   memcpy(&(clo->tcpid), tcpid, sizeof(t_tcp_id));
   id_tcpid += 1;
   clo->id_tcpid = id_tcpid;

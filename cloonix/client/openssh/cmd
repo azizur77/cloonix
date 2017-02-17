@@ -1,0 +1,7 @@
+#!/bin/bash
+./all_clean
+./patched_create
+cd tainted_openssh
+#sed -i "s/TARGETS=.*/TARGETS=ssh scp/" Makefile.in
+./configure
+make

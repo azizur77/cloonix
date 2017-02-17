@@ -14,6 +14,7 @@ EXE = cloonix_munat
 VPATH=src
 
 SRC = main.c \
+      cisco.c \
       utils.c \
       machine.c \
       bootp_input.c \

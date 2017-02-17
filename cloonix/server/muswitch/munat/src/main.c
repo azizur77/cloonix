@@ -42,6 +42,7 @@
 #include "bootp_input.h"
 #include "packets_io.h"
 #include "llid_slirptux.h"
+#include "cisco.h"
 
 
 static char g_resolv_dns_ip[MAX_NAME_LEN];
@@ -141,10 +142,10 @@ static void socket_udp_rx(t_machine_sock *ms, int len, char *rx_buf)
   else
     {
     memcpy(&(resp[MAC_HEADER+IP_HEADER+UDP_HEADER]), rx_buf, len);
-    if (!strcmp(get_dns_given2guests(), ms->lip))
-      fill_mac_ip_header(resp, get_dns_given2guests(), mac);
+    if (!strcmp(get_dns_ip(), ms->lip))
+      fill_mac_ip_header(resp, get_dns_ip(), mac);
     else
-      fill_mac_ip_header(resp, get_gw_given2guests(), mac);
+      fill_mac_ip_header(resp, get_gw_ip(), mac);
     fill_ip_ip_header((IP_HEADER + UDP_HEADER + len), &(resp[MAC_HEADER]),
                        ms->lip, ms->fip, IPPROTO_UDP);
     fill_udp_ip_header((UDP_HEADER + len), &(resp[MAC_HEADER+IP_HEADER]),
@@ -205,7 +206,7 @@ void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
 /*****************************************************************************/
 static void get_dns_addr(char *dns_ip)
 {
-  int dns_addr = 0;
+  uint32_t dns_addr = 0;
   char buff[512];
   char buff2[256];
   char *ptr_start, *ptr_end;
@@ -259,11 +260,12 @@ int main (int argc, char *argv[])
            llid_clo_high_syn_rx, llid_clo_high_synack_rx, 
            llid_clo_high_close_rx);
   get_dns_addr(g_resolv_dns_ip);
-  init_utils("172.17.0.3","172.17.0.2");
+  init_utils("172.17.0.3","172.17.0.2", "172.17.0.1");
   init_bootp();
   packets_io_init();
   machine_init();
   llid_slirptux_tcp_init();
+  cisco_init(all_ctx);
   msg_mngt_loop(all_ctx);
   return 0;
 }

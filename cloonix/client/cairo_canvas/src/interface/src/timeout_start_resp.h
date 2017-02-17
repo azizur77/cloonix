@@ -25,7 +25,7 @@ typedef struct t_create_item_node_resp
   char rootfs_backing_file[MAX_PATH_LEN];
   char install_cdrom[MAX_PATH_LEN];
   char added_cdrom[MAX_PATH_LEN];
-  char node_bdisk[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
   char ip[MAX_NAME_LEN];
   int num_eth;
   int mutype[MAX_ETH_VM];

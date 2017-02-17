@@ -28,51 +28,79 @@
 
 #include "ioc.h"
 #include "sock_fd.h"
-#include "main.h"
 #include "machine.h"
-#include "utils.h"
 #include "bootp_input.h"
 #include "clo_tcp.h"
+#include "utils.h"
+#include "main.h"
 #include "packets_io.h"
+#include "cisco.h"
 
+
+/****************************************************************************/
+static void cisco_or_gw_or_dns_arp_arrival(char *data, char *src_mac)
+{
+  int resp_len;
+  char *arp_tip, *arp_sip, *resp_data;
+  arp_tip = get_arp_tip(data);
+  arp_sip = get_arp_sip(data);
+  if ((!strcmp(arp_tip, get_gw_ip())) ||
+      (!strcmp(arp_tip, get_dns_ip()))||
+      (!strcmp(arp_tip, get_cisco_ip())))
+    {
+    resp_len = format_arp_resp(src_mac, arp_sip, arp_tip, &resp_data);
+    packet_output_to_slirptux(resp_len, resp_data);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void cisco_arp_resp_arrival(char *data, char *src_mac)
+{
+  char *arp_tip, *arp_sip;
+  arp_tip = get_arp_tip(data);
+  arp_sip = get_arp_sip(data);
+  if (!strcmp(arp_tip, get_cisco_ip()))
+    {
+    cisco_arp_resp(src_mac, arp_sip);
+    }
+}
+/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 void packet_input_from_slirptux(int len, char *data)
 {
   t_machine *machine;
-  int resp_len, proto;
-  char *src_mac, *dst_mac, *arp_tip, *arp_sip, *resp_data;
+  int proto;
+  char *src_mac, *dst_mac;
   char *name;
   proto = get_proto(len, data);
-  if ((proto == proto_arp_req) || (proto == proto_ip))
+  if (proto == proto_arp_resp)
     {
     dst_mac = get_dst_mac(data);
+    src_mac = get_src_mac(data);
+    if (!strcmp(dst_mac, OUR_MAC_CISCO))
+      cisco_arp_resp_arrival(data, src_mac);
+    }
+  else if ((proto == proto_arp_req) || (proto == proto_ip))
+    {
+    dst_mac = get_dst_mac(data);
+    src_mac = get_src_mac(data);
     if ((data[0] & 0x01) || 
         (!strcmp(dst_mac, OUR_MAC_GW)) ||
-        (!strcmp(dst_mac, OUR_MAC_DNS)))
+        (!strcmp(dst_mac, OUR_MAC_DNS)) || 
+        (!strcmp(dst_mac, OUR_MAC_CISCO)))
       {
-      src_mac = get_src_mac(data);
-      name = get_name_with_mac(src_mac);
-      if (name)
+      if (proto == proto_arp_req)
+        cisco_or_gw_or_dns_arp_arrival(data, src_mac);
+      else
         {
-        machine = look_for_machine_with_name(name);
-        if (machine)
+        name = get_name_with_mac(src_mac);
+        if (name)
           {
-          if (proto == proto_arp_req)
-            {
-            arp_tip = get_arp_tip(data);
-            arp_sip = get_arp_sip(data);
-            if ((!strcmp(arp_tip, get_gw_given2guests())) ||
-                (!strcmp(arp_tip, get_dns_given2guests())))
-              {
-              resp_len = format_arp_resp(src_mac,arp_sip,arp_tip,&resp_data);
-              packet_output_to_slirptux(resp_len, resp_data);
-              }
-            }
-          else
-            {
+          machine = look_for_machine_with_name(name);
+          if (machine)
             packet_ip_input(machine, src_mac, dst_mac, len, data); 
-            }
           }
         }
       }

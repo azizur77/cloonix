@@ -25,10 +25,11 @@
 #define VM_CONFIG_FLAG_9P_SHARED       0x0004
 #define VM_CONFIG_FLAG_FULL_VIRT       0x0008
 #define VM_CONFIG_FLAG_BALLOONING      0x0010
-#define VM_CONFIG_FLAG_HAS_BDISK       0x0020
-#define VM_CONFIG_FLAG_INSTALL_CDROM   0x0040
-#define VM_CONFIG_FLAG_NO_REBOOT       0x0080
-#define VM_CONFIG_FLAG_ADDED_CDROM     0x0100
+#define VM_CONFIG_FLAG_INSTALL_CDROM   0x0020
+#define VM_CONFIG_FLAG_NO_REBOOT       0x0040
+#define VM_CONFIG_FLAG_ADDED_CDROM     0x0080
+#define VM_CONFIG_FLAG_ADDED_DISK      0x0100
+#define VM_CONFIG_FLAG_CISCO           0x0200
 
 #define VM_FLAG_DERIVED_BACKING        0x10000
 #define VM_FLAG_IS_INSIDE_CLOONIX      0x20000
@@ -82,7 +83,7 @@ typedef struct t_vm_params
   char rootfs_backing[MAX_PATH_LEN];
   char install_cdrom[MAX_PATH_LEN];
   char added_cdrom[MAX_PATH_LEN];
-  char bdisk[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
   char p9_host_share[MAX_PATH_LEN];
   int has_kvm_virt;
 } t_vm_params;
@@ -161,9 +162,9 @@ typedef struct t_topo_node_chain
   char kernel[MAX_NAME_LEN];
   char rootfs_used[MAX_PATH_LEN];
   char rootfs_backing[MAX_PATH_LEN];
-  char node_bdisk[MAX_PATH_LEN];
   char install_cdrom[MAX_PATH_LEN];
   char added_cdrom[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
   int num_eth;
   int vm_config_flags;
   int vm_id;

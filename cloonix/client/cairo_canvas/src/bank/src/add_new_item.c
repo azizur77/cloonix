@@ -816,7 +816,7 @@ int add_new_eth(char *name, int num, int bank_type, int mutype,
 /****************************************************************************/
 int add_new_node(char *name, char *ip, char *kernel, char *rootfs_sod,
                  char *rootfs_backing_file,  char *install_cdrom, 
-                 char *added_cdrom, char *node_bdisk, int bank_type, 
+                 char *added_cdrom, char *added_disk, int bank_type, 
                  double x, double y, int hidden_on_graph,
                  int color_choice, int vm_id, int vm_config_flags)
 {
@@ -839,7 +839,7 @@ int add_new_node(char *name, char *ip, char *kernel, char *rootfs_sod,
             rootfs_backing_file, MAX_PATH_LEN-1);
     strncpy(bitem->pbi.pbi_node->install_cdrom, install_cdrom, MAX_PATH_LEN-1); 
     strncpy(bitem->pbi.pbi_node->added_cdrom, added_cdrom, MAX_PATH_LEN-1); 
-    strncpy(bitem->pbi.pbi_node->node_bdisk, node_bdisk, MAX_PATH_LEN-1); 
+    strncpy(bitem->pbi.pbi_node->added_disk, added_disk, MAX_PATH_LEN-1); 
     bitem->pbi.color_choice = color_choice;
     bitem->pbi.pbi_node->node_vm_id = vm_id;
     bitem->pbi.pbi_node->node_vm_config_flags = vm_config_flags;

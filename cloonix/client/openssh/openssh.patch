@@ -1,0 +1,235 @@
+diff -Naur openssh-7.4p1/sshconnect.c tainted_openssh/sshconnect.c
+--- openssh-7.4p1/sshconnect.c	2016-12-19 05:59:41.000000000 +0100
++++ tainted_openssh/sshconnect.c	2017-02-16 18:31:23.630716393 +0100
+@@ -41,6 +41,11 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++#include <sys/socket.h>
++#include <sys/un.h>
++#include <sys/stat.h>
++
++
+ #include "xmalloc.h"
+ #include "key.h"
+ #include "hostfile.h"
+@@ -502,23 +507,59 @@
+ 	return 0;
+ }
+ 
++
++//CLOONIX
++/*****************************************************************************/
++static int test_file_is_socket(char *path)
++{
++  int result = -1;
++  struct stat stat_file;
++  if (!stat(path, &stat_file))
++    {
++    if (S_ISSOCK(stat_file.st_mode))
++      result = 0;
++    }
++  return result;
++}
++/*---------------------------------------------------------------------------*/
++
++/*****************************************************************************/
+ int
+ ssh_connect(const char *host, struct addrinfo *addrs,
+     struct sockaddr_storage *hostaddr, u_short port, int family,
+     int connection_attempts, int *timeout_ms, int want_keepalive, int needpriv)
+ {
+-	if (options.proxy_command == NULL) {
+-		return ssh_connect_direct(host, addrs, hostaddr, port, family,
+-		    connection_attempts, timeout_ms, want_keepalive, needpriv);
+-	} else if (strcmp(options.proxy_command, "-") == 0) {
+-		packet_set_connection(STDIN_FILENO, STDOUT_FILENO);
+-		return 0; /* Always succeeds */
+-	} else if (options.proxy_use_fdpass) {
+-		return ssh_proxy_fdpass_connect(host, port,
+-		    options.proxy_command);
+-	}
+-	return ssh_proxy_connect(host, port, options.proxy_command);
++  int len,  sock, ret;
++  struct sockaddr_un addr;
++  char *pname = "/tmp/tst_openssh";
++  if (test_file_is_socket(pname))
++    fatal("err path name not socket %s\n", pname);
++  else
++    {
++    sock = socket (AF_UNIX,SOCK_STREAM,0);
++    if (sock <= 0)
++      fatal("err socket SOCK_STREAM\n");
++    else
++      {
++      memset (&addr, 0, sizeof (struct sockaddr_un));
++      addr.sun_family = AF_UNIX;
++      strcpy(addr.sun_path, pname);
++      len = sizeof (struct sockaddr_un);
++      ret = connect(sock,(struct sockaddr *) &addr, len);
++      if (ret != 0)
++        {
++        close(sock);
++        fatal("NO SERVER LISTENING TO %s\n", pname);
++        }
++      }
++    }
++  /* Set the connection. */
++  packet_set_connection(sock, sock);
++  return 0;
+ }
++/*---------------------------------------------------------------------------*/
++
++
+ 
+ static void
+ send_client_banner(int connection_out, int minor1)
+@@ -1242,6 +1283,7 @@
+ 	int r = -1, flags = 0;
+ 	char valid[64], *fp = NULL, *cafp = NULL;
+ 	struct sshkey *plain = NULL;
++return 0;
+ 
+ 	if ((fp = sshkey_fingerprint(host_key,
+ 	    options.fingerprint_hash, SSH_FP_DEFAULT)) == NULL) {
+diff -Naur openssh-7.4p1/sshd.c tainted_openssh/sshd.c
+--- openssh-7.4p1/sshd.c	2016-12-19 05:59:41.000000000 +0100
++++ tainted_openssh/sshd.c	2017-02-16 18:30:40.882665733 +0100
+@@ -47,6 +47,8 @@
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
+ #include <sys/socket.h>
++#include <sys/un.h>
++
+ #ifdef HAVE_SYS_STAT_H
+ # include <sys/stat.h>
+ #endif
+@@ -1014,73 +1016,67 @@
+ /*
+  * Listen for TCP connections
+  */
++//CLOONIX
++/****************************************************************************/
++static int socket_listen_unix(char *pname)
++{
++  int ret, fd, len, result = -1;
++  struct sockaddr_un serv;
++  mode_t old_mask;
++  if (strlen(pname) >= 108)
++    fatal("Name too long: %d", (int)(strlen(pname)));
++  else
++    {
++    unlink (pname);
++    fd = socket (AF_UNIX, SOCK_STREAM, 0);
++    if (fd < 0)
++      fatal("Erreur socket AF_UNIX");
++    else
++      {
++      memset (&serv, 0, sizeof (struct sockaddr_un));
++      serv.sun_family = AF_UNIX;
++      strncpy (serv.sun_path, pname, strlen(pname));
++      len = sizeof (serv.sun_family) + strlen (serv.sun_path);
++      old_mask = umask (0000);
++      ret = bind (fd, (struct sockaddr *) &serv, len);
++      umask (old_mask);
++      if (ret != 0)
++        {
++        close(fd);
++        fatal("bind failure %s %d\n", pname, errno);
++        }
++      else
++        {
++        ret = listen (fd, 5);
++        if (ret != 0)
++          {
++          close(fd);
++          fatal("listen failure\n");
++          }
++        else
++          result = fd;
++        }
++      }
++    }
++  return result;
++}
++/*--------------------------------------------------------------------------*/
++
++/*****************************************************************************/
+ static void
+ server_listen(void)
+ {
+-	int ret, listen_sock, on = 1;
+-	struct addrinfo *ai;
+-	char ntop[NI_MAXHOST], strport[NI_MAXSERV];
++  int fd_listen;
++  fd_listen = socket_listen_unix("/tmp/tst_openssh");
++  if (fd_listen == -1)
++    fatal("err fd_listen\n");
++  listen_socks[num_listen_socks] = fd_listen;
++  num_listen_socks++;
++}
++/*---------------------------------------------------------------------------*/
+ 
+-	for (ai = options.listen_addrs; ai; ai = ai->ai_next) {
+-		if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
+-			continue;
+-		if (num_listen_socks >= MAX_LISTEN_SOCKS)
+-			fatal("Too many listen sockets. "
+-			    "Enlarge MAX_LISTEN_SOCKS");
+-		if ((ret = getnameinfo(ai->ai_addr, ai->ai_addrlen,
+-		    ntop, sizeof(ntop), strport, sizeof(strport),
+-		    NI_NUMERICHOST|NI_NUMERICSERV)) != 0) {
+-			error("getnameinfo failed: %.100s",
+-			    ssh_gai_strerror(ret));
+-			continue;
+-		}
+-		/* Create socket for listening. */
+-		listen_sock = socket(ai->ai_family, ai->ai_socktype,
+-		    ai->ai_protocol);
+-		if (listen_sock < 0) {
+-			/* kernel may not support ipv6 */
+-			verbose("socket: %.100s", strerror(errno));
+-			continue;
+-		}
+-		if (set_nonblock(listen_sock) == -1) {
+-			close(listen_sock);
+-			continue;
+-		}
+-		/*
+-		 * Set socket options.
+-		 * Allow local port reuse in TIME_WAIT.
+-		 */
+-		if (setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR,
+-		    &on, sizeof(on)) == -1)
+-			error("setsockopt SO_REUSEADDR: %s", strerror(errno));
+-
+-		/* Only communicate in IPv6 over AF_INET6 sockets. */
+-		if (ai->ai_family == AF_INET6)
+-			sock_set_v6only(listen_sock);
+-
+-		debug("Bind to port %s on %s.", strport, ntop);
+-
+-		/* Bind the socket to the desired port. */
+-		if (bind(listen_sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+-			error("Bind to port %s on %s failed: %.200s.",
+-			    strport, ntop, strerror(errno));
+-			close(listen_sock);
+-			continue;
+-		}
+-		listen_socks[num_listen_socks] = listen_sock;
+-		num_listen_socks++;
+ 
+-		/* Start listening on the port. */
+-		if (listen(listen_sock, SSH_LISTEN_BACKLOG) < 0)
+-			fatal("listen on [%s]:%s: %.100s",
+-			    ntop, strport, strerror(errno));
+-		logit("Server listening on %s port %s.", ntop, strport);
+-	}
+-	freeaddrinfo(options.listen_addrs);
+ 
+-	if (!num_listen_socks)
+-		fatal("Cannot bind any address.");
+-}
+ 
+ /*
+  * The main TCP accept loop. Note that, for the non-debug case, returns

@@ -50,7 +50,7 @@ enum
   proto_ip,
 };
 /*---------------------------------------------------------------------------*/
-void init_utils(char *our_ip_dns, char *our_ip_gw);
+void init_utils(char *our_ip_dns, char *our_ip_gw,  char *our_ip_cisco);
 char *debug_print_packet(int is_tx, int ilen, char *buf);
 unsigned short in_cksum(unsigned short *addr, int len);
 /*---------------------------------------------------------------------------*/
@@ -64,6 +64,7 @@ char *get_arp_sip(char *data);
 void packet_ip_input(t_machine *machine, char *src_mac, char *dst_mac,
                      int len, char *data);
 /*---------------------------------------------------------------------------*/
+int format_arp_req(char *sip, char *tip, char **resp_data);
 int format_arp_resp(char *mac, char *sip, char *tip, char **resp_data);
 /*---------------------------------------------------------------------------*/
 void packet_icmp_input(t_machine *machine, char *src_mac, char *dst_mac,
@@ -80,12 +81,13 @@ int format_icmp_tx_buf(char *mac_dst_ascii, char *ip_dst_ascii,
 /*---------------------------------------------------------------------------*/
 char *flags_to_ascii(char flags);
 /*---------------------------------------------------------------------------*/
-char *get_dns_given2guests(void);
-char *get_gw_given2guests(void);
+char *get_dns_ip(void);
+char *get_gw_ip(void);
+char *get_cisco_ip(void);
 /*---------------------------------------------------------------------------*/
-int ip_string_to_int (int *inet_addr, char *ip_string);
+int ip_string_to_int (uint32_t *inet_addr, char *ip_string);
 /*---------------------------------------------------------------------------*/
-void int_to_ip_string (int addr, char *ip_string);
+void int_to_ip_string (uint32_t addr, char *ip_string);
 /*---------------------------------------------------------------------------*/
 
 

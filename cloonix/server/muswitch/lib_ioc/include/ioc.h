@@ -167,10 +167,12 @@ void string_tx(t_all_ctx *all_ctx, int llid, int len, char *tx);
 int  string_client_unix (t_all_ctx *all_ctx, char *pname, 
                          t_fd_error err_cb, t_msg_rx_cb rx_cb);
 int string_server_unix(t_all_ctx *all_ctx, char *pname,t_fd_connect connect_cb); 
+int rawdata_server_unix(t_all_ctx *all_ctx, char *pname,
+                        t_fd_connect connect_cb);
 void msg_mngt_loop(t_all_ctx *all_ctx);
 
 int msg_watch_fd(t_all_ctx *all_ctx,int fd,t_fd_event rx_data,t_fd_error err);
-void watch_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx);
+void data_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx);
 
 
 void wake_out_epoll(t_all_ctx *all_ctx, uint8_t nb, t_wake_out_epoll cb);
