@@ -169,8 +169,7 @@ static int start_launch(void *ptr)
   static char home[MAX_PATH_LEN];
   static char logname[MAX_NAME_LEN];
   static char display[MAX_NAME_LEN];
-  static char *environ[] = { lib_path,xauth,username,logname,home,display, NULL };
-
+  static char *environ[]={lib_path,xauth,username,logname,home,display,NULL};
   memset(lib_path, 0, MAX_PATH_LEN);
   memset(xauth, 0, MAX_PATH_LEN);
   snprintf(lib_path, MAX_PATH_LEN-1, 
@@ -197,9 +196,6 @@ static int start_launch(void *ptr)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-
-
-
 
 /****************************************************************************/
 static void release_pid_wait(t_pid_wait *pid_wait)
@@ -346,6 +342,18 @@ static void launch_pid_wait(int type, char *nm, char **argv)
 }
 /*--------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void debug_print_cmd(char **argv)
+{
+  int i, len = 0;
+  char info[MAX_PRINT_LEN];
+  for (i=0; argv[i]; i++)
+    {
+    len += sprintf(info+len, "%s ", argv[i]);
+    }
+  KERR("%s", info);
+}
+/*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int check_before_start_launch(char **argv)
@@ -359,12 +367,10 @@ int check_before_start_launch(char **argv)
     sprintf(info, "File: %s Problem\n", argv[0]);
     insert_next_warning(info, 1);
     }
+  debug_print_cmd(argv);
   return result;
 }
 /*---------------------------------------------------------------------------*/
-
-
-
 
 /****************************************************************************/
 static void start_qemu_spice(char *password, char *path, t_qemu_spice_item *it)

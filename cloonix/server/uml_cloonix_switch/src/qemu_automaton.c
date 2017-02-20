@@ -298,11 +298,11 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
    " -nodefaults"\
    " -name %s"\
    " -device virtio-serial-pci"\
-   " -chardev socket,id=mon1,path=%s,server"\
+   " -chardev socket,id=mon1,path=%s,server,nowait"\
    " -mon chardev=mon1,mode=readline"\
-   " -chardev socket,id=qmp1,path=%s,server"\
+   " -chardev socket,id=qmp1,path=%s,server,nowait"\
    " -mon chardev=qmp1,mode=control"\
-   " -chardev socket,path=%s,server,wait,id=cloon"\
+   " -chardev socket,path=%s,server,nowait,id=cloon"\
    " -device virtserialport,chardev=cloon,name=net.cloonix.0"\
    " -chardev socket,path=%s,server,nowait,id=hvc0"\
    " -device virtconsole,chardev=hvc0"
@@ -330,8 +330,6 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   char *rootfs, *added_disk, *gname;
   char *spice_path, *cdrom;
   if (!vm)
-    KOUT(" ");
-  if (!spice_libs_exists())
     KOUT(" ");
   spice_path = utils_get_spice_path(vm->vm_id);
   nb_cpu = vm->vm_params.cpu;
@@ -370,7 +368,8 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
                                 //" -vga virtio -display gtk,gl=on",
           cmd_start, cfg_get_work_vm(vm->vm_id), DIR_UMID,
           cpu_type, nb_cpu, nb_cpu, option_kvm_txt);
-  len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
+  if (spice_libs_exists())
+    len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
   if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
     if (vm->vm_params.p9_host_share[0] == 0) 

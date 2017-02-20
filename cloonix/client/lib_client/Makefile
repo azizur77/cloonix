@@ -32,7 +32,6 @@ INCLUDES= -I./include \
 
 CFLAGS= -g $(WARNINGS) $(INCLUDES)
 
-
 CFGLIB= -I. $(shell pkg-config --cflags gtk+-3.0) \
         -DWITH_GLIB -DGTK_DISABLE_SINGLE_INCLUDES \
         -DGDK_DISABLE_DEPRECATED \

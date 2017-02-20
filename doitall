@@ -1,11 +1,5 @@
 #!/bin/bash
 set -e
-BUILD_TYPE=normal
-if [ $# == 1 ]; then
-  if [ "$1" = "small_server" ]; then
-    BUILD_TYPE=$1
-  fi
-fi
 CLOONIX_CONFIG=./cloonix/cloonix_config
 if [ ! -e $CLOONIX_CONFIG ]; then
   echo NOT FOUND:
@@ -15,13 +9,6 @@ fi
 VERSION=$(cat ./cloonix/cloonix_config | grep CLOONIX_VERSION)
 VERSION=${VERSION#*=}
 ./allclean
-if [ "$BUILD_TYPE" = "small_server" ]; then
-  echo SMALL SERVER ONLY
-  sleep 2
-  ./build_small_server
-  ./pack_small_server
-else
-  ./build
-  ./pack
-  sudo ./install_cloonix cloonix-${VERSION}.tar.gz
-fi
+./build
+./pack
+sudo ./install_cloonix cloonix-${VERSION}.tar.gz

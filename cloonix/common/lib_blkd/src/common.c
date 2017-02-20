@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <sys/syscall.h>
 
 
 #include "ioc_top.h"
@@ -60,7 +61,8 @@ unsigned int cloonix_get_msec(void)
 {
   struct timespec ts;
   unsigned int result;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+//  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+  if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts))
     KOUT(" ");
   result = (unsigned int) (ts.tv_sec - g_start_off_second_offset);
   result *= 1000;
@@ -74,7 +76,8 @@ long long cloonix_get_usec(void)
 {
   struct timespec ts;
   long long result;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+//  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+  if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts))
     KOUT(" ");
   result = (long long) (ts.tv_sec - g_start_off_second_offset);
   result *= 1000000;

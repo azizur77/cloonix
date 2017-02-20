@@ -17,7 +17,6 @@ EXE     = hyperzor
 WARNINGS=-Wall
 VPATH=src
 
-
 INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I${IO_CLOWNIX}/include \
           -I$(GLOB_INCLUDE) \
@@ -26,7 +25,6 @@ INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I${CONNECT}/include \
           -I${AGENT_INCLUDE} \
           -I$(VPATH)
-
 LIBS = $(shell pkg-config --libs gtk+-3.0) \
        -L${IO_CLOWNIX} -lio_clownix \
        -L${BLKD} -lblkd \

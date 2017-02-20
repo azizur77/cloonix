@@ -176,7 +176,8 @@ static void insert_lb(GtkWidget *grid, char *txt, int idx)
 static GtkWidget *build_sysinfo_grid(GtkWidget **gval)
 {
   int i;
-  GtkWidget *grid = gtk_grid_new();
+  GtkWidget *grid = NULL;
+  grid = gtk_grid_new();
   for (i=0;i<4; i++)
     gtk_grid_insert_column(GTK_GRID(grid), i);
   for (i=0;i<sysdf_max; i++)
@@ -374,8 +375,8 @@ static GtkWidget *tree_setup(void)
 /****************************************************************************/
 void gui_init(void)
 {
-  GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
+  GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   g_tree_view = tree_setup();
   signal(SIGCHLD, SIG_IGN);
   g_main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);

@@ -13,6 +13,7 @@ OBJ_DIR=obj/
 LIB = libinterface.a
 VPATH=./src
 WARNINGS=-Wall
+
 INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I${IO_CLOWNIX}/include \
           -I${LIB_BANK} \

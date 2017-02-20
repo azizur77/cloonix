@@ -34,7 +34,6 @@ INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I${LIB_SUBSETS}/include \
           -I./crcanvas_gtk
 
-
 LIBS = $(shell pkg-config --libs gtk+-3.0) \
        -L${LIB_CLIENT}/ -lglibclient \
        -L${RPC_C2C}/ -lrpc_c2c \
@@ -52,7 +51,6 @@ LIBS = $(shell pkg-config --libs gtk+-3.0) \
        $(shell pkg-config --libs pangocairo) \
        -L${UTILS}/ -lutils -lm \
        $(shell pkg-config --libs gtk+-3.0) 
-
 
 SRCS     = popup.c topo.c menus.c cloonix.c move.c menu_utils.c \
            main_timer_loop.c canvas_ctx.c eventfull_eth.c make_layout.c \

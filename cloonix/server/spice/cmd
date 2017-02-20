@@ -22,7 +22,7 @@ cd ${TARGET}/spice_server
 
 PKG_CONFIG_PATH=${TARGET}/pkgconfig \
 ./configure LIBS="-lm" --prefix=${TARGET} \
-            --enable-gstreamer=1.0 \
+            --enable-gstreamer=auto \
             --libdir=${TARGET} \
             --datarootdir=${TARGET} \
             --disable-celt051 --disable-smartcard --disable-client \

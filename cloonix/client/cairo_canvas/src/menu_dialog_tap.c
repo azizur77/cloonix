@@ -135,7 +135,6 @@ static void flags_tap_check_button(GtkWidget *grid, int *line_nb)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rad[1]),TRUE);
   else if (g_custom_tap.mutype == musat_type_wif)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rad[2]),TRUE);
-
   hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   for (i=0; i<3; i++)
     {
@@ -165,6 +164,7 @@ static void custom_tap_dialog(void)
   int response, line_nb = 0;
   GtkWidget *grid, *dialog, *numadd,  *entry_name;
   GtkWidget *parent = get_main_window();
+
   grid = gtk_grid_new();
   gtk_grid_insert_column(GTK_GRID(grid), 0);
   gtk_grid_insert_column(GTK_GRID(grid), 1);

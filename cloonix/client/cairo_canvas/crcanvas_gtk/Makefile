@@ -8,7 +8,6 @@ SRC = \
      cr-panner.c \
      cr-canvas.c \
 
-
 INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I. $(shell pkg-config --cflags pangocairo) 
 

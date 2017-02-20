@@ -11,6 +11,8 @@
 #include <asm/types.h>
 #include <signal.h>
 
+#include <sys/syscall.h>
+
 
 
 #include "io_clownix.h"
@@ -280,8 +282,10 @@ static int delta_ms(struct timeval *cur, struct timeval *last)
 /*****************************************************************************/
 static void my_gettimeofday(struct timeval *tv)
 {
+
   struct timespec ts;
-  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+//  if (clock_gettime(CLOCK_MONOTONIC, &ts))
+  if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts)) 
     KOUT(" ");
   tv->tv_sec = ts.tv_sec;
   tv->tv_usec = ts.tv_nsec/1000;

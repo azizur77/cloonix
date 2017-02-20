@@ -23,6 +23,7 @@ PKG_CONFIG_PATH=${TARGET}/pkgconfig \
             --libdir=${TARGET} \
             --datarootdir=${TARGET} \
             --with-usb-acl-helper-dir=/usr/local/bin/cloonix/common/spice/spice_lib \
+            --enable-dependency-tracking \
             --enable-polkit \
             --enable-usbredir \
             --enable-gtk-doc=no \

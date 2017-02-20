@@ -89,12 +89,16 @@ done
   echo BUILDING CLIENT
   echo
   sleep 1
+  if [ -d /opt/gtk3/lib ]; then
+    export LD_LIBRARY_PATH=/opt/gtk3/lib
+    export PATH="/opt/gtk3/bin:$PATH"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/opt/gtk3/lib/pkgconfig"
+  fi
 #----------------------------------------------------------
   cd ${CLOONIX_CLIENT}/lib_client
   make clean
   make libglibclient.a
   make
-
 
   for i in  ctrl \
             cairo_canvas/crcanvas_gtk \

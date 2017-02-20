@@ -93,7 +93,6 @@ static void custom_a2b_dialog(t_custom_a2b *cust)
   GtkWidget *grid, *dialog, *numadd,  *entry_name;
   GtkWidget *parent = get_main_window();
 
-
   grid = gtk_grid_new();
   gtk_grid_insert_column(GTK_GRID(grid), 0);
   gtk_grid_insert_column(GTK_GRID(grid), 1);
