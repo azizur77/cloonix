@@ -4,6 +4,9 @@ rm -rf spice-gtk
 rm -f spice-gtk.tar.gz
 git clone git://anongit.freedesktop.org/spice/spice-gtk
 cd spice-gtk
+
+patch -p1 < ../compile.patch
+
 ./autogen.sh
 
 rm -rf ./autom4te.cache
