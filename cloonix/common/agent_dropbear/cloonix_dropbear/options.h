@@ -21,7 +21,7 @@
 
 #define MAX_BANNER_SIZE 2000 /* this is 25*80 chars, any more is foolish */
 #define MAX_BANNER_LINES 20 /* How many lines the client will display */
-#define MAX_CMD_LEN 1024 /* max length of a command */
+#define MAX_CMD_LEN 4096 /* max length of a command */
 #define MAX_TERM_LEN 200 /* max length of TERM name */
 #define MAX_HOST_LEN 254 /* max hostname len for tcp fwding */
 #define MAX_IP_LEN 15 /* strlen("255.255.255.255") == 15 */
