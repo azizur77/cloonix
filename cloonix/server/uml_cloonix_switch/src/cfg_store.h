@@ -86,9 +86,8 @@ typedef struct t_vm
   t_vm_params vm_params;
   int saved_pid;
   int pid_of_cp_clone;
-  char binary_name[MAX_NAME_LEN];
-  int  locked_vm;
-  int  vm_to_be_killed;
+  int locked_vm;
+  int vm_to_be_killed;
   int tmux_launch;
   t_wake_up_eths *wake_up_eths;
   int pid;

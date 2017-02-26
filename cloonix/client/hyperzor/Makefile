@@ -41,7 +41,7 @@ OBJ_DIR  = ./obj/
 OBJS     = $(addprefix $(OBJ_DIR), $(OBJ))
 
 
-CFLAGS   = -g $(WARNINGS) $(INCLUDES)
+CFLAGS   += -g $(WARNINGS) $(INCLUDES)
 
 CC       = gcc 
 

@@ -18,23 +18,52 @@ rm -rf ${TARGET}/spice_client
 mv spice_client ${TARGET}
 
 cd ${TARGET}/spice_client
-PKG_CONFIG_PATH=${TARGET}/pkgconfig \
-./configure --prefix=${TARGET} \
-            --libdir=${TARGET} \
-            --datarootdir=${TARGET} \
-            --with-usb-acl-helper-dir=/usr/local/bin/cloonix/common/spice/spice_lib \
-            --enable-dependency-tracking \
-            --enable-polkit \
-            --enable-usbredir \
-            --enable-gtk-doc=no \
-            --enable-gtk-doc-html=no \
-            --enable-gtk-doc-pdf=no \
-            --enable-controler=no \
-            --enable-dbus=no \
-            --enable-vala=no \
-            --enable-webdav=no \
-            --enable-smartcard=no \
-            --enable-lz4=no
+
+export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
+PREFIX=/usr/local/bin/cloonix/gtk3
+if [ -e ${PREFIX} ]; then
+  PREFIX=/usr/local/bin/cloonix/gtk3
+  GTKI=${PREFIX}/include
+  GTKL=${PREFIX}/lib
+  GTKB=${PREFIX}/bin
+  GTKP=${GTKL}/pkgconfig
+  export LD_LIBRARY_PATH=${GTKL}
+  export PATH="${GTKB}:$PATH"
+  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${GTKP}"
+  export CFLAGS="-I${GTKI}"
+
+  ./configure --prefix=${TARGET} \
+              --libdir=${TARGET} \
+              --datarootdir=${TARGET} \
+              --enable-dependency-tracking \
+              --enable-gtk-doc=no \
+              --enable-gtk-doc-html=no \
+              --enable-gtk-doc-pdf=no \
+              --enable-controler=no \
+              --enable-dbus=no \
+              --enable-vala=no \
+              --enable-webdav=no \
+              --enable-smartcard=no \
+              --enable-lz4=no
+else
+  SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
+  ./configure --prefix=${TARGET} \
+              --libdir=${TARGET} \
+              --datarootdir=${TARGET} \
+              --with-usb-acl-helper-dir=${SPICE_LIB} \
+              --enable-dependency-tracking \
+              --enable-polkit \
+              --enable-usbredir \
+              --enable-gtk-doc=no \
+              --enable-gtk-doc-html=no \
+              --enable-gtk-doc-pdf=no \
+              --enable-controler=no \
+              --enable-dbus=no \
+              --enable-vala=no \
+              --enable-webdav=no \
+              --enable-smartcard=no \
+              --enable-lz4=no
+fi
 
 make clean
 make

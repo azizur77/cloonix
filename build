@@ -88,12 +88,18 @@ done
   echo
   echo BUILDING CLIENT
   echo
-  sleep 1
-  if [ -d /opt/gtk3/lib ]; then
-    export LD_LIBRARY_PATH=/opt/gtk3/lib
-    export PATH="/opt/gtk3/bin:$PATH"
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/opt/gtk3/lib/pkgconfig"
+  PREFIX=/usr/local/bin/cloonix/gtk3
+  if [ -e ${PREFIX} ]; then
+    GTKI=${PREFIX}/include
+    GTKL=${PREFIX}/lib
+    GTKB=${PREFIX}/bin
+    GTKP=${GTKL}/pkgconfig
+    export LD_LIBRARY_PATH=${GTKL}
+    export PATH="${GTKB}:$PATH"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${GTKP}"
+    export CFLAGS="-I${GTKI}"
   fi
+  sleep 1
 #----------------------------------------------------------
   cd ${CLOONIX_CLIENT}/lib_client
   make clean

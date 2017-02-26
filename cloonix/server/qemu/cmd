@@ -2,11 +2,20 @@
 set -e
 HERE=`pwd`
 CLOONIX_COMMON=${HERE}/../../../cloonix/common
-SPICE_LIB=${CLOONIX_COMMON}/spice/spice_lib/pkgconfig
-if [ ! -e ${SPICE_LIB} ]; then
-  ABLE="disable"
+PKGCONFIG=${CLOONIX_COMMON}/spice/spice_lib/pkgconfig
+PREFIX=/usr/local/bin/cloonix/gtk3
+if [ -e ${PREFIX} ]; then
+  PKGCONFIG+=:${PREFIX}/lib/pkgconfig
+  export PKG_CONFIG_PATH=${PKGCONFIG}
+  export CFLAGS="-I${PREFIX}/include"
+  export LDFLAGS="-L${PREFIX}/lib \
+                  -Wl,-rpath=${PREFIX}/lib \
+                  -L${CLOONIX_COMMON}/spice/spice_lib \
+                  -Wl,-rpath=${CLOONIX_COMMON}/spice/spice_lib" ;
 else
-  ABLE="enable"
+  export PKG_CONFIG_PATH=${PKGCONFIG}
+  export LDFLAGS="-L${CLOONIX_COMMON}/spice/spice_lib \
+                  -Wl,-rpath=${CLOONIX_COMMON}/spice/spice_lib" ;
 fi
 MUETH=${HERE}/../../
 QEMU_NAME=qemu-627eae7
@@ -21,8 +30,8 @@ cd ${HERE}/qemu_bin/tainted_qemu
  CONFIGURATION_OPTS="--prefix=/usr/local
                      --target-list=x86_64-softmmu
                      --enable-kvm
-                     --${ABLE}-spice
-                     --${ABLE}-usb-redir
+                     --enable-spice
+                     --enable-usb-redir
                      --enable-linux-user
                      --disable-gtk
                      --disable-virtfs
@@ -77,11 +86,7 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --enable-mueth
                      --muethdir=${MUETH}"
 
-if [ "${ABLE}" = "enable" ]; then
-  PKG_CONFIG_PATH=${SPICE_LIB} ./configure  $CONFIGURATION_OPTS
-else
-  ./configure  $CONFIGURATION_OPTS
-fi
+./configure  $CONFIGURATION_OPTS
 
 make clean
 make -j 5

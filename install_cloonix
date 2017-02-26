@@ -13,12 +13,19 @@ if [ ! -e $CLOONIX ]; then
   exit
 fi
 #----------------------------------------------------------
-rm -rf /usr/local/bin/cloonix*
+rm -f /usr/local/bin/cloonix/cloonix_config
+rm -f /usr/local/bin/cloonix/LICENCE
+rm -rf /usr/local/bin/cloonix/client
+rm -rf /usr/local/bin/cloonix/server
+rm -rf /usr/local/bin/cloonix/common
 cd /usr/local/bin
 tar zxvf ${HERE}/${CLOONIX}
 chown -R root:root /usr/local/bin/cloonix*
 MUTAP=/usr/local/bin/cloonix/server/muswitch/mutap/cloonix_mutap
 chmod u+s ${MUTAP}
-USBHELP=/usr/local/bin/cloonix/common/spice/spice_lib/spice-client-glib-usb-acl-helper
-chmod u+s ${USBHELP}
+USBHELP=/usr/local/bin/cloonix/common/spice
+USBHELP+=/spice_lib/spice-client-glib-usb-acl-helper
+if [ -e ${USBHELP} ]; then
+  chmod u+s ${USBHELP}
+fi
 #----------------------------------------------------------

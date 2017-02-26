@@ -430,8 +430,10 @@ static char *qemu_cmd_format(t_vm *vm)
   int len = 0;
   char *cmd = (char *) clownix_malloc(MAX_BIG_BUF, 7);
   memset(cmd, 0,  MAX_BIG_BUF);
-  len += snprintf(cmd, MAX_BIG_BUF-1, "%s/server/qemu/%s/%s ", 
-                  cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE);
+  len += snprintf(cmd, MAX_BIG_BUF-1,
+                  "%s/server/qemu/%s/%s -L %s/server/qemu/%s ",
+                  cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
+                  cfg_get_bin_dir(), QEMU_BIN_DIR);
   len += create_linux_cmd_kvm(vm, cmd+len);
   strcat(cmd, ";sleep 10");
   return cmd;

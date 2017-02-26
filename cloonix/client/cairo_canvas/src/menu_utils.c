@@ -173,8 +173,8 @@ static int start_launch(void *ptr)
   memset(lib_path, 0, MAX_PATH_LEN);
   memset(xauth, 0, MAX_PATH_LEN);
   snprintf(lib_path, MAX_PATH_LEN-1, 
-           "LD_LIBRARY_PATH=%s/common/spice/spice_lib", 
-           get_local_cloonix_tree());
+           "LD_LIBRARY_PATH=%s/common/spice/spice_lib:%s/gtk3/lib", 
+           get_local_cloonix_tree(), get_local_cloonix_tree());
   if(!getenv("HOME"))
     KOUT(" ");
   if(!getenv("USER"))

@@ -15,5 +15,9 @@ if [ ! -d ${CLOONIX_TREE} ]; then
   exit 1
 fi
 
+if [ -e /usr/local/bin/cloonix/gtk3/lib ]; then
+  export LD_LIBRARY_PATH=/usr/local/bin/cloonix/gtk3/lib
+fi
+
 ${CLOONIX_TREE}/client/cairo_canvas/cloonix_gui $CLOONIX_CONFIG "$@"
 

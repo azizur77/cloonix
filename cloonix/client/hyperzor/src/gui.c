@@ -123,9 +123,9 @@ static void launch_spice_desktop(char *net_name, char *name)
   else
     {
     snprintf(cmd, 2*MAX_PATH_LEN-1, 
-    "LD_LIBRARY_PATH=%s/common/spice/spice_lib "
+    "LD_LIBRARY_PATH=%s/common/spice/spice_lib:%s/gtk3/lib "
     "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
-    root, binspice, net_name, name, doors,
+    root, root, binspice, net_name, name, doors,
     work_dir, vm_id, SPICE_SOCK, passwd);
 KERR("%s", cmd);
     close_and_fork(cmd);

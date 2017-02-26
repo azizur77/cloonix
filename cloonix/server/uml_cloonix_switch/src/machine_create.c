@@ -274,16 +274,6 @@ int run_linux_virtual_machine(int llid, int tid, char *name,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static char *get_binary_name(t_vm_params *vm_params)
-{
-  static char binary_name[MAX_NAME_LEN];
-  memset(binary_name, 0, MAX_NAME_LEN);
-  strncpy(binary_name, QEMU_EXE, MAX_NAME_LEN-1);
-  return binary_name;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 static void death_of_mkdir_clone(void *data, int status, char *name)
 {
   int i;
@@ -310,8 +300,6 @@ static void death_of_mkdir_clone(void *data, int status, char *name)
     for (i=0; i<vm_building->vm_params.nb_eth; i++)
       add_eth_cfg(vm, i, err);
 
-    strncpy(vm->binary_name, get_binary_name(&(vm_building->vm_params)), 
-            MAX_NAME_LEN-1);
     if (!run_linux_virtual_machine(vm_building->llid, vm_building->tid,
                                    vm_building->vm_params.name, vm, err))
       event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());

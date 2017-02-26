@@ -15,6 +15,10 @@ if [ ! -d ${CLOONIX_TREE} ]; then
   exit 1
 fi
 
+if [ -e /usr/local/bin/cloonix/gtk3/lib ]; then
+  export LD_LIBRARY_PATH=/usr/local/bin/cloonix/gtk3/lib
+fi
+
 BIN_ZOR=${CLOONIX_TREE}/client/hyperzor/hyperzor
 $BIN_ZOR $CLOONIX_CONFIG
 
