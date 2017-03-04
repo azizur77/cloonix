@@ -24,15 +24,10 @@ SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
 
 PREFIX=/usr/local/bin/cloonix/gtk3
 if [ -e ${PREFIX} ]; then
-  export C_INCLUDE_PATH="${PREFIX}/include"
-  export LD_LIBRARY_PATH="${PREFIX}/lib"
   export PATH="${PREFIX}/bin:$PATH"
+  export C_INCLUDE_PATH="${PREFIX}/include"
   export CFLAGS="-I${PREFIX}/include"
   export LDFLAGS="-L${PREFIX}/lib"
-  export SSL_CFLAGS="-I${PREFIX}/include"
-  export SSL_LIBS="${PREFIX}/lib"
-  export OPENSSL_CFLAGS="-I${PREFIX}/include"
-  export OPENSSL_LIBS="${PREFIX}/lib"
   export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
   export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
 else
@@ -43,7 +38,6 @@ fi
               --libdir=${TARGET} \
               --datarootdir=${TARGET} \
               --with-usb-acl-helper-dir=${SPICE_LIB} \
-              --enable-dependency-tracking \
               --enable-polkit \
               --enable-usbredir \
               --enable-gtk-doc=no \
@@ -55,6 +49,7 @@ fi
               --enable-webdav=no \
               --enable-smartcard=no \
               --enable-lz4=no
+
 
 make clean
 make

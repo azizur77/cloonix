@@ -20,36 +20,26 @@ mv spice_server ${TARGET}
 
 cd ${TARGET}/spice_server
 
-export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 
 PREFIX=/usr/local/bin/cloonix/gtk3
 if [ -e ${PREFIX} ]; then
-  export C_INCLUDE_PATH="${PREFIX}/include"
-  export LD_LIBRARY_PATH="${PREFIX}/lib"
   export PATH="${PREFIX}/bin:$PATH"
+  export C_INCLUDE_PATH="${PREFIX}/include"
   export CFLAGS="-I${PREFIX}/include"
-  export LDFLAGS="-L${PREFIX}/lib"
-  export SSL_CFLAGS="-I${PREFIX}/include"
-  export SSL_LIBS="${PREFIX}/lib"
-  export OPENSSL_CFLAGS="-I${PREFIX}/include"
-  export OPENSSL_LIBS="${PREFIX}/lib"
+  export LDFLAGS="-L${PREFIX}/lib -lm"
   export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
   export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
-  ./configure LIBS="-lm -lssl" --prefix=${TARGET} \
-            --enable-gstreamer=auto \
-            --enable-dependency-tracking \
-            --libdir=${TARGET} \
-            --datarootdir=${TARGET} \
-            --disable-celt051 --disable-smartcard --disable-client \
-            --enable-shared --disable-static --enable-lz4=no
 else
-  ./configure LIBS="-lm" --prefix=${TARGET} \
-            --enable-gstreamer=auto \
-            --libdir=${TARGET} \
-            --datarootdir=${TARGET} \
-            --disable-celt051 --disable-smartcard --disable-client \
-            --enable-shared --disable-static --enable-lz4=no 
+  export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 fi
+
+  ./configure --prefix=${TARGET} \
+              --enable-gstreamer=auto \
+              --libdir=${TARGET} \
+              --datarootdir=${TARGET} \
+              --disable-celt051 --disable-smartcard --disable-client \
+              --enable-shared --disable-static --enable-lz4=no
+
 make clean
 make
 make install
