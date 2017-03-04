@@ -295,7 +295,9 @@ char *utils_get_muswitch_traf_dir(void)
 char *utils_get_tmux_bin_path(void)
 {
   static char tmux[MAX_PATH_LEN];
-  sprintf(tmux, "/usr/bin/tmux");
+  sprintf(tmux, "%s/gtk3/bin/tmux", cfg_get_bin_dir());
+  if (!file_exists(tmux, F_OK))
+    sprintf(tmux, "/usr/bin/tmux");
   return tmux;
 }
 /*---------------------------------------------------------------------------*/

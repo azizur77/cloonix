@@ -186,8 +186,13 @@ void cloonix_get_xvt(char *xvt)
   if (!file_exists_exec("/usr/bin/urxvt"))
     {
     if (!file_exists_exec("/bin/xterm"))
-      KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
-    strncpy(xvt, "/bin/xterm", MAX_NAME_LEN-1);
+      {
+      if (!file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/xterm"))
+        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
+      strncpy(xvt, "/usr/local/bin/cloonix/gtk3/bin/xterm", MAX_NAME_LEN-1);
+      }
+    else
+      strncpy(xvt, "/bin/xterm", MAX_NAME_LEN-1);
     }
   else
     strncpy(xvt, "/usr/bin/urxvt", MAX_NAME_LEN-1);
@@ -533,7 +538,10 @@ int main(int argc, char *argv[])
     printf("\n\nInstall \"rxvt-unicode\" to have \"/usr/bin/urxvt\" \n\n");
     printf("********************************\n");
     if (!file_exists_exec("/bin/xterm"))
-      KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
+      {
+      if (!file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/xterm"))
+        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
+      }
     sleep(5);
     }
   eth_choice = 0;

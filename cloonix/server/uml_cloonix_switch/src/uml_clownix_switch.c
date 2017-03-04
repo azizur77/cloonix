@@ -80,7 +80,6 @@ static char **g_saved_environ;
 
 char *used_binaries[] =
 {
-  "/usr/bin/tmux",
   "/bin/rm",
   "/bin/bash",
   "/bin/sh",
@@ -324,6 +323,12 @@ static void connect_from_client_unix(void *ptr, int llid, int llid_new)
 static void launching(void)
 {
   char clownlock[MAX_PATH_LEN];
+  char *tmux = utils_get_tmux_bin_path();
+  if (!file_exists(tmux, X_OK))
+    {
+    printf("\"%s\" not found or not executable\n", tmux);
+    KOUT("\"%s\" not found or not executable\n", tmux);
+    }
   set_cloonix_name(cfg_get_cloonix_name());
   printf("\n\n");
   printf("     Cloonix Version:        %s\n",cfg_get_version());

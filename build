@@ -90,14 +90,13 @@ done
   echo
   PREFIX=/usr/local/bin/cloonix/gtk3
   if [ -e ${PREFIX} ]; then
-    GTKI=${PREFIX}/include
-    GTKL=${PREFIX}/lib
-    GTKB=${PREFIX}/bin
-    GTKP=${GTKL}/pkgconfig
-    export LD_LIBRARY_PATH=${GTKL}
-    export PATH="${GTKB}:$PATH"
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${GTKP}"
-    export CFLAGS="-I${GTKI}"
+    export C_INCLUDE_PATH=${PREFIX}/include
+    export LD_LIBRARY_PATH=${PREFIX}/lib
+    export PATH="${PREFIX}/bin:$PATH"
+    export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
+    export PKG_CONFIG_LIBDIR=${PREFIX}/lib/pkgconfig
+    export CFLAGS=-I${PREFIX}/include
+    export LDFLAGS=-L${PREFIX}/lib
   fi
   sleep 1
 #----------------------------------------------------------

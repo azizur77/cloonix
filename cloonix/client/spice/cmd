@@ -19,34 +19,26 @@ mv spice_client ${TARGET}
 
 cd ${TARGET}/spice_client
 
-export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
+SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
+
+
 PREFIX=/usr/local/bin/cloonix/gtk3
 if [ -e ${PREFIX} ]; then
-  PREFIX=/usr/local/bin/cloonix/gtk3
-  GTKI=${PREFIX}/include
-  GTKL=${PREFIX}/lib
-  GTKB=${PREFIX}/bin
-  GTKP=${GTKL}/pkgconfig
-  export LD_LIBRARY_PATH=${GTKL}
-  export PATH="${GTKB}:$PATH"
-  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${GTKP}"
-  export CFLAGS="-I${GTKI}"
-
-  ./configure --prefix=${TARGET} \
-              --libdir=${TARGET} \
-              --datarootdir=${TARGET} \
-              --enable-dependency-tracking \
-              --enable-gtk-doc=no \
-              --enable-gtk-doc-html=no \
-              --enable-gtk-doc-pdf=no \
-              --enable-controler=no \
-              --enable-dbus=no \
-              --enable-vala=no \
-              --enable-webdav=no \
-              --enable-smartcard=no \
-              --enable-lz4=no
+  export C_INCLUDE_PATH="${PREFIX}/include"
+  export LD_LIBRARY_PATH="${PREFIX}/lib"
+  export PATH="${PREFIX}/bin:$PATH"
+  export CFLAGS="-I${PREFIX}/include"
+  export LDFLAGS="-L${PREFIX}/lib"
+  export SSL_CFLAGS="-I${PREFIX}/include"
+  export SSL_LIBS="${PREFIX}/lib"
+  export OPENSSL_CFLAGS="-I${PREFIX}/include"
+  export OPENSSL_LIBS="${PREFIX}/lib"
+  export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
+  export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
 else
-  SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
+  export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
+fi
+
   ./configure --prefix=${TARGET} \
               --libdir=${TARGET} \
               --datarootdir=${TARGET} \
@@ -63,7 +55,6 @@ else
               --enable-webdav=no \
               --enable-smartcard=no \
               --enable-lz4=no
-fi
 
 make clean
 make

@@ -52,7 +52,9 @@ static int cipher( int do_encrypt, unsigned char *iv,
             unsigned char *outbuf)
 {
   int len, tot_len = 0;
-  EVP_CIPHER_CTX_init(cipher_ctx);
+  cipher_ctx = EVP_CIPHER_CTX_new();
+  if (!cipher_ctx)
+    KOUT(" ");
   EVP_CipherInit_ex(cipher_ctx, EVP_aes_256_cbc(), NULL, 
                     glob_key, iv, do_encrypt);
   EVP_CIPHER_CTX_set_key_length(cipher_ctx, MSG_DIGEST_LEN);
@@ -62,7 +64,7 @@ static int cipher( int do_encrypt, unsigned char *iv,
     if (EVP_CipherFinal_ex(cipher_ctx, outbuf+tot_len, &len))
       tot_len += len;
     }
-  EVP_CIPHER_CTX_cleanup(cipher_ctx);
+  EVP_CIPHER_CTX_free(cipher_ctx);
   return tot_len;
 }
 /*---------------------------------------------------------------------------*/
@@ -135,7 +137,7 @@ void cipher_change_key(char *key)
 void cipher_init(void)
 {
   cipher_ctx = EVP_CIPHER_CTX_new();
-  OpenSSL_add_all_digests();
+  EVP_add_digest(EVP_sha256());
   md_hmac_sha = EVP_get_digestbyname("SHA256");
   if(!md_hmac_sha)
     KOUT("Unknown message digest \"SHA256\"");

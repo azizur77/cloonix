@@ -25,9 +25,23 @@ cd ${TARGET}
 tar xvf ${HERE}/spice_usb/usbredir.tar.gz
 cd usbredir
 
-PKG_CONFIG_PATH=${TARGET}/pkgconfig \
-./configure --prefix=${TARGET} \
-            --libdir=${TARGET}
+PREFIX=/usr/local/bin/cloonix/gtk3
+if [ -e ${PREFIX} ]; then
+  export C_INCLUDE_PATH="${PREFIX}/include"
+  export LD_LIBRARY_PATH="${PREFIX}/lib"
+  export PATH="${PREFIX}/bin:$PATH"
+  export CFLAGS="-I${PREFIX}/include"
+  export LDFLAGS="-L${PREFIX}/lib"
+  export SSL_CFLAGS="-I${PREFIX}/include"
+  export SSL_LIBS="${PREFIX}/lib"
+  export OPENSSL_CFLAGS="-I${PREFIX}/include"
+  export OPENSSL_LIBS="${PREFIX}/lib"
+  export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
+  export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
+fi
+
+./configure --prefix=${TARGET} --libdir=${TARGET}
+
 make clean
 make
 make install
