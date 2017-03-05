@@ -456,8 +456,8 @@ static int forked_fct(void *ptr)
     }
   cloonix_set_name(get_new_name());
   cloonix_set_pid(getpid());
+  setenv("LD_LIBRARY_PATH", "/usr/local/bin/cloonix/gtk3/lib", 0);
   ctx->fct(ctx->param_data_start);
-
   return 0;
 }
 /*---------------------------------------------------------------------------*/

@@ -530,7 +530,8 @@ static char **save_environ(void)
   if (spice_libs_exists())
     {
     snprintf(lib_path,MAX_PATH_LEN-1,
-             "LD_LIBRARY_PATH=%s/common/spice/spice_lib", cfg_get_bin_dir());
+             "LD_LIBRARY_PATH=%s/common/spice/spice_lib"
+             ":/usr/local/bin/cloonix/gtk3/lib", cfg_get_bin_dir());
     }
   return environ;
 }

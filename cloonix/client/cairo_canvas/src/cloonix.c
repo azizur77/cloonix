@@ -262,8 +262,16 @@ char **get_argv_local_dbssh(char *name)
            get_local_cloonix_tree());
   strncpy(doors_addr, get_doors_client_addr(), MAX_PATH_LEN-1);
   snprintf(username, MAX_PATH_LEN-1, "local_host_dropbear");
-  snprintf(cmd, 2*MAX_PATH_LEN-1, "/usr/bin/tmux -S %s attach -t %s; sleep 10", 
-           get_tmux_work_path(), nm);
+  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+    {
+    snprintf(cmd, 2*MAX_PATH_LEN-1, 
+    "/usr/local/bin/cloonix/gtk3/bin/tmux -S %s attach -t %s; sleep 10", 
+    get_tmux_work_path(), nm);
+    }
+  else
+    snprintf(cmd, 2*MAX_PATH_LEN-1, 
+             "/usr/bin/tmux -S %s attach -t %s; sleep 10", 
+             get_tmux_work_path(), nm);
 
 
 //  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
