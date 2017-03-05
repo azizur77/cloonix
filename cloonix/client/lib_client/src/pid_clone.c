@@ -87,7 +87,6 @@ static void send_to_pid_mngt(int llid, char *str);
 static int current_max_pid;
 static int nb_running_pids;
 static t_clone_ctx clone_ctx[MAX_FORK_IDENT];
-static int client_llid;
 
 extern int g_i_am_a_clone;
 extern int g_i_am_a_clone_no_kerr;
@@ -456,7 +455,6 @@ static int forked_fct(void *ptr)
     }
   cloonix_set_name(get_new_name());
   cloonix_set_pid(getpid());
-  setenv("LD_LIBRARY_PATH", "/usr/local/bin/cloonix/gtk3/lib", 0);
   ctx->fct(ctx->param_data_start);
   return 0;
 }
@@ -522,87 +520,6 @@ static void send_to_pid_mngt(int llid, char *str)
   else
     string_tx_now(llid, len, buf);
   clownix_free(buf, __FUNCTION__);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void send_to_daddy (char *str)
-{
-  int len;
-  char *buf;
-  len = strlen(str)+strlen(XML_OPEN)+strlen(XML_CLOSE)+strlen(SENDER_PID)+10;
-  buf  = (char *)clownix_malloc(len, 17);
-  memset (buf, 0, len);
-  len = sprintf(buf,"%s%s%d %s %s",XML_OPEN,SENDER_PID,getpid(),str,XML_CLOSE);
-  if (!msg_exist_channel(client_llid))
-    KERR("%s", str);
-  else
-    string_tx_now(client_llid, len, buf);
-  clownix_free(buf, __FUNCTION__);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-static int popenRWE(int *rp, char *exe, char *argv[])
-{
-  int out[2];
-  int pid;
-  if (pipe(out) < 0)
-    KOUT(" ");
-  if ((pid = fork()) < 0)
-    KOUT(" ");
-  if (pid > 0)
-    {
-    close(out[1]);
-    *rp = out[0];
-    }
-  else if (pid == 0)
-    {
-    close(out[0]);
-    close(1);
-    dup(out[1]);
-    execvp(exe, (char**)argv);
-    }
-  return pid;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int my_popen(char *exe, char *argv[])
-{
-  static int count = 0;
-  int rpipe, pid, status;
-  FILE *fp;
-  char line[MAX_PRINT_LEN];
-  pid = popenRWE(&rpipe, exe, argv);
-  fp = fdopen(rpipe, "r");
-  if (fp)
-    {
-    while (fgets(line, MAX_PRINT_LEN, fp))
-      {
-      if (strlen(line))
-        {
-        send_to_daddy (line);
-        }
-      }
-    fclose(fp);
-    }
-  close(rpipe);
-  do
-    {
-    waitpid(pid, &status, 0);
-    if (!WIFEXITED(status))
-      {
-      count++;
-      if (count == 10)
-        KOUT(" ");
-      usleep(10000);
-      KERR("my_popen slip");
-      }
-    } while(!WIFEXITED(status));
-
-  return status;
 }
 /*---------------------------------------------------------------------------*/
 

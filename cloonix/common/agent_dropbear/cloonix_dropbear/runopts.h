@@ -42,6 +42,7 @@ typedef struct svr_runopts
   char unix_dropbear_sock[MAX_DROPBEAR_PATH_LEN];
   char pidfile[MAX_DROPBEAR_PATH_LEN];
   int i_run_in_kvm;
+  char cloonix_tree_dir[MAX_DROPBEAR_PATH_LEN];
 } svr_runopts;
 
 extern svr_runopts svr_opts;

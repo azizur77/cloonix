@@ -82,7 +82,6 @@ void from_cloonix_switch_delete_sat_edge(char *name, char *lan, int num);
 /*****************************************************************************/
 void interface_switch_init(char *path, char *password);
 /*--------------------------------------------------------------------------*/
-int wrapper_execv(char *cmd, char **argv);
 void launch_xterm_double_click(char *name, int vm_config_flags);
 /*--------------------------------------------------------------------------*/
 int get_vm_id_from_topo(char *name);

@@ -285,6 +285,13 @@ static int newchansess(struct Channel *channel)
   chansess->tty = NULL;
   chansess->exxit.exxitpid = -1;
   chansess->i_run_in_kvm = channel->i_run_in_kvm;
+  if (channel->cloonix_tree_dir[0])
+    {
+    strncpy(chansess->cloonix_tree_dir, 
+            channel->cloonix_tree_dir, 
+            MAX_DROPBEAR_PATH_LEN-1);
+    }
+
   channel->typedata = chansess;
   return 0;
 }
@@ -646,6 +653,7 @@ static void execchild(struct ChanSess *chansess)
   char *usershell = NULL;
   char *login = NULL;
   char *pth="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+  char ld_lib[MAX_DROPBEAR_PATH_LEN];
   unsetnonblocking(STDOUT_FILENO);
   unsetnonblocking(STDIN_FILENO);
   unsetnonblocking(STDERR_FILENO);
@@ -670,6 +678,12 @@ static void execchild(struct ChanSess *chansess)
     {
     unsetenv("PATH");
     addnewvar("PATH", pth); 
+    if (chansess->cloonix_tree_dir[0])
+      {
+      snprintf(ld_lib, MAX_DROPBEAR_PATH_LEN-1, 
+               "%s/gtk3/lib", chansess->cloonix_tree_dir);
+      addnewvar("LD_LIBRARY_PATH", ld_lib); 
+      }
     addnewvar("TERM", "xterm");
     if (chansess->cloonix_display)
       addnewvar("DISPLAY", chansess->cloonix_display);

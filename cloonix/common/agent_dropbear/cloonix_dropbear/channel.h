@@ -72,6 +72,7 @@ int init_done;
 	const struct ChanType* ctype;
 
 int i_run_in_kvm;
+char cloonix_tree_dir[MAX_DROPBEAR_PATH_LEN];
 
 
 };

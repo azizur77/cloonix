@@ -20,6 +20,7 @@
 #include "io_clownix.h"
 
 int main_i_run_in_kvm(void);
+char *main_cloonix_tree_dir(void);
 int call_child_death_detection(void);
 size_t cloonix_read(int fd, void *ibuf, size_t count);
 size_t cloonix_write(int fd, const void *ibuf, size_t count);
@@ -369,8 +370,14 @@ void recv_msg_channel_open(void)
   channel->writebuf = cbuf_new(0);
   channel->recvmaxpacket = RECV_MAX_CHANNEL_DATA_LEN;
   channel->i_run_in_kvm = main_i_run_in_kvm();
-
-
+  if (main_cloonix_tree_dir())
+    {
+    strncpy(channel->cloonix_tree_dir, 
+            main_cloonix_tree_dir(), 
+            MAX_DROPBEAR_PATH_LEN-1); 
+    }
+  else
+    channel->cloonix_tree_dir[0] = 0;
   if (typelen > MAX_NAME_LEN) 
     {
     send_msg_channel_open_failure(channel->remotechan, errtype, "", "");
@@ -480,6 +487,14 @@ int send_msg_channel_open_init(int fd)
   chan->errfd = -1; 
   chan->recvmaxpacket = RECV_MAX_CHANNEL_DATA_LEN;
   chan->i_run_in_kvm = main_i_run_in_kvm();
+  if (main_cloonix_tree_dir())
+    {
+    strncpy(chan->cloonix_tree_dir, 
+            main_cloonix_tree_dir(), 
+            MAX_DROPBEAR_PATH_LEN-1);
+    }
+  else
+    chan->cloonix_tree_dir[0] = 0;
   chan->writebuf = cbuf_new(opts.recv_window);
   chan->recvwindow = opts.recv_window;
   setnonblocking(fd);

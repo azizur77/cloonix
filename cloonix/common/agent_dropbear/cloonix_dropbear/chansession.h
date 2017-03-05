@@ -54,6 +54,8 @@ struct ChanSess {
 
 
 int i_run_in_kvm;
+char cloonix_tree_dir[MAX_DROPBEAR_PATH_LEN];
+
 };
 
 struct ChildPid {

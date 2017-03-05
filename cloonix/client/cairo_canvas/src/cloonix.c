@@ -78,6 +78,7 @@ static char g_cloonix_root_tree[MAX_PATH_LEN];
 static char g_tmp_work_path[MAX_PATH_LEN];
 static char g_tmux_work_path[MAX_PATH_LEN];
 static char g_password[MSG_DIGEST_LEN];
+static char **g_saved_environ;
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
@@ -534,6 +535,62 @@ static void init_local_cloonix_bin_path(char *curdir, char *callbin)
 }
 /*--------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+char **get_saved_environ(void)
+{
+  return (g_saved_environ);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static char **save_environ(void)
+{
+  char *xauthority;
+  char ld_lib[MAX_PATH_LEN];
+  static char lib_path[MAX_PATH_LEN];
+  static char xauth[MAX_PATH_LEN];
+  static char username[MAX_NAME_LEN];
+  static char home[MAX_PATH_LEN];
+  static char logname[MAX_NAME_LEN];
+  static char display[MAX_NAME_LEN];
+  static char *environ[]={lib_path,xauth,username,logname,home,display,NULL};
+  memset(lib_path, 0, MAX_PATH_LEN);
+  memset(xauth, 0, MAX_PATH_LEN);
+  if(!getenv("HOME"))
+    KOUT(" ");
+  if(!getenv("USER"))
+    KOUT(" ");
+  if(!getenv("DISPLAY"))
+    KOUT(" ");
+  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+    {
+    snprintf(ld_lib, MAX_PATH_LEN-1,
+             "%s/common/spice/spice_lib:%s/gtk3/lib",
+             get_local_cloonix_tree(), get_local_cloonix_tree());
+    }
+  else
+    {
+    snprintf(ld_lib, MAX_PATH_LEN-1,
+             "%s/common/spice/spice_lib",
+             get_local_cloonix_tree());
+    }
+  snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
+  setenv("LD_LIBRARY_PATH", ld_lib, 1);
+  xauthority = getenv("XAUTHORITY");
+  if ((xauthority) && (!access(xauthority, W_OK)))
+    snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority);
+  else
+    snprintf(xauth,MAX_PATH_LEN-1,"XAUTHORITY=%s/.Xauthority",getenv("HOME"));
+  memset(home, 0, MAX_PATH_LEN);
+  snprintf(home, MAX_PATH_LEN-1, "HOME=%s", getenv("HOME"));
+  memset(display, 0, MAX_NAME_LEN);
+  snprintf(display, MAX_NAME_LEN-1, "DISPLAY=%s", getenv("DISPLAY"));
+  memset(username, 0, MAX_NAME_LEN);
+  snprintf(username, MAX_NAME_LEN-1, "USER=%s", getenv("USER"));
+  return environ;
+}
+/*---------------------------------------------------------------------------*/
+
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
@@ -542,9 +599,6 @@ int main(int argc, char *argv[])
   main_timeout = 0;
   if (!file_exists_exec("/usr/bin/urxvt"))
     {
-    printf("********************************\n");
-    printf("\n\nInstall \"rxvt-unicode\" to have \"/usr/bin/urxvt\" \n\n");
-    printf("********************************\n");
     if (!file_exists_exec("/bin/xterm"))
       {
       if (!file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/xterm"))
@@ -576,6 +630,7 @@ int main(int argc, char *argv[])
   if (!getcwd(g_current_directory, MAX_PATH_LEN-1))
     KOUT(" ");
   init_local_cloonix_bin_path(g_current_directory, argv[0]); 
+  g_saved_environ = save_environ();
   memset(g_doors_client_addr, 0, MAX_PATH_LEN);
   strncpy(g_doors_client_addr, cnf->doors, MAX_PATH_LEN-1);
   printf("CONNECT TO UNIX SERVER: %s\n", g_doors_client_addr);
@@ -584,8 +639,6 @@ int main(int argc, char *argv[])
   interface_switch_init(g_doors_client_addr, g_password);
   eventfull_init();
   client_get_path(0, work_dir_resp);
-
-
   printf("CONNECTED\n");
   printf("GRAPH PID: %d\n", getpid());
   layout_topo_init();

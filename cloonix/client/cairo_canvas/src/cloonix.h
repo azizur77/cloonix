@@ -71,6 +71,8 @@ int wireshark_present_in_server(void);
 int wireshark_qt_present_in_server(void);
 char *get_wireshark_present_in_server(void);
 char *get_doors_client_addr(void);
+char **get_saved_environ(void);
+
 
 /*****************************************************************************/
 

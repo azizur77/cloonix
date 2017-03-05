@@ -25,8 +25,6 @@ int pid_clone_launch(t_fct_to_launch fct, t_launched_death death,
                      char *vm_name, int fd_not_to_close, int no_kerr);
 void pid_clone_init(void);
 int get_nb_running_pids(void);
-void send_to_daddy (char *str);
-int my_popen(char *exe, char *argv[]);
 char *pid_get_clone_internal_com(void);
 
 void vm_destruction_clean(char *vm_name);

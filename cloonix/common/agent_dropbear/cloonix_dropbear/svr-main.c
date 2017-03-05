@@ -52,6 +52,12 @@ int main_i_run_in_kvm(void)
   return svr_opts.i_run_in_kvm;
 }
 
+char *main_cloonix_tree_dir(void)
+{
+  return svr_opts.cloonix_tree_dir;
+}
+
+
 int main(int argc, char ** argv)
 {
   int lenmax = MAX_DROPBEAR_PATH_LEN-1;
@@ -62,23 +68,20 @@ int main(int argc, char ** argv)
     strncpy(svr_opts.unix_dropbear_sock, UNIX_DROPBEAR_SOCK, lenmax);
     strncpy(svr_opts.pidfile, PATH_DROPBEAR_PID, lenmax);
     }
-  else if (argc == 2)
-    {
-    KOUT("%s   %s", argv[1], argv[2]);
-    }
-  else if (argc == 3)
+  else if (argc == 4)
     {
     svr_opts.i_run_in_kvm = 0;
     strncpy(svr_opts.unix_dropbear_sock, argv[1], lenmax);
     strncpy(svr_opts.pidfile, argv[2], lenmax);
+    strncpy(svr_opts.cloonix_tree_dir, argv[3], lenmax);
     }
   else
     KOUT("%d", argc);
 
-        opts.recv_window = DEFAULT_RECV_WINDOW;
+  opts.recv_window = DEFAULT_RECV_WINDOW;
 
-	main_noinetd();
-	return -1;
+  main_noinetd();
+  return -1;
 }
 
 

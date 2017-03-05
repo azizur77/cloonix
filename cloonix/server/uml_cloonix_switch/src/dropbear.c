@@ -41,6 +41,7 @@ typedef struct t_dropbear_params
   char bin[MAX_PATH_LEN];
   char unix_sock[MAX_PATH_LEN];
   char pid_file[MAX_PATH_LEN];
+  char cloonix_tree[MAX_PATH_LEN];
 } t_dropbear_params;
 
 
@@ -57,6 +58,7 @@ static void dump_dropbear_creation_info(t_dropbear_params *dp)
   char *argv[] = {dp->bin,
                   dp->unix_sock,
                   dp->pid_file,
+                  dp->cloonix_tree,
                   NULL};
   utils_format_gene("CREATION", info, "dropbear", argv);
   KERR("%s", info);
@@ -71,6 +73,7 @@ static int start_dropbear(void *data)
   char *argv[] = {dp->bin, 
                   dp->unix_sock, 
                   dp->pid_file,  
+                  dp->cloonix_tree,
                   NULL};
 //VIP
   execv(dp->bin, argv);
@@ -190,6 +193,7 @@ void init_dropbear(void)
            "%s/%s", cfg_get_root_work(), DROPBEAR_SOCK);
   snprintf(g_dropbear_params.pid_file, MAX_PATH_LEN-1,
            "%s/%s", cfg_get_root_work(), DROPBEAR_PID);
+  snprintf(g_dropbear_params.cloonix_tree, MAX_PATH_LEN-1, cfg_get_bin_dir());
   g_dropbear_killed_requested = 0;
   launch_dropbear();
   clownix_timeout_add(2000, timer_monitor_dropbear_pid, NULL, NULL, NULL);

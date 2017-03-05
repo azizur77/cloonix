@@ -26,6 +26,11 @@ int main_i_run_in_kvm(void)
   return 0;
 }
 
+char *main_cloonix_tree_dir(void)
+{
+  return NULL;
+}
+
 
 /****************************************************************************/
 int main(int argc, char ** argv)

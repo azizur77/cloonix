@@ -29,6 +29,8 @@
 #include "header_sock.h"
 #include "stats.h"
 
+int file_exists_exec(char *path);
+
 typedef struct t_grid_ident
 {
   char net_name[MAX_NAME_LEN];
@@ -102,19 +104,16 @@ static void launch_cloonix_ssh(char *net_name, char *name)
 /****************************************************************************/
 static void launch_spice_desktop(char *net_name, char *name)
 {
-  char *doors, *passwd, *binspice, *root, *work_dir;
+  char *doors, *passwd, *binspice, *work_dir;
   char cmd[2*MAX_PATH_LEN];
   int vm_id = store_get_vm_id(net_name, name);
 
   memset(cmd, 0, 2*MAX_PATH_LEN);
   binspice = get_cloonix_spice_bin();
-  root = get_cloonix_root_tree();
   work_dir = get_cloonix_work_dir(net_name);
   if (!work_dir)
     KERR("%s %s", net_name, name);
   else if (vm_id == 0)
-    KERR("%s %s", net_name, name);
-  else if (strlen(root) == 0) 
     KERR("%s %s", net_name, name);
   else if (strlen(binspice) == 0) 
     KERR("%s %s", net_name, name);
@@ -122,11 +121,20 @@ static void launch_spice_desktop(char *net_name, char *name)
     KERR("%s %s", net_name, name);
   else
     {
-    snprintf(cmd, 2*MAX_PATH_LEN-1, 
-    "LD_LIBRARY_PATH=%s/common/spice/spice_lib:%s/gtk3/lib "
-    "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
-    root, root, binspice, net_name, name, doors,
-    work_dir, vm_id, SPICE_SOCK, passwd);
+    if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+      {
+      snprintf(cmd, 2*MAX_PATH_LEN-1, 
+      "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
+      binspice, net_name, name, doors,
+      work_dir, vm_id, SPICE_SOCK, passwd);
+      }
+    else
+      {
+      snprintf(cmd, 2*MAX_PATH_LEN-1, 
+      "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
+      binspice, net_name, name, doors,
+      work_dir, vm_id, SPICE_SOCK, passwd);
+      }
 KERR("%s", cmd);
     close_and_fork(cmd);
     }

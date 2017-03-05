@@ -76,7 +76,8 @@ int get_vm_id_from_topo(char *name)
 static int start_launch(void *ptr)
 {
   char **argv = (char **) ptr;
-  execv(argv[0], argv);
+  char **environ = get_saved_environ();
+  execve(argv[0], argv, environ);
   return 0;
 }
 /*---------------------------------------------------------------------------*/

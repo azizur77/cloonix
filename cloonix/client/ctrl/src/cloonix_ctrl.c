@@ -40,6 +40,10 @@
 static int g_inhibited;
 static char g_cloonix_server_sock[MAX_PATH_LEN];
 static char g_cloonix_password[MSG_DIGEST_LEN];
+static char g_current_directory[MAX_PATH_LEN];
+static char g_cloonix_root_tree[MAX_PATH_LEN];
+
+
 
 static int g_nb_cloonix_servers;
 static t_cloonix_conf_info *g_cloonix_conf_info;
@@ -478,15 +482,87 @@ static int callback_connect(void *ptr, int llid, int fd)
 }
 /*---------------------------------------------------------------------------*/
 
+/****************************************************************************/
+static char *init_local_cloonix_bin_path(char *curdir, char *callbin)
+{
+  char path[MAX_PATH_LEN];
+  char *ptr;
+  memset(g_cloonix_root_tree, 0, MAX_PATH_LEN);
+  memset(path, 0, MAX_PATH_LEN);
+  if (callbin[0] == '/')
+    snprintf(path, MAX_PATH_LEN-1, "%s", callbin);
+  else
+    snprintf(path, MAX_PATH_LEN-1, "%s/%s", curdir, callbin);
+
+  ptr = strrchr(path, '/');
+  if (!ptr)
+    KOUT("%s", path);
+  *ptr = 0;
+  ptr = strrchr(path, '/');
+  if (!ptr)
+    KOUT("%s", path);
+  *ptr = 0;
+  ptr = strrchr(path, '/');
+  if (!ptr)
+    KOUT("%s", path);
+  *ptr = 0;
+  strncpy(g_cloonix_root_tree, path, MAX_PATH_LEN-1);
+  snprintf(path, MAX_PATH_LEN-1,
+           "%s/client/ctrl/cloonix_ctrl", g_cloonix_root_tree);
+  if (access(path, X_OK))
+    KOUT("%s", path);
+  return g_cloonix_root_tree;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int file_exists_exec(char *path)
+{
+  int err, result = 0;
+  err = access(path, X_OK);
+  if (!err)
+    result = 1;
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void fix_ld_library_path(char *cloonix_tree)
+{
+  char ld_lib[MAX_PATH_LEN];
+  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+    {
+    snprintf(ld_lib, MAX_PATH_LEN-1, 
+             "%s/common/spice/spice_lib:%s/gtk3/lib",
+             cloonix_tree, cloonix_tree);
+    }
+  else
+    {
+    snprintf(ld_lib, MAX_PATH_LEN-1, 
+             "%s/common/spice/spice_lib",
+             cloonix_tree);
+    }
+  setenv("LD_LIBRARY_PATH", ld_lib, 1);
+}
+/*--------------------------------------------------------------------------*/
+
 /*****************************************************************************/
 int main (int argc, char *argv[])
 {
   int i, result;
+  char *cloonix_tree;
   if (argc < 2)
     KOUT("%d", argc);
   g_inhibited = 0;
   if (cloonix_conf_info_init(argv[1]))
     KOUT("%s", argv[1]);
+
+  memset(g_current_directory, 0, MAX_PATH_LEN);
+  if (!getcwd(g_current_directory, MAX_PATH_LEN-1))
+    KOUT(" ");
+  cloonix_tree = init_local_cloonix_bin_path(g_current_directory, argv[0]);
+  fix_ld_library_path(cloonix_tree);
+
   if (argc < 3)
     {
     doorways_sock_init();
