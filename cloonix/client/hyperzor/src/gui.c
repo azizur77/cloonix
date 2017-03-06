@@ -121,20 +121,10 @@ static void launch_spice_desktop(char *net_name, char *name)
     KERR("%s %s", net_name, name);
   else
     {
-    if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
-      {
-      snprintf(cmd, 2*MAX_PATH_LEN-1, 
-      "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
-      binspice, net_name, name, doors,
-      work_dir, vm_id, SPICE_SOCK, passwd);
-      }
-    else
-      {
-      snprintf(cmd, 2*MAX_PATH_LEN-1, 
-      "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
-      binspice, net_name, name, doors,
-      work_dir, vm_id, SPICE_SOCK, passwd);
-      }
+    snprintf(cmd, 2*MAX_PATH_LEN-1, 
+    "%s --title=%s/%s -d %s -c %s/vm/vm%d/%s -w %s", 
+    binspice, net_name, name, doors,
+    work_dir, vm_id, SPICE_SOCK, passwd);
 KERR("%s", cmd);
     close_and_fork(cmd);
     }

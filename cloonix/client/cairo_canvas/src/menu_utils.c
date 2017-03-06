@@ -442,7 +442,7 @@ void node_xterm_qmonitor(GtkWidget *mn, t_item_ident *pm)
   static char title[2*MAX_NAME_LEN];
   static char nm[MAX_NAME_LEN];
   static char cmd[MAX_PATH_LEN];
-  static char xvt[MAX_NAME_LEN];
+  static char xvt[MAX_PATH_LEN];
   char *argv[] = {xvt, "-T", title, "-e", "/bin/bash", "-c", cmd, NULL};
   memset(title, 0, 2*MAX_NAME_LEN);
   memset(nm, 0, MAX_NAME_LEN);

@@ -512,6 +512,7 @@ char **get_saved_environ(void)
 static char **save_environ(void)
 {
   char ld_lib[MAX_PATH_LEN];
+  char tmux[MAX_PATH_LEN];
   static char lib_path[MAX_PATH_LEN];
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];
@@ -522,7 +523,8 @@ static char **save_environ(void)
   snprintf(username, MAX_NAME_LEN-1, "USER=%s", getenv("USER"));
   if (!spice_libs_exists())
     KOUT(" ");
-  if (!file_exists("/usr/local/bin/cloonix/gtk3/bin/tmux", X_OK))
+  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", cfg_get_bin_dir());
+  if (!file_exists(tmux, X_OK))
     {
     snprintf(ld_lib, MAX_PATH_LEN-1,
              "%s/common/spice/spice_lib", cfg_get_bin_dir());

@@ -183,20 +183,23 @@ char *get_doors_client_addr(void)
 /*****************************************************************************/
 void cloonix_get_xvt(char *xvt)
 {
-  memset(xvt, 0, MAX_NAME_LEN);
+  char xterm[MAX_PATH_LEN];
+  char *tree = get_local_cloonix_tree();
+  memset(xvt, 0, MAX_PATH_LEN);
   if (!file_exists_exec("/usr/bin/urxvt"))
     {
     if (!file_exists_exec("/bin/xterm"))
       {
-      if (!file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/xterm"))
-        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
-      strncpy(xvt, "/usr/local/bin/cloonix/gtk3/bin/xterm", MAX_NAME_LEN-1);
+      snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/xterm", tree);
+      if (!file_exists_exec(xterm))
+        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\"\n\n");
+      strncpy(xvt, xterm, MAX_PATH_LEN-1);
       }
     else
-      strncpy(xvt, "/bin/xterm", MAX_NAME_LEN-1);
+      strncpy(xvt, "/bin/xterm", MAX_PATH_LEN-1);
     }
   else
-    strncpy(xvt, "/usr/bin/urxvt", MAX_NAME_LEN-1);
+    strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -236,17 +239,19 @@ char *get_distant_cloonix_tree(void)
 /*****************************************************************************/
 char **get_argv_local_dbssh(char *name)
 {
+  char tmux[MAX_PATH_LEN];
+  char *tree;
   static char bin_path[MAX_PATH_LEN];
   static char doors_addr[MAX_PATH_LEN];
   static char username[2*MAX_NAME_LEN];
   static char cmd[2*MAX_PATH_LEN];
   static char nm[MAX_NAME_LEN];
   static char title[2*MAX_NAME_LEN];
-  static char xvt[MAX_NAME_LEN];
+  static char xvt[MAX_PATH_LEN];
   static char *argv[] = {xvt, "-T", title, "-e",  
                          bin_path, doors_addr, g_password, 
                          "-t", username, cmd, NULL};
-
+  tree = get_local_cloonix_tree();
   memset(cmd, 0, 2*MAX_PATH_LEN);
   memset(bin_path, 0, MAX_PATH_LEN);
   memset(doors_addr, 0, MAX_PATH_LEN);
@@ -263,17 +268,19 @@ char **get_argv_local_dbssh(char *name)
            get_local_cloonix_tree());
   strncpy(doors_addr, get_doors_client_addr(), MAX_PATH_LEN-1);
   snprintf(username, MAX_PATH_LEN-1, "local_host_dropbear");
-  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", tree);
+  if (file_exists_exec(tmux))
     {
     snprintf(cmd, 2*MAX_PATH_LEN-1, 
-    "/usr/local/bin/cloonix/gtk3/bin/tmux -S %s attach -t %s; sleep 10", 
-    get_tmux_work_path(), nm);
+             "%s -S %s attach -t %s; sleep 10", 
+             tmux, get_tmux_work_path(), nm);
     }
   else
+    {
     snprintf(cmd, 2*MAX_PATH_LEN-1, 
              "/usr/bin/tmux -S %s attach -t %s; sleep 10", 
              get_tmux_work_path(), nm);
-
+    }
 
 //  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
 
@@ -545,6 +552,8 @@ char **get_saved_environ(void)
 /*****************************************************************************/
 static char **save_environ(void)
 {
+  char tmux[MAX_PATH_LEN];
+  char *tree;
   char *xauthority;
   char ld_lib[MAX_PATH_LEN];
   static char lib_path[MAX_PATH_LEN];
@@ -554,6 +563,7 @@ static char **save_environ(void)
   static char logname[MAX_NAME_LEN];
   static char display[MAX_NAME_LEN];
   static char *environ[]={lib_path,xauth,username,logname,home,display,NULL};
+  tree = get_local_cloonix_tree();
   memset(lib_path, 0, MAX_PATH_LEN);
   memset(xauth, 0, MAX_PATH_LEN);
   if(!getenv("HOME"))
@@ -562,17 +572,16 @@ static char **save_environ(void)
     KOUT(" ");
   if(!getenv("DISPLAY"))
     KOUT(" ");
-  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", tree);
+  if (file_exists_exec(tmux))
     {
     snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib:%s/gtk3/lib",
-             get_local_cloonix_tree(), get_local_cloonix_tree());
+             "%s/common/spice/spice_lib:%s/gtk3/lib", tree, tree);
     }
   else
     {
     snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib",
-             get_local_cloonix_tree());
+             "%s/common/spice/spice_lib", tree);
     }
   snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
   setenv("LD_LIBRARY_PATH", ld_lib, 1);
@@ -594,20 +603,13 @@ static char **save_environ(void)
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
+  char xvt[MAX_PATH_LEN];
   t_cloonix_conf_info *cnf;
   g_i_am_in_cloonix = i_am_inside_cloonix(g_i_am_in_cloonix_name);
   main_timeout = 0;
-  if (!file_exists_exec("/usr/bin/urxvt"))
-    {
-    if (!file_exists_exec("/bin/xterm"))
-      {
-      if (!file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/xterm"))
-        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\" as lower choice\n\n");
-      }
-    sleep(5);
-    }
   eth_choice = 0;
-
+  cloonix_get_xvt(xvt);
+  printf("\nWill use:\n%s\n", xvt);
   if (argc < 2)
     KOUT("%d", argc);
   if (cloonix_conf_info_init(argv[1]))

@@ -88,7 +88,7 @@ void launch_xterm_double_click(char *name_vm, int vm_config_flags)
   static char title[2*MAX_NAME_LEN];
   static char name[MAX_NAME_LEN];
   static char cmd[2*MAX_PATH_LEN];
-  static char xvt[MAX_NAME_LEN];
+  static char xvt[MAX_PATH_LEN];
   static char *argv[] = {xvt, "-T", title, "-e", 
                          "/bin/bash", "-c", cmd, NULL};
   memset(cmd, 0, 2*MAX_PATH_LEN);

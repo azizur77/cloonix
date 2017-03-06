@@ -259,6 +259,7 @@ void store_evt_lan_exists(char *net_name, char *name, int exists)
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
+  char tmux[MAX_PATH_LEN];
   char ld_lib[MAX_PATH_LEN];
   char current_directory[MAX_PATH_LEN];
   memset(g_cloonix_root_tree, 0, MAX_PATH_LEN);
@@ -277,7 +278,8 @@ int main(int argc, char *argv[])
 
   init_local_cloonix_paths(current_directory, argv[0], argv[1]);
 
-  if (file_exists_exec("/usr/local/bin/cloonix/gtk3/bin/tmux"))
+  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", g_cloonix_root_tree);
+  if (file_exists_exec(tmux))
     {
     snprintf(ld_lib, MAX_PATH_LEN-1, "%s/common/spice/spice_lib:%s/gtk3/lib",
              g_cloonix_root_tree, g_cloonix_root_tree);
