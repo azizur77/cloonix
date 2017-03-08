@@ -186,20 +186,27 @@ void cloonix_get_xvt(char *xvt)
   char xterm[MAX_PATH_LEN];
   char *tree = get_local_cloonix_tree();
   memset(xvt, 0, MAX_PATH_LEN);
-  if (!file_exists_exec("/usr/bin/urxvt"))
-    {
-    if (!file_exists_exec("/bin/xterm"))
-      {
-      snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/xterm", tree);
-      if (!file_exists_exec(xterm))
-        KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\"\n\n");
-      strncpy(xvt, xterm, MAX_PATH_LEN-1);
-      }
-    else
-      strncpy(xvt, "/bin/xterm", MAX_PATH_LEN-1);
-    }
+  snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/urxvt", tree);
+  if (file_exists_exec(xterm))
+    strncpy(xvt, xterm, MAX_PATH_LEN-1);
   else
-    strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
+    {
+    snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/xterm", tree);
+    if (file_exists_exec(xterm))
+      strncpy(xvt, xterm, MAX_PATH_LEN-1);
+    else
+      {
+      if (!file_exists_exec("/usr/bin/urxvt"))
+        {
+        if (!file_exists_exec("/bin/xterm"))
+          KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\"\n\n");
+        else
+          strncpy(xvt, "/bin/xterm", MAX_PATH_LEN-1);
+        }
+      else
+        strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
+      }
+    }
 }
 /*---------------------------------------------------------------------------*/
 
@@ -608,8 +615,6 @@ int main(int argc, char *argv[])
   g_i_am_in_cloonix = i_am_inside_cloonix(g_i_am_in_cloonix_name);
   main_timeout = 0;
   eth_choice = 0;
-  cloonix_get_xvt(xvt);
-  printf("\nWill use:\n%s\n", xvt);
   if (argc < 2)
     KOUT("%d", argc);
   if (cloonix_conf_info_init(argv[1]))
@@ -632,6 +637,8 @@ int main(int argc, char *argv[])
   if (!getcwd(g_current_directory, MAX_PATH_LEN-1))
     KOUT(" ");
   init_local_cloonix_bin_path(g_current_directory, argv[0]); 
+  cloonix_get_xvt(xvt);
+  printf("\nWill use:\n%s\n", xvt);
   g_saved_environ = save_environ();
   memset(g_doors_client_addr, 0, MAX_PATH_LEN);
   strncpy(g_doors_client_addr, cnf->doors, MAX_PATH_LEN-1);

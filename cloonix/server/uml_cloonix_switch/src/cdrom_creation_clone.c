@@ -75,10 +75,11 @@ static int create_tmp_config(int vm_id, char *name, int nb_eth,
 /*****************************************************************************/
 static int fct_in_clone_context(void *data)
 {
+  char *genisobin = util_get_genisoimage();
   int result;
   char err[MAX_PRINT_LEN];
   t_cdrom_config *cdrom_conf = (t_cdrom_config *) data;
-  char *argv[] = { "/usr/bin/genisoimage", "-U", "-o", cdrom_conf->cdrom_path, 
+  char *argv[] = { genisobin, "-U", "-o", cdrom_conf->cdrom_path, 
                    cdrom_conf->tmp_conf, NULL, 
                  };
   if (create_tmp_config(cdrom_conf->vm_id, cdrom_conf->name, 
@@ -89,13 +90,13 @@ static int fct_in_clone_context(void *data)
     send_to_daddy(err);
     return -1;
     }
-  result = my_popen("/usr/bin/genisoimage", argv);
+  result = my_popen(genisobin, argv);
   if (result == 0)
     send_to_daddy("CDROM_DONE_OK");
   else
     {
-    KERR("/usr/bin/genisoimage -J -o %s %s", cdrom_conf->cdrom_path, cdrom_conf->tmp_conf);
-    send_to_daddy("Error /usr/bin/genisoimage");
+    KERR("%s -J -o %s %s", genisobin, cdrom_conf->cdrom_path, cdrom_conf->tmp_conf);
+    send_to_daddy("Error genisoimage");
     }
   return result;
 }
@@ -149,11 +150,12 @@ static void death_of_clone_in_main_context(void *data, int status, char *name)
 /*****************************************************************************/
 static void cdrom_config_creation(t_vm *vm, int nb_eth) 
 {
+  char *genisobin = util_get_genisoimage();
   t_cdrom_config *cdrom_conf;
   char *tmp_conf  = utils_dir_conf_tmp(vm->vm_id);
   char *cdrom_path = utils_get_cdrom_path_name(vm->vm_id);
-  if (access("/usr/bin/genisoimage", X_OK))
-    KOUT("/usr/bin/genisoimage not found");
+  if (access(genisobin, X_OK))
+    KOUT("%s not found", genisobin);
   if (access(tmp_conf, F_OK))
     KOUT("%s not found", tmp_conf);
   cdrom_conf = (t_cdrom_config *) clownix_malloc(sizeof(t_cdrom_config), 13); 

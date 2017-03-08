@@ -6,7 +6,10 @@ PKGCONFIG=${CLOONIX_COMMON}/spice/spice_lib/pkgconfig
 PREFIX=/usr/local/bin/cloonix/gtk3
 if [ -e ${PREFIX} ]; then
   PKGCONFIG+=:${PREFIX}/lib/pkgconfig
+  export PATH="${PREFIX}/bin:$PATH"
+  export C_INCLUDE_PATH=${PREFIX}/include
   export PKG_CONFIG_PATH=${PKGCONFIG}
+  export PKG_CONFIG_LIBDIR=${PKGCONFIG}
   export CFLAGS="-I${PREFIX}/include"
   export LDFLAGS="-L${PREFIX}/lib \
                   -Wl,-rpath=${PREFIX}/lib \

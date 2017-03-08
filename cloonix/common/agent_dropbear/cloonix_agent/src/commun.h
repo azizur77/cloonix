@@ -41,10 +41,6 @@
 #define UNIX_X11_SOCKET_DIR "/tmp/.X11-unix"
 #define UNIX_X11_SOCKET_PREFIX "/tmp/.X11-unix/X"
 
-#define XAUTH_BIN1 "/usr/bin/X11/xauth"
-#define XAUTH_BIN2 "/usr/bin/xauth"
-#define XAUTH_BIN3 "/bin/xauth"
-
 void send_ack_to_virtio(int dido_llid, 
                         unsigned long long s2c, 
                         unsigned long long c2s);

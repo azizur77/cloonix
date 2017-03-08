@@ -206,4 +206,16 @@ extern struct sshsession ses;
 extern struct serversession svr_ses;
 extern struct clientsession cli_ses;
 
+
+
+#define XAUTH_BIN1 "/usr/local/bin/cloonix/gtk3/bin/xauth"
+#define XAUTH_BIN2 "/usr/bin/X11/xauth"
+#define XAUTH_BIN3 "/usr/bin/xauth"
+#define XAUTH_BIN4 "/bin/xauth"
+#define MAX_BIN_PATH_LEN 100
+#define XAUTH_CMD_LEN 500
+#define XAUTH_FILE "/tmp/xauth_"
+
+
+
 #endif /* _SESSION_H_ */

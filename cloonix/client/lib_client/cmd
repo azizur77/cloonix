@@ -16,5 +16,6 @@ fct_env_gtk3()
 fct_env_gtk3
 
 make clean
-make -j 5
+make libglibclient.a
+make
 

@@ -23,7 +23,7 @@ LIBS = -L${IO_CLOWNIX} -lio_clownix \
        -L${BLKD} -lblkd \
        -L${RPCT} -lrpct \
        -L${RPC_QMONITOR} -lrpc_qmonitor \
-       -L${UTILS} -lutils -lssl -lcrypto -lrt -lpthread -lreadline
+       -L${UTILS} -lutils -lssl -lcrypto -lrt -lpthread -lreadline -lncurses
 
 CFLAGS+= -g -Wall $(INCLUDES)
 CC?=gcc

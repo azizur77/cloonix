@@ -17,13 +17,16 @@ mv tainted_spice spice_client
 rm -rf ${TARGET}/spice_client
 mv spice_client ${TARGET}
 
-cd ${TARGET}/spice_client
 
 SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
 
 
 PREFIX=/usr/local/bin/cloonix/gtk3
 if [ -e ${PREFIX} ]; then
+  cd ${TARGET}/spice_client/po
+  rm -f Makefile.in.in
+  ln -s /usr/local/bin/cloonix/gtk3/share/intltool/Makefile.in.in Makefile.in.in
+  cd ${TARGET}/spice_client
   export PATH="${PREFIX}/bin:$PATH"
   export C_INCLUDE_PATH="${PREFIX}/include"
   export CFLAGS="-I${PREFIX}/include"
@@ -31,6 +34,7 @@ if [ -e ${PREFIX} ]; then
   export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
   export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
 else
+  cd ${TARGET}/spice_client
   export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
 fi
 

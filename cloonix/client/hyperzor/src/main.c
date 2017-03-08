@@ -190,11 +190,18 @@ static void init_local_cloonix_paths(char *curdir, char *callbin, char *conf)
     printf("\nBAD INSTALL, NOT FOUND:\n%s\n", g_cloonix_config_file);
     KOUT("%s %d", g_cloonix_config_file, err);
     }
-  err = access("/usr/bin/urxvt", X_OK);
+  snprintf(path, MAX_PATH_LEN-1, "%s/gtk3/bin/urxvt", g_cloonix_root_tree);
+  err = access(path, X_OK);
   if (!err)
-    strncpy(g_urxvt_terminal_bin, "/usr/bin/urxvt", MAX_PATH_LEN-1);
+    strncpy(g_urxvt_terminal_bin, path, MAX_PATH_LEN-1);
   else
-    KERR("%d", err);
+    { 
+    err = access("/usr/bin/urxvt", X_OK);
+    if (!err)
+      strncpy(g_urxvt_terminal_bin, "/usr/bin/urxvt", MAX_PATH_LEN-1);
+    else
+      KERR("%d", err);
+    }
 }
 /*--------------------------------------------------------------------------*/
 

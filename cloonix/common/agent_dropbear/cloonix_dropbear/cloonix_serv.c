@@ -23,14 +23,6 @@
 #include "session.h"
 
 
-
-#define XAUTH_BIN1 "/usr/bin/X11/xauth"
-#define XAUTH_BIN2 "/usr/bin/xauth"
-#define XAUTH_BIN3 "/bin/xauth"
-#define MAX_BIN_PATH_LEN 100
-#define XAUTH_CMD_LEN 500
-
-
 int writechannel(struct Channel* channel, int fd, circbuffer *cbuf);
 int send_msg_channel_data(struct Channel *channel, int isextended);
 void check_close(struct Channel *channel);
@@ -68,6 +60,8 @@ static char *get_xauth_bin(void)
     strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
   else if (!access(XAUTH_BIN3, F_OK))
     strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
+  else if (!access(XAUTH_BIN4, F_OK))
+    strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
   else
     strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
   return path;

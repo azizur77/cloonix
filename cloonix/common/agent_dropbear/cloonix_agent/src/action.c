@@ -56,7 +56,6 @@ typedef struct t_dropbear_ctx
   unsigned long long oct_data2dbclient; 
   unsigned long long prev_oct_data2dbserv; 
   unsigned long long oct_data2dbserv; 
-  char xauth_cookie[MAX_ASCII_LEN];
   struct t_dropbear_ctx *prev;
   struct t_dropbear_ctx *next;
 } t_dropbear_ctx;
@@ -216,7 +215,7 @@ static void remove_listen_x11(t_dropbear_ctx *dctx)
 
 /****************************************************************************/
 static void alloc_ctx(int display_sock_x11, int dido_llid, int fd,
-                      char *xauth_cookie, int is_allocated_x11_display_idx)
+                      int is_allocated_x11_display_idx)
 {
   t_dropbear_ctx *dctx;
   if (g_fd_to_ctx[fd])
@@ -229,8 +228,6 @@ static void alloc_ctx(int display_sock_x11, int dido_llid, int fd,
   dctx->fd = fd;
   dctx->is_allocated_x11_display_idx = is_allocated_x11_display_idx;
   dctx->display_sock_x11 = display_sock_x11;
-  if (xauth_cookie)
-    strncpy(dctx->xauth_cookie, xauth_cookie, MAX_ASCII_LEN-1);
   dctx->fd_listen_x11 = add_listen_x11(dctx->display_sock_x11);
   g_ctx[dido_llid] = dctx;
   g_fd_to_ctx[fd] = dctx;
@@ -580,9 +577,8 @@ static void helper_rx_virtio_noctx(int dido_llid, int type, int val, char *rx)
   int fd, inside_cloonix_x11_display_idx, display_sock_x11;
   int is_allocated_x11_display_idx;
   char xauth_cookie_format[MAX_ASCII_LEN];
-  char *xauth_cookie=NULL, *ptr;
   int headsize = sock_header_get_size();
-  char *g_buf = get_g_buf();
+  char *ptr, *g_buf = get_g_buf();
   char *buf = g_buf + headsize;
   memset(g_buf, 0, headsize);
   if ((type == header_type_ctrl_agent) && (val == header_val_add_dido_llid))
@@ -613,7 +609,7 @@ static void helper_rx_virtio_noctx(int dido_llid, int type, int val, char *rx)
             is_allocated_x11_display_idx = 0;
           else
             is_allocated_x11_display_idx = 1;
-          alloc_ctx(display_sock_x11, dido_llid, fd, xauth_cookie, 
+          alloc_ctx(display_sock_x11, dido_llid, fd, 
                     is_allocated_x11_display_idx);
           memset(buf, 0, MAX_ASCII_LEN);
           snprintf(buf, MAX_ASCII_LEN-1, DBSSH_SERV_DOORS_RESP, display_sock_x11); 

@@ -27,12 +27,6 @@
 #include "cloonix_x11.h"
 
 
-#define XAUTH_FILE "/tmp/xauth_"
-#define XAUTH_BIN1 "/usr/bin/X11/xauth"
-#define XAUTH_BIN2 "/usr/bin/xauth"
-#define XAUTH_BIN3 "/bin/xauth"
-
-
 void read_packet(void);
 void cli_session(int sock_in, int sock_out); 
 int send_msg_channel_data(struct Channel *channel, int isextended);
@@ -178,16 +172,18 @@ static int get_local_display_port(char *display, char **dpy)
 /****************************************************************************/
 static char *get_xauth_bin(void)
 {
-  static char path[MAX_NAME_LEN];
-  memset(path, 0, MAX_NAME_LEN);
+  static char path[MAX_BIN_PATH_LEN];
+  memset(path, 0, MAX_BIN_PATH_LEN);
   if (!access(XAUTH_BIN1, F_OK))
-    strncpy(path, XAUTH_BIN1, MAX_NAME_LEN-1);
+    strncpy(path, XAUTH_BIN1, MAX_BIN_PATH_LEN-1);
   else if (!access(XAUTH_BIN2, F_OK))
-    strncpy(path, XAUTH_BIN2, MAX_NAME_LEN-1);
+    strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
   else if (!access(XAUTH_BIN3, F_OK))
-    strncpy(path, XAUTH_BIN3, MAX_NAME_LEN-1);
+    strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
+  else if (!access(XAUTH_BIN4, F_OK))
+    strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
   else
-    strncpy(path, "xauth", MAX_NAME_LEN-1);
+    strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
   return path;
 }
 /*--------------------------------------------------------------------------*/
@@ -336,6 +332,7 @@ static void xauth_extraction(char *cookie_format, char *cookie_key)
                "0000NO_X11_FORWARDING_COOKIE");
       snprintf(cookie_key, MAX_XAUTH_COOKIE-1,
                "NO_X11_FORWARDING_COOKIE");
+      KERR("NO_X11_FORWARDING_COOKIE");
       }
     }
   else 
@@ -344,6 +341,7 @@ static void xauth_extraction(char *cookie_format, char *cookie_key)
              "0000NO_X11_FORWARDING_COOKIE");
     snprintf(cookie_key, MAX_XAUTH_COOKIE-1,
              "NO_X11_FORWARDING_COOKIE");
+    KERR("NO_X11_FORWARDING_COOKIE");
     }
 }
 /*--------------------------------------------------------------------------*/

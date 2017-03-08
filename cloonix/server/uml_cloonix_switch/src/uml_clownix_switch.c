@@ -134,7 +134,6 @@ static void usage(char *name)
 static void  check_used_binaries_presence(t_cloonix_config *conf)
 {
   int i=0;
-  char path[MAX_PATH_LEN];
   while(used_binaries[i])
     {
     if (!file_exists(used_binaries[i], X_OK))
@@ -144,12 +143,10 @@ static void  check_used_binaries_presence(t_cloonix_config *conf)
       }
     i++;
     } 
-  memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1, "/usr/bin/genisoimage");
-  if (!file_exists(path, X_OK))
+  if (!file_exists(util_get_genisoimage(), X_OK))
     {
-    printf("\"%s\" not found or not executable\n", path);
-    KOUT("\"%s\" not found or not executable\n", path);
+    printf("\"%s\" not found or not executable\n", util_get_genisoimage());
+    KOUT("\"%s\" not found or not executable\n", util_get_genisoimage());
     }
   if (file_exists(WIRESHARK_BINARY_QT, X_OK))
     conf->flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;

@@ -76,6 +76,8 @@ char *utils_get_musat_name(char *name);
 void start_mueth_qemu(t_vm *vm);
 /*--------------------------------------------------------------------------*/
 void utils_format_gene(char *start, char *err, char *name, char **argv);
+/*--------------------------------------------------------------------------*/
+char *util_get_genisoimage(void);
 /****************************************************************************/
 
 

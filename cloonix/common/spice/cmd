@@ -5,6 +5,20 @@ TARGET=${HERE}/spice_lib
 rm -rf ${TARGET}
 mkdir -p ${TARGET}
 
+fct_env_gtk3()
+{
+  PREFIX=/usr/local/bin/cloonix/gtk3
+  if [ -e ${PREFIX} ]; then
+    export PATH="${PREFIX}/bin:$PATH"
+    export C_INCLUDE_PATH=${PREFIX}/include
+    export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
+    export PKG_CONFIG_LIBDIR=${PREFIX}/lib/pkgconfig
+    export CFLAGS=-I${PREFIX}/include
+    export LDFLAGS=-L${PREFIX}/lib
+  fi
+}
+
+fct_env_gtk3
 
 cd $TARGET
 tar xvf ${HERE}/spice_protocol/spice-protocol.tar.gz
