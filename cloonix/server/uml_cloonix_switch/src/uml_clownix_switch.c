@@ -562,6 +562,8 @@ int main (int argc, char *argv[])
   conf = get_parsed_config(argv[2]);
   if (!conf)
     KOUT(" ");
+  cfg_init();
+  cfg_set_host_conf(conf);
   check_used_binaries_presence(conf);
   lan_init();
   llid_trace_init();
@@ -573,8 +575,6 @@ int main (int argc, char *argv[])
   blkd_sub_init();
   blkd_data_init();
   automates_init();
-  cfg_init();
-  cfg_set_host_conf(conf);
   g_saved_environ = save_environ();
   msg_mngt_init(cfg_get_cloonix_name(), IO_MAX_BUF_LEN);
   if (tst_port_is_not_used(conf->server_port))

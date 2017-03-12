@@ -208,7 +208,6 @@ extern struct clientsession cli_ses;
 
 
 
-#define XAUTH_BIN1 "/usr/local/bin/cloonix/gtk3/bin/xauth"
 #define XAUTH_BIN2 "/usr/bin/X11/xauth"
 #define XAUTH_BIN3 "/usr/bin/xauth"
 #define XAUTH_BIN4 "/bin/xauth"

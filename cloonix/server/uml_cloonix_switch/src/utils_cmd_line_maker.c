@@ -679,7 +679,7 @@ char *utils_get_uname_r_mod_path(void)
 char *util_get_genisoimage(void)
 {
   static char path[MAX_PATH_LEN];
-  snprintf(path, MAX_PATH_LEN-1,"/usr/local/bin/cloonix/gtk3/bin/genisoimage");
+  snprintf(path, MAX_PATH_LEN-1,"%s/gtk3/bin/genisoimage", cfg_get_bin_dir());
   if (!file_exists(path, X_OK))
     snprintf(path, MAX_PATH_LEN-1, "/usr/bin/genisoimage");
   return path;

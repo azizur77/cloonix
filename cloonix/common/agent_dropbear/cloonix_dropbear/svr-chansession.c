@@ -21,7 +21,7 @@
 #include "cloonix_timer.h"
 
 /*---------------------------------------------------------------------------*/
-void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key);
+void cloonix_serv_xauth_cookie_key(char *tree, char *display, char *cookie_key);
 int call_child_death_detection(void);
 /*---------------------------------------------------------------------------*/
 static int sessioncommand(struct Channel *channel, 
@@ -596,7 +596,8 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess)
         {
         if (strcmp(chansess->cloonix_xauth_cookie_key, "NO_X11_FORWARDING_COOKIE"))
           {
-          cloonix_serv_xauth_cookie_key(chansess->cloonix_display,
+          cloonix_serv_xauth_cookie_key(chansess->cloonix_tree_dir,
+                                        chansess->cloonix_display,
                                         chansess->cloonix_xauth_cookie_key);
           }
         }

@@ -170,20 +170,22 @@ static int get_local_display_port(char *display, char **dpy)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static char *get_xauth_bin(void)
+static char *get_xauth_bin(char *tree)
 {
   static char path[MAX_BIN_PATH_LEN];
   memset(path, 0, MAX_BIN_PATH_LEN);
-  if (!access(XAUTH_BIN1, F_OK))
-    strncpy(path, XAUTH_BIN1, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN2, F_OK))
-    strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN3, F_OK))
-    strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN4, F_OK))
-    strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
-  else
-    strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
+  sprintf(path, "%s/gtk3/bin/xauth", tree);
+  if (access(path, F_OK))
+    {
+    if (!access(XAUTH_BIN2, F_OK))
+      strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
+    else if (!access(XAUTH_BIN3, F_OK))
+      strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
+    else if (!access(XAUTH_BIN4, F_OK))
+      strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
+    else
+      strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
+    }
   return path;
 }
 /*--------------------------------------------------------------------------*/
@@ -308,7 +310,7 @@ static int put_in_file_xauth_line(char *xauth_bin, char *dpy, char *file)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void xauth_extraction(char *cookie_format, char *cookie_key)
+static void xauth_extraction(char *tree,char *cookie_format, char *cookie_key)
 {
   char file[MAX_PATH_LEN];
   char *dpy, *display = getenv("DISPLAY");
@@ -322,7 +324,7 @@ static void xauth_extraction(char *cookie_format, char *cookie_key)
     memset(file, 0, MAX_PATH_LEN);
     snprintf(file, MAX_PATH_LEN-1, "%s%08X", 
              XAUTH_FILE, rand()&0xFFFFFFFF);
-    if (!put_in_file_xauth_line(get_xauth_bin(), dpy, file))
+    if (!put_in_file_xauth_line(get_xauth_bin(tree), dpy, file))
       {
       read_and_modify_xauth_x11_cookie(file, port, cookie_format, cookie_key);
       }
@@ -790,7 +792,8 @@ static int callback_connect(void *ptr, int llid, int fd)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int cloonix_connect_remote(char *cloonix_doors, 
+int cloonix_connect_remote(char *tree,
+                           char *cloonix_doors, 
                            char *vmname,
                            char *password)
 {
@@ -810,7 +813,7 @@ int cloonix_connect_remote(char *cloonix_doors,
   g_current_read_buf_offset = 0;
   g_current_write_buf_offset = 0;
   g_current_rx_buf_len = 0;
-  xauth_extraction(g_xauth_cookie_format, g_xauth_cookie_key);
+  xauth_extraction(tree, g_xauth_cookie_format, g_xauth_cookie_key);
   if (strlen(g_xauth_cookie_format) == 0) 
     KOUT(" ");
   doorways_sock_init();

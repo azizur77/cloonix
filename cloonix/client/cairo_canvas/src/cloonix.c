@@ -563,13 +563,23 @@ static char **save_environ(void)
   char *tree;
   char *xauthority;
   char ld_lib[MAX_PATH_LEN];
+  char lib_fp[MAX_PATH_LEN];
+  char tinfo[MAX_PATH_LEN];
   static char lib_path[MAX_PATH_LEN];
+  static char lib_fontpath[MAX_PATH_LEN];
+  static char terminfo[MAX_PATH_LEN];
   static char xauth[MAX_PATH_LEN];
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];
   static char logname[MAX_NAME_LEN];
   static char display[MAX_NAME_LEN];
-  static char *environ[]={lib_path,xauth,username,logname,home,display,NULL};
+  char **environ;
+  static char *environ_simple[]={lib_path, xauth, username,
+                                 logname, home, display, NULL};
+  static char *environ_gtk3[]={lib_path, lib_fontpath, terminfo,  
+                               "FONTCONFIG_NAME=fonts.conf",
+                               xauth, username, logname,
+                               home, display, NULL};
   tree = get_local_cloonix_tree();
   memset(lib_path, 0, MAX_PATH_LEN);
   memset(xauth, 0, MAX_PATH_LEN);
@@ -584,14 +594,25 @@ static char **save_environ(void)
     {
     snprintf(ld_lib, MAX_PATH_LEN-1,
              "%s/common/spice/spice_lib:%s/gtk3/lib", tree, tree);
+    snprintf(lib_fp, MAX_PATH_LEN-1, "%s/gtk3/etc/fonts", tree);
+    snprintf(tinfo, MAX_PATH_LEN-1, "%s/gtk3/share/terminfo", tree);
+    snprintf(terminfo, MAX_PATH_LEN-1, "TERMINFO=%s", tinfo);
+    snprintf(lib_fontpath, MAX_PATH_LEN-1, "FONTCONFIG_PATH=%s", lib_fp);
+    snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
+    setenv("LD_LIBRARY_PATH", ld_lib, 1);
+    setenv("FONTCONFIG_PATH", lib_fp, 1);
+    setenv("TERMINFO", tinfo, 1);
+    setenv("FONTCONFIG_NAME", "fonts.conf", 1);
+    environ = environ_gtk3; 
     }
   else
     {
     snprintf(ld_lib, MAX_PATH_LEN-1,
              "%s/common/spice/spice_lib", tree);
+    snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
+    setenv("LD_LIBRARY_PATH", ld_lib, 1);
+    environ = environ_simple; 
     }
-  snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
-  setenv("LD_LIBRARY_PATH", ld_lib, 1);
   xauthority = getenv("XAUTHORITY");
   if ((xauthority) && (!access(xauthority, W_OK)))
     snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority);

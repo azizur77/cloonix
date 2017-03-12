@@ -50,32 +50,34 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item) {KOUT(" ");}
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static char *get_xauth_bin(void)
+static char *get_xauth_bin(char *tree)
 {
   static char path[MAX_BIN_PATH_LEN];
   memset(path, 0, MAX_BIN_PATH_LEN);
-  if (!access(XAUTH_BIN1, F_OK))
-    strncpy(path, XAUTH_BIN1, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN2, F_OK))
-    strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN3, F_OK))
-    strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
-  else if (!access(XAUTH_BIN4, F_OK))
-    strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
-  else
-    strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
+  sprintf(path, "%s/gtk3/bin/xauth", tree);
+  if (access(path, F_OK))
+    {
+    if (!access(XAUTH_BIN2, F_OK))
+      strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
+    else if (!access(XAUTH_BIN3, F_OK))
+      strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
+    else if (!access(XAUTH_BIN4, F_OK))
+      strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
+    else
+      strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
+    }
   return path;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void cloonix_serv_xauth_cookie_key(char *display, char *cookie_key)
+void cloonix_serv_xauth_cookie_key(char *tree, char *display, char *cookie_key)
 {
   char cmd[XAUTH_CMD_LEN];
   char *xauthority = getenv("XAUTHORITY");
   memset(cmd, 0, XAUTH_CMD_LEN);
   snprintf(cmd, XAUTH_CMD_LEN-1, "%s add %s MIT-MAGIC-COOKIE-1 %s",
-               get_xauth_bin(), display, cookie_key);
+               get_xauth_bin(tree), display, cookie_key);
   if ((xauthority) && (access(xauthority, W_OK)))
     KERR("%s not writable", xauthority);
   else

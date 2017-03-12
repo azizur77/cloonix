@@ -181,7 +181,7 @@ static int local_clownix_system (char *commande)
 {
   pid_t pid;
   int   status;
-  char *environ[] = { NULL };
+  char **environ = get_saved_environ();
   char * argv [4];
   char msg_dad[MAX_NAME_LEN];
   if (commande == NULL)
@@ -594,7 +594,7 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
         clownix_timeout_add(3000, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       else
-        clownix_timeout_add(100, static_vm_timeout, (void *) wake_up_eths,
+        clownix_timeout_add(300, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       break;
     case auto_create_vm_connect:
