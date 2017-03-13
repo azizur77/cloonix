@@ -963,6 +963,9 @@ void cfg_set_host_conf(t_cloonix_config *conf)
   if (cfg.cloonix_config.network_name[0])
     KOUT(" ");
   memcpy(&(cfg.cloonix_config), conf, sizeof(t_cloonix_config));
+  snprintf(conf->tmux_bin, MAX_PATH_LEN-1, "%s", utils_get_tmux_bin_path());
+  snprintf(cfg.cloonix_config.tmux_bin, MAX_PATH_LEN-1, "%s", 
+           utils_get_tmux_bin_path());
 }
 /*---------------------------------------------------------------------------*/
 

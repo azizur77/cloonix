@@ -1157,6 +1157,7 @@ void recv_work_dir_resp(int llid, int itid, t_cloonix_config *icloonix_config)
     random_choice_str(cloonix_config.username,MAX_NAME_LEN);
     cloonix_config.server_port = rand();
     random_choice_str(cloonix_config.bin_dir,MAX_PATH_LEN);
+    random_choice_str(cloonix_config.tmux_bin,MAX_PATH_LEN);
     random_choice_str(cloonix_config.work_dir,MAX_PATH_LEN);
     random_choice_str(cloonix_config.bulk_dir,MAX_PATH_LEN);
     cloonix_config.flags_config = rand();

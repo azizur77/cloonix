@@ -240,14 +240,17 @@ char *get_distant_cloonix_tree(void)
 }
 /*--------------------------------------------------------------------------*/
 
-
-
+/*****************************************************************************/
+char *get_distant_tmux(void)
+{
+  return g_cloonix_config.tmux_bin;
+}
+/*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 char **get_argv_local_dbssh(char *name)
 {
-  char tmux[MAX_PATH_LEN];
-  char *tree;
+  char *tmux;
   static char bin_path[MAX_PATH_LEN];
   static char doors_addr[MAX_PATH_LEN];
   static char username[2*MAX_NAME_LEN];
@@ -258,7 +261,6 @@ char **get_argv_local_dbssh(char *name)
   static char *argv[] = {xvt, "-T", title, "-e",  
                          bin_path, doors_addr, g_password, 
                          "-t", username, cmd, NULL};
-  tree = get_local_cloonix_tree();
   memset(cmd, 0, 2*MAX_PATH_LEN);
   memset(bin_path, 0, MAX_PATH_LEN);
   memset(doors_addr, 0, MAX_PATH_LEN);
@@ -275,23 +277,11 @@ char **get_argv_local_dbssh(char *name)
            get_local_cloonix_tree());
   strncpy(doors_addr, get_doors_client_addr(), MAX_PATH_LEN-1);
   snprintf(username, MAX_PATH_LEN-1, "local_host_dropbear");
-  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", tree);
-  if (file_exists_exec(tmux))
-    {
-    snprintf(cmd, 2*MAX_PATH_LEN-1, 
-             "%s -S %s attach -t %s; sleep 10", 
-             tmux, get_tmux_work_path(), nm);
-    }
-  else
-    {
-    snprintf(cmd, 2*MAX_PATH_LEN-1, 
-             "/usr/bin/tmux -S %s attach -t %s; sleep 10", 
-             get_tmux_work_path(), nm);
-    }
-
-//  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
-
-
+  tmux = get_distant_tmux();
+  snprintf(cmd, 2*MAX_PATH_LEN-1, 
+           "%s -S %s attach -t %s; sleep 10", 
+           tmux, get_tmux_work_path(), nm);
+  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
   return (argv);
 }
 /*--------------------------------------------------------------------------*/
@@ -660,6 +650,13 @@ int main(int argc, char *argv[])
   init_local_cloonix_bin_path(g_current_directory, argv[0]); 
   cloonix_get_xvt(xvt);
   printf("\nWill use:\n%s\n", xvt);
+  if(!getenv("HOME"))
+    KOUT("No HOME env");
+  if(!getenv("USER"))
+    KOUT("No USER env");
+  if(!getenv("DISPLAY"))
+    KOUT("No DISPLAY env");
+
   g_saved_environ = save_environ();
   memset(g_doors_client_addr, 0, MAX_PATH_LEN);
   strncpy(g_doors_client_addr, cnf->doors, MAX_PATH_LEN-1);

@@ -655,6 +655,7 @@ static void execchild(struct ChanSess *chansess)
   char *login = NULL;
   char *pth="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
   char ld_lib[MAX_DROPBEAR_PATH_LEN];
+  char terminfo[MAX_DROPBEAR_PATH_LEN];
   unsetnonblocking(STDOUT_FILENO);
   unsetnonblocking(STDIN_FILENO);
   unsetnonblocking(STDERR_FILENO);
@@ -684,6 +685,9 @@ static void execchild(struct ChanSess *chansess)
       snprintf(ld_lib, MAX_DROPBEAR_PATH_LEN-1, 
                "%s/gtk3/lib", chansess->cloonix_tree_dir);
       addnewvar("LD_LIBRARY_PATH", ld_lib); 
+      snprintf(terminfo, MAX_DROPBEAR_PATH_LEN-1, 
+               "%s/gtk3/share/terminfo", chansess->cloonix_tree_dir);
+      addnewvar("TERMINFO", terminfo); 
       }
     addnewvar("TERM", "xterm");
     if (chansess->cloonix_display)

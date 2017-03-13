@@ -96,7 +96,7 @@ static void init_core_segfault(void)
 void my_mkdir(char *dst_dir)
 {
   struct stat stat_file;
-  if (mkdir(dst_dir, 0700))
+  if (mkdir(dst_dir, 0777))
     {
     if (errno != EEXIST)
       KOUT("%s, %d", dst_dir, errno);
@@ -107,7 +107,7 @@ void my_mkdir(char *dst_dir)
       if (!S_ISDIR(stat_file.st_mode))
         {
         unlink(dst_dir);
-        if (mkdir(dst_dir, 0700))
+        if (mkdir(dst_dir, 0777))
           KOUT("%s, %d", dst_dir, errno);
         }
       }

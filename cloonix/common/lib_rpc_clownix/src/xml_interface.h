@@ -101,6 +101,7 @@
                          "  <work_dir> %s </work_dir>\n"\
                          "  <bulk_dir> %s </bulk_dir>\n"\
                          "  <bin_dir> %s </bin_dir>\n"\
+                         "  <tmux_bin> %s </tmux_bin>\n"\
                          "  <flags> %d </flags>\n"\
                          "</work_dir_resp>"
 /*---------------------------------------------------------------------------*/
@@ -343,6 +344,7 @@
                               "  <work_dir> %s </work_dir>\n"\
                               "  <bulk_dir> %s </bulk_dir>\n"\
                               "  <bin_dir> %s </bin_dir>\n"\
+                              "  <tmux_bin> %s </tmux_bin>\n"\
                               "  <nb_vm> %d </nb_vm> \n"\
                               "  <nb_sat> %d </nb_sat>\n"
 

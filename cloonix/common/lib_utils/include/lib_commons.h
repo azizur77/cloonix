@@ -98,6 +98,7 @@ typedef struct t_cloonix_config
   char work_dir[MAX_PATH_LEN];
   char bin_dir[MAX_PATH_LEN];
   char bulk_dir[MAX_PATH_LEN];
+  char tmux_bin[MAX_PATH_LEN];
   int  flags_config;
 } t_cloonix_config;
 /*---------------------------------------------------------------------------*/

@@ -59,6 +59,10 @@ static void init_local_cloonix_bin_path(char *curdir, char *callbin)
   if (!ptr)
     KOUT("%s", path);
   *ptr = 0;
+  ptr = strrchr(path, '/');
+  if (!ptr)
+    KOUT("%s", path);
+  *ptr = 0;
   strncpy(g_cloonix_tree, path, MAX_PATH_LEN-1);
   snprintf(path, MAX_PATH_LEN-1,
            "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh", 

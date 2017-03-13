@@ -611,6 +611,7 @@ void send_work_dir_resp(int llid, int tid, t_cloonix_config *cloonix_config)
                 cloonix_config->work_dir,
                 cloonix_config->bulk_dir,
                 cloonix_config->bin_dir,
+                cloonix_config->tmux_bin,
                 cloonix_config->flags_config);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -817,6 +818,7 @@ void send_event_topo(int llid, int tid, t_topo_info *topo)
                 topo->cloonix_config.work_dir,
                 topo->cloonix_config.bulk_dir,
                 topo->cloonix_config.bin_dir,
+                topo->cloonix_config.tmux_bin,
                 topo->nb_vm, topo->nb_sat);
 
   for (i=0; i<topo->nb_vm; i++)
@@ -1648,8 +1650,9 @@ static t_topo_info *helper_event_topo (char *msg, int *tid)
                                      topo->cloonix_config.work_dir,
                                      topo->cloonix_config.bulk_dir,
                                      topo->cloonix_config.bin_dir,
+                                     topo->cloonix_config.tmux_bin,
                                      &(topo->nb_vm),  
-                                     &(topo->nb_sat)) != 9)
+                                     &(topo->nb_sat)) != 10)
     KOUT("%s", msg);
   topo->vmit= (t_vm_item *) clownix_malloc(topo->nb_vm*sizeof(t_vm_item),16);
   memset(topo->vmit, 0, topo->nb_vm*sizeof(t_vm_item));
@@ -2271,7 +2274,8 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
                                      cloonix_config->work_dir,
                                      cloonix_config->bulk_dir,
                                      cloonix_config->bin_dir,
-                                     &(cloonix_config->flags_config)) != 9)
+                                     cloonix_config->tmux_bin,
+                                     &(cloonix_config->flags_config)) != 10)
 
 
         KOUT("%s", msg);

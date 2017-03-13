@@ -160,6 +160,7 @@ t_topo_info *random_topo_gen(void)
   random_choice_str(topo->cloonix_config.username,MAX_NAME_LEN);
   topo->cloonix_config.server_port = rand();
   random_choice_str(topo->cloonix_config.bin_dir,MAX_PATH_LEN);
+  random_choice_str(topo->cloonix_config.tmux_bin,MAX_PATH_LEN);
   random_choice_str(topo->cloonix_config.work_dir,MAX_PATH_LEN);
   random_choice_str(topo->cloonix_config.bulk_dir,MAX_PATH_LEN);
   topo->nb_sat  = nb_sat;
@@ -314,6 +315,8 @@ int topo_info_diff(t_topo_info *topo, t_topo_info *ref)
     return 181;
   if (strcmp(topo->cloonix_config.bin_dir,    ref->cloonix_config.bin_dir))
     return 191;
+  if (strcmp(topo->cloonix_config.tmux_bin,    ref->cloonix_config.tmux_bin))
+    return 192;
   return 0;
 }
 /*---------------------------------------------------------------------------*/
