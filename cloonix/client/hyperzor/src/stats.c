@@ -133,8 +133,11 @@ static void alloc_item(t_stats_net *net, char *name)
 /****************************************************************************/
 static void free_item(t_stats_net *net, t_stats_item *item)
 {
+  int i;
   if (item->grid_vals)
     {
+    for (i=0; i<sysdf_max; i++)
+      g_free(item->grid_vals[i]);
     clownix_free(item->grid_vals, __FUNCTION__);
     item->grid_vals = NULL;
     }
@@ -349,6 +352,7 @@ void stats_free_grid_var(char *net_name, char *name)
 {
   t_stats_net *net = find_net_with_name(net_name);
   t_stats_item *item;
+  int i;
   if (!net)
     KERR("%s %s", net_name, name);
   else
@@ -360,6 +364,8 @@ void stats_free_grid_var(char *net_name, char *name)
         KERR("%s %s", net_name, name);
       else
         {
+        for (i=0; i<sysdf_max; i++)
+          g_free(item->grid_vals[i]);
         clownix_free(item->grid_vals, __FUNCTION__);
         item->grid_vals = NULL;
         }
