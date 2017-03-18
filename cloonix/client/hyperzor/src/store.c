@@ -340,6 +340,7 @@ static void setup_sid_from_iter(t_iter *elem)
   gtk_tree_model_get_string_from_iter(GTK_TREE_MODEL(g_store), &elem->iter);
   memset(elem->sid, 0, MAX_NAME_LEN);
   strncpy(elem->sid, str, MAX_NAME_LEN-1);
+  g_free(str);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -423,6 +424,7 @@ static void store_add_leaf(t_iter *parent, t_iter *child, char *name)
   str = 
   gtk_tree_model_get_string_from_iter(GTK_TREE_MODEL(g_store), &child->iter);
   strncpy(child->sid, str, MAX_NAME_LEN-1);
+  g_free(str);
 }
 /*--------------------------------------------------------------------------*/
 

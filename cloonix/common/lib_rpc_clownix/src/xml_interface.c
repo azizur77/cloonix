@@ -1976,12 +1976,13 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
         {
         if (len >= MAX_STATS_SYSDF)
           len = MAX_STATS_SYSDF-1;
-        line = malloc(MAX_STATS_SYSDF);
+        line = (char *) clownix_malloc(MAX_STATS_SYSDF, 10);
         memcpy(line, ptrs, len);
         line[len] = 0;
         }
       recv_evt_stats_sysinfo(llid, tid, network_name, name,
                              &stats_sysinfo, line, status);
+      clownix_free(line, __FUNCTION__);
       break;
 
     case bnd_mucli_dialog_req:

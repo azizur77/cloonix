@@ -176,9 +176,11 @@ static void doors_llid_detach(t_cloonix *cloonix)
   if (cloonix->tag)
     g_source_remove(cloonix->tag);
   if (cloonix->g_io_channel)
+    {
     g_io_channel_shutdown(cloonix->g_io_channel, FALSE, NULL);
+    cloonix->g_io_channel = NULL;
+    }
   cloonix->tag = 0;
-  cloonix->g_io_channel = NULL;
   cloonix->glibtx = NULL;
   cloonix->glibrx = NULL;
   if (msg_exist_channel(cloonix->doors_llid))
@@ -390,7 +392,6 @@ static void connect_llid_add(t_cloonix *cloonix, int fd)
   cloon  = find_cloonix_with_fd(fd);
   if (cloon)
     KOUT("%d %d %d %s", fd, cloon->doors_fd, cloon->connect_fd, cloon->name);
-printf("%d", fd);
   cloonix->connect_fd = fd;
   cloonix->g_io_connect_channel = g_io_channel_unix_new(fd);
   cloonix->doors_llid = 0;
@@ -405,8 +406,10 @@ static void connect_llid_del(t_cloonix *cloonix)
   if (cloonix->connect_tag)
     g_source_remove(cloonix->connect_tag);
   if (cloonix->g_io_connect_channel)
+    {
     g_io_channel_shutdown(cloonix->g_io_connect_channel, FALSE, NULL);
-  cloonix->g_io_connect_channel = NULL;
+    cloonix->g_io_connect_channel = NULL;
+    }
   if (cloonix->connect_fd != -1)
     close(cloonix->connect_fd);
   cloonix->connect_fd = -1;

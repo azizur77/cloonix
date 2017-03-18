@@ -362,40 +362,37 @@ static void free_all_lan_not_in_topo(t_record_net *net, t_topo_info *topo)
     {
     found = 0;
     next_lan = cur_lan->next;
-    for (i=0; i<topo->nb_vm; i++)
+    for (i=0; (found == 0) && (i<topo->nb_vm); i++)
       {
-      for (j=0; j<topo->vmit[i].vm_params.nb_eth; j++)
+      for (j=0; (found == 0) && (j<topo->vmit[i].vm_params.nb_eth); j++)
         {
-        for (k=0; k < topo->vmit[i].lan_eth[j].nb_lan; k++)
+        for (k=0; (found == 0) && (k < topo->vmit[i].lan_eth[j].nb_lan); k++)
           {
           lan = topo->vmit[i].lan_eth[j].lan[k].name;
-        if (!strcmp(cur_lan->name, lan))
-          {
-          found = 1;
-          break;
-          }
+          if (!strcmp(cur_lan->name, lan))
+            {
+            found = 1;
+            }
           }
         }
       }
-    for (i=0; i<topo->nb_sat; i++)
+    for (i=0; (found == 0) && (i<topo->nb_sat); i++)
       {
-      for (k=0; k < topo->sati[i].lan0_sat.nb_lan; k++)
+      for (k=0; (found == 0) && (k < topo->sati[i].lan0_sat.nb_lan); k++)
         {
         lan = topo->sati[i].lan0_sat.lan[k].name;
         if (!strcmp(cur_lan->name, lan))
           {
           found = 1;
-          break;
           }
         }
 
-      for (k=0; k < topo->sati[i].lan1_sat.nb_lan; k++)
+      for (k=0; (found == 0) && (k < topo->sati[i].lan1_sat.nb_lan); k++)
         {
         lan = topo->sati[i].lan1_sat.lan[k].name;
         if (!strcmp(cur_lan->name, lan))
           {
           found = 1;
-          break;
           }
         }
       }
