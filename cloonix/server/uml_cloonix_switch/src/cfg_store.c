@@ -966,6 +966,10 @@ void cfg_set_host_conf(t_cloonix_config *conf)
   snprintf(conf->tmux_bin, MAX_PATH_LEN-1, "%s", utils_get_tmux_bin_path());
   snprintf(cfg.cloonix_config.tmux_bin, MAX_PATH_LEN-1, "%s", 
            utils_get_tmux_bin_path());
+  if (file_exists(WIRESHARK_BINARY_QT, X_OK))
+    cfg.cloonix_config.flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;
+  else if (file_exists(WIRESHARK_BINARY, X_OK))
+    cfg.cloonix_config.flags_config |= FLAGS_CONFIG_WIRESHARK_PRESENT;
 }
 /*---------------------------------------------------------------------------*/
 
