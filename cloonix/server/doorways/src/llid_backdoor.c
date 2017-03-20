@@ -219,32 +219,6 @@ void llid_backdoor_tx(char *name, int llid_backdoor, int dido_llid,
 }
 /*--------------------------------------------------------------------------*/
 
-
-/****************************************************************************/
-void llid_backdoor_ack_tx_to_agent(char *name, int llid_backdoor,
-                                   int dido_llid,
-                                   unsigned long long s2c,
-                                   unsigned long long c2s,
-                                   char *buf)
-{
-  t_backdoor_vm *bvm;
-  char *payload;
-  int len, headsize = sock_header_get_size();
-  bvm = check_llid_name(llid_backdoor, name, __FUNCTION__);
-  if (bvm)
-    {
-    memset(buf, 0, MAX_A2D_LEN);
-    snprintf(buf+headsize, MAX_NAME_LEN-1, LAACK, s2c, c2s);
-    len = strlen(buf+headsize) + 1;
-    sock_header_set_info(buf, dido_llid, len, header_type_ctrl_agent,
-                         header_val_ack, &payload);
-    if (payload != buf + headsize)
-      KOUT("%p %p", payload, buf);
-    llid_backdoor_low_tx(llid_backdoor, len + headsize, buf);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
 /****************************************************************************/
 void llid_backdoor_tx_reboot_to_agent(char *name, int job_idx)
 {
@@ -609,26 +583,6 @@ static void rx_from_agent_conclusion(t_backdoor_vm *bvm,
     {
     switch (val)
       {
-      case header_val_ack:
-        if (sscanf(payload, LAACK, &s2c, &c2s) != 2)
-          KERR(" ");
-        else
-          {
-          llid_traf_get_stats(dido_llid, &ls2c, &lc2s);
-          if (ls2c != s2c)
-            KERR("my_rx:%llu his_tx:%llu", ls2c, s2c); 
-          if (lc2s < c2s)
-            KERR("NEG DIFF: %llu %llu", lc2s, c2s);
-          else
-            {
-            delta = lc2s - c2s;
-            if (delta > 4000000)
-              {
-              KERR("DELTA: %llu", delta);
-              }
-            }
-          }
-        break;
 
       default:
         KERR("%d", val);

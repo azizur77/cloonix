@@ -20,7 +20,6 @@
 #include "cloonix_x11.h"
 #include "header_sock.h"
 
-#define UNIX_X11_SOCKET_DIR "/tmp/.X11-unix"
 #define UNIX_X11_SOCKET_PREFIX "/tmp/.X11-unix/X"
 
 

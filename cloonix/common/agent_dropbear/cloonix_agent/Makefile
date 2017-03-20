@@ -6,7 +6,8 @@ SRC = action.c  \
       cloonix_agent.c \
       sock.c \
       x11_channels.c \
-      use_hvc_console.c
+      use_hvc_console.c \
+      nonblock.c
 
 VPATH=src
 INCLUDES= -I./src

@@ -65,9 +65,6 @@ typedef struct t_llid_traf
   int  auto_timer_ref;
   int  zero_queue_series;
   long long auto_timer_abs;
-  unsigned long long prev_oct_data2dbclient;
-  unsigned long long oct_data2dbclient;
-  unsigned long long oct_data2dbserv;
   char *xauth_cookie_format;
   int display_port; 
   int display_sock_x11; 
@@ -160,22 +157,6 @@ static t_llid_traf *llid_traf_get(int dido_llid)
 {
   t_llid_traf *lt = g_llid_traf[dido_llid];
   return lt;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void llid_traf_get_stats(int dido_llid, 
-                         unsigned long long *s2c, 
-                         unsigned long long *c2s)
-{
-  t_llid_traf *lt = llid_traf_get(dido_llid);
-  if (!lt)
-    KERR(" ");
-  else
-    {
-    *s2c = lt->oct_data2dbclient;
-    *c2s = lt->oct_data2dbserv;
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -464,14 +445,6 @@ void llid_traf_tx_to_client(char *name, int dido_llid,
        (type == header_type_traffic) && (val == header_val_none))
       {
       send_to_traf_client(dido_llid, doors_val_none, len, buf);
-      lt->oct_data2dbclient += len;
-      if (lt->oct_data2dbclient > lt->prev_oct_data2dbclient + 10000)
-        {
-        llid_backdoor_ack_tx_to_agent(lt->name, lt->backdoor_llid,
-                                      lt->dido_llid, lt->oct_data2dbclient,
-                                      lt->oct_data2dbserv, g_buf);
-        lt->prev_oct_data2dbclient = lt->oct_data2dbclient;
-        }
       }
     else if (type == header_type_ctrl_agent)
       {
@@ -570,7 +543,6 @@ void llid_traf_rx_from_client(int dido_llid, int len, char *buf)
       len_done += chosen_len;
       len_to_do -= chosen_len;
       }
-    lt->oct_data2dbserv += len;
     }
   else
     KOUT(" ");

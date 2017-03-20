@@ -25,7 +25,6 @@
 #define DBSSH_SERV_DOORS_REQ "DBSSH_SERV_DOORS_REQ in_idx_x11=%d cookie=%s"
 #define DBSSH_SERV_DOORS_RESP "DBSSH_SERV_DOORS_RESP display_sock_x11=%d"
 #define LABREAK "link_agent_break"
-#define LAACK   "link_agent_ack s2c:%llu c2s:%llu"
 #define LABOOT  "link_agent_reboot %d"
 #define LAHALT  "link_agent_halt %d"
 #define LAPING  "link_agent_ping %d"

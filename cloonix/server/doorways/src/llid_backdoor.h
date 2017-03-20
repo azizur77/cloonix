@@ -21,11 +21,6 @@ void llid_backdoor_add_traf(char *name, int llid_backdoor, int llid_traf);
 void llid_backdoor_del_traf(char *name, int llid_backdoor, int llid_traf);
 void llid_backdoor_tx(char *name, int llid_backdoor, int llid_traf,
                       int len, int type, int val, char  *buf);
-void llid_backdoor_ack_tx_to_agent(char *name, int llid_backdoor, 
-                                   int llid_traf, 
-                                   unsigned long long s2c, 
-                                   unsigned long long c2s,
-                                   char *buf);
 void llid_backdoor_tx_x11_open_to_agent(int backdoor_llid, int llid, int idx);
 void llid_backdoor_tx_x11_close_to_agent(int backdoor_llid, int llid, int idx);
 void llid_backdoor_begin_unix(char *name, char *path);

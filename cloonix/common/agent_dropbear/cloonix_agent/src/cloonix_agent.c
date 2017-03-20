@@ -36,6 +36,7 @@
 #include "sock.h"
 #include "commun.h"
 #include "x11_channels.h"
+#include "nonblock.h"
 
 int use_hvc_console(int use_hcv);
 
@@ -64,32 +65,6 @@ char *get_g_buf(void)
 {
   return g_buf;
 }
-
-/*****************************************************************************/
-static void segfault_sigaction(int signal, siginfo_t *si, void *arg)
-{
-  int i;
-  void *array[50];
-  size_t size;
-  size = backtrace(array, 50);
-  for (i=0; i< (int)size; i++)
-    KERR("%p", array[i]);
-  KOUT(" ");
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void init_core_segfault(void)
-{
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sigaction));
-    sigemptyset(&sa.sa_mask);
-    sa.sa_sigaction = segfault_sigaction;
-    sa.sa_flags   = SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, NULL);
-}
-/*---------------------------------------------------------------------------*/
-
 
 
 /****************************************************************************/
@@ -130,24 +105,6 @@ static int get_biggest_fd(void)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void sub_send_to_virtio(char *buf, int len)
-{
-  int tx_len, len_to_do, len_done;
-  len_to_do = len;
-  len_done = 0;
-  while (len_to_do)
-    {
-    tx_len = write (g_fd_virtio, buf + len_done, len_to_do);
-    if ((tx_len < 0) || (tx_len > len_to_do))
-      KOUT("%d %d %d %d %d", tx_len, len_done, len_to_do, len, errno);
-    len_done += tx_len;
-    len_to_do -= tx_len;
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-
-/****************************************************************************/
 void send_to_virtio(int dido_llid, int len, int type, int var, char *buf)
 {
   char *payload;
@@ -157,26 +114,7 @@ void send_to_virtio(int dido_llid, int len, int type, int var, char *buf)
   sock_header_set_info(g_buf, dido_llid, len, type, var, &payload);
   if (g_buf != buf)
     KOUT("%p %p", g_buf, buf);
-  sub_send_to_virtio(g_buf, len + headsize);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void send_ack_to_virtio(int dido_llid, unsigned long long s2c, 
-                        unsigned long long c2s)
-{
-  char *payload;
-  char buf[MAX_ASCII_LEN];
-  int len, headsize = sock_header_get_size();
-  memset(buf, 0, MAX_ASCII_LEN);
-  snprintf(buf, MAX_ASCII_LEN-1, LAACK, s2c, c2s);
-  len = strlen(buf)+1;
-  sock_header_set_info(g_buf, dido_llid, len, header_type_ctrl, 
-                       header_val_ack, &payload);
-  if (payload != g_buf + headsize)
-    KOUT("%p %p", payload, g_buf);
-  memcpy(payload, buf, len);
-  sub_send_to_virtio(g_buf, len + headsize);
+  nonblock_send(g_fd_virtio, g_buf, len + headsize);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -330,25 +268,29 @@ static void events_from_virtio(int fd)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void prepare_fd_set(fd_set *infd)
+static int prepare_fd_set(fd_set *infd, fd_set *outfd)
 {
+  int result;
   FD_ZERO(infd);
+  FD_ZERO(outfd);
   FD_SET(g_fd_virtio, infd);
-  x11_prepare_fd_set(infd);
-  action_prepare_fd_set(infd);
+  nonblock_prepare_fd_set(g_fd_virtio, outfd);
+  x11_prepare_fd_set(infd, outfd);
+  action_prepare_fd_set(infd, outfd);
+  result = get_biggest_fd();
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void select_wait_and_switch(void)
 {
-  fd_set infd;
+  fd_set infd, outfd;
   int fd_max, result;
   time_t cur_sec;
   static struct timeval timeout;
-  prepare_fd_set(&infd);
-  fd_max = get_biggest_fd();
-  result = select(fd_max + 1, &infd, NULL, NULL, &timeout);
+  fd_max = prepare_fd_set(&infd, &outfd);
+  result = select(fd_max + 1, &infd, &outfd, NULL, &timeout);
   if ( result < 0 )
     KOUT(" ");
   else if (result == 0) 
@@ -358,6 +300,7 @@ static void select_wait_and_switch(void)
     }
   else 
     {
+    nonblock_process_events(&outfd);
     if (FD_ISSET(g_fd_virtio, &infd))
       events_from_virtio(g_fd_virtio);
     x11_process_events(&infd);
@@ -424,6 +367,7 @@ static void no_signal_pipe(void)
 int main(int argc, char *argv[])
 { 
   daemon(0,0);
+  nonblock_init();
   action_init();
   x11_init();
   g_time_count = 0;
@@ -441,7 +385,7 @@ int main(int argc, char *argv[])
   my_mkdir(UNIX_X11_SOCKET_DIR);
   purge();
   no_signal_pipe();
-  init_core_segfault();
+  nonblock_add_fd(g_fd_virtio);
   for (;;)
     select_wait_and_switch();
   return 0;

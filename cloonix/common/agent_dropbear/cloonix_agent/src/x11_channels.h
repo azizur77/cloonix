@@ -21,7 +21,7 @@ void x11_pool_release(int idx);
 int  x11_get_biggest_fd(void);
 void x11_write(int idx_fd_x11, int len, char *buf);
 void x11_process_events(fd_set *infd);
-void x11_prepare_fd_set(fd_set *infd);
+void x11_prepare_fd_set(fd_set *infd, fd_set *outfd);
 void x11_rx_ack_open_x11(int dido_llid, char *rx);
 void x11_event_listen(int dido_llid, int x11_display_idx, int fd_x11_listen);
 void x11_init(void);

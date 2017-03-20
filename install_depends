@@ -72,27 +72,22 @@ fct_run_get_arch_packages()
 #--------------------------------------------------------------------------
 fct_build_get_debian_packages()
 {
-  apt-get -y install \
-             tmux locales-all genisoimage rxvt-unicode build-essential \
-             tar gcc-multilib libncurses5-dev libssl-dev bc \
-             libgtk-3-dev libcap-dev libevent-dev libreadline-dev \
-             libsdl1.2-dev libogg-dev libsasl2-dev intltool \
-             libjpeg-dev python-pyparsing libsoup2.4 libusb-1.0-0-dev \
-             libgudev-1.0-dev libopus-dev python-six \
-             libtext-csv-perl libepoxy-dev libegl1-mesa-dev \
-             libpolkit-gobject-1-dev libacl1-dev \
-             libgstreamer-plugins-base1.0-dev
+  apt-get -y install tmux genisoimage rxvt-unicode build-essential \
+                     gcc-multilib intltool libncurses5-dev libjpeg-dev \
+                     libusb-1.0-0-dev libsasl2-dev libopus-dev \
+                     libssl-dev libgtk-3-dev libcap-dev libevent-dev \
+                     libreadline-dev python-pyparsing python-six \
+                     libgstreamer-plugins-base1.0-dev libtext-csv-perl \
+                     libepoxy-dev libpolkit-gobject-1-dev libacl1-dev \
+                     libegl1-mesa-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
 {
-  apt-get -y install \
-             tmux locales-all genisoimage rxvt-unicode libevent-2.0-5 \
-             tar libusb-1.0 libopus0 e2fsprogs \
-             libsdl1.2debian libasound2 libcurl3-gnutls \
-             ttf-dejavu libgtk-3-0 libepoxy0 libegl1-mesa \
-             libpolkit-gobject-1-0 libacl1 \
-             libgstreamer-plugins-base1.0
+  apt-get -y install tmux genisoimage rxvt-unicode \
+                     libusb-1.0 libopus0 libgtk-3-0 \
+                     libepoxy0 libegl1-mesa \
+                     libgstreamer-plugins-base1.0
 }
 #--------------------------------------------------------------------------
 fct_build_get_centos_packages()

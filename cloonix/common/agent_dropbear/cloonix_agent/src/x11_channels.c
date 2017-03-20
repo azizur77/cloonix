@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include "sock.h"
 #include "commun.h"
+#include "nonblock.h"
 
 static int pool_fifo_free_index[MAX_IDX_X11];
 static int pool_read_idx;
@@ -51,8 +52,6 @@ typedef struct t_fd_x11_ctx
   int display_sock_x11;
   int dido_llid;
   int fd;
-  int payload_rx_x11;
-  int payload_tx_x11;
   int ready;
   struct t_fd_x11_ctx *prev;
   struct t_fd_x11_ctx *next;
@@ -167,6 +166,7 @@ static int alloc_x11_fd(int dido_llid, int fd, int display_sock_x11)
     g_fd_x11_ctx[result].sub_dido_idx = result;
     g_fd_x11_ctx[result].dido_llid = dido_llid;
     g_fd_x11_ctx[result].fd = fd;
+    nonblock_add_fd(fd);
     g_fd_x11_ctx[result].display_sock_x11 = display_sock_x11;
     if (g_head_fd_x11_ctx)
       g_head_fd_x11_ctx->prev = &(g_fd_x11_ctx[result]);
@@ -182,6 +182,7 @@ static void free_fd_ctx(int sub_dido_idx)
 {
   if (g_fd_x11_ctx[sub_dido_idx].sub_dido_idx)
     {
+    nonblock_del_fd(g_fd_x11_ctx[sub_dido_idx].fd);
     close(g_fd_x11_ctx[sub_dido_idx].fd);
     send_close_x11_to_doors(sub_dido_idx);
     if (g_fd_x11_ctx[sub_dido_idx].prev)
@@ -217,21 +218,8 @@ static int get_idx_with_fd(int fd)
 /****************************************************************************/
 void x11_write(int sub_dido_idx, int len, char *buf)
 {
-  int tx_len;
   t_fd_x11_ctx *ctx = &(g_fd_x11_ctx[sub_dido_idx]);
-  if (ctx->fd)
-    {
-    tx_len = write (ctx->fd, buf, len);
-    if (tx_len != len)
-      {
-      KERR("%d %d", tx_len, len);
-      free_fd_ctx(sub_dido_idx);
-      }
-    ctx->payload_tx_x11 += tx_len;
-//    KERR("payload_tx_x11:%d  %d", sub_dido_idx, ctx->payload_tx_x11);
-    }
-  else
-    KERR(" ");
+  nonblock_send(ctx->fd, buf, len);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -239,11 +227,10 @@ void x11_write(int sub_dido_idx, int len, char *buf)
 static void x11_read_evt(int fd)
 {
   t_fd_x11_ctx *ctx;
-  int sub_dido_idx, len;
   int headsize = sock_header_get_size();
   char *g_buf = get_g_buf();
   char *buf = g_buf + headsize;
-  memset(g_buf, 0, headsize);
+  int err, val, sub_dido_idx, len = 1, first_loop = 1;
   sub_dido_idx = get_idx_with_fd(fd);
   if (!sub_dido_idx)
     KERR(" ");
@@ -254,28 +241,55 @@ static void x11_read_evt(int fd)
       KOUT("%d %d", ctx->sub_dido_idx, sub_dido_idx);
     if (ctx->fd != fd)
       KOUT("%d %d", ctx->fd, fd);
-    len = read (fd, buf, MAX_A2D_LEN-headsize);
-    if (len == 0)
+    err = ioctl(fd, SIOCINQ, &val);
+    if ((err != 0) || (val<0))
       {
-      KERR(" ");
+      val = 0;
+      KERR("%d", errno);
       free_fd_ctx(sub_dido_idx);
       }
-    else if (len < 0)
+    else
       {
-      len = 0;
-      if ((errno != EAGAIN) && (errno != EINTR))
+      memset(g_buf, 0, headsize);
+      len = read (fd, buf, MAX_A2D_LEN-headsize);
+      if ((len == 0) && (first_loop == 1))
         {
         KERR("%d", errno);
         free_fd_ctx(sub_dido_idx);
         }
-      }
-    else
-      {
-      send_to_virtio(ctx->dido_llid,len,header_type_x11,sub_dido_idx,g_buf);
-      ctx->payload_rx_x11 += len;
-//      KERR("payload_rx_x11:%d  %d", sub_dido_idx, ctx->payload_rx_x11);
+      else if (len < 0)
+        {
+        len = 0;
+        if ((errno != EAGAIN) && (errno != EINTR))
+          {
+          KERR("%d", errno);
+          free_fd_ctx(sub_dido_idx);
+          }
+        }
+      else if (len > 0)
+        {
+        first_loop = 0;
+        send_to_virtio(ctx->dido_llid,len,header_type_x11,sub_dido_idx,g_buf);
+        }
       }
     }
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void set_sock_tx_buf(int fd)
+{
+  unsigned int lbuf;
+  unsigned int len = sizeof(lbuf);
+  if(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, &len)<0)
+    KOUT(" ");
+  KERR("%d %d", lbuf, len);
+  lbuf = 400000;
+  if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, sizeof(lbuf))<0)
+    KOUT(" ");
+  if(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, &len)<0)
+    KOUT(" ");
+  KERR("%d %d", lbuf, len);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -300,6 +314,7 @@ void x11_event_listen(int dido_llid, int display_sock_x11, int fd_x11_listen)
       }
     else
       {
+      set_sock_tx_buf(fd);
       snprintf(buf, MAX_A2D_LEN-1, LAX11OPEN, sub_dido_idx, display_sock_x11);
       send_to_virtio(dido_llid, strlen(buf) + 1, header_type_x11_ctrl, 
                      header_val_x11_open_serv, g_buf);
@@ -315,20 +330,25 @@ void x11_process_events(fd_set *infd)
   while(cur)
     {
     if (FD_ISSET(cur->fd, infd))
+      {
       x11_read_evt(cur->fd);
+      }
     cur = cur->next;
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void x11_prepare_fd_set(fd_set *infd)
+void x11_prepare_fd_set(fd_set *infd, fd_set *outfd)
 {
  t_fd_x11_ctx *cur = g_head_fd_x11_ctx;
   while(cur)
     {
     if (cur->ready)
+      {
       FD_SET(cur->fd, infd); 
+      nonblock_prepare_fd_set(cur->fd, outfd);
+      }
     cur = cur->next;
     }
 }

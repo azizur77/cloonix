@@ -37,6 +37,7 @@
 #include "commun.h"
 #include "sock.h"
 #include "x11_channels.h"
+#include "nonblock.h"
 
 
 #define MAX_FD_NUM 150
@@ -53,9 +54,6 @@ typedef struct t_dropbear_ctx
   int is_allocated_x11_display_idx;
   int display_sock_x11;
   int fd_listen_x11;
-  unsigned long long oct_data2dbclient; 
-  unsigned long long prev_oct_data2dbserv; 
-  unsigned long long oct_data2dbserv; 
   struct t_dropbear_ctx *prev;
   struct t_dropbear_ctx *next;
 } t_dropbear_ctx;
@@ -69,15 +67,9 @@ static int g_halt_countdown;
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int send_to_dropbear(int fd, int count, char *ibuf)
+static void send_to_dropbear(int fd, char *buf, int len)
 {
-  int len, result = -1;
-  len = write(fd, ibuf, count);
-  if (len == count)
-    result = 0;
-  else 
-    KERR("%d %d", len, count);
-  return result;
+  nonblock_send(fd, buf, len);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -226,6 +218,7 @@ static void alloc_ctx(int display_sock_x11, int dido_llid, int fd,
   memset(dctx, 0, sizeof(t_dropbear_ctx));
   dctx->dido_llid = dido_llid;
   dctx->fd = fd;
+  nonblock_add_fd(dctx->fd);
   dctx->is_allocated_x11_display_idx = is_allocated_x11_display_idx;
   dctx->display_sock_x11 = display_sock_x11;
   dctx->fd_listen_x11 = add_listen_x11(dctx->display_sock_x11);
@@ -262,6 +255,7 @@ static void free_ctx(int dido_llid)
     memcpy(buf, LABREAK, strlen(LABREAK) + 1);
     send_to_virtio(dido_llid, strlen(LABREAK) + 1, header_type_ctrl_agent,
                    header_val_del_dido_llid, g_buf);
+    nonblock_del_fd(dctx->fd);
     close(dctx->fd);
     if (!g_fd_to_ctx[dctx->fd])
       KOUT(" ");
@@ -296,7 +290,6 @@ static void action_rx_dropbear(t_dropbear_ctx *dctx, int len, char *rx)
   memcpy(buf, rx, len);
   send_to_virtio(dctx->dido_llid, len, 
                  header_type_traffic, header_val_none, g_buf);
-  dctx->oct_data2dbclient += len;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -331,12 +324,13 @@ void action_events(fd_set *infd)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void action_prepare_fd_set(fd_set *infd)
+void action_prepare_fd_set(fd_set *infd, fd_set *outfd)
 {
   t_dropbear_ctx *dctx = g_head_ctx;
   while (dctx)
     {
     FD_SET(dctx->fd, infd);
+    nonblock_prepare_fd_set(dctx->fd, outfd);
     FD_SET(dctx->fd_listen_x11, infd);
     dctx = dctx->next;
     } 
@@ -612,7 +606,7 @@ static void helper_rx_virtio_noctx(int dido_llid, int type, int val, char *rx)
           alloc_ctx(display_sock_x11, dido_llid, fd, 
                     is_allocated_x11_display_idx);
           memset(buf, 0, MAX_ASCII_LEN);
-          snprintf(buf, MAX_ASCII_LEN-1, DBSSH_SERV_DOORS_RESP, display_sock_x11); 
+          snprintf(buf,MAX_ASCII_LEN-1,DBSSH_SERV_DOORS_RESP,display_sock_x11); 
           send_to_virtio(dido_llid, strlen(buf) + 1, header_type_ctrl_agent,
                          header_val_add_dido_llid, g_buf);
           }
@@ -635,49 +629,6 @@ static void helper_rx_virtio_noctx(int dido_llid, int type, int val, char *rx)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int helper_rx_virtio_traffic(t_dropbear_ctx *dctx, int len, char *rx)
-{
-  int result = send_to_dropbear(dctx->fd, len, rx);
-  if (!result)
-    {
-    dctx->oct_data2dbserv += len;
-    if (dctx->oct_data2dbserv > dctx->prev_oct_data2dbserv + 10000)
-      {
-      send_ack_to_virtio(dctx->dido_llid, 
-                         dctx->oct_data2dbclient,
-                         dctx->oct_data2dbserv);
-      dctx->prev_oct_data2dbserv = dctx->oct_data2dbserv;
-      }
-    }
-  return result;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void helper_rx_virtio_ack(t_dropbear_ctx *dctx, int dido_llid, char *rx)
-{
-  unsigned long long s2c, c2s;
-  if (sscanf(rx, LAACK, &s2c, &c2s) != 2)
-    {
-    KERR(" ");
-    free_ctx(dido_llid);
-    }
-  else
-    {
-/*
-    if (dctx->oct_data2dbserv != c2s)
-      KERR("my_rx:%llu his_tx:%llu", dctx->oct_data2dbserv, c2s);
-    if (dctx->oct_data2dbclient != s2c)
-      KERR("my_tx:%llu his_rx:%llu", dctx->oct_data2dbclient, s2c);
-    if (dctx->oct_data2dbclient < s2c)
-      KERR("NEG DIFF: %llu %llu", dctx->oct_data2dbclient, s2c);
-*/
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-
-/****************************************************************************/
 void action_rx_virtio(int dido_llid, int len, int type, int val, char *rx)
 {
   t_dropbear_ctx *dctx;
@@ -694,11 +645,7 @@ void action_rx_virtio(int dido_llid, int len, int type, int val, char *rx)
         {
         if (val == header_val_none)
           {
-          if (helper_rx_virtio_traffic(dctx, len, rx))
-            {
-            KERR(" ");
-            free_ctx(dido_llid);
-            }
+          send_to_dropbear(dctx->fd, rx, len);
           }  
         else
           KERR("%d %d", type, val);
@@ -712,9 +659,6 @@ void action_rx_virtio(int dido_llid, int len, int type, int val, char *rx)
               {
               free_ctx(dido_llid);
               }
-            break;
-          case header_val_ack:
-            helper_rx_virtio_ack(dctx, dido_llid, rx);
             break;
           default:
             KERR("%d %d", type, val);
