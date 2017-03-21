@@ -110,7 +110,6 @@ static void static_vm_timeout(void *data)
 }
 /*--------------------------------------------------------------------------*/
 
-
 /****************************************************************************/
 static void cprootfs_clone_death(void *data, int status, char *name)
 {
@@ -292,7 +291,7 @@ static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
 
 /****************************************************************************/
 #define QEMU_OPTS \
-   " -L %s/server/qemu/%s -m %d"\
+   " -m %d"\
    " -serial mon:stdio"\
    " -nographic"\
    " -nodefaults"\
@@ -352,7 +351,6 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     }
 
   sprintf(cmd_start, QEMU_OPTS, 
-          cfg_get_bin_dir(), QEMU_BIN_DIR,
           vm->vm_params.mem,
           vm->vm_params.name,
           utils_get_qmonitor_path(vm->vm_id),
@@ -591,10 +589,10 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
     case auto_create_vm_launch:
       wake_up_eths->state = auto_create_vm_connect;
       if (launch_qemu_vm(vm))
-        clownix_timeout_add(3000, static_vm_timeout, (void *) wake_up_eths,
+        clownix_timeout_add(4000, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       else
-        clownix_timeout_add(300, static_vm_timeout, (void *) wake_up_eths,
+        clownix_timeout_add(500, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       break;
     case auto_create_vm_connect:

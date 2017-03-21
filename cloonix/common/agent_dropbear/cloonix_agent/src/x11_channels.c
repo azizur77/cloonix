@@ -276,23 +276,6 @@ static void x11_read_evt(int fd)
 }
 /*--------------------------------------------------------------------------*/
 
-/*****************************************************************************/
-static void set_sock_tx_buf(int fd)
-{
-  unsigned int lbuf;
-  unsigned int len = sizeof(lbuf);
-  if(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, &len)<0)
-    KOUT(" ");
-  KERR("%d %d", lbuf, len);
-  lbuf = 400000;
-  if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, sizeof(lbuf))<0)
-    KOUT(" ");
-  if(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&lbuf, &len)<0)
-    KOUT(" ");
-  KERR("%d %d", lbuf, len);
-}
-/*--------------------------------------------------------------------------*/
-
 /****************************************************************************/
 void x11_event_listen(int dido_llid, int display_sock_x11, int fd_x11_listen)
 {
@@ -314,7 +297,6 @@ void x11_event_listen(int dido_llid, int display_sock_x11, int fd_x11_listen)
       }
     else
       {
-      set_sock_tx_buf(fd);
       snprintf(buf, MAX_A2D_LEN-1, LAX11OPEN, sub_dido_idx, display_sock_x11);
       send_to_virtio(dido_llid, strlen(buf) + 1, header_type_x11_ctrl, 
                      header_val_x11_open_serv, g_buf);

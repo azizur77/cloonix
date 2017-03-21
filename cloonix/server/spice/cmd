@@ -32,7 +32,10 @@ if [ -e ${PREFIX} ]; then
 else
   export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 fi
-
+set +e
+  export NOCONFIGURE=no
+  ./autogen.sh
+set -e
   ./configure --prefix=${TARGET} \
               --enable-gstreamer=auto \
               --libdir=${TARGET} \

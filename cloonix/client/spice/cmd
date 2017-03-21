@@ -37,24 +37,27 @@ else
   cd ${TARGET}/spice_client
   export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
 fi
-
+set +e
+  export NOCONFIGURE=no
+  ./autogen.sh 
+set -e
   ./configure --prefix=${TARGET} \
               --libdir=${TARGET} \
               --datarootdir=${TARGET} \
               --with-usb-acl-helper-dir=${SPICE_LIB} \
               --enable-polkit \
               --enable-usbredir \
-              --enable-gtk-doc=no \
-              --enable-gtk-doc-html=no \
-              --enable-gtk-doc-pdf=no \
-              --enable-controler=no \
-              --enable-dbus=no \
-              --enable-vala=no \
-              --enable-webdav=no \
-              --enable-smartcard=no \
-              --enable-lz4=no
+              --disable-gtk-doc \
+              --disable-gtk-doc-html \
+              --disable-gtk-doc-pdf \
+              --disable-controler \
+              --disable-dbus \
+              --disable-vala \
+              --disable-webdav \
+              --disable-smartcard \
+              --disable-lz4
 
-
+sed -i s"/controller//" src/Makefile
 make clean
 make
 for i in Makefile doc/Makefile data/Makefile man/Makefile src/Makefile src/controller/Makefile; do
