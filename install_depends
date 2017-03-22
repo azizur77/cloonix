@@ -52,7 +52,6 @@ fct_build_get_arch_packages()
 
   ln -s /usr/bin/python2 /usr/bin/python
 
-  export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
   if ! tmux -c ls 1>/dev/null 2>&1 ; then
     localedef -f UTF-8 -i en_US en_US.UTF-8
   fi
@@ -76,9 +75,8 @@ fct_build_get_debian_packages()
                      libjpeg-dev libusb-1.0-0-dev libsasl2-dev \
                      libopus-dev libssl-dev libgtk-3-dev libcap-dev \
                      libevent-dev libreadline-dev python-pyparsing python-six \
-                     libgstreamer-plugins-base1.0-dev libtext-csv-perl \
-                     libepoxy-dev libpolkit-gobject-1-dev libacl1-dev \
-                     libegl1-mesa-dev
+                     libgstreamer-plugins-base1.0-dev libepoxy-dev \
+                     libpolkit-gobject-1-dev libacl1-dev libegl1-mesa-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -98,9 +96,7 @@ fct_build_get_centos_packages()
          gtk3-devel libcap-devel libevent-devel readline-devel \
          pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel polkit-devel libacl-devel \
-         dejavu-serif-fonts cpan
-
-  export PERL_MM_USE_DEFAULT=1; cpan install Text::CSV
+         dejavu-serif-fonts
 }
 #--------------------------------------------------------------------------
 fct_run_get_centos_packages()
@@ -120,8 +116,7 @@ fct_build_get_fedora_packages()
          libusb-devel cyrus-sasl-devel opus-devel openssl-devel \
          gtk3-devel libcap-devel libevent-devel readline-devel \
          python pyparsing python-six gstreamer1-plugins-base-devel \
-         libepoxy-devel polkit-devel libacl-devel \
-         dejavu-serif-fonts perl-Text-CSV 
+         libepoxy-devel polkit-devel libacl-devel dejavu-serif-fonts
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
@@ -140,8 +135,8 @@ fct_build_get_opensuse_packages()
          libusb-devel cyrus-sasl-devel libopus-devel openssl-devel \
          gtk3-devel libcap-devel libevent-devel readline-devel \
          python python-pyparsing python-six dejavu-fonts patch \
-         gstreamer-plugins-base-devel libepoxy-devel perl-Text-CSV \
-         polkit-devel libacl-devel glibc-locale
+         gstreamer-plugins-base-devel libepoxy-devel polkit-devel \
+         libacl-devel glibc-locale
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
