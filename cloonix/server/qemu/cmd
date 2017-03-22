@@ -30,12 +30,20 @@ cd ${HERE}/sources
 mv tainted_qemu ${HERE}/qemu_bin
 cd ${HERE}/qemu_bin/tainted_qemu
 
+
+#                     --disable-xen-pv-domain-build
+#                     --disable-xen
+#                     --disable-xen-pci-passthrough
  CONFIGURATION_OPTS="--prefix=/usr/local
                      --target-list=x86_64-softmmu
                      --enable-kvm
                      --enable-spice
                      --enable-usb-redir
                      --enable-linux-user
+                     --disable-replication
+                     --disable-rdma
+                     --disable-xen
+                     --disable-xen-pci-passthrough
                      --disable-gtk
                      --disable-virtfs
                      --disable-sdl
@@ -60,8 +68,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-vnc-jpeg
                      --disable-vnc-png
                      --disable-cocoa
-                     --disable-xen
-                     --disable-xen-pci-passthrough
                      --disable-brlapi
                      --disable-curl
                      --disable-fdt
@@ -79,7 +85,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-libusb
                      --disable-seccomp
                      --disable-glusterfs
-                     --disable-archipelago
                      --disable-tpm
                      --disable-libssh2
                      --disable-numa

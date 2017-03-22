@@ -1,6 +1,6 @@
-diff -Naur qemu-56f9e46/audio/audio.c tainted_qemu/audio/audio.c
---- qemu-56f9e46/audio/audio.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/audio/audio.c	2017-02-20 23:53:46.690994655 +0100
+diff -Naur qemu-2.8.0/audio/audio.c tainted_qemu/audio/audio.c
+--- qemu-2.8.0/audio/audio.c	2016-12-20 21:16:43.000000000 +0100
++++ tainted_qemu/audio/audio.c	2017-03-22 11:52:37.119131918 +0100
 @@ -1834,6 +1834,7 @@
      {
          int def;
@@ -9,10 +9,10 @@ diff -Naur qemu-56f9e46/audio/audio.c tainted_qemu/audio/audio.c
      }
  
      if (drvname) {
-diff -Naur qemu-56f9e46/configure tainted_qemu/configure
---- qemu-56f9e46/configure	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/configure	2017-02-20 23:53:46.690994655 +0100
-@@ -211,6 +211,7 @@
+diff -Naur qemu-2.8.0/configure tainted_qemu/configure
+--- qemu-2.8.0/configure	2016-12-20 21:16:44.000000000 +0100
++++ tainted_qemu/configure	2017-03-22 11:52:37.123131936 +0100
+@@ -213,6 +213,7 @@
  vnc="yes"
  sparse="no"
  vde=""
@@ -20,7 +20,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
  vnc_sasl=""
  vnc_jpeg=""
  vnc_png=""
-@@ -819,6 +820,8 @@
+@@ -818,6 +819,8 @@
    ;;
    --localstatedir=*) local_statedir="$optarg"
    ;;
@@ -29,7 +29,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
    --sbindir=*|--sharedstatedir=*|\
    --oldincludedir=*|--datarootdir=*|--infodir=*|--localedir=*|\
    --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
-@@ -894,6 +897,10 @@
+@@ -893,6 +896,10 @@
    ;;
    --enable-vde) vde="yes"
    ;;
@@ -40,7 +40,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
    --disable-netmap) netmap="no"
    ;;
    --enable-netmap) netmap="yes"
-@@ -2799,6 +2806,84 @@
+@@ -2785,6 +2792,84 @@
    fi
  fi
  
@@ -125,7 +125,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
  ##########################################
  # netmap support probe
  # Apart from looking for netmap headers, we make sure that the host API version
-@@ -4075,29 +4160,18 @@
+@@ -4061,29 +4146,18 @@
  fi
  
  ##########################################
@@ -164,7 +164,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
  fi
  
  # check for smartcard support
-@@ -5059,6 +5133,7 @@
+@@ -5045,6 +5119,7 @@
  echo "Documentation     $docs"
  echo "PIE               $pie"
  echo "vde support       $vde"
@@ -172,7 +172,7 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
  echo "netmap support    $netmap"
  echo "Linux AIO support $linux_aio"
  echo "ATTR/XATTR support $attr"
-@@ -5225,6 +5300,9 @@
+@@ -5211,6 +5286,9 @@
  if test "$vde" = "yes" ; then
    echo "CONFIG_VDE=y" >> $config_host_mak
  fi
@@ -182,9 +182,9 @@ diff -Naur qemu-56f9e46/configure tainted_qemu/configure
  if test "$netmap" = "yes" ; then
    echo "CONFIG_NETMAP=y" >> $config_host_mak
  fi
-diff -Naur qemu-56f9e46/hmp-commands.hx tainted_qemu/hmp-commands.hx
---- qemu-56f9e46/hmp-commands.hx	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hmp-commands.hx	2017-02-20 23:53:46.690994655 +0100
+diff -Naur qemu-2.8.0/hmp-commands.hx tainted_qemu/hmp-commands.hx
+--- qemu-2.8.0/hmp-commands.hx	2016-12-20 21:16:44.000000000 +0100
++++ tainted_qemu/hmp-commands.hx	2017-03-22 11:52:37.123131936 +0100
 @@ -1263,7 +1263,7 @@
      {
          .name       = "host_net_add",
@@ -194,9 +194,9 @@ diff -Naur qemu-56f9e46/hmp-commands.hx tainted_qemu/hmp-commands.hx
          .help       = "add host VLAN client",
          .cmd        = hmp_host_net_add,
          .command_completion = host_net_add_completion,
-diff -Naur qemu-56f9e46/hw/net/Makefile.objs tainted_qemu/hw/net/Makefile.objs
---- qemu-56f9e46/hw/net/Makefile.objs	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hw/net/Makefile.objs	2017-02-20 23:53:46.690994655 +0100
+diff -Naur qemu-2.8.0/hw/net/Makefile.objs tainted_qemu/hw/net/Makefile.objs
+--- qemu-2.8.0/hw/net/Makefile.objs	2016-12-20 21:16:46.000000000 +0100
++++ tainted_qemu/hw/net/Makefile.objs	2017-03-22 11:52:37.123131936 +0100
 @@ -34,6 +34,7 @@
  obj-$(CONFIG_XILINX_ETHLITE) += xilinx_ethlite.o
  
@@ -205,9 +205,9 @@ diff -Naur qemu-56f9e46/hw/net/Makefile.objs tainted_qemu/hw/net/Makefile.objs
  obj-y += vhost_net.o
  
  obj-$(CONFIG_ETSEC) += fsl_etsec/etsec.o fsl_etsec/registers.o \
-diff -Naur qemu-56f9e46/hw/net/virtio-muethnet.c tainted_qemu/hw/net/virtio-muethnet.c
---- qemu-56f9e46/hw/net/virtio-muethnet.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_qemu/hw/net/virtio-muethnet.c	2017-02-20 23:56:55.948371074 +0100
+diff -Naur qemu-2.8.0/hw/net/virtio-muethnet.c tainted_qemu/hw/net/virtio-muethnet.c
+--- qemu-2.8.0/hw/net/virtio-muethnet.c	1970-01-01 01:00:00.000000000 +0100
++++ tainted_qemu/hw/net/virtio-muethnet.c	2017-03-22 11:52:37.123131936 +0100
 @@ -0,0 +1,1014 @@
 +/*
 + * Modifications for cloonix mueth
@@ -1223,10 +1223,10 @@ diff -Naur qemu-56f9e46/hw/net/virtio-muethnet.c tainted_qemu/hw/net/virtio-muet
 +/****************************************************************************/
 +type_init(virtio_register_types)
 +/*--------------------------------------------------------------------------*/
-diff -Naur qemu-56f9e46/hw/pci/pci.c tainted_qemu/hw/pci/pci.c
---- qemu-56f9e46/hw/pci/pci.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hw/pci/pci.c	2017-02-20 23:53:46.690994655 +0100
-@@ -1773,6 +1773,7 @@
+diff -Naur qemu-2.8.0/hw/pci/pci.c tainted_qemu/hw/pci/pci.c
+--- qemu-2.8.0/hw/pci/pci.c	2016-12-20 21:16:46.000000000 +0100
++++ tainted_qemu/hw/pci/pci.c	2017-03-22 11:52:37.123131936 +0100
+@@ -1770,6 +1770,7 @@
      "e1000",
      "pcnet",
      "virtio-net-pci",
@@ -1234,11 +1234,11 @@ diff -Naur qemu-56f9e46/hw/pci/pci.c tainted_qemu/hw/pci/pci.c
      NULL
  };
  
-diff -Naur qemu-56f9e46/hw/virtio/virtio.c tainted_qemu/hw/virtio/virtio.c
---- qemu-56f9e46/hw/virtio/virtio.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hw/virtio/virtio.c	2017-02-20 23:53:46.690994655 +0100
-@@ -284,6 +284,12 @@
-     virtio_stw_phys_cached(vq->vdev, &caches->used, pa, val);
+diff -Naur qemu-2.8.0/hw/virtio/virtio.c tainted_qemu/hw/virtio/virtio.c
+--- qemu-2.8.0/hw/virtio/virtio.c	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/hw/virtio/virtio.c	2017-03-22 11:52:37.127131953 +0100
+@@ -208,6 +208,12 @@
+     virtio_stw_phys(vq->vdev, pa, val);
  }
  
 +unsigned int virtio_queue_get_notification(VirtQueue *vq)
@@ -1250,10 +1250,10 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio.c tainted_qemu/hw/virtio/virtio.c
  void virtio_queue_set_notification(VirtQueue *vq, int enable)
  {
      vq->notification = enable;
-diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci.c
---- qemu-56f9e46/hw/virtio/virtio-pci.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hw/virtio/virtio-pci.c	2017-02-20 23:53:46.690994655 +0100
-@@ -2298,6 +2298,21 @@
+diff -Naur qemu-2.8.0/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci.c
+--- qemu-2.8.0/hw/virtio/virtio-pci.c	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/hw/virtio/virtio-pci.c	2017-03-22 11:52:37.127131953 +0100
+@@ -2275,6 +2275,21 @@
      object_property_set_bool(OBJECT(vdev), true, "realized", errp);
  }
  
@@ -1275,7 +1275,7 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci
  static void virtio_net_pci_class_init(ObjectClass *klass, void *data)
  {
      DeviceClass *dc = DEVICE_CLASS(klass);
-@@ -2314,6 +2329,26 @@
+@@ -2291,6 +2306,26 @@
      vpciklass->realize = virtio_net_pci_realize;
  }
  
@@ -1302,7 +1302,7 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci
  static void virtio_net_pci_instance_init(Object *obj)
  {
      VirtIONetPCI *dev = VIRTIO_NET_PCI(obj);
-@@ -2324,6 +2359,18 @@
+@@ -2301,6 +2336,18 @@
                                "bootindex", &error_abort);
  }
  
@@ -1321,7 +1321,7 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci
  static const TypeInfo virtio_net_pci_info = {
      .name          = TYPE_VIRTIO_NET_PCI,
      .parent        = TYPE_VIRTIO_PCI,
-@@ -2332,6 +2379,17 @@
+@@ -2309,6 +2356,17 @@
      .class_init    = virtio_net_pci_class_init,
  };
  
@@ -1339,7 +1339,7 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci
  /* virtio-rng-pci */
  
  static void virtio_rng_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
-@@ -2574,6 +2632,9 @@
+@@ -2550,6 +2608,9 @@
      type_register_static(&virtio_balloon_pci_info);
      type_register_static(&virtio_serial_pci_info);
      type_register_static(&virtio_net_pci_info);
@@ -1349,10 +1349,10 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.c tainted_qemu/hw/virtio/virtio-pci
  #ifdef CONFIG_VHOST_SCSI
      type_register_static(&vhost_scsi_pci_info);
  #endif
-diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.h tainted_qemu/hw/virtio/virtio-pci.h
---- qemu-56f9e46/hw/virtio/virtio-pci.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/hw/virtio/virtio-pci.h	2017-02-20 23:53:46.690994655 +0100
-@@ -266,6 +266,12 @@
+diff -Naur qemu-2.8.0/hw/virtio/virtio-pci.h tainted_qemu/hw/virtio/virtio-pci.h
+--- qemu-2.8.0/hw/virtio/virtio-pci.h	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/hw/virtio/virtio-pci.h	2017-03-22 11:52:37.127131953 +0100
+@@ -262,6 +262,12 @@
      VirtIONet vdev;
  };
  
@@ -1365,11 +1365,11 @@ diff -Naur qemu-56f9e46/hw/virtio/virtio-pci.h tainted_qemu/hw/virtio/virtio-pci
  /*
   * virtio-9p-pci: This extends VirtioPCIProxy.
   */
-diff -Naur qemu-56f9e46/include/hw/virtio/virtio.h tainted_qemu/include/hw/virtio/virtio.h
---- qemu-56f9e46/include/hw/virtio/virtio.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/include/hw/virtio/virtio.h	2017-02-20 23:53:46.690994655 +0100
-@@ -289,6 +289,8 @@
-                                                 VirtIOHandleAIOOutput handle_output);
+diff -Naur qemu-2.8.0/include/hw/virtio/virtio.h tainted_qemu/include/hw/virtio/virtio.h
+--- qemu-2.8.0/include/hw/virtio/virtio.h	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/include/hw/virtio/virtio.h	2017-03-22 11:52:37.127131953 +0100
+@@ -283,6 +283,8 @@
+                                                            VirtQueue *));
  VirtQueue *virtio_vector_first_queue(VirtIODevice *vdev, uint16_t vector);
  VirtQueue *virtio_vector_next_queue(VirtQueue *vq);
 +unsigned int virtio_queue_get_notification(VirtQueue *vq);
@@ -1377,9 +1377,9 @@ diff -Naur qemu-56f9e46/include/hw/virtio/virtio.h tainted_qemu/include/hw/virti
  
  static inline void virtio_add_feature(uint64_t *features, unsigned int fbit)
  {
-diff -Naur qemu-56f9e46/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/virtio/virtio-net.h
---- qemu-56f9e46/include/hw/virtio/virtio-net.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/include/hw/virtio/virtio-net.h	2017-02-20 23:53:46.690994655 +0100
+diff -Naur qemu-2.8.0/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/virtio/virtio-net.h
+--- qemu-2.8.0/include/hw/virtio/virtio-net.h	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/include/hw/virtio/virtio-net.h	2017-03-22 11:55:23.983858285 +0100
 @@ -21,6 +21,14 @@
  #define VIRTIO_NET(obj) \
          OBJECT_CHECK(VirtIONet, (obj), TYPE_VIRTIO_NET)
@@ -1404,10 +1404,11 @@ diff -Naur qemu-56f9e46/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/v
  typedef struct virtio_net_conf
  {
      uint32_t txtimer;
-@@ -42,15 +52,27 @@
+@@ -41,15 +51,29 @@
  /* Maximum packet size we can receive from tap device: header + 64k */
  #define VIRTIO_NET_MAX_BUFSIZE (sizeof(struct virtio_net_hdr) + (64 << 10))
  
++
 +typedef struct t_async_rx_el
 +{
 +  uint32_t volatile pool_put_lock;
@@ -1417,14 +1418,15 @@ diff -Naur qemu-56f9e46/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/v
 +  VirtQueueElement *elem[CLOONIX_CIRC_ELEM + 1];
 +} t_async_rx_el;
 +
++
  typedef struct VirtIONetQueue {
      VirtQueue *rx_vq;
      VirtQueue *tx_vq;
      QEMUTimer *tx_timer;
 +    QEMUTimer *rx_timer;
      QEMUBH *tx_bh;
-     uint32_t tx_waiting;
-+    uint32_t rx_waiting;
+     int tx_waiting;
++    int rx_waiting;
      struct {
          VirtQueueElement *elem;
      } async_tx;
@@ -1432,7 +1434,7 @@ diff -Naur qemu-56f9e46/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/v
      struct VirtIONet *n;
  } VirtIONetQueue;
  
-@@ -102,4 +124,10 @@
+@@ -101,4 +125,10 @@
  void virtio_net_set_netclient_name(VirtIONet *n, const char *name,
                                     const char *type);
  
@@ -1443,9 +1445,9 @@ diff -Naur qemu-56f9e46/include/hw/virtio/virtio-net.h tainted_qemu/include/hw/v
 +#endif
 +
  #endif
-diff -Naur qemu-56f9e46/include/net/cloonix_mueth.h tainted_qemu/include/net/cloonix_mueth.h
---- qemu-56f9e46/include/net/cloonix_mueth.h	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_qemu/include/net/cloonix_mueth.h	2017-02-20 23:53:46.690994655 +0100
+diff -Naur qemu-2.8.0/include/net/cloonix_mueth.h tainted_qemu/include/net/cloonix_mueth.h
+--- qemu-2.8.0/include/net/cloonix_mueth.h	1970-01-01 01:00:00.000000000 +0100
++++ tainted_qemu/include/net/cloonix_mueth.h	2017-03-22 11:52:37.127131953 +0100
 @@ -0,0 +1,29 @@
 +
 +void sock_fd_local_flow_control(t_all_ctx *all_ctx, int stop);
@@ -1476,9 +1478,9 @@ diff -Naur qemu-56f9e46/include/net/cloonix_mueth.h tainted_qemu/include/net/clo
 +    int eth;
 +} MUETHState;
 +
-diff -Naur qemu-56f9e46/include/qemu/error-report.h tainted_qemu/include/qemu/error-report.h
---- qemu-56f9e46/include/qemu/error-report.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/include/qemu/error-report.h	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/include/qemu/error-report.h tainted_qemu/include/qemu/error-report.h
+--- qemu-2.8.0/include/qemu/error-report.h	2016-12-20 21:16:48.000000000 +0100
++++ tainted_qemu/include/qemu/error-report.h	2017-03-22 11:52:37.127131953 +0100
 @@ -13,6 +13,17 @@
  #ifndef QEMU_ERROR_REPORT_H
  #define QEMU_ERROR_REPORT_H
@@ -1506,9 +1508,9 @@ diff -Naur qemu-56f9e46/include/qemu/error-report.h tainted_qemu/include/qemu/er
  const char *error_get_progname(void);
  extern bool enable_timestamp_msg;
  
-diff -Naur qemu-56f9e46/include/qemu-common.h tainted_qemu/include/qemu-common.h
---- qemu-56f9e46/include/qemu-common.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/include/qemu-common.h	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/include/qemu-common.h tainted_qemu/include/qemu-common.h
+--- qemu-2.8.0/include/qemu-common.h	2016-12-20 21:16:47.000000000 +0100
++++ tainted_qemu/include/qemu-common.h	2017-03-22 11:52:37.127131953 +0100
 @@ -151,4 +151,13 @@
   * returned. */
  bool dump_in_progress(void);
@@ -1523,9 +1525,9 @@ diff -Naur qemu-56f9e46/include/qemu-common.h tainted_qemu/include/qemu-common.h
 +    } while (0)
 +
  #endif
-diff -Naur qemu-56f9e46/net/clients.h tainted_qemu/net/clients.h
---- qemu-56f9e46/net/clients.h	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/net/clients.h	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/net/clients.h tainted_qemu/net/clients.h
+--- qemu-2.8.0/net/clients.h	2016-12-20 21:16:48.000000000 +0100
++++ tainted_qemu/net/clients.h	2017-03-22 11:52:37.127131953 +0100
 @@ -54,6 +54,12 @@
                   NetClientState *peer, Error **errp);
  #endif
@@ -1539,9 +1541,9 @@ diff -Naur qemu-56f9e46/net/clients.h tainted_qemu/net/clients.h
  #ifdef CONFIG_NETMAP
  int net_init_netmap(const Netdev *netdev, const char *name,
                      NetClientState *peer, Error **errp);
-diff -Naur qemu-56f9e46/net/cloonix_mueth.c tainted_qemu/net/cloonix_mueth.c
---- qemu-56f9e46/net/cloonix_mueth.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_qemu/net/cloonix_mueth.c	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/net/cloonix_mueth.c tainted_qemu/net/cloonix_mueth.c
+--- qemu-2.8.0/net/cloonix_mueth.c	1970-01-01 01:00:00.000000000 +0100
++++ tainted_qemu/net/cloonix_mueth.c	2017-03-22 11:52:37.127131953 +0100
 @@ -0,0 +1,337 @@
 +/*****************************************************************************/
 +#include <stdio.h>
@@ -1880,9 +1882,9 @@ diff -Naur qemu-56f9e46/net/cloonix_mueth.c tainted_qemu/net/cloonix_mueth.c
 +}
 +/*--------------------------------------------------------------------------*/
 +
-diff -Naur qemu-56f9e46/net/hub.c tainted_qemu/net/hub.c
---- qemu-56f9e46/net/hub.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/net/hub.c	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/net/hub.c tainted_qemu/net/hub.c
+--- qemu-2.8.0/net/hub.c	2016-12-20 21:16:48.000000000 +0100
++++ tainted_qemu/net/hub.c	2017-03-22 11:52:37.127131953 +0100
 @@ -322,6 +322,7 @@
              case NET_CLIENT_DRIVER_TAP:
              case NET_CLIENT_DRIVER_SOCKET:
@@ -1891,9 +1893,9 @@ diff -Naur qemu-56f9e46/net/hub.c tainted_qemu/net/hub.c
              case NET_CLIENT_DRIVER_VHOST_USER:
                  has_host_dev = 1;
                  break;
-diff -Naur qemu-56f9e46/net/Makefile.objs tainted_qemu/net/Makefile.objs
---- qemu-56f9e46/net/Makefile.objs	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/net/Makefile.objs	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/net/Makefile.objs tainted_qemu/net/Makefile.objs
+--- qemu-2.8.0/net/Makefile.objs	2016-12-20 21:16:48.000000000 +0100
++++ tainted_qemu/net/Makefile.objs	2017-03-22 11:52:37.127131953 +0100
 @@ -13,6 +13,7 @@
  common-obj-$(CONFIG_SLIRP) += slirp.o
  common-obj-$(CONFIG_VDE) += vde.o
@@ -1902,9 +1904,9 @@ diff -Naur qemu-56f9e46/net/Makefile.objs tainted_qemu/net/Makefile.objs
  common-obj-y += filter.o
  common-obj-y += filter-buffer.o
  common-obj-y += filter-mirror.o
-diff -Naur qemu-56f9e46/net/net.c tainted_qemu/net/net.c
---- qemu-56f9e46/net/net.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/net/net.c	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/net/net.c tainted_qemu/net/net.c
+--- qemu-2.8.0/net/net.c	2016-12-20 21:16:48.000000000 +0100
++++ tainted_qemu/net/net.c	2017-03-22 11:52:37.131131970 +0100
 @@ -72,6 +72,10 @@
  #ifdef CONFIG_VDE
      "vde",
@@ -1926,7 +1928,7 @@ diff -Naur qemu-56f9e46/net/net.c tainted_qemu/net/net.c
  #ifdef CONFIG_NETMAP
          [NET_CLIENT_DRIVER_NETMAP]    = net_init_netmap,
  #endif
-@@ -1019,6 +1026,10 @@
+@@ -1018,6 +1025,10 @@
              legacy.type = NET_CLIENT_DRIVER_VDE;
              legacy.u.vde = *opts->u.vde.data;
              break;
@@ -1937,10 +1939,10 @@ diff -Naur qemu-56f9e46/net/net.c tainted_qemu/net/net.c
          case NET_LEGACY_OPTIONS_KIND_DUMP:
              legacy.type = NET_CLIENT_DRIVER_DUMP;
              legacy.u.dump = *opts->u.dump.data;
-diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
---- qemu-56f9e46/qapi-schema.json	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/qapi-schema.json	2017-02-20 23:53:46.694994685 +0100
-@@ -3419,7 +3419,7 @@
+diff -Naur qemu-2.8.0/qapi-schema.json tainted_qemu/qapi-schema.json
+--- qemu-2.8.0/qapi-schema.json	2016-12-20 21:16:49.000000000 +0100
++++ tainted_qemu/qapi-schema.json	2017-03-22 11:52:37.131131970 +0100
+@@ -2509,7 +2509,7 @@
  # Add a network backend.
  #
  # @type: the type of network backend.  Current valid values are 'user', 'tap',
@@ -1949,7 +1951,7 @@ diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
  #
  # @id: the name of the new network backend
  #
-@@ -3809,6 +3809,28 @@
+@@ -2871,6 +2871,28 @@
      '*mode':  'uint16' } }
  
  ##
@@ -1978,7 +1980,7 @@ diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
  # @NetdevDumpOptions:
  #
  # Dump VLAN network traffic to a file.
-@@ -3903,7 +3925,7 @@
+@@ -2965,7 +2987,7 @@
  # Since: 2.7
  ##
  { 'enum': 'NetClientDriver',
@@ -1987,7 +1989,7 @@ diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
              'bridge', 'hubport', 'netmap', 'vhost-user' ] }
  
  ##
-@@ -3930,6 +3952,7 @@
+@@ -2992,6 +3014,7 @@
      'l2tpv3':   'NetdevL2TPv3Options',
      'socket':   'NetdevSocketOptions',
      'vde':      'NetdevVdeOptions',
@@ -1995,7 +1997,7 @@ diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
      'dump':     'NetdevDumpOptions',
      'bridge':   'NetdevBridgeOptions',
      'hubport':  'NetdevHubPortOptions',
-@@ -3974,6 +3997,7 @@
+@@ -3036,6 +3059,7 @@
      'l2tpv3':   'NetdevL2TPv3Options',
      'socket':   'NetdevSocketOptions',
      'vde':      'NetdevVdeOptions',
@@ -2003,10 +2005,10 @@ diff -Naur qemu-56f9e46/qapi-schema.json tainted_qemu/qapi-schema.json
      'dump':     'NetdevDumpOptions',
      'bridge':   'NetdevBridgeOptions',
      'netmap':   'NetdevNetmapOptions',
-diff -Naur qemu-56f9e46/qdev-monitor.c tainted_qemu/qdev-monitor.c
---- qemu-56f9e46/qdev-monitor.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/qdev-monitor.c	2017-02-20 23:53:46.694994685 +0100
-@@ -67,6 +67,7 @@
+diff -Naur qemu-2.8.0/qdev-monitor.c tainted_qemu/qdev-monitor.c
+--- qemu-2.8.0/qdev-monitor.c	2016-12-20 21:16:49.000000000 +0100
++++ tainted_qemu/qdev-monitor.c	2017-03-22 11:52:37.131131970 +0100
+@@ -66,6 +66,7 @@
      { "virtio-mouse-pci", "virtio-mouse", QEMU_ARCH_ALL & ~QEMU_ARCH_S390X },
      { "virtio-net-ccw", "virtio-net", QEMU_ARCH_S390X },
      { "virtio-net-pci", "virtio-net", QEMU_ARCH_ALL & ~QEMU_ARCH_S390X },
@@ -2014,10 +2016,10 @@ diff -Naur qemu-56f9e46/qdev-monitor.c tainted_qemu/qdev-monitor.c
      { "virtio-rng-ccw", "virtio-rng", QEMU_ARCH_S390X },
      { "virtio-rng-pci", "virtio-rng", QEMU_ARCH_ALL & ~QEMU_ARCH_S390X },
      { "virtio-scsi-ccw", "virtio-scsi", QEMU_ARCH_S390X },
-diff -Naur qemu-56f9e46/qemu-options.hx tainted_qemu/qemu-options.hx
---- qemu-56f9e46/qemu-options.hx	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/qemu-options.hx	2017-02-20 23:53:46.694994685 +0100
-@@ -1678,6 +1678,11 @@
+diff -Naur qemu-2.8.0/qemu-options.hx tainted_qemu/qemu-options.hx
+--- qemu-2.8.0/qemu-options.hx	2016-12-20 21:16:49.000000000 +0100
++++ tainted_qemu/qemu-options.hx	2017-03-22 11:52:37.131131970 +0100
+@@ -1671,6 +1671,11 @@
      "                Use group 'groupname' and mode 'octalmode' to change default\n"
      "                ownership and permissions for communication port.\n"
  #endif
@@ -2029,7 +2031,7 @@ diff -Naur qemu-56f9e46/qemu-options.hx tainted_qemu/qemu-options.hx
  #ifdef CONFIG_NETMAP
      "-netdev netmap,id=str,ifname=name[,devname=nmname]\n"
      "                attach to the existing netmap-enabled network interface 'name', or to a\n"
-@@ -1705,6 +1710,9 @@
+@@ -1698,6 +1703,9 @@
  #ifdef CONFIG_VDE
      "vde|"
  #endif
@@ -2039,9 +2041,9 @@ diff -Naur qemu-56f9e46/qemu-options.hx tainted_qemu/qemu-options.hx
  #ifdef CONFIG_NETMAP
      "netmap|"
  #endif
-diff -Naur qemu-56f9e46/util/qemu-error.c tainted_qemu/util/qemu-error.c
---- qemu-56f9e46/util/qemu-error.c	2017-02-20 18:42:47.000000000 +0100
-+++ tainted_qemu/util/qemu-error.c	2017-02-20 23:53:46.694994685 +0100
+diff -Naur qemu-2.8.0/util/qemu-error.c tainted_qemu/util/qemu-error.c
+--- qemu-2.8.0/util/qemu-error.c	2016-12-20 21:16:54.000000000 +0100
++++ tainted_qemu/util/qemu-error.c	2017-03-22 11:52:37.131131970 +0100
 @@ -209,6 +209,7 @@
   * Prepend the current location and append a newline.
   * It's wrong to call this in a QMP monitor.  Use error_setg() there.
