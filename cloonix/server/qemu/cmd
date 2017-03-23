@@ -41,7 +41,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-libusb
                      --enable-mueth
                      --muethdir=${MUETH}
-                     --audio-drv-list=alsa 
                      --disable-linux-aio
                      --disable-libiscsi
                      --disable-slirp
