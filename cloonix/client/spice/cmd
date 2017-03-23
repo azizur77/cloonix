@@ -38,7 +38,7 @@ else
   export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
 fi
 set +e
-  export NOCONFIGURE=no
+  export NOCONFIGURE=yes
   ./autogen.sh 
 set -e
   ./configure --prefix=${TARGET} \
@@ -47,6 +47,9 @@ set -e
               --with-usb-acl-helper-dir=${SPICE_LIB} \
               --enable-polkit \
               --enable-usbredir \
+              --enable-gstaudio=yes \
+              --enable-gstvideo=yes \
+              --enable-pulse \
               --disable-gtk-doc \
               --disable-gtk-doc-html \
               --disable-gtk-doc-pdf \

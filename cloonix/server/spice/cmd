@@ -33,15 +33,18 @@ else
   export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 fi
 set +e
-  export NOCONFIGURE=no
+  export NOCONFIGURE=yes
   ./autogen.sh
 set -e
   ./configure --prefix=${TARGET} \
-              --enable-gstreamer=auto \
+              --enable-gstreamer=yes \
               --libdir=${TARGET} \
               --datarootdir=${TARGET} \
-              --disable-celt051 --disable-smartcard --disable-client \
-              --enable-shared --disable-static --enable-lz4=no
+              --disable-celt051 \
+              --disable-smartcard \
+              --disable-client \
+              --disable-static \
+              --disable-lz4
 
 make clean
 make
