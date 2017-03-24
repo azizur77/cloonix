@@ -46,7 +46,7 @@ fct_build_get_arch_packages()
              tar tmux cdrkit rxvt-unicode base-devel \
              readline libevent gtk3 python2 python2-pyparsing \
              python2-six intltool opus polkit acl mesa libusb \
-             gst-plugins-base ttf-dejavu
+             gst-plugins-base ttf-dejavu pulseaudio
 
   yes | pacman -Sy gcc-multilib
 
@@ -61,7 +61,8 @@ fct_run_get_arch_packages()
 {
   pacman --noconfirm --force -Syu \
              tar tmux cdrkit rxvt-unicode readline libevent gtk3 \
-             opus polkit acl mesa libusb gst-plugins-base ttf-dejavu
+             opus polkit acl mesa libusb gst-plugins-base ttf-dejavu \
+             pulseaudio
 
   if ! tmux -c ls 1>/dev/null 2>&1 ; then
     localedef -f UTF-8 -i en_US en_US.UTF-8
