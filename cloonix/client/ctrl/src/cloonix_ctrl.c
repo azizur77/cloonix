@@ -353,18 +353,29 @@ static void timout_connect(void *data)
 {
   if (!g_inhibited)
     {
-    printf("\n\n\nTIMEOUT\nSERVERS IN CONFIG FILE: ");
-    printf("\n\n%s\n\n\n", cloonix_conf_info_get_names());
+    printf("\nusage:\n\n\tcloonix_cli <reachable server> <args...>\n\n");
     exit(1);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void timout_connect_target(void *data)
+{
+  if (!g_inhibited)
+    {
+    printf("\n\n\nTIMEOUT\n");
+    exit(1);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
 void init_connection_to_uml_cloonix_switch(void)
 {
   client_init("ctrl", g_cloonix_server_sock, g_cloonix_password);
-  clownix_timeout_add(200, timout_connect, NULL, NULL, NULL);
+  clownix_timeout_add(200, timout_connect_target, NULL, NULL, NULL);
   while (!client_is_connected())
     msg_mngt_loop_once();
   g_inhibited = 1;
@@ -375,14 +386,21 @@ void init_connection_to_uml_cloonix_switch(void)
 static void print_reacheability(int idx, char *reach)
 {
   int count_spaces; 
-  char spaces[20];
-  memset(spaces, ' ', 20);
-  count_spaces = 20 - strlen(g_cloonix_conf_info[idx].name);
+  char spaces1[20];
+  char spaces2[25];
+  memset(spaces1, ' ', 20);
+  memset(spaces2, ' ', 25);
+  count_spaces = 15 - strlen(g_cloonix_conf_info[idx].name);
   if (count_spaces <= 0)
     count_spaces = 4;
-  spaces[count_spaces] = 0;
-  printf("%s%s%s %s\n", g_cloonix_conf_info[idx].name, spaces,
-                        g_cloonix_conf_info[idx].doors, reach);
+  spaces1[count_spaces] = 0;
+  count_spaces = 25 - strlen(g_cloonix_conf_info[idx].doors);
+  if (count_spaces <= 0)
+    count_spaces = 4;
+  spaces2[count_spaces] = 0;
+
+  printf("\t%s%s%s%s%s\n", g_cloonix_conf_info[idx].name, spaces1,
+                        g_cloonix_conf_info[idx].doors, spaces2, reach);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -394,7 +412,7 @@ static void stub_err_cb (int llid)
     {
     if (g_cloonix_conf_info[i].doors_llid == llid)
       {
-      print_reacheability(i, "NOT_REACHABLE");
+      print_reacheability(i, "not_reachable");
       }
     }
 }
@@ -439,7 +457,7 @@ static void stub_topo(int tid, t_topo_info *topo)
                  g_cloonix_conf_info[i].name)) 
         KERR("%s %s", topo->cloonix_config.network_name,
                       g_cloonix_conf_info[i].name);
-      print_reacheability(i, "REACHABLE");
+      print_reacheability(i, "reachable");
       }
     }
 }
@@ -572,8 +590,7 @@ int main (int argc, char *argv[])
     cloonix_conf_info_get_all(&g_nb_cloonix_servers, &g_cloonix_conf_info);
     client_topo_tst_sub(stub_topo);
     doors_io_basic_xml_init(stub_doorways_tx);
-    printf("\nVersion:%s\n", cloonix_conf_info_get_version());
-    printf("\nALIVE CLOONIX SERVERS:\n\n");
+    printf("\nVersion:%s\n\n", cloonix_conf_info_get_version());
     for (i=0; i<g_nb_cloonix_servers; i++)
       {
       g_cloonix_conf_info[i].doors_llid = 0;

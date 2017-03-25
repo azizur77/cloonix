@@ -8,14 +8,14 @@ if [ ! -f $CLOONIX_CONFIG ]; then
   echo "ERROR: $CLOONIX_CONFIG not found"
   exit 1
 fi
-CLOONIX_TREE=$(cat $CLOONIX_CONFIG |grep  CLOONIX_TREE | awk -F = "{print \$2}")
+CLOONIX_TREE=$(cat $CLOONIX_CONFIG |grep  CLOONIX_TREE | awk -F = '{print $2}')
 
 if [ ! -d ${CLOONIX_TREE} ]; then
   echo "ERROR: ${CLOONIX_TREE} not found"
   exit 1
 fi
 
-LIST=$(cat $CLOONIX_CONFIG |grep CLOONIX_NET: | awk "{print \$2}")
+LIST=$(cat $CLOONIX_CONFIG |grep CLOONIX_NET: | awk '{print $2}')
 
 if (( ${#} < 1 )); then
   echo  cloonix_name needed as parameter.
@@ -42,9 +42,9 @@ LINE_CLOONIX_CONFIG=$(echo $LINE_CLOONIX_CONFIG)
 cloonix_info="${LINE_CLOONIX_CONFIG##*CLOONIX_NET: $cloonix_name \{}"
 cloonix_info="${cloonix_info%%\}*}"
 
-ip=$(echo $cloonix_info |awk "{print \$2}")
-port=$(echo $cloonix_info |awk "{print \$4}")
-passwd=$(echo $cloonix_info |awk "{print \$6}")
+ip=$(echo $cloonix_info |awk '{print $2}')
+port=$(echo $cloonix_info |awk '{print $4}')
+passwd=$(echo $cloonix_info |awk '{print $6}')
 
 
 shift 1

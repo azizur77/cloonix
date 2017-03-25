@@ -8,7 +8,7 @@ if [ ! -f $CLOONIX_CONFIG ]; then
   echo "ERROR: $CLOONIX_CONFIG not found"
   exit 1
 fi
-CLOONIX_TREE=$(cat $CLOONIX_CONFIG |grep  CLOONIX_TREE | awk -F = "{print \$2}")
+CLOONIX_TREE=$(cat $CLOONIX_CONFIG |grep  CLOONIX_TREE | awk -F = '{print $2}')
 
 if [ ! -d ${CLOONIX_TREE} ]; then
   echo "ERROR: ${CLOONIX_TREE} not found"
