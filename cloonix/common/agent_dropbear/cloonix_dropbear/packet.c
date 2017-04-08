@@ -123,8 +123,11 @@ static int read_packet_init(void )
   maxlen = blocksize - ses.readbuf->pos;
   slen = cloonix_read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen), maxlen);
   if (slen == 0)
+    {
     ses.remoteclosed();
-  if (slen >= 0)
+    KOUT(" ");
+    }
+  if (slen > 0)
     {
     buf_incrwritepos(ses.readbuf, slen);
     if ((unsigned int)slen == maxlen)

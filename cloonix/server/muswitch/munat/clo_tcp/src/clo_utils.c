@@ -387,11 +387,13 @@ int util_extract_clo(t_clo **head, t_clo *clo)
     {
     util_extract_hdata(&(clo->head_hdata), clo->head_hdata);
     result = -1;
+    KERR("closed_state_count_line:%d", clo->closed_state_count_line);
     }
   while (clo->head_ldata)
     {
     util_extract_ldata(&(clo->head_ldata), clo->head_ldata);
     result = -1;
+    KERR("closed_state_count_line:%d", clo->closed_state_count_line);
     }
   if (clo->prev)
     clo->prev->next = clo->next;

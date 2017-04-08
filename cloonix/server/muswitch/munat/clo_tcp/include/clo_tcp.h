@@ -138,6 +138,7 @@ typedef struct t_clo
   t_tcp_id tcpid;
   int closed_state_count;
   int closed_state_count_initialised;
+  int closed_state_count_line;
   int id_tcpid;
   int has_been_closed_from_outside_socket;
   int state;

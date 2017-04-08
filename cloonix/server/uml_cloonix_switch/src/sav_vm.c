@@ -326,7 +326,7 @@ static void timer_svm(void *data)
     KOUT(" ");
   if (svm->llid)
     {
-    snprintf(err, MAX_PATH_LEN-1, "VM SAVING ERROR %d", svm->state);
+    snprintf(err, MAX_PATH_LEN-1, "VM TIMER SAVING ERROR %d", svm->state);
     send_status_ko(svm->llid, svm->tid, err);
     }
   svm->abeat_timer = 0;
@@ -420,7 +420,7 @@ static void start_saving_vm(t_sav_vm *svm)
 {
   set_svm_state(svm, state_saving);
   qmp_request_qemu_stop_cont(svm->name, 0);
-  clownix_timeout_add(50000, timer_svm, (void *) svm,
+  clownix_timeout_add(150000, timer_svm, (void *) svm,
                       &(svm->abeat_timer), &(svm->ref_timer));
   pid_clone_launch(cp_rootfs_clone, cp_rootfs_clone_death,
                    cp_rootfs_clone_msg, (void *)svm,

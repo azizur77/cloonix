@@ -43,6 +43,7 @@ enum {
   num_fct_high_data_rx,
   num_fct_high_synack_rx,
   num_fct_high_close_rx,
+  num_fct_high_close_rx_send_rst,
   num_fct_send_finack,
   num_fct_max,
 };
@@ -113,10 +114,11 @@ static void local_send_finack_state_fin(t_clo *clo)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void init_closed_state_count_if_not_done(t_clo *clo, int val)
+static void init_closed_state_count_if_not_done(t_clo *clo, int val, int line)
 {
   if (!clo->closed_state_count_initialised)
     {
+    clo->closed_state_count_line = line;
     clo->closed_state_count_initialised = 1;
     clo->closed_state_count = val;
     }
@@ -129,9 +131,9 @@ static void local_send_reset_state_closed(t_clo *clo)
   u32_t ackno, seqno;
   u16_t loc_wnd, dist_wnd;
   clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
-  util_send_reset(&(clo->tcpid),ackno, seqno,loc_wnd,__FUNCTION__,__LINE__);
+  util_send_reset(&(clo->tcpid), ackno, seqno, loc_wnd, __FUNCTION__, __LINE__);
   clo_mngt_set_state(clo, state_closed);
-  init_closed_state_count_if_not_done(clo, 2);
+  init_closed_state_count_if_not_done(clo, 2, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -183,6 +185,8 @@ static void timer_fct_call(t_all_ctx *all_ctx, void *param)
   t_timer_fct *fct = (t_timer_fct *) param;
   t_clo *clo = clo_mngt_find(&(fct->tcpid));
   int do_not_delete_param = 0;
+  u32_t ackno, seqno;
+  u16_t loc_wnd, dist_wnd;
   switch(fct->num_fct)
     {
     case num_fct_high_data_rx:
@@ -200,6 +204,19 @@ static void timer_fct_call(t_all_ctx *all_ctx, void *param)
     case num_fct_high_close_rx:
       fct_high_close_rx(&(fct->tcpid));
       break;
+
+    case num_fct_high_close_rx_send_rst:
+      fct_high_close_rx(&(fct->tcpid));
+      if ((clo) && (clo->id_tcpid == fct->id_tcpid))
+        {
+        clo_mngt_get_ackno_seqno_wnd(clo,&ackno,&seqno,&loc_wnd,&dist_wnd);
+        util_send_reset(&(clo->tcpid),ackno,seqno,loc_wnd,
+                        __FUNCTION__,__LINE__);
+        }
+      else
+        KERR(" ");
+      break;
+
     case num_fct_send_finack:
       if ((clo) && (clo->id_tcpid == fct->id_tcpid))
         {
@@ -241,6 +258,8 @@ static void async_fct_call(int num_fct, int id, t_tcp_id *tcpid,
     clownix_timeout_add(get_all_ctx(),5,timer_fct_call,(void *)fct,NULL,NULL);
   else if (num_fct == num_fct_high_close_rx)
     clownix_timeout_add(get_all_ctx(),3,timer_fct_call,(void *)fct,NULL,NULL);
+  else if (num_fct == num_fct_high_close_rx_send_rst)
+    clownix_timeout_add(get_all_ctx(),100,timer_fct_call,(void *)fct,NULL,NULL);
   else
     clownix_timeout_add(get_all_ctx(),1,timer_fct_call,(void *)fct,NULL,NULL);
 }
@@ -251,8 +270,8 @@ static void break_of_com_kill_both_sides(t_clo *clo, int line)
 {
   if (line)
     KERR("TRAP BREAK %d", line);
-  async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 0, NULL);
-  local_send_reset_state_closed(clo);
+  async_fct_call(num_fct_high_close_rx_send_rst, 
+                 clo->id_tcpid, &(clo->tcpid), 0, NULL);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -281,7 +300,7 @@ static void local_rx_data_purge(t_clo *clo)
     cur = next;
     }
   if (res == -1)
-    break_of_com_kill_both_sides(clo, 0);
+    break_of_com_kill_both_sides(clo, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -406,7 +425,7 @@ int clo_high_close_tx(t_tcp_id *tcpid)
       case state_closed:
       case state_fin_wait_last_ack:
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2);
+        init_closed_state_count_if_not_done(clo, 2, __LINE__);
         break;
       default:
         KOUT(" %d", state);
@@ -454,7 +473,7 @@ static void non_existing_tcp_low_input(t_tcp_id *tcpid, t_low *low,
       clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
       util_send_reset(tcpid, ackno, seqno, loc_wnd, __FUNCTION__, __LINE__);
       clo_mngt_set_state(clo, state_closed);
-      init_closed_state_count_if_not_done(clo, 2);
+      init_closed_state_count_if_not_done(clo, 2, __LINE__);
       }
     }
   else
@@ -492,7 +511,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         util_send_reset(&(clo->tcpid),ackno,seqno,loc_wnd,
                         __FUNCTION__,__LINE__);
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2);
+        init_closed_state_count_if_not_done(clo, 2, __LINE__);
         }
       break;
     case state_first_syn_sent:
@@ -512,7 +531,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid),
                        0, NULL);
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2);
+        init_closed_state_count_if_not_done(clo, 2, __LINE__);
         }
       break;
 
@@ -610,7 +629,7 @@ void clo_low_input(int mac_len, u8_t *mac_data)
           async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 
                          0, NULL);
           clo_mngt_set_state(clo, state_closed);
-          init_closed_state_count_if_not_done(clo, 2);
+          init_closed_state_count_if_not_done(clo, 2, __LINE__);
           }
         else
           {

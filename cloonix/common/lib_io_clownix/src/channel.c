@@ -480,14 +480,16 @@ int heartbeat_mngt(int type)
     if (glob_heartbeat_ms_timeout < 50)
       {
       if (heart_count > 5000)
+        {
         KERR("%d", type);
+        result = 1;
+        }
       }
     heart_count=0;
     memcpy(&last_heartbeat, &cur, sizeof(struct timeval));
     if (channel_beat)
       {
       channel_beat(delta);
-      result = 1;
       }
     }
   return result;
@@ -801,7 +803,7 @@ static int handle_io_on_fd(int nb, struct epoll_event *events)
 /*****************************************************************************/
 void channel_loop(int once)
 {
-  int cidx, k, result;
+  int cidx, k, result, pb;
   uint32_t evt;
   static struct epoll_event events[MAX_EPOLL_EVENTS_PER_RUN];
   my_gettimeofday(&last_heartbeat);
@@ -831,7 +833,7 @@ void channel_loop(int once)
       continue;
       }
     else
-      heartbeat_mngt(1);
+      pb = heartbeat_mngt(1);
     slipery_select++;
     counter_select_speed++;
 
@@ -847,7 +849,7 @@ void channel_loop(int once)
         slipery_select = 0;
       }
 
-    if (slipery_select >= 5)
+    if (pb || (slipery_select >= 5))
       {
       for(k=0; k<result; k++) 
         {
@@ -857,7 +859,8 @@ void channel_loop(int once)
                                      cidx, (evt & EPOLLOUT),
                                      (evt & EPOLLIN), evt);
         }
-      KOUT(" %d %d", result, channel_modification_occurence);
+      if (slipery_select >= 5)
+        KOUT(" %d %d", result, channel_modification_occurence);
       }
     if (once)
       break;
