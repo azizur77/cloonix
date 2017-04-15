@@ -79,6 +79,11 @@ fct_build_get_debian_packages()
                      libgstreamer-plugins-base1.0-dev libepoxy-dev \
                      libpolkit-gobject-1-dev libacl1-dev libegl1-mesa-dev \
                      libpulse-dev sudo
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
+
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -86,6 +91,10 @@ fct_run_get_debian_packages()
   apt-get -y install tar tmux genisoimage rxvt-unicode libusb-1.0 libopus0 \
                      libgtk-3-0 libepoxy0 libegl1-mesa libsasl2-2 \
                      libgstreamer-plugins-base1.0 libpulse0
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_build_get_centos_packages()
@@ -99,6 +108,10 @@ fct_build_get_centos_packages()
          pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel polkit-devel libacl-devel \
          dejavu-serif-fonts pulseaudio-libs-devel
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_run_get_centos_packages()
@@ -107,6 +120,10 @@ fct_run_get_centos_packages()
          tar tmux genisoimage gtk3 xterm libevent libusb opus \
          cyrus-sasl dejavu-serif-fonts libepoxy polkit libacl \
          gstreamer1-plugins-base libjpeg-turbo pulseaudio-libs
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_build_get_fedora_packages()
@@ -120,6 +137,10 @@ fct_build_get_fedora_packages()
          python pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel polkit-devel libacl-devel dejavu-serif-fonts \
          pulseaudio-libs-devel
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
@@ -128,6 +149,10 @@ fct_run_get_fedora_packages()
          tar tmux genisoimage gtk3 rxvt-unicode libevent libusb opus \
          cyrus-sasl dejavu-serif-fonts libepoxy polkit libacl \
          gstreamer1-plugins-base libjpeg-turbo pulseaudio-libs
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_build_get_opensuse_packages()
@@ -140,6 +165,10 @@ fct_build_get_opensuse_packages()
          python python-pyparsing python-six dejavu-fonts patch \
          gstreamer-plugins-base-devel libepoxy-devel polkit-devel \
          libacl-devel glibc-locale libpulse-devel
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
@@ -149,6 +178,10 @@ fct_run_get_opensuse_packages()
          libopus0 cyrus-sasl dejavu-fonts libepoxy0 polkit libacl \
          gstreamer-plugins-base glibc-locale libgthread-2_0-0 \
          libjpeg62 libpulse0
+
+  if ! tmux -c ls 1>/dev/null 2>&1 ; then
+    localedef -f UTF-8 -i en_US en_US.UTF-8
+  fi
 }
 #--------------------------------------------------------------------------
 if [ $UID != 0 ]; then
