@@ -273,6 +273,57 @@ int run_linux_virtual_machine(int llid, int tid, char *name,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static int kerr_upon_missing_dir(char *name, char *dir)
+{
+  int result = 0;
+  struct stat stat_file;
+  if (stat(dir, &stat_file))
+    {
+    KERR("%s %s %d", name, dir, errno);
+    result = -1;
+    }
+  else if (!S_ISDIR(stat_file.st_mode))
+    {
+    KERR("%s %s", name, dir);
+    result = -1;
+    }
+  else if ((stat_file.st_mode & S_IRWXU) != S_IRWXU)
+    {
+    KERR("%s %s %X", name, dir, stat_file.st_mode);
+    result = -1;
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int missing_dir(char *name, int vm_id)
+{
+  int result = 0;
+  char path[MAX_PATH_LEN];
+  snprintf(path, MAX_PATH_LEN-1, "%s", cfg_get_work_vm(vm_id));
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  snprintf(path, MAX_PATH_LEN-1, "%s/%s", cfg_get_work_vm(vm_id), DIR_DATA);
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  snprintf(path, MAX_PATH_LEN-1, "%s/%s", cfg_get_work_vm(vm_id), DIR_CONF);
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  snprintf(path, MAX_PATH_LEN-1, "%s", utils_dir_conf_tmp(vm_id));
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  snprintf(path, MAX_PATH_LEN-1, "%s", utils_get_disks_path_name(vm_id));
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  snprintf(path, MAX_PATH_LEN-1, "%s/%s", cfg_get_work_vm(vm_id),  DIR_UMID);
+  if (kerr_upon_missing_dir(name, path))
+    result = 1;
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void death_of_mkdir_clone(void *data, int status, char *name)
 {
   int i;
@@ -284,6 +335,12 @@ static void death_of_mkdir_clone(void *data, int status, char *name)
     {
     sprintf(err,"Path: \"%s\" pb creating directory", 
                 cfg_get_work_vm(vm_building->vm_id));
+    send_status_ko(vm_building->llid, vm_building->tid, err);
+    clownix_free(vm_building,  __FUNCTION__);
+    }
+  else if (missing_dir(vm_building->vm_params.name, vm_building->vm_id))
+    {
+    sprintf(err,"Bad vm %s dir creation", vm_building->vm_params.name);
     send_status_ko(vm_building->llid, vm_building->tid, err);
     clownix_free(vm_building,  __FUNCTION__);
     }

@@ -158,6 +158,7 @@ void my_mkdir(char *dst_dir)
         KOUT("%s, %d", dst_dir, errno);
       if (!S_ISDIR(stat_file.st_mode))
         {
+        KERR("%s", dst_dir);
         unlink(dst_dir);
         if (mkdir(dst_dir, 0700))
           KOUT("%s, %d", dst_dir, errno);
