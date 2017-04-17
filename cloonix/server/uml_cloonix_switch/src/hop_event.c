@@ -300,7 +300,7 @@ static void free_hop(t_hop_record *hop)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void hop_evt_client_free(llid)
+static void hop_evt_client_free(int llid)
 {
   t_clients *cli;
   t_hop_record *cur = g_head_hop;

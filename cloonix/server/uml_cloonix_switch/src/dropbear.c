@@ -192,7 +192,8 @@ void init_dropbear(void)
            "%s/%s", cfg_get_root_work(), DROPBEAR_SOCK);
   snprintf(g_dropbear_params.pid_file, MAX_PATH_LEN-1,
            "%s/%s", cfg_get_root_work(), DROPBEAR_PID);
-  snprintf(g_dropbear_params.cloonix_tree, MAX_PATH_LEN-1, cfg_get_bin_dir());
+  snprintf(g_dropbear_params.cloonix_tree, MAX_PATH_LEN-1, 
+           "%s", cfg_get_bin_dir());
   g_dropbear_killed_requested = 0;
   launch_dropbear();
   clownix_timeout_add(2000, timer_monitor_dropbear_pid, NULL, NULL, NULL);

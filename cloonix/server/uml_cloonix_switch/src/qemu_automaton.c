@@ -84,6 +84,7 @@ int inside_cloonix(char **name);
 
 void qemu_vm_automaton(void *unused_data, int status, char *name);
 
+char **get_saved_environ(void);
 
 /****************************************************************************/
 static int get_wake_up_eths(char *name, t_vm **vm,
@@ -130,7 +131,8 @@ static void cprootfs_clone_death(void *data, int status, char *name)
       {
       if (!status)
         KOUT("%d", status);
-      snprintf(wake_up_eths->error_report, MAX_PRINT_LEN-1, cprootfs->msg);
+      snprintf(wake_up_eths->error_report, MAX_PRINT_LEN-1, 
+               "%s", cprootfs->msg);
       KERR("%s", name);
       }
     else
@@ -179,7 +181,7 @@ static int local_clownix_system (char *commande)
 {
   pid_t pid;
   int   status;
-  char **environ = get_saved_environ();
+  char **environ = NULL;
   char * argv [4];
   char msg_dad[MAX_NAME_LEN];
   if (commande == NULL)

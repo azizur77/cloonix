@@ -506,6 +506,7 @@ static int forked_fct(void *ptr)
   g_i_am_a_clone = 1;
   if (ctx->no_kerr)
     g_i_am_a_clone_no_kerr = 1;
+  else
     g_i_am_a_clone_no_kerr = 0;
   openlog("forked_fct", 0, LOG_USER);
   signal(SIGCHLD, SIG_DFL);
