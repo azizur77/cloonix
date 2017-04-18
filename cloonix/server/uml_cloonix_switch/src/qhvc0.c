@@ -65,6 +65,7 @@
   "if [ ! -e ${CONFIG}/cloonix_agent ]; then\n"\
   "  mkdir -p /mnt/cloonix_config_fs\n"\
   "  mount /dev/%s /mnt/cloonix_config_fs\n"\
+  "  mount -o remount,exec /dev/%s\n"\
   "fi\n"\
   "${CONFIG}/cloonix_agent\n"\
   "${CONFIG}/dropbear_cloonix_sshd\n"\
@@ -966,7 +967,7 @@ static void scheduler_heartbeat(t_qhvc0_vm *cvm)
       {
       cvm->in_guest_cloonix_agent_start_done = 1;
       snprintf(script_start_dropbear, MAX_LEN_DROPBEAR, 
-               CMD_START_DROPBEAR_CLOONIX, "sr0");
+               CMD_START_DROPBEAR_CLOONIX, "sr0", "sr0");
       begin_and_send(cvm, script_start_dropbear);
       }
     cvm->in_guest_cloonix_agent_start_done++;
