@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
-GPLv3 software for a tool that helps in the creation of virtual 
+AGPLv3 software for a tool that helps in the creation of virtual 
 machine networks.
 
 See directory cloonix for the LICENCE
@@ -12,24 +12,18 @@ See cloonix.fr for more documentation.
 Build and install from github sources:
 --------------------------------------
 
-         git clone https://github.com/clownix/cloonix.git
-         cd cloonix
-         ./install_depends build
-         ./doitall
+    git clone --depth=1 https://github.com/clownix/cloonix.git
+    cd cloonix
+    ./install_depends build
+    ./doitall
 
-  For each distribution, packets have to be installed for the build,
-  a script has been written for this task, look into the
-  install_depends file and launch it as root with build as input
-  parameter.
+  Whatever the distribution, packets have to be installed for the build,
+  the install_depends file detects the distribution and installs all
+  the necessary packages for the build.
+  It must be run with root privilege.
   
-  Then then a call to ./doitall does the build, pack and install of the 
-  binaries in /usr/local/bin.
-  Note that the "sudo" in the doitall is there to give the root
-  privileges to be able to write in the /usr/local/bin where cloonix
-  is installed.
-
-  If you do not have sudo or are not in the sudoers, you must be root
-  to call: ./install_cloonix cloonix-${VERSION}.tar.gz
+  Then then a call to ./doitall does the build, and at the end, installs
+  the binaries in /usr/local/bin (root privilege necessary).
 
   Be aware that cloonix_config must be saved because it is overwritten
   with each new install.
@@ -38,42 +32,42 @@ Build and install from github sources:
 
 
 
-
 -----------------------------------------------------------
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
-         wget http://cloonix.fr/archive/v-33-01/jessie-cloonix-33-01.tar.gz
-         wget http://cloonix.fr/archive/v-33-01/install_depends
-         wget http://cloonix.fr/archive/v-33-01/install_cloonix
-         ./install_depends run
-         ./install_cloonix jessie-cloonix-33-01.tar.gz
+    wget http://cloonix.fr/bin_stored/v-35-01/jessie-cloonix-35-01.tar.gz
+    wget http://cloonix.fr/bin_stored/v-35-01/install_depends
+    wget http://cloonix.fr/bin_stored/v-35-01/install_cloonix
+    ./install_depends run
+    ./install_cloonix jessie-cloonix-35-01.tar.gz
 
   To run the pre-compiled software, the host needs a subset of the packets
-  needed for the build, the script used for the build:
-  install_depends can be launched with run as input to install the
-  sub-set needed for the run. It must be run with root privilege.
+  needed for the build, install_depends can be launched with run as input
+  to install the packages needed for the run.
+  It must be run with root privilege.
 
 
 To use the software, a virtual machine qcow2 is necessary:
 ----------------------------------------------------------
        
-         wget http://cloonix.fr/bulk_stored/jessie.qcow2.xz
-         mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
-         cd ${HOME}/cloonix_data/bulk
-         xz -d jessie.qcow2.xz
+    wget http://cloonix.fr/bulk_stored/v-35-01/jessie.qcow2.xz
+    mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
+    cd ${HOME}/cloonix_data/bulk
+    xz -d jessie.qcow2.xz
 
   After the install, download one of the virtual machines provided at
-  cloonix.fr, choose the jessie.qcow2, and put it in your "bulk" directory,
-  see in /usr/local/bin/cloonix/cloonix_config the path for the bulk
-  directory which is by default ${HOME}/cloonix_data/bulk. 
+  cloonix.fr, for example, choose the jessie.qcow2, and put it in your
+  "bulk" directory, see in /usr/local/bin/cloonix/cloonix_config the
+  path for the bulk directory which is by default: 
+  ${HOME}/cloonix_data/bulk. 
   
 Use a demo script to begin using cloonix:
 -----------------------------------------
 
-         wget http://cloonix.fr/demo_stored/ping.sh
-         chmod +x ping.sh 
-         ./ping.sh
+    wget http://cloonix.fr/demo_stored/v-35-01/ping.sh
+    chmod +x ping.sh 
+    ./ping.sh
 
   Download one of the demo scripts provided at cloonix.fr, choose the 
   "ping.sh" script because it is the simplest one and launch it.
