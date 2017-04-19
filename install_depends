@@ -191,6 +191,7 @@ fi
 case "$name" in
   "Debian" | "Ubuntu")
     printf "\n\tInstall tool is apt-get.\n\n"
+    apt-get --assume-yes update
     if [ $depends_build = 1 ]; then
       fct_build_get_debian_packages
     else
@@ -199,6 +200,7 @@ case "$name" in
   ;;
   "CentOS")
     printf "\n\tInstall tool is yum.\n\n"
+    yum update -y
     if [ $depends_build = 1 ]; then
       fct_build_get_centos_packages
     else
@@ -207,6 +209,7 @@ case "$name" in
   ;;
   "Fedora")
     printf "\n\tInstall tool is dnf.\n\n"
+    dnf update -y
     if [ $depends_build = 1 ]; then
       fct_build_get_fedora_packages
     else
@@ -215,6 +218,7 @@ case "$name" in
   ;;
   "openSUSE")
     printf "\n\tInstall tool is zypper.\n\n"
+    zypper update -y
     if [ $depends_build = 1 ]; then
       fct_build_get_opensuse_packages
     else
@@ -223,6 +227,7 @@ case "$name" in
   ;;
   "Arch")
     printf "\n\tInstall tool is pacman.\n\n"
+    pacman -Syu
     if [ $depends_build = 1 ]; then
       fct_build_get_arch_packages
     else
