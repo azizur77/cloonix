@@ -37,8 +37,12 @@ Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
     wget http://cloonix.fr/bin_stored/v-35-01/jessie-cloonix-35-01.tar.gz
-    wget http://cloonix.fr/bin_stored/v-35-01/install_depends
-    wget http://cloonix.fr/bin_stored/v-35-01/install_cloonix
+    wget http://cloonix.fr/bin_stored/v-35-01/install_depends.gz
+    wget http://cloonix.fr/bin_stored/v-35-01/install_cloonix.gz
+    gunzip install_depends.gz
+    gunzip install_cloonix.gz
+    chmod +x install_depends
+    chmod +x install_cloonix
     ./install_depends run
     ./install_cloonix jessie-cloonix-35-01.tar.gz
 
