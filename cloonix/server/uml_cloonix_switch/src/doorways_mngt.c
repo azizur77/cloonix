@@ -181,7 +181,10 @@ void doors_recv_event(int llid, int tid, char *name, char *line)
     stats_counters_sysinfo_update_df(name,line+strlen(AGENT_SYSINFO_DF)+1);
     }
   else if (!strcmp(line, PING_OK))
+    {
+    arm_utils_finish_vm_init(name, 1);
     qhvc0_event_backdoor(name, backdoor_evt_ping_ok);
+    }
   else if (!strcmp(line, PING_KO))
     qhvc0_event_backdoor(name, backdoor_evt_ping_ko);
   else if (sscanf(line, REBOOT_REQUEST, &job_idx) == 1)
