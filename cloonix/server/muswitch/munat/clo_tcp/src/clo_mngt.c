@@ -206,6 +206,8 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
         else
           KERR("DROP TOLOOKINTO %d", low->datalen);
         }
+      if ((low->flags & TH_FIN) ==  TH_FIN)
+        clo->recv_next += 1;
       result = 0;
       }
     else 
