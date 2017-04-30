@@ -308,7 +308,11 @@ static void local_rx_data_purge(t_clo *clo)
     cur = next;
     }
   if (res == -1)
+    {
+    clo_mngt_set_state(clo, state_closed);
+    init_closed_state_count_if_not_done(clo, 2, __LINE__);
     break_of_com_kill_both_sides(clo, __LINE__);
+    }
 }
 /*---------------------------------------------------------------------------*/
 
@@ -321,7 +325,9 @@ static void try_send_data2low(t_clo *clo)
     if (!cur->count_250ms) 
       {
       if (!clo_mngt_authorised_to_send_nexttx(clo))
+        {
         break;
+        }
       local_send_data_to_low(clo, cur, 1);
       }
     else
@@ -362,12 +368,14 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
       result = error_not_established;
     else
       {
+      clo_mngt_high_input(clo, hlen, hdata);
       if (!clo_mngt_authorised_to_send_nexttx(clo))
+        {
         result = error_not_authorized;
+        }
       else
         {
         result = error_none;
-        clo_mngt_high_input(clo, hlen, hdata);
         try_send_data2low(clo);
         }
       }
