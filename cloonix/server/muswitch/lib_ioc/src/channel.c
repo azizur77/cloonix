@@ -256,9 +256,13 @@ void channel_rx_local_flow_ctrl(void *ptr, int llid, int stop)
   if (cidx)
     {
     if (stop)
+      {
       ioc_ctx->g_channel[cidx].red_to_stop_reading = 1;
+      }
     else
+      {
       ioc_ctx->g_channel[cidx].red_to_stop_reading = 0;
+      }
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -289,9 +293,13 @@ void channel_tx_local_flow_ctrl(void *ptr, int llid, int stop)
   if (cidx)
     {
     if (stop)
+      {
       ioc_ctx->g_channel[cidx].red_to_stop_writing = 1;
+      }
     else
+      {
       ioc_ctx->g_channel[cidx].red_to_stop_writing = 0;
+      }
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -560,7 +568,9 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
     if (ioc_ctx->g_channel[cidx].red_to_stop_writing == 0)
       (*evt) |= EPOLLOUT; 
     else
+      {
       blkd_stop_tx_counter_increment((void *) all_ctx, llid);
+      }
     }
   switch (our_mutype)
     {
@@ -569,7 +579,9 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
       if (max_tx_queued < MAX_GLOB_BLKD_QUEUED_BYTES/2) 
         (*evt) |= EPOLLIN;
       else
+        {
         blkd_stop_rx_counter_increment((void *) all_ctx, llid);
+        }
       break;
     case musat_type_eth:
     case musat_type_tap:
@@ -582,7 +594,9 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
       if (ioc_ctx->g_channel[cidx].red_to_stop_reading == 0)
         (*evt) |= EPOLLIN;
       else
+        {
         blkd_stop_rx_counter_increment((void *) all_ctx, llid);
+        }
       break;
     default:
       KOUT("%d", our_mutype);

@@ -360,7 +360,10 @@ static int group_read_sock_unix(void *ptr, t_blkd_fifo_rx *pool,
       trig_dist_flow_control(ptr, pool, llid);
     }
   if (pool->rx_queued_bytes > MAX_GLOB_BLKD_QUEUED_BYTES/2)
+    {
+    KERR(" ");
     read_state = read_state_drop;
+    }
   len_max = group->len_data_max - group->len_data_read;
   buf_rx = group->head_data + group->len_data_read;
   if (len_max <= 0)

@@ -910,7 +910,9 @@ int blkd_get_rank(void *ptr, int llid, char *name)
 void blkd_stop_tx_counter_increment(void *ptr, int llid)
 {
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
-  if (cur)
+  if (!cur)
+    KERR(" ");
+  else
     {
     cur->fifo_tx.slot_stop[cur->fifo_tx.current_slot] += 1;
     }
@@ -938,6 +940,7 @@ void blkd_drop_rx_counter_increment(void *ptr, int llid, int val)
     KERR(" ");
   else
     {
+    KERR("INC DROP RX");
     cur->report_item.drop_rx += val;
     }
 }

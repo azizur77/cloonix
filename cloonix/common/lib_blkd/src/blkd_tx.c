@@ -214,6 +214,7 @@ int blkd_tx_fifo_alloc(void *ptr, t_blkd_fifo_tx *pool, t_blkd *blkd)
   if ((pool->tx_queued_bytes > MAX_GLOB_BLKD_QUEUED_BYTES/2) ||
       (pool->put == pool->get))
     {
+    KERR(" ");
     if (blkd->countref == 0)
       blkd_free(ptr, blkd);
     }
