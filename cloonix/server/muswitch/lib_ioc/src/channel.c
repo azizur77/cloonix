@@ -568,22 +568,11 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
     if (ioc_ctx->g_channel[cidx].red_to_stop_writing == 0)
       (*evt) |= EPOLLOUT; 
     else
-      {
       blkd_stop_tx_counter_increment((void *) all_ctx, llid);
-      }
     }
   switch (our_mutype)
     {
     case mulan_type:
-      get_max_tx_rx_queues(all_ctx, llid, &max_tx_queued, &max_rx_queued);
-      if (max_tx_queued < MAX_GLOB_BLKD_QUEUED_BYTES/2) 
-        (*evt) |= EPOLLIN;
-      else
-        {
-        blkd_stop_rx_counter_increment((void *) all_ctx, llid);
-        }
-      break;
-    case musat_type_eth:
     case musat_type_tap:
     case musat_type_wif:
     case musat_type_raw:
@@ -591,12 +580,18 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
     case musat_type_c2c:
     case musat_type_nat:
     case musat_type_a2b:
+      get_max_tx_rx_queues(all_ctx, llid, &max_tx_queued, &max_rx_queued);
+      if ((max_tx_queued < MAX_GLOB_BLKD_QUEUED_BYTES/2) && 
+          (ioc_ctx->g_channel[cidx].red_to_stop_reading == 0))
+        (*evt) |= EPOLLIN;
+      else
+        blkd_stop_rx_counter_increment((void *) all_ctx, llid);
+      break;
+    case musat_type_eth:
       if (ioc_ctx->g_channel[cidx].red_to_stop_reading == 0)
         (*evt) |= EPOLLIN;
       else
-        {
         blkd_stop_rx_counter_increment((void *) all_ctx, llid);
-        }
       break;
     default:
       KOUT("%d", our_mutype);

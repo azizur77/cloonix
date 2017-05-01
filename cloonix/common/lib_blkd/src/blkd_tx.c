@@ -211,10 +211,11 @@ int blkd_tx_fifo_alloc(void *ptr, t_blkd_fifo_tx *pool, t_blkd *blkd)
     { 
     trig_dist_flow_control(ptr);
     }
-  if ((pool->tx_queued_bytes > MAX_GLOB_BLKD_QUEUED_BYTES/2) ||
+  if ((pool->tx_queued_bytes > (3*MAX_GLOB_BLKD_QUEUED_BYTES)/4) ||
       (pool->put == pool->get))
     {
-    KERR(" ");
+    KERR("%d %d %d %d", pool->tx_queued_bytes, pool->put, pool->get,
+                        (3*MAX_GLOB_BLKD_QUEUED_BYTES)/4);
     if (blkd->countref == 0)
       blkd_free(ptr, blkd);
     }
