@@ -32,9 +32,21 @@
 #define MAX_ERR_LEN 400
 #define MAX_RESP_LEN 500
 #define MASK_ASYNC_TX_POOL 0x7FF
+#define MASK_TX_ELEM_FREE_POOL 0x3FF
 #define MAX_USOCK_RANKS 200 
 /*--------------------------------------------------------------------------*/
 struct t_all_ctx;
+/*--------------------------------------------------------------------------*/
+typedef struct t_tx_elem_free_pool
+{
+  uint32_t volatile pool_lock;
+  int pool_put;
+  int pool_get;
+  int pool_qty;
+  void *elem[MASK_TX_ELEM_FREE_POOL + 1];
+  void *q[MASK_TX_ELEM_FREE_POOL + 1];
+  void *vdev[MASK_TX_ELEM_FREE_POOL + 1];
+} t_tx_elem_free_pool;
 /*--------------------------------------------------------------------------*/
 typedef struct t_tx_sock_async_pool
 {
@@ -118,6 +130,8 @@ typedef struct t_all_ctx
 
   t_traf_sat g_traf[2];
 
+  void *bh_trigger;
+  t_tx_elem_free_pool tx_elem_free_pool;
   t_tx_sock_async_pool tx_pool;
   void *qemu_mueth_state;
   int qemu_guest_hdr_len;
