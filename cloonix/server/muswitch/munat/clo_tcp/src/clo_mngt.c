@@ -211,11 +211,14 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
       result = 0;
       }
     else 
+      {
       KERR("%d %d %d %d", 
            (adjusted_recv_next <= adjusted_seqno),
            (adjusted_seqno <= adjusted_recv_next + 2*TCP_WND),
            (adjusted_recv_next <= adjusted_seqno + low->tcplen),
            (adjusted_seqno+low->tcplen-1 <= adjusted_recv_next+2*TCP_WND));
+      KERR("%d %d %d %d", adjusted_seqno, adjusted_recv_next, 2*TCP_WND, low->tcplen);
+      }
     }
   return result;
 }
@@ -260,14 +263,17 @@ t_clo *clo_mngt_create_tcp(t_tcp_id *tcpid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void clo_mngt_delete_tcp(t_clo *clo)
+int clo_mngt_delete_tcp(t_clo *clo)
 {
+  int result = 0;
   if (clo->state != state_closed)
     KOUT(" ");
   if (util_extract_clo(&head_clo, clo))
     {
+    result = -1;
     KERR(" ");
     }
+  return result;
 }
 /*---------------------------------------------------------------------------*/
 

@@ -754,7 +754,12 @@ static void clo_clean_closed(void)
       {
       cur->closed_state_count -= 1;
       if (cur->closed_state_count == 0) 
-        clo_mngt_delete_tcp(cur);
+        {
+        if (clo_mngt_delete_tcp(cur))
+          {
+          break_of_com_kill_both_sides(cur, __LINE__);
+          }
+        }
       }
     cur = next;
     }

@@ -20,7 +20,7 @@ t_clo *clo_mngt_find(t_tcp_id *tcpid);
 int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted);
 void clo_mngt_high_input(t_clo *clo, int hlen, u8_t *hdata);
 t_clo *clo_mngt_create_tcp(t_tcp_id *tcpid);
-void clo_mngt_delete_tcp(t_clo *clo);
+int clo_mngt_delete_tcp(t_clo *clo);
 void clo_mngt_set_state(t_clo *clo, int state);
 int clo_mngt_get_state(t_clo *clo);
 u32_t get_g_250ms_count(void);
