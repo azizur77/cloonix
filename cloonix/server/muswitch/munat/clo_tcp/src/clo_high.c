@@ -311,7 +311,6 @@ static void local_rx_data_purge(t_clo *clo)
     {
     clo_mngt_set_state(clo, state_closed);
     init_closed_state_count_if_not_done(clo, 2, __LINE__);
-    break_of_com_kill_both_sides(clo, __LINE__);
     }
 }
 /*---------------------------------------------------------------------------*/
