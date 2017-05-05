@@ -141,7 +141,7 @@ static void local_send_reset_state_closed(t_clo *clo)
   clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
   util_send_reset(&(clo->tcpid), ackno, seqno, loc_wnd, __FUNCTION__, __LINE__);
   clo_mngt_set_state(clo, state_closed);
-  init_closed_state_count_if_not_done(clo, 2, __LINE__);
+  init_closed_state_count_if_not_done(clo, 20, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -276,8 +276,7 @@ static void async_fct_call(int num_fct, int id, t_tcp_id *tcpid,
 /*****************************************************************************/
 static void break_of_com_kill_both_sides(t_clo *clo, int line)
 {
-  if (line)
-    KERR("TRAP BREAK %d", line);
+  KERR("TRAP BREAK %d", line);
   async_fct_call(num_fct_high_close_rx_send_rst, 
                  clo->id_tcpid, &(clo->tcpid), 0, NULL);
 }
@@ -310,7 +309,7 @@ static void local_rx_data_purge(t_clo *clo)
   if (res == -1)
     {
     clo_mngt_set_state(clo, state_closed);
-    init_closed_state_count_if_not_done(clo, 2, __LINE__);
+    init_closed_state_count_if_not_done(clo, 20, __LINE__);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -440,7 +439,7 @@ int clo_high_close_tx(t_tcp_id *tcpid)
       case state_closed:
       case state_fin_wait_last_ack:
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2, __LINE__);
+        init_closed_state_count_if_not_done(clo, 20, __LINE__);
         break;
       default:
         KOUT(" %d", state);
@@ -488,7 +487,7 @@ static void non_existing_tcp_low_input(t_tcp_id *tcpid, t_low *low,
       clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
       util_send_reset(tcpid, ackno, seqno, loc_wnd, __FUNCTION__, __LINE__);
       clo_mngt_set_state(clo, state_closed);
-      init_closed_state_count_if_not_done(clo, 2, __LINE__);
+      init_closed_state_count_if_not_done(clo, 20, __LINE__);
       }
     }
   else
@@ -526,7 +525,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         util_send_reset(&(clo->tcpid),ackno,seqno,loc_wnd,
                         __FUNCTION__,__LINE__);
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2, __LINE__);
+        init_closed_state_count_if_not_done(clo, 20, __LINE__);
         }
       break;
     case state_first_syn_sent:
@@ -546,7 +545,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid),
                        0, NULL);
         clo_mngt_set_state(clo, state_closed);
-        init_closed_state_count_if_not_done(clo, 2, __LINE__);
+        init_closed_state_count_if_not_done(clo, 20, __LINE__);
         }
       break;
 
@@ -640,7 +639,7 @@ void clo_low_input(int mac_len, u8_t *mac_data)
           async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 
                          0, NULL);
           clo_mngt_set_state(clo, state_closed);
-          init_closed_state_count_if_not_done(clo, 2, __LINE__);
+          init_closed_state_count_if_not_done(clo, 20, __LINE__);
           }
         else
           {
