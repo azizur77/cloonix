@@ -151,6 +151,7 @@ static void ajust(t_clo *clo, t_low *low,
 int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
 {
   int result = -1;
+  int adjusted_tcplen;
   u32_t adjusted_send_unack, adjusted_send_next, adjusted_recv_next,
         adjusted_seqno, adjusted_ackno;
   *inserted = 0;
@@ -174,10 +175,14 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
     {
     ajust(clo, low, &adjusted_send_unack, &adjusted_send_next,
           &adjusted_recv_next, &adjusted_seqno, &adjusted_ackno); 
+    if ((low->flags & TH_FIN) ==  TH_FIN)
+      adjusted_tcplen = low->tcplen + 1;
+    else
+      adjusted_tcplen = low->tcplen;
     if (((adjusted_recv_next <= adjusted_seqno) &&
          (adjusted_seqno <= adjusted_recv_next + 2*TCP_WND)) ||
-        ((adjusted_recv_next <= adjusted_seqno + low->tcplen) &&
-         adjusted_seqno+low->tcplen-1 <= adjusted_recv_next+2*TCP_WND)) 
+        ((adjusted_recv_next <= adjusted_seqno + adjusted_tcplen) &&
+         adjusted_seqno+adjusted_tcplen-1 <= adjusted_recv_next+2*TCP_WND)) 
       {
       if (low->flags & TH_ACK)
         {
@@ -194,7 +199,7 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
             util_insert_ldata(&(clo->head_ldata), low);
             *inserted = 1;
             clo->have_to_ack = 1;
-            clo->recv_next = low->seqno + low->tcplen;
+            clo->recv_next = low->seqno + adjusted_tcplen;
             clo->dist_wnd = low->wnd;
             }
           else
@@ -206,8 +211,6 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
         else
           KERR("DROP TOLOOKINTO %d", low->datalen);
         }
-      if ((low->flags & TH_FIN) ==  TH_FIN)
-        clo->recv_next += 1;
       result = 0;
       }
     else 
@@ -215,9 +218,9 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
       KERR("%d %d %d %d", 
            (adjusted_recv_next <= adjusted_seqno),
            (adjusted_seqno <= adjusted_recv_next + 2*TCP_WND),
-           (adjusted_recv_next <= adjusted_seqno + low->tcplen),
-           (adjusted_seqno+low->tcplen-1 <= adjusted_recv_next+2*TCP_WND));
-      KERR("%d %d %d %d", adjusted_seqno, adjusted_recv_next, 2*TCP_WND, low->tcplen);
+           (adjusted_recv_next <= adjusted_seqno + adjusted_tcplen),
+           (adjusted_seqno+adjusted_tcplen-1 <= adjusted_recv_next+2*TCP_WND));
+      KERR("%d %d %d %d", adjusted_seqno, adjusted_recv_next, 2*TCP_WND, adjusted_tcplen);
       }
     }
   return result;
