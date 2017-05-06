@@ -272,8 +272,7 @@ t_clo *clo_mngt_create_tcp(t_tcp_id *tcpid)
 int clo_mngt_delete_tcp(t_clo *clo)
 {
   int result = 0;
-  if (clo->state != state_closed)
-    KOUT(" ");
+  clo_mngt_set_state(clo, state_closed);
   if (util_extract_clo(&head_clo, clo))
     {
     result = -1;
