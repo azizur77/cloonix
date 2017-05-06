@@ -200,9 +200,19 @@ static void timed_rx_from_out(long delta_ns, void *data)
     {
     if (clo->tcpid.llid != llid)
       KOUT(" ");
-    do_rx_from_out(clo, fd);
-    channel_unset_red_to_stop_reading(get_all_ctx(), llid);
-    free(data);
+    if (clo->tcpid.llid_unlocked)
+      {
+      channel_unset_red_to_stop_reading(get_all_ctx(), llid);
+      do_rx_from_out(clo, fd);
+      free(data);
+      }
+    else
+      {
+      KERR("NOT READY YET");
+      channel_set_red_to_stop_reading(get_all_ctx(), llid);
+      clownix_real_timeout_add(50000000, timed_rx_from_out, 
+                               (void *) ptr_llid_fd, NULL);
+      }
     }
 }
 /*---------------------------------------------------------------------------*/

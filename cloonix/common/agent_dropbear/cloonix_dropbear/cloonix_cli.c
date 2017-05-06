@@ -343,7 +343,6 @@ static void xauth_extraction(char *tree,char *cookie_format, char *cookie_key)
              "0000NO_X11_FORWARDING_COOKIE");
     snprintf(cookie_key, MAX_XAUTH_COOKIE-1,
              "NO_X11_FORWARDING_COOKIE");
-    KERR("NO_X11_FORWARDING_COOKIE");
     }
 }
 /*--------------------------------------------------------------------------*/
