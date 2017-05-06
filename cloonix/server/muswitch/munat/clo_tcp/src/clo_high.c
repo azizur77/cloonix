@@ -494,8 +494,11 @@ static void non_existing_tcp_low_input(t_tcp_id *tcpid, t_low *low,
     {
     if ((!(low->flags & TH_RST)) && (low->tcplen != 0))
       {
-      KERR(" ");
-      ackno = low->seqno + low->tcplen;
+      KERR("%X  %d ", low->flags, low->tcplen);
+      if ((low->flags & TH_FIN) ==  TH_FIN)
+        ackno = low->seqno + low->tcplen+1;
+      else
+        ackno = low->seqno + low->tcplen;
       seqno = low->ackno;
       util_send_reset(tcpid, ackno, seqno, TCP_WND, __FUNCTION__, __LINE__);
       }
