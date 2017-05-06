@@ -100,8 +100,6 @@ static int timed_send_ack(t_clo *clo)
     clo->send_ack_active = 1;
     clownix_real_timeout_add(1, send_ack_cb, (void *) time_tcpid, NULL);
     }
-  else
-    KERR(" ");
   return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -306,8 +304,6 @@ static void local_rx_data_purge(t_clo *clo)
     util_extract_ldata(&(clo->head_ldata), cur);
     cur = next;
     }
-  if (res == -1)
-    KERR(" APPLI SIDE CLOSED");
 }
 /*---------------------------------------------------------------------------*/
 
@@ -491,13 +487,16 @@ static void non_existing_tcp_low_input(t_tcp_id *tcpid, t_low *low,
     {
     if ((!(low->flags & TH_RST)) && (low->tcplen != 0))
       {
-      KERR("%X  %d ", low->flags, low->tcplen);
-      if ((low->flags & TH_FIN) ==  TH_FIN)
-        ackno = low->seqno + low->tcplen+1;
-      else
-        ackno = low->seqno + low->tcplen;
-      seqno = low->ackno;
-      util_send_reset(tcpid, ackno, seqno, TCP_WND, __FUNCTION__, __LINE__);
+      if ((!(low->flags & TH_FIN)) && (low->tcplen != 1))
+        {
+        KERR("%X  %d ", low->flags, low->tcplen);
+        if ((low->flags & TH_FIN) ==  TH_FIN)
+          ackno = low->seqno + low->tcplen+1;
+        else
+          ackno = low->seqno + low->tcplen;
+        seqno = low->ackno;
+        util_send_reset(tcpid, ackno, seqno, TCP_WND, __FUNCTION__, __LINE__);
+        }
       }
     }
 }
