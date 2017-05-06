@@ -358,7 +358,8 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
   if ((state != state_established) && 
       (state != state_fin_wait1) && 
       (state != state_fin_wait_last_ack) && 
-      (state != state_fin_wait2))
+      (state != state_fin_wait2) &&
+      (state != state_closed))
     {
     KERR("%d", state);
     result = error_not_established;
@@ -366,14 +367,17 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
   else
     {
     clo_mngt_high_input(clo, hlen, hdata);
-    if (!clo_mngt_authorised_to_send_nexttx(clo))
+    if (state != state_closed)
       {
-      result = error_not_authorized;
-      }
-    else
-      {
-      result = error_none;
-      try_send_data2low(clo);
+      if (!clo_mngt_authorised_to_send_nexttx(clo))
+        {
+        result = error_not_authorized;
+        }
+      else
+        {
+        result = error_none;
+        try_send_data2low(clo);
+        }
       }
     }
   return result;
