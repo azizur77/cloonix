@@ -766,7 +766,7 @@ static void clo_clean_closed(void)
         if (clo_mngt_delete_tcp(cur))
           {
           async_fct_call(num_fct_high_close_rx_send_rst, 
-                         clo->id_tcpid, &(clo->tcpid), 0, NULL);
+                         cur->id_tcpid, &(cur->tcpid), 0, NULL);
           }
         }
       }
