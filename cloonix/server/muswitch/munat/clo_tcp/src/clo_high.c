@@ -65,8 +65,6 @@ static void ackno_send(t_clo *clo, int force)
   clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
   if ((force) || (ackno != clo->ackno_sent))
     {
-    if (ackno == clo->ackno_sent)
-      KERR(" ");
     util_send_ack(&(clo->tcpid), ackno, seqno, loc_wnd);
     clo->ackno_sent = ackno;
     }
