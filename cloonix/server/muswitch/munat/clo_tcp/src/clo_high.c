@@ -307,10 +307,7 @@ static void local_rx_data_purge(t_clo *clo)
     cur = next;
     }
   if (res == -1)
-    {
-    clo_mngt_set_state(clo, state_closed);
-    init_closed_state_count_if_not_done(clo, 20, __LINE__);
-    }
+    KERR(" APPLI SIDE CLOSED");
 }
 /*---------------------------------------------------------------------------*/
 
