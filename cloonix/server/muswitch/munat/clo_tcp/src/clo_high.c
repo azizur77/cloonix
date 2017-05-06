@@ -351,22 +351,29 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
 {
   int result = error_not_established;
   t_clo *clo = clo_mngt_find(tcpid);
-  if (clo)
+  int state;
+  if (!clo)
+    KOUT(" ");
+  state = clo_mngt_get_state(clo);
+  if ((state != state_established) && 
+      (state != state_fin_wait1) && 
+      (state != state_fin_wait_last_ack) && 
+      (state != state_fin_wait2))
     {
-    if (clo_mngt_get_state(clo) != state_established)
-      result = error_not_established;
+    KERR("%d", state);
+    result = error_not_established;
+    }
+  else
+    {
+    clo_mngt_high_input(clo, hlen, hdata);
+    if (!clo_mngt_authorised_to_send_nexttx(clo))
+      {
+      result = error_not_authorized;
+      }
     else
       {
-      clo_mngt_high_input(clo, hlen, hdata);
-      if (!clo_mngt_authorised_to_send_nexttx(clo))
-        {
-        result = error_not_authorized;
-        }
-      else
-        {
-        result = error_none;
-        try_send_data2low(clo);
-        }
+      result = error_none;
+      try_send_data2low(clo);
       }
     }
   return result;
