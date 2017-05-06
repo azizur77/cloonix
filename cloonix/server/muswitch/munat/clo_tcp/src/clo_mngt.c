@@ -192,7 +192,10 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
         }
       if (low->datalen)
         {
-        if (clo->state == state_established)
+        if ((clo->state == state_established) ||
+            (clo->state == state_fin_wait1) || 
+            (clo->state == state_fin_wait_last_ack) || 
+            (clo->state == state_fin_wait2))
           {
           if (low->seqno == clo->recv_next)
             {
@@ -274,7 +277,6 @@ int clo_mngt_delete_tcp(t_clo *clo)
   if (util_extract_clo(&head_clo, clo))
     {
     result = -1;
-    KERR(" ");
     }
   return result;
 }

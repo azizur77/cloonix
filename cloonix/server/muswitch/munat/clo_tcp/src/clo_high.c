@@ -294,8 +294,11 @@ static void local_rx_data_purge(t_clo *clo)
       }
     }
   cur = clo->head_ldata;
-  if (cur)
-    KERR(" TOLOOKINTO %d", res);
+  if (res != -1)
+    {
+    if (cur)
+      KERR(" TOLOOKINTO %d", res);
+    }
   while (cur)
     {
     next = cur->next;
@@ -362,10 +365,10 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
       (state != state_closed))
     {
     KERR("%d", state);
-    result = error_not_established;
     }
   else
     {
+    result = error_none;
     clo_mngt_high_input(clo, hlen, hdata);
     if (state != state_closed)
       {
@@ -375,7 +378,6 @@ int clo_high_data_tx(t_tcp_id *tcpid, int hlen, u8_t *hdata)
         }
       else
         {
-        result = error_none;
         try_send_data2low(clo);
         }
       }
@@ -440,7 +442,6 @@ int clo_high_close_tx(t_tcp_id *tcpid)
       case state_fin_wait2:
       case state_closed:
       case state_fin_wait_last_ack:
-        clo_mngt_set_state(clo, state_closed);
         init_closed_state_count_if_not_done(clo, 20, __LINE__);
         break;
       default:
@@ -646,7 +647,6 @@ void clo_low_input(int mac_len, u8_t *mac_data)
           {
           async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 
                          0, NULL);
-          clo_mngt_set_state(clo, state_closed);
           init_closed_state_count_if_not_done(clo, 20, __LINE__);
           }
         else
@@ -765,7 +765,8 @@ static void clo_clean_closed(void)
         {
         if (clo_mngt_delete_tcp(cur))
           {
-          break_of_com_kill_both_sides(cur, __LINE__);
+          async_fct_call(num_fct_high_close_rx_send_rst, 
+                         clo->id_tcpid, &(clo->tcpid), 0, NULL);
           }
         }
       }
