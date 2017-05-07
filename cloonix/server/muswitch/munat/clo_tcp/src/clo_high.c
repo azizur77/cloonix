@@ -39,8 +39,6 @@ static t_high_close_rx  fct_high_close_rx;
 /*---------------------------------------------------------------------------*/
 enum {
   num_fct_none = 0,
-  num_fct_high_data_rx,
-  num_fct_high_synack_rx,
   num_fct_high_close_rx,
   num_fct_high_close_rx_send_rst,
   num_fct_send_finack,
@@ -193,18 +191,7 @@ static void timer_fct_call(t_all_ctx *all_ctx, void *param)
   u16_t loc_wnd, dist_wnd;
   switch(fct->num_fct)
     {
-    case num_fct_high_data_rx:
-      if ((clo) && (clo->id_tcpid == fct->id_tcpid))
-        fct_high_data_rx(&(fct->tcpid), fct->len, fct->data);
-      else
-        KERR(" ");
-      break;
-    case num_fct_high_synack_rx:
-      if ((clo) && (clo->id_tcpid == fct->id_tcpid))
-        fct_high_synack_rx(&(fct->tcpid));
-      else
-        KERR(" ");
-      break;
+
     case num_fct_high_close_rx:
       fct_high_close_rx(&(fct->tcpid));
       break;
@@ -289,8 +276,7 @@ static void local_rx_data_purge(t_clo *clo)
     {
     if (!clo_mngt_get_new_rxdata(clo, &len, &data))
       {
-      async_fct_call(num_fct_high_data_rx, clo->id_tcpid, &(clo->tcpid), 
-                     len, data);
+      fct_high_data_rx(&(clo->tcpid), len, data);
       }
     }
   cur = clo->head_ldata;
@@ -545,8 +531,9 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
       if ((low->flags & (TH_SYN | TH_ACK)) == (TH_SYN | TH_ACK))
         {
         clo_mngt_set_state(clo, state_established);
-        async_fct_call(num_fct_high_synack_rx, clo->id_tcpid, &(clo->tcpid), 
-                       0, NULL);
+        fct_high_synack_rx(&(clo->tcpid));
+//        async_fct_call(num_fct_high_synack_rx, clo->id_tcpid, &(clo->tcpid), 
+//                       0, NULL);
         result = 0;
         }
       else
@@ -669,8 +656,7 @@ void clo_low_input(int mac_len, u8_t *mac_data)
                 change = clo_mngt_adjust_loc_wnd(clo, TCP_WND);
                 if (!clo_mngt_get_new_rxdata(clo, &len, &data))
                   {
-                  async_fct_call(num_fct_high_data_rx, clo->id_tcpid, 
-                                 &(clo->tcpid), len, data);
+                  fct_high_data_rx(&(clo->tcpid), len, data);
                   }
                 }
               else if (res == 0)
@@ -731,12 +717,9 @@ static void receive_all_local_data(void)
         {
         if (!clo_mngt_get_new_rxdata(cur, &len, &data))
           {
-          async_fct_call(num_fct_high_data_rx, cur->id_tcpid, &(cur->tcpid),
-                         len, data);
+          fct_high_data_rx(&(cur->tcpid), len, data);
           }
         }
-      else  
-        KERR("%d TOLOOKINTO 3 is possible", clo_mngt_get_state(cur));
       }
     cur = cur->next;
     }
