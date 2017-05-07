@@ -440,6 +440,7 @@ int clo_high_close_tx(t_tcp_id *tcpid)
         break;
       case state_fin_wait1:
       case state_fin_wait2:
+        init_closed_state_count_if_not_done(clo, 20, __LINE__);
         break;
       case state_closed:
       case state_fin_wait_last_ack:
