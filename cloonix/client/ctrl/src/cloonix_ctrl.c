@@ -548,19 +548,9 @@ static void fix_ld_library_path(char *cloonix_tree)
 {
   char ld_lib[MAX_PATH_LEN];
   char tmux[MAX_PATH_LEN];
-  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", cloonix_tree);
-  if (file_exists_exec(tmux))
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1, 
-             "%s/common/spice/spice_lib:%s/gtk3/lib",
-             cloonix_tree, cloonix_tree);
-    }
-  else
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1, 
-             "%s/common/spice/spice_lib",
-             cloonix_tree);
-    }
+  snprintf(ld_lib, MAX_PATH_LEN-1, 
+           "%s/common/spice/spice_lib",
+           cloonix_tree);
   setenv("LD_LIBRARY_PATH", ld_lib, 1);
 }
 /*--------------------------------------------------------------------------*/

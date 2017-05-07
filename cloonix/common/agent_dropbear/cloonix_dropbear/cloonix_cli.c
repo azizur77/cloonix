@@ -174,18 +174,14 @@ static char *get_xauth_bin(char *tree)
 {
   static char path[MAX_BIN_PATH_LEN];
   memset(path, 0, MAX_BIN_PATH_LEN);
-  sprintf(path, "%s/gtk3/bin/xauth", tree);
-  if (access(path, F_OK))
-    {
-    if (!access(XAUTH_BIN2, F_OK))
-      strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
-    else if (!access(XAUTH_BIN3, F_OK))
-      strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
-    else if (!access(XAUTH_BIN4, F_OK))
-      strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
-    else
-      strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
-    }
+  if (!access(XAUTH_BIN2, F_OK))
+    strncpy(path, XAUTH_BIN2, MAX_BIN_PATH_LEN-1);
+  else if (!access(XAUTH_BIN3, F_OK))
+    strncpy(path, XAUTH_BIN3, MAX_BIN_PATH_LEN-1);
+  else if (!access(XAUTH_BIN4, F_OK))
+    strncpy(path, XAUTH_BIN4, MAX_BIN_PATH_LEN-1);
+  else
+    strncpy(path, "xauth", MAX_BIN_PATH_LEN-1);
   return path;
 }
 /*--------------------------------------------------------------------------*/

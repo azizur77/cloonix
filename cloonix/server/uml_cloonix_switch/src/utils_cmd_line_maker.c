@@ -294,9 +294,7 @@ char *utils_get_muswitch_traf_dir(void)
 char *utils_get_tmux_bin_path(void)
 {
   static char tmux[MAX_PATH_LEN];
-  sprintf(tmux, "%s/gtk3/bin/tmux", cfg_get_bin_dir());
-  if (!file_exists(tmux, F_OK))
-    sprintf(tmux, "/usr/bin/tmux");
+  sprintf(tmux, "/usr/bin/tmux");
   return tmux;
 }
 /*---------------------------------------------------------------------------*/
@@ -678,9 +676,7 @@ char *utils_get_uname_r_mod_path(void)
 char *util_get_genisoimage(void)
 {
   static char path[MAX_PATH_LEN];
-  snprintf(path, MAX_PATH_LEN-1,"%s/gtk3/bin/genisoimage", cfg_get_bin_dir());
-  if (!file_exists(path, X_OK))
-    snprintf(path, MAX_PATH_LEN-1, "/usr/bin/genisoimage");
+  snprintf(path, MAX_PATH_LEN-1, "/usr/bin/genisoimage");
   return path;
 }
 /*---------------------------------------------------------------------------*/

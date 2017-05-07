@@ -20,23 +20,9 @@ mv spice_client ${TARGET}
 
 SPICE_LIB=/usr/local/bin/cloonix/common/spice/spice_lib
 
+cd ${TARGET}/spice_client
+export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
 
-PREFIX=/usr/local/bin/cloonix/gtk3
-if [ -e ${PREFIX} ]; then
-  cd ${TARGET}/spice_client/po
-  rm -f Makefile.in.in
-  ln -s /usr/local/bin/cloonix/gtk3/share/intltool/Makefile.in.in Makefile.in.in
-  cd ${TARGET}/spice_client
-  export PATH="${PREFIX}/bin:$PATH"
-  export C_INCLUDE_PATH="${PREFIX}/include"
-  export CFLAGS="-I${PREFIX}/include"
-  export LDFLAGS="-L${PREFIX}/lib"
-  export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
-  export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
-else
-  cd ${TARGET}/spice_client
-  export PKG_CONFIG_PATH=${TARGET}/pkgconfig 
-fi
 set +e
   export NOCONFIGURE=yes
   ./autogen.sh 

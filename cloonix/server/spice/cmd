@@ -17,21 +17,9 @@ tar xvf spice.tar.gz
 mv spice spice_server
 rm -rf ${TARGET}/spice_server
 mv spice_server ${TARGET}
-
 cd ${TARGET}/spice_server
+export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 
-
-PREFIX=/usr/local/bin/cloonix/gtk3
-if [ -e ${PREFIX} ]; then
-  export PATH="${PREFIX}/bin:$PATH"
-  export C_INCLUDE_PATH="${PREFIX}/include"
-  export CFLAGS="-I${PREFIX}/include"
-  export LDFLAGS="-L${PREFIX}/lib -lm"
-  export PKG_CONFIG_PATH="${TARGET}/pkgconfig:${PREFIX}/lib/pkgconfig"
-  export PKG_CONFIG_LIBDIR=$PKG_CONFIG_PATH
-else
-  export PKG_CONFIG_PATH=${TARGET}/pkgconfig
-fi
 set +e
   export NOCONFIGURE=yes
   ./autogen.sh

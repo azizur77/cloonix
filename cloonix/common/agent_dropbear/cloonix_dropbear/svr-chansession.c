@@ -680,15 +680,6 @@ static void execchild(struct ChanSess *chansess)
     {
     unsetenv("PATH");
     addnewvar("PATH", pth); 
-    if (chansess->cloonix_tree_dir[0])
-      {
-      snprintf(ld_lib, MAX_DROPBEAR_PATH_LEN-1, 
-               "%s/gtk3/lib", chansess->cloonix_tree_dir);
-      addnewvar("LD_LIBRARY_PATH", ld_lib); 
-      snprintf(terminfo, MAX_DROPBEAR_PATH_LEN-1, 
-               "%s/gtk3/share/terminfo", chansess->cloonix_tree_dir);
-      addnewvar("TERMINFO", terminfo); 
-      }
     addnewvar("TERM", "xterm");
     if (chansess->cloonix_display)
       addnewvar("DISPLAY", chansess->cloonix_display);

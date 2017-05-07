@@ -15,9 +15,5 @@ if [ ! -d ${CLOONIX_TREE} ]; then
   exit 1
 fi
 
-if [ -x ${CLOONIX_TREE}/gtk3/bin/tmux ]; then
-  export LD_LIBRARY_PATH="${CLOONIX_TREE}/gtk3/lib"
-fi
-
 ${CLOONIX_TREE}/client/ctrl/cloonix_ctrl $CLOONIX_CONFIG "$@"
 

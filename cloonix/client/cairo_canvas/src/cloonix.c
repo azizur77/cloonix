@@ -185,27 +185,15 @@ void cloonix_get_xvt(char *xvt)
   char xterm[MAX_PATH_LEN];
   char *tree = get_local_cloonix_tree();
   memset(xvt, 0, MAX_PATH_LEN);
-  snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/urxvt", tree);
-  if (file_exists_exec(xterm))
-    strncpy(xvt, xterm, MAX_PATH_LEN-1);
-  else
+  if (!file_exists_exec("/usr/bin/urxvt"))
     {
-    snprintf(xterm, MAX_PATH_LEN-1, "%s/gtk3/bin/xterm", tree);
-    if (file_exists_exec(xterm))
-      strncpy(xvt, xterm, MAX_PATH_LEN-1);
+    if (!file_exists_exec("/bin/xterm"))
+      KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\"\n\n");
     else
-      {
-      if (!file_exists_exec("/usr/bin/urxvt"))
-        {
-        if (!file_exists_exec("/bin/xterm"))
-          KOUT("\n\nInstall \"rxvt-unicode\" or \"xterm\"\n\n");
-        else
-          strncpy(xvt, "/bin/xterm", MAX_PATH_LEN-1);
-        }
-      else
-        strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
-      }
+      strncpy(xvt, "/bin/xterm", MAX_PATH_LEN-1);
     }
+  else
+    strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -565,10 +553,6 @@ static char **save_environ(void)
   char **environ;
   static char *environ_simple[]={lib_path, xauth, username,
                                  logname, home, display, NULL};
-  static char *environ_gtk3[]={lib_path, lib_fontpath, terminfo,  
-                               "FONTCONFIG_NAME=fonts.conf",
-                               xauth, username, logname,
-                               home, display, NULL};
   tree = get_local_cloonix_tree();
   memset(lib_path, 0, MAX_PATH_LEN);
   memset(xauth, 0, MAX_PATH_LEN);
@@ -578,30 +562,11 @@ static char **save_environ(void)
     KOUT(" ");
   if(!getenv("DISPLAY"))
     KOUT(" ");
-  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", tree);
-  if (file_exists_exec(tmux))
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib:%s/gtk3/lib", tree, tree);
-    snprintf(lib_fp, MAX_PATH_LEN-1, "%s/gtk3/etc/fonts", tree);
-    snprintf(tinfo, MAX_PATH_LEN-1, "%s/gtk3/share/terminfo", tree);
-    snprintf(terminfo, MAX_PATH_LEN-1, "TERMINFO=%s", tinfo);
-    snprintf(lib_fontpath, MAX_PATH_LEN-1, "FONTCONFIG_PATH=%s", lib_fp);
-    snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
-    setenv("LD_LIBRARY_PATH", ld_lib, 1);
-    setenv("FONTCONFIG_PATH", lib_fp, 1);
-    setenv("TERMINFO", tinfo, 1);
-    setenv("FONTCONFIG_NAME", "fonts.conf", 1);
-    environ = environ_gtk3; 
-    }
-  else
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib", tree);
-    snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
-    setenv("LD_LIBRARY_PATH", ld_lib, 1);
-    environ = environ_simple; 
-    }
+  snprintf(ld_lib, MAX_PATH_LEN-1,
+           "%s/common/spice/spice_lib", tree);
+  snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
+  setenv("LD_LIBRARY_PATH", ld_lib, 1);
+  environ = environ_simple; 
   xauthority = getenv("XAUTHORITY");
   if ((xauthority) && (!access(xauthority, W_OK)))
     snprintf(xauth, MAX_PATH_LEN-1, "XAUTHORITY=%s", xauthority);

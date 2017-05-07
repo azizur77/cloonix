@@ -189,18 +189,11 @@ static void init_local_cloonix_paths(char *curdir, char *callbin, char *conf)
     printf("\nBAD INSTALL, NOT FOUND:\n%s\n", g_cloonix_config_file);
     KOUT("%s %d", g_cloonix_config_file, err);
     }
-  snprintf(path, MAX_PATH_LEN-1, "%s/gtk3/bin/urxvt", g_cloonix_root_tree);
-  err = access(path, X_OK);
+  err = access("/usr/bin/urxvt", X_OK);
   if (!err)
-    strncpy(g_urxvt_terminal_bin, path, MAX_PATH_LEN-1);
+    strncpy(g_urxvt_terminal_bin, "/usr/bin/urxvt", MAX_PATH_LEN-1);
   else
-    { 
-    err = access("/usr/bin/urxvt", X_OK);
-    if (!err)
-      strncpy(g_urxvt_terminal_bin, "/usr/bin/urxvt", MAX_PATH_LEN-1);
-    else
-      KERR("%d", err);
-    }
+    KERR("%d", err);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -283,18 +276,8 @@ int main(int argc, char *argv[])
     KOUT(" ");
 
   init_local_cloonix_paths(current_directory, argv[0], argv[1]);
-
-  snprintf(tmux, MAX_PATH_LEN-1, "%s/gtk3/bin/tmux", g_cloonix_root_tree);
-  if (file_exists_exec(tmux))
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1, "%s/common/spice/spice_lib:%s/gtk3/lib",
-             g_cloonix_root_tree, g_cloonix_root_tree);
-    }
-  else
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1, "%s/common/spice/spice_lib",
-             g_cloonix_root_tree);
-    }
+  snprintf(ld_lib, MAX_PATH_LEN-1, "%s/common/spice/spice_lib",
+           g_cloonix_root_tree);
   setenv("LD_LIBRARY_PATH", ld_lib, 1);
 
   gtk_init(NULL, NULL);

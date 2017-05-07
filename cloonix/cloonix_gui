@@ -15,12 +15,5 @@ if [ ! -d ${CLOONIX_TREE} ]; then
   exit 1
 fi
 
-if [ -x ${CLOONIX_TREE}/gtk3/bin/tmux ]; then
-  export LD_LIBRARY_PATH="${CLOONIX_TREE}/gtk3/lib"
-  export FONTCONFIG_PATH="${CLOONIX_TREE}/gtk3/etc/fonts"
-  export FONTCONFIG_FILE="fonts.conf"
-  export TERMINFO="${CLOONIX_TREE}/gtk3/share/terminfo"
-fi
-
 ${CLOONIX_TREE}/client/cairo_canvas/cloonix_gui $CLOONIX_CONFIG "$@"
 

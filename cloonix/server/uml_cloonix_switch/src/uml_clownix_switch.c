@@ -511,9 +511,6 @@ static char **save_environ(void)
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];
   static char *environ_normal[] = { lib_path, username, home, NULL };
-  static char *environ_gtk3[] = { lib_path, username, home,
-                                  terminfo, fontconfig, 
-                                  "FONTCONFIG_NAME=fonts.conf", NULL };
   char **environ;
   memset(home, 0, MAX_PATH_LEN);
   snprintf(home, MAX_PATH_LEN-1, "HOME=%s", getenv("HOME"));
@@ -521,25 +518,9 @@ static char **save_environ(void)
   snprintf(username, MAX_NAME_LEN-1, "USER=%s", getenv("USER"));
   if (!spice_libs_exists())
     KOUT(" ");
-  if (strstr(tmux, "gtk3"))
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib:%s/gtk3/lib", 
-             cfg_get_bin_dir(), cfg_get_bin_dir());
-    snprintf(terminfo, MAX_PATH_LEN-1, 
-             "TERMINFO=%s/gtk3/share/terminfo", 
-             cfg_get_bin_dir());
-    snprintf(fontconfig, MAX_PATH_LEN-1, 
-             "FONTCONFIG_PATH=%s/gtk3/share/fonts", 
-             cfg_get_bin_dir());
-    environ = environ_gtk3;
-    }
-  else
-    {
-    snprintf(ld_lib, MAX_PATH_LEN-1,
-             "%s/common/spice/spice_lib", cfg_get_bin_dir());
-    environ = environ_normal;
-    }
+  snprintf(ld_lib, MAX_PATH_LEN-1,
+           "%s/common/spice/spice_lib", cfg_get_bin_dir());
+  environ = environ_normal;
   snprintf(lib_path, MAX_PATH_LEN-1, "LD_LIBRARY_PATH=%s", ld_lib);
   return environ;
 }

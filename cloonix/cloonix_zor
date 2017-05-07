@@ -15,13 +15,6 @@ if [ ! -d ${CLOONIX_TREE} ]; then
   exit 1
 fi
 
-if [ -x ${CLOONIX_TREE}/gtk3/bin/tmux ]; then
-  export LD_LIBRARY_PATH="${CLOONIX_TREE}/gtk3/lib"
-  export FONTCONFIG_PATH="${CLOONIX_TREE}/gtk3/etc/fonts"
-  export FONTCONFIG_FILE="fonts.conf"
-  export TERMINFO="${CLOONIX_TREE}/gtk3/share/terminfo"
-fi
-
 BIN_ZOR=${CLOONIX_TREE}/client/hyperzor/hyperzor
 $BIN_ZOR $CLOONIX_CONFIG
 

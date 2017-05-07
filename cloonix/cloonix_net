@@ -17,10 +17,6 @@ fi
 
 SWITCH_BIN=${CLOONIX_TREE}/server/uml_cloonix_switch/uml_cloonix_switch
 
-if [ -x ${CLOONIX_TREE}/gtk3/bin/tmux ]; then
-  export LD_LIBRARY_PATH="${CLOONIX_TREE}/gtk3/lib"
-fi
-
 
 ${SWITCH_BIN} $CLOONIX_CONFIG "$@"
 sleep 2
