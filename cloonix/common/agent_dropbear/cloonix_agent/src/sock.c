@@ -92,8 +92,10 @@ int sock_header_get_info(char *rx,
     *type = 0;
     *val  = 0;
     KERR("%02X %02X %02X %02X %02X %02X %02X %02X",
-         (rx[8] & 0xFF), (rx[9] & 0xFF), (rx[10] & 0xFF), (rx[11] & 0xFF),
-         (rx[12] & 0xFF), (rx[13] & 0xFF), (rx[14] & 0xFF), (rx[15] & 0xFF));
+         (unsigned int) (rx[8] & 0xFF), (unsigned int) (rx[9] & 0xFF),
+         (unsigned int) (rx[10] & 0xFF), (unsigned int) (rx[11] & 0xFF),
+         (unsigned int) (rx[12] & 0xFF), (unsigned int) (rx[13] & 0xFF),
+         (unsigned int) (rx[14] & 0xFF), (unsigned int) (rx[15] & 0xFF));
     }
 
   *nrx  = &(rx[16]);
