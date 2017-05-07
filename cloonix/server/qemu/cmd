@@ -73,7 +73,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-curl
                      --disable-fdt
                      --disable-bluez
-                     --disable-colo
                      --disable-rdma
                      --disable-vde
                      --disable-netmap
@@ -88,13 +87,13 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-bzip2
                      --disable-seccomp
                      --disable-glusterfs
-                     --disable-archipelago
                      --disable-tpm
                      --disable-libssh2
                      --disable-numa
                      --disable-tcmalloc
-                     --disable-jemalloc
-                     --disable-replication"
+                     --disable-jemalloc"
+
+#                     --disable-replication"
 
 
 ./configure  $CONFIGURATION_OPTS
