@@ -376,6 +376,16 @@ t_clo *util_insert_clo(t_clo **head, t_tcp_id *tcpid)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
+void util_silent_purge_hdata_and_ldata(t_clo *clo)
+{
+  while (clo->head_hdata)
+    util_extract_hdata(&(clo->head_hdata), clo->head_hdata);
+  while (clo->head_ldata)
+    util_extract_ldata(&(clo->head_ldata), clo->head_ldata);
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
 int util_extract_clo(t_clo **head, t_clo *clo)
 {
   int result = 0;

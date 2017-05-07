@@ -38,5 +38,6 @@ void util_send_finack(t_tcp_id *tcpid, u32_t ackno, u32_t seqno, u16_t wnd);
 void util_send_fin(t_tcp_id *tcpid, u32_t ackno, u32_t seqno, u16_t wnd);
 void util_send_data(t_tcp_id *tcpid, u32_t ackno, u32_t seqno, u16_t wnd,
                     int hlen, u8_t *hdata);
+void util_silent_purge_hdata_and_ldata(t_clo *clo);
 /*--------------------------------------------------------------------------*/
 

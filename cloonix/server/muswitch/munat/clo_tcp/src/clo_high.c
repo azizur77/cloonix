@@ -442,7 +442,9 @@ int clo_high_close_tx(t_tcp_id *tcpid)
       case state_fin_wait2:
       case state_closed:
       case state_fin_wait_last_ack:
-        init_closed_state_count_if_not_done(clo, 20, __LINE__);
+        clo_mngt_set_state(clo, state_closed);
+        util_silent_purge_hdata_and_ldata(clo);
+        init_closed_state_count_if_not_done(clo, 4, __LINE__);
         break;
       default:
         KOUT(" %d", state);
@@ -647,7 +649,9 @@ void clo_low_input(int mac_len, u8_t *mac_data)
           {
           async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 
                          0, NULL);
-          init_closed_state_count_if_not_done(clo, 20, __LINE__);
+          clo_mngt_set_state(clo, state_closed);
+          util_silent_purge_hdata_and_ldata(clo);
+          init_closed_state_count_if_not_done(clo, 4, __LINE__);
           }
         else
           {
