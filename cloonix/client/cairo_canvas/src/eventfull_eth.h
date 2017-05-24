@@ -17,10 +17,8 @@
 /*****************************************************************************/
 typedef struct t_eventfull
 {
-  int nb_vm;
-  t_eventfull_vm *vm;
-  int nb_sat;
-  t_eventfull_sat *sat;
+  int nb_endp;
+  t_eventfull_endp *endp;
 } t_eventfull;
 /*---------------------------------------------------------------------------*/
 void event_full_timeout_blink_off(void);

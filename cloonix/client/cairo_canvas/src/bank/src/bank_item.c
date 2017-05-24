@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "bank.h" 
 #include "bank_item.h" 
@@ -133,8 +132,7 @@ static int is_not_an_eth(t_bank_item *bitem)
 static int is_not_an_edge(t_bank_item *bitem)
 {
   int result = 1;
-  if ((bitem->bank_type == bank_type_edge_eth2lan)  ||
-      (bitem->bank_type == bank_type_edge_sat2lan))
+  if (bitem->bank_type == bank_type_edge)
     result = 0;
   return result;
 }
@@ -408,8 +406,7 @@ static t_bank_item *bank_look_for_item(int bank_type, char *name, int num,
         cur = cur->next;
         }
       break;
-    case bank_type_edge_eth2lan:
-    case bank_type_edge_sat2lan:
+    case bank_type_edge:
       while (cur)
         {
         if (cur->lan[0] == 0)
@@ -516,7 +513,7 @@ int sat_is_a_a2b(char *name)
   if (bitem)
     {
     result = 0;
-    if (bitem->pbi.mutype == musat_type_a2b)
+    if (bitem->pbi.mutype == endp_type_a2b)
       result = 1;
     }
   return result;

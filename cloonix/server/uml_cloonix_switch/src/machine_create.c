@@ -30,7 +30,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "commun_daemon.h"
@@ -50,7 +49,7 @@
 #include "qhvc0.h"
 #include "doorways_mngt.h"
 #include "c2c.h"
-#include "mueth_mngt.h"
+#include "endp_mngt.h"
 #include "stats_counters.h"
 #include "stats_counters_sysinfo.h"
 
@@ -75,25 +74,13 @@ typedef struct t_vm_building
 {
   int llid;
   int tid;
-  int thread_action_done;
-  int thread_action_status;
-  t_vm_params vm_params;
+  t_topo_kvm kvm;
   int vm_id;
   int ref_jfs;
   void *jfs;
   int type_eth;
   int llid_eth[MAX_ETH_VM+2];
 } t_vm_building;
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-static void add_eth_cfg(t_vm *vm, int eth, char *err)
-{
-  char path_data[MAX_PATH_LEN];
-  sprintf(path_data,"%s%d", utils_get_intf_prefix(0, vm->vm_id), eth);
-  cfg_set_eth(&(vm->vm_params), eth, path_data);
-}
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
@@ -169,26 +156,14 @@ static void delayed_vm_cutoff(void *data)
   int pid;
   char *name = (char *) data;
   t_vm *vm = cfg_get_vm(name);
-  int i, vm_id, nb_eth;
-  t_eth *eth, *next_eth;
+  int vm_id;
   if (vm)
     {
-    eth = vm->eth_head;
-    nb_eth = vm->vm_params.nb_eth;
-    for (i=0; i<nb_eth; i++)
-      {
-      if (eth)
-        {
-        next_eth = eth->next;
-        cfg_unset_eth(vm, eth);
-        eth = next_eth;
-        }
-      }
     pid = utils_get_pid_of_machine(vm);
     if (pid)
       {
       if ( !kill(pid, SIGTERM))
-        KERR("Brutal kill of %s", vm->vm_params.name);
+        KERR("Brutal kill of %s", vm->kvm.name);
       }
     vm_id = cfg_unset_vm(vm);
     cfg_free_vm_id(vm_id);
@@ -224,7 +199,7 @@ void timeout_start_vm_create_automaton(void *data)
       if (strcmp(wake_up_eths->name, vm_name))
         KOUT("%s %s", wake_up_eths->name, vm_name);
       else 
-        qemu_vm_automaton(NULL, 0, vm->vm_params.name);
+        qemu_vm_automaton(NULL, 0, vm->kvm.name);
       }
     }
   clownix_free(data, __FUNCTION__);
@@ -238,17 +213,17 @@ static void start_lock_and_watchdog(int llid, int tid, t_vm *vm, char *err)
   if (!vm)
     KOUT(" ");
   utils_chk_my_dirs(vm);
-  event_print("Making cmd line for %s", vm->vm_params.name);
+  event_print("Making cmd line for %s", vm->kvm.name);
   data = (t_wake_up_eths *) clownix_malloc(sizeof(t_wake_up_eths), 13);
   memset(data, 0, sizeof(t_wake_up_eths));
   data->state = 0;
   data->llid = llid;
   data->tid = tid;
-  strcpy(data->name, vm->vm_params.name);
+  strcpy(data->name, vm->kvm.name);
   vm->wake_up_eths = data;
   cfg_set_vm_locked(vm);
-  cdrom_config_creation_request(vm, vm->vm_params.nb_eth, 
-                               vm->vm_params.vm_config_flags);
+  cdrom_config_creation_request(vm, vm->kvm.nb_eth, 
+                               vm->kvm.vm_config_flags);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -257,7 +232,7 @@ int run_linux_virtual_machine(int llid, int tid, char *name,
                               t_vm *vm, char *err)
 {
   int result = -1;
-  if (umid_pid_already_exists(vm->vm_id))
+  if (umid_pid_already_exists(vm->kvm.vm_id))
     {
     sprintf( err, "Machine %s seems to be running already", name);
     event_print("Machine %s seems to be running already", name);
@@ -326,7 +301,6 @@ static int missing_dir(char *name, int vm_id)
 /*****************************************************************************/
 static void death_of_mkdir_clone(void *data, int status, char *name)
 {
-  int i;
   char err[MAX_PATH_LEN];
   t_vm *vm;
   t_vm_building *vm_building = (t_vm_building *) data;
@@ -338,31 +312,28 @@ static void death_of_mkdir_clone(void *data, int status, char *name)
     send_status_ko(vm_building->llid, vm_building->tid, err);
     clownix_free(vm_building,  __FUNCTION__);
     }
-  else if (missing_dir(vm_building->vm_params.name, vm_building->vm_id))
+  else if (missing_dir(vm_building->kvm.name, vm_building->vm_id))
     {
-    sprintf(err,"Bad vm %s dir creation", vm_building->vm_params.name);
+    sprintf(err,"Bad vm %s dir creation", vm_building->kvm.name);
     send_status_ko(vm_building->llid, vm_building->tid, err);
     clownix_free(vm_building,  __FUNCTION__);
     }
   else
     {
-    event_print("Directories for %s created", vm_building->vm_params.name);
-    cfg_set_vm(&(vm_building->vm_params),
+    event_print("Directories for %s created", vm_building->kvm.name);
+    cfg_set_vm(&(vm_building->kvm),
                 vm_building->vm_id, vm_building->llid);
-    vm = cfg_get_vm(vm_building->vm_params.name);
+    vm = cfg_get_vm(vm_building->kvm.name);
     if (!vm)
       KOUT(" ");
 
-    for (i=0; i<vm_building->vm_params.nb_eth; i++)
-      add_eth_cfg(vm, i, err);
-
     if (!run_linux_virtual_machine(vm_building->llid, vm_building->tid,
-                                   vm_building->vm_params.name, vm, err))
+                                   vm_building->kvm.name, vm, err))
       event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
     else
       {
       send_status_ko(vm_building->llid, vm_building->tid, err);
-      machine_death(vm_building->vm_params.name, error_death_run);
+      machine_death(vm_building->kvm.name, error_death_run);
       }
     }
   recv_coherency_unlock();
@@ -374,24 +345,24 @@ static int mkdir_clone(void *data)
 {
   int result;
   t_vm_building *vm_building = (t_vm_building *) data;
-  result = mk_machine_dirs(vm_building->vm_params.name, vm_building->vm_id);
+  result = mk_machine_dirs(vm_building->kvm.name, vm_building->vm_id);
   return result;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void machine_recv_add_vm(int llid, int tid, t_vm_params *vm_params, int vm_id)
+void machine_recv_add_vm(int llid, int tid, t_topo_kvm *kvm, int vm_id)
 {
   t_vm_building *vm_building;
   vm_building = (t_vm_building *) clownix_malloc(sizeof(t_vm_building), 16);
   memset(vm_building, 0, sizeof(t_vm_building));
   vm_building->llid = llid;
   vm_building->tid  = tid;
-  memcpy(&(vm_building->vm_params), vm_params, sizeof(t_vm_params));
+  memcpy(&(vm_building->kvm), kvm, sizeof(t_topo_kvm));
   vm_building->vm_id  = vm_id;
   pid_clone_launch(mkdir_clone, death_of_mkdir_clone, NULL,
                    (void *) vm_building, (void *) vm_building, NULL, 
-                   vm_building->vm_params.name, -1, 1);
+                   vm_building->kvm.name, -1, 1);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -399,10 +370,10 @@ void machine_recv_add_vm(int llid, int tid, t_vm_params *vm_params, int vm_id)
 static void stop_mueth_qemu(t_vm *vm)
 {
   int i;
-  for (i=0; i<vm->vm_params.nb_eth; i++)
+  for (i=0; i<vm->kvm.nb_eth; i++)
     {
-    if (mueth_vm_stop(vm->vm_params.name, i))
-      KERR("%s %d", vm->vm_params.name, i);
+    if (endp_mngt_stop(vm->kvm.name, i))
+      KERR("%s %d", vm->kvm.name, i);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -448,14 +419,13 @@ int machine_death( char *name, int error_death)
     if (!cfg_is_a_zombie(name))
       {
       result = 0;
-      stats_counters_vm_death(name);
       stats_counters_sysinfo_vm_death(name);
-      cfg_add_zombie(vm->vm_id, name);
+      cfg_add_zombie(vm->kvm.vm_id, name);
       if (!cfg_get_vm_locked(vm))
         {
         if (vm->wake_up_eths != NULL)
           KOUT(" ");
-        timeout_erase_dir_zombie(vm->vm_id, name);
+        timeout_erase_dir_zombie(vm->kvm.vm_id, name);
         }
       else
         {
@@ -486,7 +456,7 @@ void machine_recv_kill_clownix(void)
     if (!vm)
       KOUT(" ");
     next_vm = vm->next;
-    strcpy(name, vm->vm_params.name);
+    strcpy(name, vm->kvm.name);
     machine_death(name, error_death_noerr);
     vm = next_vm;
     }

@@ -21,7 +21,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "bank.h"
@@ -412,7 +411,7 @@ static void spring_force_item(t_bank_item *bitem)
   t_list_bank_item *cur;
   if ((bitem->bank_type == bank_type_node) ||
       ((bitem->bank_type == bank_type_sat) && 
-        (bitem->pbi.mutype == musat_type_a2b)))
+        (bitem->pbi.mutype == endp_type_a2b)))
     {
     cur = bitem->head_eth_list;
     while (cur)

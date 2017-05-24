@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "doorways_sock.h"
@@ -32,6 +31,8 @@
 #include "timeout_start_req.h"
 #include "make_layout.h"
 #include "cloonix.h"
+#include "lib_topo.h"
+
 
 
 
@@ -55,52 +56,9 @@ static void callback_end(int tid, int status, char *info)
 
 
 /****************************************************************************/
-static void from_topo_delete_all_edges_to_lan(char *lan)
-{
-  t_topo_edge_eth_chain *intfe, *intf, *sate, *sat;
-  if (!topo_info)
-    KOUT(" ");
-  intfe = topo_get_edge_eth_node_chain(topo_info);
-  sate  = topo_get_edge_eth_sat_chain(topo_info);
-  intf = intfe;
-  sat = sate;
-  while (intfe)
-    {
-    if (!strcmp(intfe->lan, lan))
-      client_del_lan_sat(0,callback_end, intfe->name, intfe->lan, intfe->num);
-    intfe = intfe->next;
-    }
-  while (sate)
-    {
-    if (!strcmp(sate->lan, lan))
-      {
-      client_del_lan_sat(0,callback_end, sate->name, sate->lan, sate->num);
-      }
-    sate = sate->next;
-    }
-
-  topo_free_edge_eth_chain(intf);
-  topo_free_edge_eth_chain(sat);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void delete_all_edges_to_lan(char *lan)
-{
-  from_topo_delete_all_edges_to_lan(lan);
-  if (topo_count == 0)
-    {
-    topo_info_free(topo_info);
-    topo_info = NULL;
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-
-/****************************************************************************/
 void topo_info_update(t_topo_info *topo)
 {
-  topo_info_free(topo_info);
+  topo_free_topo(topo_info);
   topo_info = topo;
   topo_count++;
 }
@@ -159,27 +117,11 @@ void timer_create_item_req(void *data)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void timer_create_edge_eth_req(void *data)
+void timer_create_edge_req(void *data)
 {
-  t_edge_eth_req *pa = (t_edge_eth_req *) data;
-  if (pa->bank_type == bank_type_eth) 
-    {
-    client_add_lan_sat(0, callback_end, pa->name, pa->lan, pa->num);
-    }
-  else
-    KOUT("%d", pa->bank_type);
+  t_edge_req *pa = (t_edge_req *) data;
+  client_add_lan_endp(0, callback_end, pa->name, pa->num, pa->lan);
   clownix_free(pa, __FUNCTION__);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void timer_delete_edge_eth_req(void *data)
-{
-  t_edge_eth_req *pa = (t_edge_eth_req *) data;
-  if (pa->bank_type == bank_type_eth) 
-    client_del_lan_sat(0, callback_end, pa->name, pa->lan, pa->num);
-  else
-    KOUT("%d", pa->bank_type);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -187,30 +129,7 @@ void timer_delete_edge_eth_req(void *data)
 void timer_delete_edge_req(void *data)
 {
   t_edge_req *pa = (t_edge_req *) data;
-  switch(pa->bank_type)
-    {
-    case bank_type_edge_sat2lan:
-      client_del_lan_sat(0, callback_end, pa->name, pa->lan, pa->num);
-      break;
-    default:
-      KOUT("%d", pa->bank_type);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void timer_create_edge_req(void *data)
-{
-  t_edge_req *pa = (t_edge_req *) data;
-  switch(pa->bank_type)
-    {
-    case bank_type_edge_sat2lan:
-      client_add_lan_sat(0, callback_end, pa->name, pa->lan, pa->num);
-      break;
-    default:
-      KOUT("%d", pa->bank_type);
-    }
-  clownix_free(pa, __FUNCTION__);
+  client_del_lan_endp(0, callback_end, pa->name, pa->num, pa->lan);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -228,7 +147,6 @@ void timer_delete_item_req(void *data)
       break;
     case bank_type_lan:
       from_cloonix_switch_delete_lan(pa->name);
-      delete_all_edges_to_lan(pa->name);
       break;
     default:
       KOUT("%d", pa->bank_type);

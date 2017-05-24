@@ -29,7 +29,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 #include "cfg_store.h"
@@ -61,14 +60,14 @@
 #include "c2c.h"
 #include "sav_vm.h"
 #include "mulan_mngt.h"
-#include "mueth_mngt.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 #include "hop_event.h"
 #include "blkd_sub.h"
 #include "blkd_data.h"
 #include "cloonix_conf_info.h"
 
-static t_cloonix_config g_cloonix_config;
+static t_topo_clc g_clc;
+static t_cloonix_conf_info *g_cloonix_conf_info;
 static int g_i_am_in_cloonix;
 static char g_i_am_in_cloonix_name[MAX_NAME_LEN];
 
@@ -130,7 +129,7 @@ static void usage(char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void  check_used_binaries_presence(t_cloonix_config *conf)
+static void  check_used_binaries_presence(t_topo_clc *conf)
 {
   int i=0;
   while(used_binaries[i])
@@ -253,7 +252,6 @@ static void mk_and_tst_work_path(void)
     KOUT("%s", cfg_get_root_work());
     }
   my_mkdir(cfg_get_root_work());
-  my_mkdir(utils_path_to_tux());
   sprintf(path1, "%s/cloonix_lock",  cfg_get_root_work());
   check_for_another_instance(path1, 0);
 }
@@ -265,9 +263,8 @@ void uml_clownix_switch_error_cb(void *ptr, int llid, int err, int from)
 {
   llid_trace_free(llid, 0, __FUNCTION__);
   doorways_err_cb (llid);
-  musat_mngt_err_cb (llid);
+  endp_mngt_err_cb (llid);
   mulan_err_cb (llid);
-  mueth_err_cb (llid);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -398,10 +395,10 @@ static void eval_bash(char *input, char *output, int max)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static t_cloonix_config *get_parsed_config(char *name)
+static t_topo_clc *get_parsed_config(char *name)
 {
   char input[2*MAX_PATH_LEN];
-  t_cloonix_config *conf = NULL;
+  t_topo_clc *conf = NULL;
   t_cloonix_conf_info *cloonix_conf = cloonix_conf_info_get(name);
   if (!cloonix_conf)
     {
@@ -410,13 +407,12 @@ static t_cloonix_config *get_parsed_config(char *name)
     }
   else
     {
-    conf = &g_cloonix_config;
-    memset(conf, 0, sizeof(t_cloonix_config));
+    conf = &g_clc;
+    memset(conf, 0, sizeof(t_topo_clc));
     snprintf(conf->version,MAX_NAME_LEN-1,"%s",cloonix_conf_info_get_version());
     snprintf(conf->username, MAX_NAME_LEN-1, "%s", g_user); 
-    snprintf(conf->network_name, MAX_NAME_LEN-1, "%s", cloonix_conf->name); 
+    snprintf(conf->network, MAX_NAME_LEN-1, "%s", cloonix_conf->name); 
     conf->server_port = cloonix_conf->port; 
-    snprintf(conf->password,MSG_DIGEST_LEN-1,"%s",cloonix_conf->passwd); 
     snprintf(input, 2*MAX_PATH_LEN-1,"echo %s/%s/endofline",
              cloonix_conf_info_get_work(), 
                                                   cloonix_conf->name);
@@ -427,6 +423,7 @@ static t_cloonix_config *get_parsed_config(char *name)
     snprintf(input, 2*MAX_PATH_LEN-1,"echo %s/endofline",
              cloonix_conf_info_get_bulk()); 
     eval_bash(input, conf->bulk_dir, MAX_PATH_LEN-1);
+    g_cloonix_conf_info = cloonix_conf;
     }
   return conf;
 }
@@ -504,10 +501,7 @@ char **get_saved_environ(void)
 static char **save_environ(void)
 {
   char ld_lib[MAX_PATH_LEN];
-  char *tmux = utils_get_tmux_bin_path();
   static char lib_path[MAX_PATH_LEN];
-  static char terminfo[MAX_PATH_LEN];
-  static char fontconfig[MAX_PATH_LEN];
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];
   static char *environ_normal[] = { lib_path, username, home, NULL };
@@ -530,12 +524,11 @@ static char **save_environ(void)
 int main (int argc, char *argv[])
 {
   long long date_us;
-  t_cloonix_config *conf;
+  t_topo_clc *conf;
   struct timespec ts;
 
   if (clock_gettime(CLOCK_MONOTONIC, &ts))
     KOUT(" ");
-  cloonix_set_sec_offset(ts.tv_sec);
   g_i_am_in_cloonix = i_am_inside_cloonix(g_i_am_in_cloonix_name);
 
   init_g_user();
@@ -572,7 +565,8 @@ int main (int argc, char *argv[])
     KOUT("Port: %d is in use!!", conf->server_port);
     }
   doorways_sock_init();
-  doorways_init(cfg_get_root_work(), cfg_get_server_port(), conf->password);
+  doorways_init(cfg_get_root_work(), cfg_get_server_port(), 
+                g_cloonix_conf_info->passwd);
   eventfull_init();
   if (!file_exists(get_doorways_bin(), X_OK))
     {
@@ -595,8 +589,7 @@ int main (int argc, char *argv[])
   sav_vm_init();
   timeout_service_init();
   mulan_init();
-  mueth_init();
-  musat_mngt_init();
+  endp_mngt_init();
   date_us = cloonix_get_usec();
   srand((int) (date_us & 0xFFFF));
   msg_mngt_loop();

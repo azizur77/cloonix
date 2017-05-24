@@ -17,17 +17,12 @@
 /*****************************************************************************/
 void pool_tx_init(t_tx_sock_async_pool *pool_tx);
 void unix_sock_rx_activate(t_all_ctx *all_ctx);
-int tx_queue_len_unix_sock(t_all_ctx *all_ctx);
 void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len);
 void tx_unix_sock_end(t_all_ctx *all_ctx);
 int tx_unix_sock_pool_len(t_all_ctx *all_ctx);
-void stop_tx_counter_increment(t_all_ctx *all_ctx);
+void stop_tx_counter_increment(t_all_ctx *all_ctx, int idx);
 void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name,
-                             char *name, char *serv_path,
-                             t_client_cmd cb_client_cmd,
-                             t_prepare_rx_packet cb_prepare_rx_packet,
-                             t_rx_packet cb_rx_packet,
-                             t_collect_eventfull cb_collect,
+                             char *name, int num, char *serv_path,
                              t_get_blkd_from_elem get_blkd_from_elem);
 /*---------------------------------------------------------------------------*/
 

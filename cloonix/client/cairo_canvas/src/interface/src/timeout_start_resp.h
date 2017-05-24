@@ -15,31 +15,13 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-typedef struct t_create_item_node_resp
+typedef struct t_item_obj_resp
 {
-  int bank_type;
-  char name[MAX_NAME_LEN];
-  char kernel[MAX_NAME_LEN];
-  char rootfs_sod[MAX_PATH_LEN];
-  char rootfs_backing_file[MAX_PATH_LEN];
-  char install_cdrom[MAX_PATH_LEN];
-  char added_cdrom[MAX_PATH_LEN];
-  char added_disk[MAX_PATH_LEN];
-  char ip[MAX_NAME_LEN];
-  int num_eth;
-  int mutype[MAX_ETH_VM];
-  int vm_id;
-  int vm_config_flags;
-} t_create_item_node_resp;
-/*--------------------------------------------------------------------------*/
-typedef struct t_item_sat_resp
-{
-  int bank_type;
-  char name[MAX_NAME_LEN];
-  int mutype;
-  t_snf_info snf_info;
-  t_c2c_info c2c_info;
-} t_item_sat_resp;
+  t_topo_kvm *kvm;
+  t_topo_c2c *c2c;
+  t_topo_snf *snf;
+  t_topo_sat *sat;
+} t_item_obj_resp;
 /*--------------------------------------------------------------------------*/
 typedef struct t_item_lan_resp
 {
@@ -62,13 +44,11 @@ typedef struct t_edge_resp
   int num;
 } t_edge_resp;
 /*--------------------------------------------------------------------------*/
-void timer_create_item_node_resp(void *param);
 void timer_create_item_resp(void *param);
-void timer_create_edge_eth_resp(void *param);
 void timer_create_edge_resp(void *param);
+void timer_create_obj_resp(void *data);
 /*--------------------------------------------------------------------------*/
 void timer_delete_item_resp(void *param);
-void timer_delete_edge_eth_resp(void *param);
 void timer_delete_edge_resp(void *param);
 /*--------------------------------------------------------------------------*/
 

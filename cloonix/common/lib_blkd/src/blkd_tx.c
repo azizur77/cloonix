@@ -182,9 +182,34 @@ int blkd_fd_event_tx(void *ptr, int fd, t_blkd_fifo_tx *pool)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+void blkd_fd_event_purge_tx(void *ptr, t_blkd_fifo_tx *pool)
+{
+  t_blkd_record *rec = pool_tx_get(pool);
+  t_blkd *blkd;
+  if (!rec)
+    {
+    if ((pool->qty) || (pool->tx_queued_bytes))
+      KOUT("%d %d", (int) pool->qty, (int) pool->tx_queued_bytes);
+    }
+  while(rec)
+    {
+    while(rec->blkd != NULL)
+      {
+      blkd = pool_tx_free(pool);
+      if (blkd->countref == 0)
+        blkd_free(ptr, blkd);
+      } 
+    rec = pool_tx_get(pool);
+    } 
+  if ((pool->qty) || (pool->tx_queued_bytes))
+    KOUT("%d %d", (int) pool->qty, (int) pool->tx_queued_bytes);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static void trig_dist_flow_control(void *ptr)
 {
-  int llid, rank, our_mutype = blkd_get_our_mutype(ptr);
+  int num, llid, rank, our_mutype = blkd_get_our_mutype(ptr);
   char name[MAX_NAME_LEN];
   t_blkd_fifo_rx *pool;
   if (our_mutype == mulan_type)
@@ -192,11 +217,16 @@ static void trig_dist_flow_control(void *ptr)
     llid = blkd_get_max_rx_flow_llid(ptr, &pool);
     if (llid && pool && (pool->dist_flow_control_on == 0))
       { 
-      rank = blkd_get_rank(ptr, llid, name);
-      pool->dist_flow_control_on = 1;
-      pool->dist_flow_control_count = 5;
-      pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
-      blkd_rx_dist_flow_control(ptr, name, rank, 1);
+      rank = blkd_get_rank(ptr, llid, name, &num);
+      if (num < 0)
+        KERR("%s %d", name, num);
+      else
+        {
+        pool->dist_flow_control_on = 1;
+        pool->dist_flow_control_count = 5;
+        pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
+        blkd_rx_dist_flow_control(ptr, name, num, rank, 1);
+        }
       }
     }
 }
@@ -214,10 +244,8 @@ int blkd_tx_fifo_alloc(void *ptr, t_blkd_fifo_tx *pool, t_blkd *blkd)
   if ((pool->tx_queued_bytes > (3*MAX_GLOB_BLKD_QUEUED_BYTES)/4) ||
       (pool->put == pool->get))
     {
-    KERR("%d %d %d %d", pool->tx_queued_bytes, pool->put, pool->get,
-                        (3*MAX_GLOB_BLKD_QUEUED_BYTES)/4);
-    if (blkd->countref == 0)
-      blkd_free(ptr, blkd);
+    KERR("%lu %d %d %d", pool->tx_queued_bytes, pool->put, pool->get,
+                          (int) (3*MAX_GLOB_BLKD_QUEUED_BYTES)/4);
     }
   else
     {

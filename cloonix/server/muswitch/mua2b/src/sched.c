@@ -98,14 +98,14 @@ static void update_add_tockens(t_connect_side *side, int ms_delta)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int sum_samples(int *tab, int *msec, int idx0, int nb_samples)
+static int sum_samples(int *tab, int *msec, int index0, int nb_samples)
 {
   int i, j;
   long long result = 0;
   long long sum_delta = 0;
   for (i=1; i<nb_samples+1; i++)
     {
-    j = idx0 - i;
+    j = index0 - i;
     if (j < 0)
       j += MAX_SAMPLES;
     result += tab[j]; 
@@ -123,16 +123,16 @@ static int sum_samples(int *tab, int *msec, int idx0, int nb_samples)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int get_samply_nb(int idx0, int last_idx0)
+static int get_samply_nb(int index0, int last_index0)
 {
   int result;
-  if ((idx0 < 0) || (idx0 >= MAX_SAMPLES) ||
-      (last_idx0 < 0) || (last_idx0 >= MAX_SAMPLES))
-    KOUT("%d %d", idx0, last_idx0);
-  if (idx0 > last_idx0)
-    result = idx0 - last_idx0;
+  if ((index0 < 0) || (index0 >= MAX_SAMPLES) ||
+      (last_index0 < 0) || (last_index0 >= MAX_SAMPLES))
+    KOUT("%d %d", index0, last_index0);
+  if (index0 > last_index0)
+    result = index0 - last_index0;
   else
-    result = MAX_SAMPLES + idx0 - last_idx0;
+    result = MAX_SAMPLES + index0 - last_index0;
   if (result == 0)
     KERR(" ");
   return result;
@@ -140,12 +140,12 @@ static int get_samply_nb(int idx0, int last_idx0)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void samply(int *src, int *dst, int nb, int last_idx0)
+static void samply(int *src, int *dst, int nb, int last_index0)
 {
   int i, j;
   for (i=0; i<nb; i++)
     {
-    j = last_idx0 + i;
+    j = last_index0 + i;
     if (j >= MAX_SAMPLES)
       j = 0;
     dst[i] = src[j];
@@ -157,36 +157,41 @@ static void samply(int *src, int *dst, int nb, int last_idx0)
 static void update_stats(t_connect_side *side)
 {
   int samply_nb;
-  int idx0 = side->samply_current; 
-  int last_idx0 = side->samply_last_sent; 
+  int index0 = side->samply_current; 
+  int last_index0 = side->samply_last_sent; 
   side->qstats.sec_01_rate = sum_samples(side->samply_dequeue, 
-                                         side->samply_msec, idx0, 10);
+                                         side->samply_msec, index0, 10);
   side->qstats.sec_10_rate = sum_samples(side->samply_dequeue, 
-                                         side->samply_msec, idx0, 100);
+                                         side->samply_msec, index0, 100);
   side->qstats.sec_40_rate = sum_samples(side->samply_dequeue, 
-                                         side->samply_msec, idx0, 400);
-  samply_nb = get_samply_nb(idx0, last_idx0);
-  samply(side->samply_enqueue,side->qstats.samply_enqueue,samply_nb,last_idx0);
-  samply(side->samply_dequeue,side->qstats.samply_dequeue,samply_nb,last_idx0);
-  samply(side->samply_dropped,side->qstats.samply_dropped,samply_nb,last_idx0);
-  samply(side->samply_stored,side->qstats.samply_stored,samply_nb,last_idx0);
-  samply(side->samply_msec,side->qstats.samply_msec,samply_nb,last_idx0);
+                                         side->samply_msec, index0, 400);
+  samply_nb = get_samply_nb(index0, last_index0);
+  samply(side->samply_enqueue,
+         side->qstats.samply_enqueue,samply_nb,last_index0);
+  samply(side->samply_dequeue,
+         side->qstats.samply_dequeue,samply_nb,last_index0);
+  samply(side->samply_dropped,
+         side->qstats.samply_dropped,samply_nb,last_index0);
+  samply(side->samply_stored,
+         side->qstats.samply_stored,samply_nb,last_index0);
+  samply(side->samply_msec,side->qstats.samply_msec,
+         samply_nb,last_index0);
   side->qstats.samply_nb = samply_nb;
   side->samply_last_sent = side->samply_current; 
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_connect_side *init_ctx(int num, t_queue ***head, t_queue ***tail)
+static t_connect_side *init_ctx(int a0_b1, t_queue ***head, t_queue ***tail)
 {
   t_connect_side *side;
-  if (num == 0)
+  if (a0_b1 == 0)
     {
     side = get_sideA();
     *head = &(Actx.head);
     *tail = &(Actx.tail);
     }
-  else if (num == 1)
+  else if (a0_b1 == 1)
     {
     side = get_sideB();
     *head = &(Bctx.head);
@@ -233,13 +238,13 @@ static int is_lost(int loss)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int can_enqueue(int num, int len)
+static int can_enqueue(int a0_b1, int len)
 {
   int result = 0;
   t_connect_side *side;
-  if (num == 0)
+  if (a0_b1 == 0)
     side = get_sideA();
-  else if (num == 1)
+  else if (a0_b1 == 1)
     side = get_sideB();
   else
     KOUT(" ");
@@ -260,13 +265,13 @@ static int can_enqueue(int num, int len)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void do_enqueue(int num,  t_blkd *blkd, long long now)
+static void do_enqueue(int a0_b1,  t_blkd *blkd, long long now)
 {
   t_queue *q = (t_queue *) malloc(sizeof(t_queue));
   t_queue **head;
   t_queue **tail;
   t_connect_side *side;
-  side = init_ctx(num, &head, &tail);
+  side = init_ctx(a0_b1, &head, &tail);
   memset(q, 0, sizeof(t_queue));
   q->arrival_date_us = now;
   q->blkd = blkd;
@@ -312,7 +317,7 @@ static int action_dequeue_if_ok(t_connect_side *side, t_queue *q,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static t_blkd *do_dequeue(int num, long long now, t_connect_side **side)
+static t_blkd *do_dequeue(int a0_b1, long long now, t_connect_side **side)
 {
   t_blkd *result = NULL;
   t_blkd *blkd;
@@ -320,7 +325,7 @@ static t_blkd *do_dequeue(int num, long long now, t_connect_side **side)
   t_queue *q;
   t_queue **head;
   t_queue **tail;
-  *side = init_ctx(num, &head, &tail);
+  *side = init_ctx(a0_b1, &head, &tail);
   if (*head)
     {
     blkd = (*head)->blkd;
@@ -338,27 +343,27 @@ static t_blkd *do_dequeue(int num, long long now, t_connect_side **side)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void sched_tx(int num, long long now) 
+static void sched_tx(int a0_b1, long long now) 
 {
   t_connect_side *side;
   t_blkd *blkd;
-  blkd = do_dequeue(num, now, &side);
+  blkd = do_dequeue(a0_b1, now, &side);
   while(blkd)
     {
-    sock_fd_tx(g_all_ctx, num, blkd);
-    blkd = do_dequeue(num, now, &side);
+    sock_fd_tx(g_all_ctx, blkd);
+    blkd = do_dequeue(a0_b1, now, &side);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void timer_sched_side(int num, t_connect_side *side, int ms_delta,
+static void timer_sched_side(int a0_b1, t_connect_side *side, int ms_delta,
                              long long now, int inc_sample)
 {
   side->samply_stored[side->samply_current] = side->qstats.stored;
   update_add_tockens(side, ms_delta);
   side->samply_msec[side->samply_current] += ms_delta;
-  sched_tx(num, now);
+  sched_tx(a0_b1, now);
   if (inc_sample)
     {
     side->samply_current += 1;
@@ -416,14 +421,14 @@ void sched_update_stats(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void sched_tx_pkt(int num, t_blkd *blkd) 
+void sched_tx_pkt(int a0_b1, t_blkd *blkd) 
 {
   long long now_date_us = get_target_date_us();
-  if (can_enqueue(num, blkd->payload_len))
+  if (can_enqueue(a0_b1, blkd->payload_len))
     {
-    do_enqueue(num, blkd, now_date_us);
+    do_enqueue(a0_b1, blkd, now_date_us);
     }
-  sched_tx(num, now_date_us);
+  sched_tx(a0_b1, now_date_us);
 }
 /*---------------------------------------------------------------------------*/
 

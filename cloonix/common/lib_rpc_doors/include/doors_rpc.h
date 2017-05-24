@@ -54,10 +54,10 @@ void doors_send_c2c_req_free(int llid, int tid, char *name);
 void doors_recv_c2c_req_free(int llid, int tid, char *name);
 /*---------------------------------------------------------------------------*/
 void doors_send_c2c_clone_birth(int llid, int tid, char *net_name, char *name, 
-                                int fd, int musat_type,
+                                int fd, int endp_type,
                                 char *bin_path, char *sock);
 void doors_recv_c2c_clone_birth(int llid, int tid, char *net_name, char *name, 
-                                int fd, int musat_type,
+                                int fd, int endp_type,
                                 char *bin_path, char *sock);
 /*---------------------------------------------------------------------------*/
 void doors_send_c2c_clone_birth_pid(int llid, int tid, char *name, int pid); 

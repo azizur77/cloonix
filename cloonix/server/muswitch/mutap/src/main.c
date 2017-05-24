@@ -54,17 +54,22 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
-  int type = blkd_get_our_mutype((void *) all_ctx);
-  if (type == musat_type_tap)
-    tap_fd_tx(all_ctx, bd);
-  else if (type == musat_type_wif)
-    wif_fd_tx(all_ctx, bd);
-  else if (type == musat_type_raw)
-    raw_fd_tx(all_ctx, bd);
-  else
-    KOUT("%d", type);
+  int type;
+  if (bd)
+    {
+    type = blkd_get_our_mutype((void *) all_ctx);
+    if (type == endp_type_tap)
+      tap_fd_tx(all_ctx, bd);
+    else if (type == endp_type_wif)
+      wif_fd_tx(all_ctx, bd);
+    else if (type == endp_type_raw)
+      raw_fd_tx(all_ctx, bd);
+    else
+      KOUT("%d", type);
+    }
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -79,9 +84,9 @@ int main (int argc, char *argv[])
   tap_type = strtoul(argv[4], &endptr, 10);
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
-  if ((tap_type != musat_type_tap) &&
-      (tap_type != musat_type_raw) &&
-      (tap_type != musat_type_wif))
+  if ((tap_type != endp_type_tap) &&
+      (tap_type != endp_type_raw) &&
+      (tap_type != endp_type_wif))
     KOUT("%d", tap_type);
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);

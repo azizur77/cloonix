@@ -23,14 +23,13 @@
 #include <unistd.h>
 #include <string.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "cfg_store.h"
 #include "lan_to_name.h"
 #include "layout_topo.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 
 
 
@@ -49,7 +48,7 @@ static int can_increment_index(int val)
 
 /*****************************************************************************/
 static int build_add_vm_cmd(int offset, t_list_commands *hlist, 
-                            t_vm_params *para)
+                            t_topo_kvm *para)
 {
   int len = 0;
   int result = offset;
@@ -76,23 +75,23 @@ static int build_add_vm_cmd(int offset, t_list_commands *hlist,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int build_add_tap_cmd(int offset, t_list_commands *hlist, t_tux *tux)
+static int build_add_tap_cmd(int offset, t_list_commands *hlist, t_endp *endp)
 {
   int result = offset;
   t_list_commands *list = &(hlist[offset]);
   if (can_increment_index(result))
     {
-    if (tux->musat_type == musat_type_tap)
+    if (endp->endp_type == endp_type_tap)
       sprintf(list->cmd, "cloonix_cli %s add tap %s", 
-                         cfg_get_cloonix_name(), tux->name);
-    else if (tux->musat_type == musat_type_wif)
+                         cfg_get_cloonix_name(), endp->name);
+    else if (endp->endp_type == endp_type_wif)
       sprintf(list->cmd, "cloonix_cli %s add wif %s", 
-                         cfg_get_cloonix_name(), tux->name);
-    else if (tux->musat_type == musat_type_raw)
+                         cfg_get_cloonix_name(), endp->name);
+    else if (endp->endp_type == endp_type_raw)
       sprintf(list->cmd, "cloonix_cli %s add raw %s", 
-                         cfg_get_cloonix_name(), tux->name);
+                         cfg_get_cloonix_name(), endp->name);
     else
-      KERR("%d", tux->musat_type);
+      KERR("%d", endp->endp_type);
     result += 1;
     }
   return result;
@@ -100,15 +99,15 @@ static int build_add_tap_cmd(int offset, t_list_commands *hlist, t_tux *tux)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int build_add_c2c_cmd(int offset, t_list_commands *hlist, t_tux *tux) 
+static int build_add_c2c_cmd(int offset, t_list_commands *hlist, t_endp *endp) 
 {
   int result = offset;
   t_list_commands *list = &(hlist[offset]);
   if (can_increment_index(result))
     {
     sprintf(list->cmd, "cloonix_cli %s add c2c %s %s", 
-            cfg_get_cloonix_name(), tux->name, 
-            tux->c2c_info.req_cloonix_slave);
+            cfg_get_cloonix_name(), endp->name, 
+            endp->c2c.slave_cloonix);
     result += 1;
     }
   return result;
@@ -116,14 +115,14 @@ static int build_add_c2c_cmd(int offset, t_list_commands *hlist, t_tux *tux)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int build_add_snf_cmd(int offset, t_list_commands *hlist, t_tux *tux)
+static int build_add_snf_cmd(int offset, t_list_commands *hlist, t_endp *endp)
 {
   int result = offset;
   t_list_commands *list = &(hlist[offset]);
   if (can_increment_index(result))
     {
     sprintf(list->cmd, "cloonix_cli %s add snf %s", 
-                       cfg_get_cloonix_name(), tux->name);
+                       cfg_get_cloonix_name(), endp->name);
     result += 1;
     }
   return result;
@@ -131,14 +130,14 @@ static int build_add_snf_cmd(int offset, t_list_commands *hlist, t_tux *tux)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int build_add_a2b_cmd(int offset, t_list_commands *hlist, t_tux *tux)
+static int build_add_a2b_cmd(int offset, t_list_commands *hlist, t_endp *endp)
 {
   int result = offset;
   t_list_commands *list = &(hlist[offset]);
   if (can_increment_index(result))
     {
     sprintf(list->cmd, "cloonix_cli %s add a2b %s",
-                       cfg_get_cloonix_name(), tux->name);
+                       cfg_get_cloonix_name(), endp->name);
     result += 1;
     }
   return result;
@@ -146,14 +145,14 @@ static int build_add_a2b_cmd(int offset, t_list_commands *hlist, t_tux *tux)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int build_add_nat_cmd(int offset, t_list_commands *hlist, t_tux *tux)
+static int build_add_nat_cmd(int offset, t_list_commands *hlist, t_endp *endp)
 {
   int result = offset;
   t_list_commands *list = &(hlist[offset]);
   if (can_increment_index(result))
     {
     sprintf(list->cmd, "cloonix_cli %s add nat %s",
-                       cfg_get_cloonix_name(), tux->name);
+                       cfg_get_cloonix_name(), endp->name);
     result += 1;
     }
   return result;
@@ -361,27 +360,11 @@ static int produce_sleep_line(int offset, t_list_commands *hlist, int sec)
 static int produce_list_vm_cmd(int offset, t_list_commands *hlist,
                                int nb_vm, t_vm *vm) 
 {
-  int i, j, lan, result = offset;
-  t_eth *eth;
+  int i, result = offset;
   for (i=0; i<nb_vm; i++)
     {
-    result = build_add_vm_cmd(result, hlist, &(vm->vm_params));
+    result = build_add_vm_cmd(result, hlist, &(vm->kvm));
     result = produce_sleep_line(result, hlist, 5);
-    eth = vm->eth_head;
-    for (j=0; j<vm->nb_eth; j++)
-      {
-      lan = eth->lan_attached.lan;
-      if (lan)
-        {
-        if (!lan_get_with_num(lan))
-          KOUT(" ");
-        result = build_add_sat_lan_cmd(result, hlist,
-                                       vm->vm_params.name,
-                                       eth->eth,
-                                       lan_get_with_num(lan));
-        }
-      eth = eth->next;
-      }
     vm = vm->next;
     }
   return result;
@@ -390,51 +373,61 @@ static int produce_list_vm_cmd(int offset, t_list_commands *hlist,
 
 /*****************************************************************************/
 static int produce_list_sat_cmd(int offset, t_list_commands *hlist,
-                                int nb_tux, t_tux *tux)
+                                int nb_endp, t_endp *endp)
 {
+  t_endp *next, *cur = endp;
   int i, j, lan, result = offset;
-  for (i=0; i<nb_tux; i++)
+  for (i=0; i<nb_endp; i++)
     {
-    if (tux->is_musat)
+    if (!cur)
+      KOUT(" ");
+    if ((cur->endp_type == endp_type_tap) ||
+        (cur->endp_type == endp_type_raw) ||
+        (cur->endp_type == endp_type_wif))
       {
-      if (musat_mngt_is_tap(tux->musat_type))
+      result = build_add_tap_cmd(result, hlist, cur);
+      }
+    else if (cur->endp_type == endp_type_c2c)
+      {
+      if (cur->c2c.local_is_master)
+        result = build_add_c2c_cmd(result, hlist, cur);
+      }
+    else if (cur->endp_type == endp_type_snf)
+      {
+      result = build_add_snf_cmd(result, hlist, cur);
+      }
+    else if (cur->endp_type == endp_type_a2b)
+      {
+      result = build_add_a2b_cmd(result, hlist, cur);
+      }
+    else if (cur->endp_type == endp_type_nat)
+      {
+      result = build_add_nat_cmd(result, hlist, cur);
+      }
+    else if (cur->endp_type == endp_type_kvm)
+      {
+      }
+    else
+      KERR("%s %d", cur->name, cur->num); 
+
+    for (j=0; j<MAX_TRAF_ENDPOINT; j++)
+      {
+      lan = cur->lan_attached[j].lan_num;
+      if (lan)
         {
-        result = build_add_tap_cmd(result, hlist, tux);
+        if (!lan_get_with_num(lan))
+          KOUT(" ");
+        result = build_add_sat_lan_cmd(result, hlist,
+                                       cur->name, cur->num,
+                                       lan_get_with_num(lan));
         }
-      else if (musat_mngt_is_c2c(tux->musat_type))
-        {
-        if (tux->c2c_info.local_is_master)
-          result = build_add_c2c_cmd(result, hlist, tux);
-        }
-      else if (musat_mngt_is_snf(tux->musat_type))
-        {
-        result = build_add_snf_cmd(result, hlist, tux);
-        }
-      else if (musat_mngt_is_a2b(tux->musat_type))
-        {
-        result = build_add_a2b_cmd(result, hlist, tux);
-        }
-      else if (musat_mngt_is_nat(tux->musat_type))
-        {
-        result = build_add_nat_cmd(result, hlist, tux);
-        }
-      else
-        KERR("%s", tux->name); 
-      for (j=0; j<2; j++)
-        {
-        lan = tux->lan_attached[j].lan;
-        if (lan)
-          {
-          if (!lan_get_with_num(lan))
-            KOUT(" ");
-          result = build_add_sat_lan_cmd(result, hlist,
-                                         tux->name, j,
-                                         lan_get_with_num(lan));
-          }
-        }
-      } 
-    tux = tux->next;
+      }
+    next = endp_mngt_get_next(cur);
+    clownix_free(cur, __FILE__);
+    cur = next;
     }
+  if (cur)
+    KOUT(" ");
   return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -551,15 +544,15 @@ static int produce_last_lines(int offset, t_list_commands *hlist)
 /*****************************************************************************/
 int produce_list_commands(t_list_commands *hlist)
 {
-  int nb_vm, nb_tux, result = 0;
+  int nb_vm, nb_endp, result = 0;
   t_vm  *vm  = cfg_get_first_vm(&nb_vm);
-  t_tux *tux = cfg_get_first_tux(&nb_tux);
+  t_endp *endp = endp_mngt_get_first(&nb_endp);
   int go, width, height, cx, cy, cw, ch;
   t_layout_xml *layout_xml;
 
   result = produce_first_lines(result, hlist);
   result = produce_list_vm_cmd(result, hlist, nb_vm, vm); 
-  result = produce_list_sat_cmd(result, hlist, nb_tux, tux);
+  result = produce_list_sat_cmd(result, hlist, nb_endp, endp);
   get_layout_main_params(&go, &width, &height, &cx, &cy, &cw, &ch);
   result = produce_list_canvas_layout_cmd(result, hlist, go, 
                                                width, height, 

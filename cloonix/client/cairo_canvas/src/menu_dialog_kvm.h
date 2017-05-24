@@ -15,6 +15,6 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void menu_choice_vm_params(void);
+void menu_choice_kvm(void);
 void menu_dialog_vm_init(void);
 

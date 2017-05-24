@@ -24,7 +24,6 @@
 #include <errno.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "util_sock.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
@@ -55,7 +54,7 @@ typedef struct t_mu_arg
   char name[MAX_NAME_LEN];
   char bin_path[MAX_PATH_LEN];
   char sock[MAX_PATH_LEN];
-  char musat_type[MAX_NAME_LEN];
+  char endp_type[MAX_NAME_LEN];
   char addr_port[MAX_NAME_LEN];
 } t_mu_arg;
 /*--------------------------------------------------------------------------*/
@@ -502,7 +501,7 @@ static int musat_c2c_birth(void *data)
   t_mu_arg *mu = (t_mu_arg *) data;
   static char fd[MAX_NAME_LEN];
   char *argv[] = {mu->bin_path, mu->net_name, mu->name, 
-                  mu->sock, mu->musat_type, fd, mu->addr_port, NULL};
+                  mu->sock, mu->endp_type, fd, mu->addr_port, NULL};
   int fd_not_closed =  get_fd_not_to_close();
   if ((fd_not_closed == 0) || (fd_not_closed == -1)) 
     KERR("%d", fd_not_closed);
@@ -540,7 +539,7 @@ static void check_close_fd_used_by_doors_clone(int fd)
 
 /****************************************************************************/
 void doors_recv_c2c_clone_birth(int llid, int tid,  char *net_name, 
-                                char *name, int fd, int musat_type,
+                                char *name, int fd, int endp_type,
                                 char *bin_path, char *sock)
 {
   int doors_llid = get_doorways_llid();
@@ -558,7 +557,7 @@ void doors_recv_c2c_clone_birth(int llid, int tid,  char *net_name,
     strncpy(mu->name, name, MAX_NAME_LEN-1);
     strncpy(mu->bin_path, bin_path, MAX_PATH_LEN-1);
     strncpy(mu->sock, sock, MAX_PATH_LEN-1);
-    snprintf(mu->musat_type, MAX_NAME_LEN-1, "%d", musat_type);
+    snprintf(mu->endp_type, MAX_NAME_LEN-1, "%d", endp_type);
     if (c2c->peer_ip)
       {
       int_to_ip_string (c2c->peer_ip, peer_ip);

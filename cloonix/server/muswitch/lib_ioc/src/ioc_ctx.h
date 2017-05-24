@@ -113,4 +113,4 @@ typedef struct t_ioc_ctx
   char g_bigsndbuf[MAX_SIZE_BIGGEST_MSG];
 } t_ioc_ctx;
 
-t_all_ctx *ioc_ctx_init(char *name, int offset, int max_len_per_read);
+t_all_ctx *ioc_ctx_init(char *name, int num, int max_len_per_read);

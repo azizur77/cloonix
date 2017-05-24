@@ -30,7 +30,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "bank.h"
@@ -61,7 +60,7 @@ void topo_set_signals(GtkWidget *window);
 GtkWidget *topo_canvas(void);
 
 
-static t_cloonix_config g_cloonix_config;
+static t_topo_clc g_clc;
 
 static int eth_choice = 0;
 static GtkWidget *g_main_window;
@@ -84,7 +83,7 @@ static char **g_saved_environ;
 int wireshark_qt_present_in_server(void)
 {
   int result = 0;
-  if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) 
+  if (g_clc.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) 
     result = 1;
   return result;
 }
@@ -94,8 +93,8 @@ int wireshark_qt_present_in_server(void)
 int wireshark_present_in_server(void)
 {
   int result = 0;
-  if ((g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) ||
-      (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT))
+  if ((g_clc.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT) ||
+      (g_clc.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT))
     result = 1;
   return result;
 }
@@ -104,9 +103,9 @@ int wireshark_present_in_server(void)
 /*****************************************************************************/
 char *get_wireshark_present_in_server(void)
 {
-  if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT)
+  if (g_clc.flags_config & FLAGS_CONFIG_WIRESHARK_QT_PRESENT)
     return (WIRESHARK_BINARY_QT);
-  else if (g_cloonix_config.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT)
+  else if (g_clc.flags_config & FLAGS_CONFIG_WIRESHARK_PRESENT)
     return (WIRESHARK_BINARY);
   else
     KERR("NO WIRESHARK ON SERVER");
@@ -135,7 +134,7 @@ static int file_exists_exec(char *path)
 /*****************************************************************************/
 char *local_get_cloonix_name(void)
 {
-  return (g_cloonix_config.network_name);
+  return (g_clc.network);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -182,8 +181,6 @@ char *get_doors_client_addr(void)
 /*****************************************************************************/
 void cloonix_get_xvt(char *xvt)
 {
-  char xterm[MAX_PATH_LEN];
-  char *tree = get_local_cloonix_tree();
   memset(xvt, 0, MAX_PATH_LEN);
   if (!file_exists_exec("/usr/bin/urxvt"))
     {
@@ -223,14 +220,14 @@ char *get_local_cloonix_tree(void)
 /*****************************************************************************/
 char *get_distant_cloonix_tree(void)
 {
-  return g_cloonix_config.bin_dir;
+  return g_clc.bin_dir;
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 char *get_distant_tmux(void)
 {
-  return g_cloonix_config.tmux_bin;
+  return g_clc.tmux_bin;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -287,7 +284,7 @@ char *get_spice_vm_path(int vm_id)
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
   snprintf(path,MAX_PATH_LEN-1, "%s/vm/vm%d/%s", 
-           g_cloonix_config.work_dir, vm_id, SPICE_SOCK);
+           g_clc.work_dir, vm_id, SPICE_SOCK);
   return(path);
 }
 /*---------------------------------------------------------------------------*/
@@ -443,7 +440,7 @@ void main_timer_activation(void)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void work_dir_resp(int tid, t_cloonix_config *conf)
+void work_dir_resp(int tid, t_topo_clc *conf)
 {
   char title[MAX_NAME_LEN];
   GtkWidget *window, *vbox;
@@ -459,11 +456,11 @@ void work_dir_resp(int tid, t_cloonix_config *conf)
   move_init();
   menu_init();
   popup_init();
-  memcpy(&g_cloonix_config, conf, sizeof(t_cloonix_config));
+  memcpy(&g_clc, conf, sizeof(t_topo_clc));
   snprintf(g_tmp_work_path, MAX_PATH_LEN-1, "/tmp/%s", 
            local_get_cloonix_name());
   snprintf(g_tmux_work_path, MAX_PATH_LEN-1, "%s/%s",
-                             g_cloonix_config.work_dir, TMUX_SOCK);
+                             g_clc.work_dir, TMUX_SOCK);
   my_mkdir(g_tmp_work_path);
 
   if (gtk_init_check(NULL, NULL) == FALSE)
@@ -536,15 +533,10 @@ char **get_saved_environ(void)
 /*****************************************************************************/
 static char **save_environ(void)
 {
-  char tmux[MAX_PATH_LEN];
   char *tree;
   char *xauthority;
   char ld_lib[MAX_PATH_LEN];
-  char lib_fp[MAX_PATH_LEN];
-  char tinfo[MAX_PATH_LEN];
   static char lib_path[MAX_PATH_LEN];
-  static char lib_fontpath[MAX_PATH_LEN];
-  static char terminfo[MAX_PATH_LEN];
   static char xauth[MAX_PATH_LEN];
   static char username[MAX_NAME_LEN];
   static char home[MAX_PATH_LEN];

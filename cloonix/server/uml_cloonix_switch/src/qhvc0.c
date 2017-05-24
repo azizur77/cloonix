@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "util_sock.h"
@@ -268,12 +267,13 @@ static void entry_in_state_automaton_4(t_qhvc0_vm *cvm, int is_hvc0)
     {
     change_to_state(cvm, state_waiting_hvc0_is_cloonix_backdoor);
     protected_tx(cvm,strlen(RESP_HVCO_CLOONIX2AG)+1,RESP_HVCO_CLOONIX2AG);
+    arm_cloonix_agent_handshake_timeout(cvm);
     }
   else
     {
-      change_to_state(cvm, state_vport_is_cloonix_backdoor);
-      doors_send_command(get_doorways_llid(),0,cvm->name,
-                         CLOONIX_UP_VPORT_AND_RUNNING);
+    change_to_state(cvm, state_vport_is_cloonix_backdoor);
+    doors_send_command(get_doorways_llid(),0,cvm->name,
+                       CLOONIX_UP_VPORT_AND_RUNNING);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -873,8 +873,8 @@ static t_qhvc0_vm *vm_alloc(char *name, t_vm *vm)
   cvm = (t_qhvc0_vm *) clownix_malloc(sizeof(t_qhvc0_vm), 5);
   memset(cvm, 0, sizeof(t_qhvc0_vm));
   strncpy(cvm->name, name, MAX_NAME_LEN-1);
-  cvm->vm_id = vm->vm_id;
-  cvm->vm_config_flags = vm->vm_params.vm_config_flags;
+  cvm->vm_id = vm->kvm.vm_id;
+  cvm->vm_config_flags = vm->kvm.vm_config_flags;
   if (head_cvm)
     head_cvm->prev = cvm;
   cvm->next = head_cvm;
@@ -1046,7 +1046,7 @@ static void timer_cvm_connect_qhvc0(void *data)
       {
       if (!(cvm->vm_qhvc0_llid))
         { 
-        qmon = utils_get_qhvc0_path(vm->vm_id);
+        qmon = utils_get_qhvc0_path(vm->kvm.vm_id);
         if (!util_nonblock_client_socket_unix(qmon, &fd))
           {
           if (fd <= 0)
@@ -1076,9 +1076,9 @@ static void flag_ping_to_cloonix_agent_ko(char *name)
   t_small_evt vm_evt;
   t_vm *vm;
   vm = cfg_get_vm(name);
-  if ((vm) && (vm->vm_params.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK))
+  if ((vm) && (vm->kvm.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK))
     {
-    vm->vm_params.vm_config_flags &= ~VM_FLAG_CLOONIX_AGENT_PING_OK;
+    vm->kvm.vm_config_flags &= ~VM_FLAG_CLOONIX_AGENT_PING_OK;
     memset(&vm_evt, 0, sizeof(vm_evt));
     strncpy(vm_evt.name, name, MAX_NAME_LEN-1);
     vm_evt.evt = vm_evt_cloonix_ga_ping_ko;
@@ -1094,9 +1094,9 @@ static void flag_ping_to_cloonix_agent_ok(char *name)
   t_vm *vm;
   vm = cfg_get_vm(name);
   if ((vm) && 
-      (!(vm->vm_params.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)))
+      (!(vm->kvm.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)))
     {
-    vm->vm_params.vm_config_flags |= VM_FLAG_CLOONIX_AGENT_PING_OK;
+    vm->kvm.vm_config_flags |= VM_FLAG_CLOONIX_AGENT_PING_OK;
     memset(&vm_evt, 0, sizeof(t_small_evt));
     strncpy(vm_evt.name, name, MAX_NAME_LEN-1);
     vm_evt.evt = vm_evt_cloonix_ga_ping_ok;
@@ -1155,24 +1155,24 @@ void qhvc0_reinit_vm_in_doorways(void)
     {
     if (!vm)
       KOUT(" ");
-    cvm = vm_get_with_name(vm->vm_params.name);
+    cvm = vm_get_with_name(vm->kvm.name);
     if (cvm)
       {
-      doors_send_add_vm(get_doorways_llid(), 0, vm->vm_params.name,
-                        utils_get_qbackdoor_path(vm->vm_id));
+      doors_send_add_vm(get_doorways_llid(), 0, vm->kvm.name,
+                        utils_get_qbackdoor_path(vm->kvm.vm_id));
       if (cvm->auto_state == state_hvc0_is_cloonix_backdoor)
         {
         doors_send_command(get_doorways_llid(),0,cvm->name,
                            CLOONIX_UP_HVC_AND_RUNNING);
         doors_send_add_vm(get_doorways_llid(), 0, cvm->name,
                           utils_get_qbackdoor_hvc0_path(cvm->vm_id));
-        KERR("%s", vm->vm_params.name);
+        KERR("%s", vm->kvm.name);
         }
       else if (cvm->auto_state == state_vport_is_cloonix_backdoor)
         {
         doors_send_command(get_doorways_llid(),0,cvm->name,
                            CLOONIX_UP_VPORT_AND_RUNNING);
-        KERR("%s", vm->vm_params.name);
+        KERR("%s", vm->kvm.name);
         }
       else
         entry_in_state_automaton_1(cvm);

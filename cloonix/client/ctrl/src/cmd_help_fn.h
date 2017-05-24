@@ -103,12 +103,10 @@ void help_mud_sat(char *line);
 int cmd_mud_eth(int argc, char **argv);
 void help_mud_eth(char *line);
 /*---------------------------------------------------------------------------*/
-int cmd_sub_sat(int argc, char **argv);
-void help_sub_sat(char *line);
+int cmd_sub_endp(int argc, char **argv);
+void help_sub_endp(char *line);
 int cmd_sub_sysinfo(int argc, char **argv);
 void help_sub_sysinfo(char *line);
-int cmd_sub_eth(int argc, char **argv);
-void help_sub_eth(char *line);
 /*---------------------------------------------------------------------------*/
 int cmd_a2b_config(int argc, char **argv);
 void help_a2b_config(char *line);

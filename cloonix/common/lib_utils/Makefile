@@ -6,7 +6,7 @@ WARNINGS=-Wall -Wextra -Wstrict-prototypes
 VPATH = src
 LIB = libutils.a
 SRC = xml_utils.c file_read_write.c \
-      topo_items.c util_items.c 
+      diff_topo.c topo_items.c 
 
 INCLUDES= -I./src \
           -I./include \

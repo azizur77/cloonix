@@ -43,7 +43,8 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid)
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num,
+                        int toppid, int pid)
 {
   KOUT(" ");
 }
@@ -73,10 +74,14 @@ void rpct_recv_hop_unsub(void *ptr, int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
-  setup_global_second_offset(sec_offset);
-  rpct_send_pid_resp(ptr, llid, tid, name, getpid());
+  t_all_ctx *all_ctx = (t_all_ctx *) ptr;
+  if (strcmp(name, all_ctx->g_name))
+    KERR("%s %s", name, all_ctx->g_name);
+  if (all_ctx->g_num != num)
+    KERR("%s %d %d", name, num, all_ctx->g_num);
+  rpct_send_pid_resp(ptr, llid, tid, name, num, cloonix_get_pid(), getpid());
 }
 /*---------------------------------------------------------------------------*/
 

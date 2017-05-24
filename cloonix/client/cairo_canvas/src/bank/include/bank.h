@@ -37,8 +37,8 @@ typedef struct t_pbi_sat
 {
   void *snf_cr_item_recpath;
   void *snf_cr_item_onoff;
-  t_snf_info snf_info;
-  t_c2c_info c2c_info;
+  t_topo_snf topo_snf;
+  t_topo_c2c topo_c2c;
 } t_pbi_sat;
 
 
@@ -79,10 +79,11 @@ enum
   bank_type_all_non_edges_items,
   bank_type_node,
   bank_type_eth,
-  bank_type_lan,
+  bank_type_c2c,
+  bank_type_snf,
   bank_type_sat,
-  bank_type_edge_eth2lan,
-  bank_type_edge_sat2lan,
+  bank_type_lan,
+  bank_type_edge,
   bank_type_max,
 };
 /*--------------------------------------------------------------------------*/
@@ -159,28 +160,23 @@ t_bank_item *look_for_eth_with_id(char *name, int num);
 t_bank_item *look_for_edge_with_id(int bank_type, char *name, 
                                    int num, char *lan);
 /*--------------------------------------------------------------------------*/
-void bank_node_create(char *name, char *ip, char *kernel,
-                      char *rootfs_sod, char *rootfs_backing_file, 
-                      char *install_cdrom,  char *added_cdrom, 
-                      char *added_disk, int bank_type, 
-                      int num_eth, int *mutype, 
+void bank_node_create(char *name, char *kernel, char *rootfs_used,
+                      char *rootfs_backing, char *install_cdrom,
+                      char *added_cdrom, char *added_disk, int nb_eth, 
                       int color_choice, int vm_id, int vm_config_flags,
                       double x, double y, int hidden_on_graph,
                       double *tx, double *ty, int *thidden_on_graph);
 /*--------------------------------------------------------------------------*/
-void bank_edge_eth_create(char *name, int num, char *lan); 
-void bank_edge_sat_create(char *name, char *lan, int num);
+void bank_edge_create(char *name, int num, char *lan); 
 void bank_sat_create(char *name, int mutype, 
-                     t_snf_info *snf_info, t_c2c_info *c2c_info, 
+                     t_topo_c2c *c2c, t_topo_snf *snf,
                      double x, double y, 
                      double xa, double ya, 
                      double xb, double yb, 
                      int hidden_on_graph);
 void bank_lan_create(char *name,  double x, double y, int hidden_on_graph);
 /*--------------------------------------------------------------------------*/
-void bank_edge_eth_delete(char *name, int num, char *lan);
-void bank_edge_sat_delete(char *name, char *lan, int num);
-
+void bank_edge_delete(char *name, int num, char *lan);
 void bank_node_delete(char *name);
 void bank_sat_delete(char *name);
 void bank_lan_delete(char *name);

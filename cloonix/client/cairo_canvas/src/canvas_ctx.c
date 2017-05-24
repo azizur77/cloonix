@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -75,7 +74,7 @@ static void call_cloonix_interface_tap_create(double x, double y)
   double x0=x, y0=y;
   t_custom_tap *c = get_custom_tap();
   topo_get_matrix_inv_transform_point(&x0, &y0);
-  to_cloonix_switch_create_sat(c->name, c->mutype, NULL, x0, y0, 0,0,0,0);
+  to_cloonix_switch_create_sat(c->name, c->mutype, NULL, x0, y0);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -85,7 +84,7 @@ static void call_cloonix_interface_snf_create(double x, double y)
   double x0=x, y0=y;
   t_custom_snf *c = get_custom_snf();
   topo_get_matrix_inv_transform_point(&x0, &y0);
-  to_cloonix_switch_create_sat(c->name, musat_type_snf,NULL,x0,y0,0,0,0,0);
+  to_cloonix_switch_create_sat(c->name, endp_type_snf,NULL,x0,y0);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -94,22 +93,17 @@ static void call_cloonix_interface_nat_create(double x, double y)
 {
   double x0=x, y0=y;
   topo_get_matrix_inv_transform_point(&x0, &y0);
-  to_cloonix_switch_create_sat("nat", musat_type_nat, NULL, x0, y0, 0,0,0,0);
+  to_cloonix_switch_create_sat("nat", endp_type_nat, NULL, x0, y0);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void call_cloonix_interface_a2b_create(double x, double y)
 {
-  double x0=x, y0=y, xa, xb, ya, yb;
+  double x0=x, y0=y;
   t_custom_a2b *c = get_custom_a2b();
   topo_get_matrix_inv_transform_point(&x0, &y0);
-  xa = A2B_DIA * VAL_INTF_POS_A2B;
-  ya = A2B_DIA * VAL_INTF_POS_A2B;
-  xb = -A2B_DIA * VAL_INTF_POS_A2B;
-  yb = A2B_DIA * VAL_INTF_POS_A2B;
-  to_cloonix_switch_create_sat(c->name, musat_type_a2b, NULL,
-                               x0, y0, xa, ya, xb, yb);
+  to_cloonix_switch_create_sat(c->name, endp_type_a2b, NULL, x0, y0);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -128,8 +122,8 @@ static void call_cloonix_interface_c2c_create(double x, double y)
     c2c->c2c_req_info.port_slave = cnf->port;
     strncpy(c2c->c2c_req_info.passwd_slave, cnf->passwd, MSG_DIGEST_LEN-1);
     topo_get_matrix_inv_transform_point(&x0, &y0);
-    to_cloonix_switch_create_sat(c2c->name, musat_type_c2c, 
-                                 &(c2c->c2c_req_info), x0, y0, 0,0,0,0);
+    to_cloonix_switch_create_sat(c2c->name, endp_type_c2c, 
+                                 &(c2c->c2c_req_info), x0, y0);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -454,7 +448,7 @@ static void a2b_act(GtkWidget *mn)
 static void kvm_cact(GtkWidget *mn)
 {
   (void) mn;
-  menu_choice_vm_params();
+  menu_choice_kvm();
 }
 /*--------------------------------------------------------------------------*/
 

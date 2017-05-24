@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cloonix.h"
 
@@ -36,7 +35,7 @@ static t_custom_vm custom_vm;
 static int g_timer_relaunch_dialog;
 static GtkWidget *g_custom_dialog;
 
-void menu_choice_vm_params(void);
+void menu_choice_kvm(void);
 
 /*****************************************************************************/
 
@@ -311,7 +310,7 @@ static void custom_vm_dialog(t_custom_vm *cust)
   if (response == GTK_RESPONSE_NONE)
     {
     g_custom_dialog = NULL;
-    menu_choice_vm_params();
+    menu_choice_kvm();
     }
   else
     {
@@ -324,7 +323,7 @@ static void custom_vm_dialog(t_custom_vm *cust)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void menu_choice_vm_params(void)
+void menu_choice_kvm(void)
 {
   custom_vm_dialog(&custom_vm);
 }

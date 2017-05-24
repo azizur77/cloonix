@@ -29,7 +29,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "event_subscriber.h"
@@ -194,7 +193,7 @@ static void free_sysinfo_sub(t_sysinfo_sub *sysinfo_sub)
 /****************************************************************************/
 void recv_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub)
 {
-  char *network_name = cfg_get_cloonix_name();
+  char *network = cfg_get_cloonix_name();
   t_sysinfo_sub *cur;
   t_stats_sysinfo si;
   if (sub)
@@ -203,7 +202,7 @@ void recv_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub)
       {
       KERR("ERROR: %s", name);
       memset(&si, 0, sizeof(t_stats_sysinfo));
-      send_evt_stats_sysinfo(llid, tid, network_name, name, &si, NULL, 1);
+      send_evt_stats_sysinfo(llid, tid, network, name, &si, NULL, 1);
       }
     }
   else
@@ -218,7 +217,7 @@ void recv_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub)
 /****************************************************************************/
 void stats_counters_sysinfo_vm_death(char *name)
 {
-  char *network_name = cfg_get_cloonix_name();
+  char *network = cfg_get_cloonix_name();
   t_sysinfo_sub *cur, *next;
   t_stats_sysinfo si;
   memset(&si, 0, sizeof(t_stats_sysinfo));
@@ -226,7 +225,7 @@ void stats_counters_sysinfo_vm_death(char *name)
   while (cur)
     {
     next = find_sysinfo_sub_with_name(cur, name);
-    send_evt_stats_sysinfo(cur->llid, cur->tid, network_name, 
+    send_evt_stats_sysinfo(cur->llid, cur->tid, network, 
                            cur->name, &si, NULL, 1);
     free_sysinfo_sub(cur);
     cur = next;
@@ -295,7 +294,7 @@ void stats_counters_sysinfo_update(char *name,
                                    unsigned long freehigh,
                                    unsigned long mem_unit)
 {
-  char *network_name = cfg_get_cloonix_name();
+  char *network = cfg_get_cloonix_name();
   t_vm *vm = cfg_get_vm(name);
   t_pid_info pid_info;
   t_stats_sysinfo sysinfo;
@@ -331,7 +330,7 @@ void stats_counters_sysinfo_update(char *name,
         sysinfo.process_cutime = pid_info.cutime;
         sysinfo.process_cstime = pid_info.cstime;
         sysinfo.process_rss    = pid_info.rss;
-        send_evt_stats_sysinfo(cur->llid, cur->tid, network_name,
+        send_evt_stats_sysinfo(cur->llid, cur->tid, network,
                                name, &sysinfo, cur->df_payload, 0);
         }
       else

@@ -654,8 +654,6 @@ static void execchild(struct ChanSess *chansess)
   char *usershell = NULL;
   char *login = NULL;
   char *pth="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
-  char ld_lib[MAX_DROPBEAR_PATH_LEN];
-  char terminfo[MAX_DROPBEAR_PATH_LEN];
   unsetnonblocking(STDOUT_FILENO);
   unsetnonblocking(STDIN_FILENO);
   unsetnonblocking(STDERR_FILENO);

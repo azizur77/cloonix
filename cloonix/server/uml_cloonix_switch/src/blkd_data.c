@@ -22,14 +22,12 @@
 #include <errno.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "mulan_mngt.h"
 #include "doorways_mngt.h"
 #include "cfg_store.h"
-#include "mueth_mngt.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 
 /*--------------------------------------------------------------------------*/
 typedef struct t_blkd_data
@@ -49,8 +47,7 @@ static int g_inhibited;
 static int same_blkd_ident(t_blkd_item *cur, t_blkd_item *target)
 {
   int result = 0;
-  if ((!strcmp(cur->name, target->name)) &&
-      (cur->pid  ==  target->pid)   &&
+  if ((cur->pid  ==  target->pid)   &&
       (cur->llid ==  target->llid)  &&
       (cur->fd   ==  target->fd))
     result = 1;
@@ -197,11 +194,7 @@ void blkd_data_subscribe_to_all(int on)
     for (i=0; i<nb; i++)
       rpct_send_report_sub(NULL, llid_tab[i], on);
     clownix_free(llid_tab, __FUNCTION__);
-    nb = musat_get_all_llid(&llid_tab);
-    for (i=0; i<nb; i++)
-      rpct_send_report_sub(NULL, llid_tab[i], on);
-    clownix_free(llid_tab, __FUNCTION__);
-    nb = mueth_get_all_llid(&llid_tab);
+    nb = endp_mngt_get_all_llid(&llid_tab);
     for (i=0; i<nb; i++)
       rpct_send_report_sub(NULL, llid_tab[i], on);
     clownix_free(llid_tab, __FUNCTION__);

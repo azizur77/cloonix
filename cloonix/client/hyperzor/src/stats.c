@@ -18,7 +18,6 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "header_sock.h"
 #include "stats.h"
@@ -184,7 +183,7 @@ static void free_net(t_stats_net *net)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void stats_eth(char *net_name, char *name, int eth,
+void stats_endp(char *net_name, char *name, int num,
                           t_stats_counts *stats_counts)
 {
   t_stats_net *net = find_net_with_name(net_name);
@@ -194,25 +193,6 @@ void stats_eth(char *net_name, char *name, int eth,
     item = find_item_with_name(net, name);
     if (!item)
       KERR("%s %s", net_name, name);
-    else
-      {
-      }
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void stats_sat(char *net_name, char *name, t_stats_counts *stats_counts)
-{
-  t_stats_net *net = find_net_with_name(net_name);
-  t_stats_item *item; 
-  if (net)
-    {
-    item = find_item_with_name(net, name);
-    if (!item)
-      {
-      KERR("%s %s", net_name, name);
-      }
     else
       {
       }

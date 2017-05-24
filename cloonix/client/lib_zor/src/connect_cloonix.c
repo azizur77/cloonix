@@ -21,7 +21,6 @@
 #include <errno.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "file_read_write.h"
@@ -69,8 +68,7 @@ static t_evt_net_exists_cb    g_net_exists_cb;
 static t_evt_vm_exists_cb     g_vm_exists_cb;
 static t_evt_sat_exists_cb    g_sat_exists_cb;
 static t_evt_lan_exists_cb    g_lan_exists_cb;
-static t_evt_stats_eth_cb     g_stats_eth_cb;
-static t_evt_stats_sat_cb     g_stats_sat_cb;
+static t_evt_stats_endp_cb    g_stats_endp_cb;
 static t_evt_stats_sysinfo_cb g_stats_sysinfo_cb;
 /*--------------------------------------------------------------------------*/
 
@@ -185,7 +183,7 @@ static void alloc_record_vm(t_record_net *net, char *name,
   net->head_vm = cur;
   send_evt_stats_sysinfo_sub(net->llid, 0, name, 1);
   for (i=0; i<nb_eth; i++)
-    send_evt_stats_eth_sub(net->llid, 0, name, i, 1);
+    send_evt_stats_endp_sub(net->llid, 0, name, i, 1);
   g_vm_exists_cb(net->name, name, nb_eth, vm_id, 1);
 }
 /*--------------------------------------------------------------------------*/
@@ -217,15 +215,19 @@ static void alloc_record_sat(t_record_net *net, char *name, int type)
     net->head_sat->prev = cur;
   net->head_sat = cur;
   send_evt_stats_sysinfo_sub(net->llid, 0, name, 1);
-  send_evt_stats_sat_sub(net->llid, 0, name, 1);
-  if ((type == musat_type_tap)  ||
-      (type == musat_type_wif)  || 
-      (type == musat_type_raw)  || 
-      (type == musat_type_c2c)  ||
-      (type == musat_type_nat)  ||
-      (type == musat_type_snf)  ||
-      (type == musat_type_a2b))
+  send_evt_stats_endp_sub(net->llid, 0, name, 0, 1);
+  if ((type == endp_type_tap)  ||
+      (type == endp_type_wif)  || 
+      (type == endp_type_raw)  || 
+      (type == endp_type_c2c)  ||
+      (type == endp_type_nat)  ||
+      (type == endp_type_snf)  ||
+      (type == endp_type_a2b))
     g_sat_exists_cb(net->name, name, type, 1);
+  else
+    KERR("%d", type);
+  if (type == endp_type_a2b)
+    send_evt_stats_endp_sub(net->llid, 0, name, 1, 1);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -238,14 +240,16 @@ static void free_record_sat(t_record_net *net, t_record_sat *sat)
     sat->next->prev = sat->prev;
   if (sat == net->head_sat)
     net->head_sat = sat->next;
-  if ((sat->type == musat_type_tap) ||
-      (sat->type == musat_type_wif)  || 
-      (sat->type == musat_type_raw)  || 
-      (sat->type == musat_type_c2c)  ||
-      (sat->type == musat_type_nat)  ||
-      (sat->type == musat_type_snf)  ||
-      (sat->type == musat_type_a2b))
+  if ((sat->type == endp_type_tap)  ||
+      (sat->type == endp_type_wif)  || 
+      (sat->type == endp_type_raw)  || 
+      (sat->type == endp_type_c2c)  ||
+      (sat->type == endp_type_nat)  ||
+      (sat->type == endp_type_snf)  ||
+      (sat->type == endp_type_a2b))
     g_sat_exists_cb(net->name, sat->name, sat->type, 0);
+  else
+    KERR("%d", sat->type);
   clownix_free(sat, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
@@ -301,18 +305,19 @@ static void free_record_net(t_record_net *rec)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void free_all_vm_not_in_topo(t_record_net *net, t_topo_info *topo)
+static void free_kvm_not_in_topo(t_record_net *net, 
+                                 int nb_kvm, t_topo_kvm *kvm)
 {
   int i, found;
   t_record_vm *cur_vm, *next_vm;
   cur_vm = net->head_vm;
   while(cur_vm)
     {
-    next_vm = cur_vm->next;
     found = 0;
-    for (i=0; i<topo->nb_vm; i++)
+    next_vm = cur_vm->next;
+    for (i=0; i<nb_kvm; i++)
       {
-      if (!strcmp(cur_vm->name, topo->vmit[i].vm_params.name))
+      if (!strcmp(cur_vm->name, kvm[i].name))
         {
         found = 1;
         break;
@@ -326,18 +331,37 @@ static void free_all_vm_not_in_topo(t_record_net *net, t_topo_info *topo)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void free_all_sat_not_in_topo(t_record_net *net, t_topo_info *topo)
+static void free_sat_not_in_topo(t_record_net *net, 
+                                 int nb_c2c, t_topo_c2c *c2c,
+                                 int nb_snf, t_topo_snf *snf,
+                                 int nb_sat, t_topo_sat *sat)
 {
   int i, found;
   t_record_sat *cur_sat, *next_sat;
   cur_sat = net->head_sat;
   while(cur_sat)
     {
-    next_sat = cur_sat->next;
     found = 0;
-    for (i=0; i<topo->nb_sat; i++)
+    next_sat = cur_sat->next;
+    for (i=0; (found == 0) && (i < nb_c2c); i++)
       {
-      if (!strcmp(cur_sat->name, topo->sati[i].name))
+      if (!strcmp(cur_sat->name, c2c[i].name))
+        {
+        found = 1;
+        break;
+        }
+      }
+    for (i=0; (found == 0) && (i < nb_snf); i++)
+      {
+      if (!strcmp(cur_sat->name, snf[i].name))
+        {
+        found = 1;
+        break;
+        }
+      }
+    for (i=0; (found == 0) && (i < nb_sat); i++)
+      {
+      if (!strcmp(cur_sat->name, sat[i].name))
         {
         found = 1;
         break;
@@ -351,47 +375,26 @@ static void free_all_sat_not_in_topo(t_record_net *net, t_topo_info *topo)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void free_all_lan_not_in_topo(t_record_net *net, t_topo_info *topo)
+static void free_lan_not_in_topo(t_record_net *net, 
+                                 int nb_endp, t_topo_endp *endp)
 {
-  int i,j,k,found;
   char *lan;
   t_record_lan *cur_lan, *next_lan;
   cur_lan = net->head_lan;
+  int i, j, found;
   while(cur_lan)
     {
     found = 0;
     next_lan = cur_lan->next;
-    for (i=0; (found == 0) && (i<topo->nb_vm); i++)
+    lan = cur_lan->name;
+    for (i=0; (found==0) && (i < nb_endp); i++)
       {
-      for (j=0; (found == 0) && (j<topo->vmit[i].vm_params.nb_eth); j++)
+      for (j=0; j< endp[i].lan.nb_lan; j++)
         {
-        for (k=0; (found == 0) && (k < topo->vmit[i].lan_eth[j].nb_lan); k++)
-          {
-          lan = topo->vmit[i].lan_eth[j].lan[k].name;
-          if (!strcmp(cur_lan->name, lan))
-            {
-            found = 1;
-            }
-          }
-        }
-      }
-    for (i=0; (found == 0) && (i<topo->nb_sat); i++)
-      {
-      for (k=0; (found == 0) && (k < topo->sati[i].lan0_sat.nb_lan); k++)
-        {
-        lan = topo->sati[i].lan0_sat.lan[k].name;
-        if (!strcmp(cur_lan->name, lan))
+        if (!strcmp(lan, endp[i].lan.lan[j].lan))
           {
           found = 1;
-          }
-        }
-
-      for (k=0; (found == 0) && (k < topo->sati[i].lan1_sat.nb_lan); k++)
-        {
-        lan = topo->sati[i].lan1_sat.lan[k].name;
-        if (!strcmp(cur_lan->name, lan))
-          {
-          found = 1;
+          break;
           }
         }
       }
@@ -403,59 +406,54 @@ static void free_all_lan_not_in_topo(t_record_net *net, t_topo_info *topo)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void alloc_all_vm_not_in_records(t_record_net *net, t_topo_info *topo)
+static void alloc_kvm_not_in_record(t_record_net *net, 
+                                    int nb_kvm, t_topo_kvm *kvm)
 {
   int i;
-  for (i=0; i<topo->nb_vm; i++)
+  for (i=0; i<nb_kvm; i++)
     {
-    if (!find_vm_with_name(net, topo->vmit[i].vm_params.name))
-      alloc_record_vm(net, topo->vmit[i].vm_params.name,
-                      topo->vmit[i].vm_params.nb_eth,
-                      topo->vmit[i].vm_id);
+    if (!find_vm_with_name(net, kvm[i].name))
+      alloc_record_vm(net, kvm[i].name, kvm[i].nb_eth, kvm[i].vm_id);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void alloc_all_sat_not_in_records(t_record_net *net, t_topo_info *topo)
+static void alloc_sat_not_in_record(t_record_net *net,
+                                    int nb_c2c, t_topo_c2c *c2c,
+                                    int nb_snf, t_topo_snf *snf,
+                                    int nb_sat, t_topo_sat *sat)
 {
   int i;
-  for (i=0; i<topo->nb_sat; i++)
+  for (i=0; i<nb_c2c; i++)
     {
-    if (!find_sat_with_name(net, topo->sati[i].name))
-      alloc_record_sat(net, topo->sati[i].name, topo->sati[i].musat_type);
+    if (!find_sat_with_name(net, c2c[i].name))
+      alloc_record_sat(net, c2c[i].name, endp_type_c2c);
+    }
+  for (i=0; i<nb_snf; i++)
+    {
+    if (!find_sat_with_name(net, snf[i].name))
+      alloc_record_sat(net, snf[i].name, endp_type_snf);
+    }
+  for (i=0; i<nb_sat; i++)
+    {
+    if (!find_sat_with_name(net, sat[i].name))
+      alloc_record_sat(net, sat[i].name, sat[i].type);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void alloc_all_lan_not_in_records(t_record_net *net, t_topo_info *topo)
+static void alloc_lan_not_in_record(t_record_net *net,
+                                    int nb_endp, t_topo_endp *endp)
 {   
-  int i,j,k;
   char *lan;
-  for (i=0; i<topo->nb_vm; i++)
+  int i, j;
+  for (i=0; i< nb_endp; i++)
     {
-    for (j=0; j<topo->vmit[i].vm_params.nb_eth; j++)
+    for (j=0; j< endp[i].lan.nb_lan; j++)
       {
-      for (k=0; k < topo->vmit[i].lan_eth[j].nb_lan; k++)
-        {
-        lan = topo->vmit[i].lan_eth[j].lan[k].name;
-        if (!find_lan_with_name(net, lan))
-          alloc_record_lan(net, lan);
-        }
-      }
-    }
-  for (i=0; i<topo->nb_sat; i++)
-    {
-    for (k=0; k < topo->sati[i].lan0_sat.nb_lan; k++)
-      {
-      lan = topo->sati[i].lan0_sat.lan[k].name;
-      if (!find_lan_with_name(net, lan))
-        alloc_record_lan(net, lan);
-      }
-    for (k=0; k < topo->sati[i].lan1_sat.nb_lan; k++)
-      {
-      lan = topo->sati[i].lan1_sat.lan[k].name;
+      lan = endp[i].lan.lan[j].lan;
       if (!find_lan_with_name(net, lan))
         alloc_record_lan(net, lan);
       }
@@ -466,71 +464,74 @@ static void alloc_all_lan_not_in_records(t_record_net *net, t_topo_info *topo)
 /****************************************************************************/
 void recv_event_topo(int llid, int tid, t_topo_info *topo)
 {
-  t_record_net *net = find_net_with_name(topo->cloonix_config.network_name);
+  t_record_net *net = find_net_with_name(topo->clc.network);
   if (!net)
-    KERR("%s", topo->cloonix_config.network_name);
+    KERR("%s", topo->clc.network);
   else
     {
-    free_all_vm_not_in_topo(net, topo);
-    free_all_sat_not_in_topo(net, topo);
-    free_all_lan_not_in_topo(net, topo);
-    alloc_all_vm_not_in_records(net, topo);
-    alloc_all_sat_not_in_records(net, topo);
-    alloc_all_lan_not_in_records(net, topo);
+    free_kvm_not_in_topo(net, topo->nb_kvm, topo->kvm);
+    free_sat_not_in_topo(net, topo->nb_c2c, topo->c2c,
+                              topo->nb_snf, topo->snf,
+                              topo->nb_sat, topo->sat);
+    free_lan_not_in_topo(net, topo->nb_endp, topo->endp);
+
+    alloc_kvm_not_in_record(net, topo->nb_kvm, topo->kvm);
+    alloc_sat_not_in_record(net, topo->nb_c2c, topo->c2c,
+                            topo->nb_snf, topo->snf,
+                            topo->nb_sat, topo->sat);
+    alloc_lan_not_in_record(net, topo->nb_endp, topo->endp);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void recv_evt_stats_eth(int llid, int tid, char *net_name,
-                        char *name, int eth,
-                        t_stats_counts *stats_counts, int status)
+void recv_evt_stats_endp(int llid, int tid, char *network, 
+                         char *name, int num,
+                         t_stats_counts *stats_counts, int status)
 {
-  t_record_net *net = find_net_with_name(net_name);
-  t_record_vm *vm = NULL;
-  if (net)
-    vm = find_vm_with_name(net, name);
-  if (vm && (status == 0))
-    g_stats_eth_cb(net_name, name, eth, stats_counts);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void recv_evt_stats_sat(int llid, int tid, char *net_name, char *name,
-                        t_stats_counts *stats_counts, int status)
-{
-  t_record_net *net = find_net_with_name(net_name);
-  t_record_sat *sat = NULL;
-  if (net)
-    sat = find_sat_with_name(net, name);
-  if (sat && (status == 0))
+  t_record_net *net = find_net_with_name(network);
+  t_record_sat *sat;
+  t_record_vm *kvm;
+  if (net  && (status == 0))
     {
-    if ((sat->type == musat_type_tap) ||
-        (sat->type == musat_type_wif) ||
-        (sat->type == musat_type_raw) ||
-        (sat->type == musat_type_c2c) ||
-        (sat->type == musat_type_nat) ||
-        (sat->type == musat_type_snf) ||
-        (sat->type == musat_type_a2b))
+    sat = find_sat_with_name(net, name);
+    kvm = find_vm_with_name(net, name);
+    if (sat)
       {
-      g_stats_sat_cb(net_name, name, stats_counts);
+      if ((sat->type == endp_type_tap) ||
+          (sat->type == endp_type_wif) ||
+          (sat->type == endp_type_raw) ||
+          (sat->type == endp_type_c2c) ||
+          (sat->type == endp_type_nat) ||
+          (sat->type == endp_type_snf) ||
+          (sat->type == endp_type_a2b))
+        g_stats_endp_cb(network, name, num, stats_counts);
+      else
+        KERR("%d", sat->type);
+      }
+    else if (kvm)
+      {
+      if (sat->type == endp_type_kvm) 
+        g_stats_endp_cb(network, name, num, stats_counts);
+      else
+        KERR("%d", sat->type);
       }
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void recv_evt_stats_sysinfo(int llid, int tid, char *net_name, char *name,
+void recv_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
                             t_stats_sysinfo *stats, char *df,  int status)
 {
-  t_record_net *net = find_net_with_name(net_name);
+  t_record_net *net = find_net_with_name(network);
   t_record_vm *vm;
   if (net)
     {
     vm = find_vm_with_name(net, name);
     if (vm && (status == 0))
       {
-      g_stats_sysinfo_cb(net_name, name, stats, df);
+      g_stats_sysinfo_cb(network, name, stats, df);
       }
     }
 }
@@ -546,27 +547,27 @@ void recv_blkd_reports(int llid, int tid, t_blkd_reports *blkd)
 
 
 /****************************************************************************/
-static void net_change_exists(char *net_name, int llid, int exists)
+static void net_change_exists(char *network, int llid, int exists)
 {
-  t_record_net *net = find_net_with_name(net_name);
+  t_record_net *net = find_net_with_name(network);
   if (exists)
     {
     if (net)
       KERR("%s %d %d", net->name, net->llid, llid); 
     else
-      alloc_record_net(net_name, llid);
+      alloc_record_net(network, llid);
     }
   else
     {
     if (net)
       {
       if(net->llid != llid)
-        KERR("%s %d %d", net_name, net->llid, llid);
+        KERR("%s %d %d", network, net->llid, llid);
       else
         free_record_net(net);
       }
     else
-      KERR("%s", net_name);
+      KERR("%s", network);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -577,16 +578,14 @@ void connect_cloonix_init(char *conf_path,
                           t_evt_vm_exists_cb     vm_exists,
                           t_evt_sat_exists_cb    sat_exists,
                           t_evt_lan_exists_cb    lan_exists,
-                          t_evt_stats_eth_cb     stats_eth,
-                          t_evt_stats_sat_cb     stats_sat,
+                          t_evt_stats_endp_cb    stats_endp,
                           t_evt_stats_sysinfo_cb stats_sysinfo)
 {
   g_net_exists_cb     = net_exists;
   g_vm_exists_cb      = vm_exists;
   g_sat_exists_cb     = sat_exists;
   g_lan_exists_cb     = lan_exists;
-  g_stats_eth_cb      = stats_eth;
-  g_stats_sat_cb      = stats_sat;
+  g_stats_endp_cb     = stats_endp;
   g_stats_sysinfo_cb  = stats_sysinfo;
   interface_init(conf_path, net_change_exists);
 }

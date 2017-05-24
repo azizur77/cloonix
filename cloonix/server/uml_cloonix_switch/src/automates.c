@@ -26,7 +26,6 @@
 
 #include "io_clownix.h"
 #include "commun_daemon.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "pid_clone.h"
 #include "cfg_store.h"
@@ -188,17 +187,12 @@ void last_action_self_destruction(void *data)
   unlink(path);
   sprintf(path, "%s", pid_get_clone_internal_com());
   unlink(path);
-  if (unlink_sub_dir_files_except_dir(utils_get_musat_sock_dir(), err))
+  if (unlink_sub_dir_files_except_dir(utils_get_endp_sock_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);
   if (unlink_sub_dir_files_except_dir(utils_get_muswitch_sock_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);
-  if (unlink_sub_dir_files_except_dir(utils_get_muswitch_key_dir(), err))
-    event_print("DELETE PROBLEM: %s\n", err);
   if (unlink_sub_dir_files_except_dir(utils_get_muswitch_traf_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);
-  if (unlink_sub_dir_files_except_dir(utils_path_to_tux(), err))
-    event_print("DELETE PROBLEM: %s\n", err);
-  unlink(utils_path_to_tux());
   if (unlink_sub_dir_files_except_dir(cfg_get_work(), err))
     event_print("DELETE PROBLEM: %s\n", err);
   if (unlink_sub_dir_files_except_dir(cfg_get_root_work(), err))

@@ -21,7 +21,6 @@
 #include <string.h>
 /*---------------------------------------------------------------------------*/
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -91,18 +90,18 @@ static void callback_topo_names(int tid, t_topo_info *topo)
 {
   int i;
   char *rootfs_type;
-  for (i=0; i<topo->nb_vm; i++)
+  for (i=0; i<topo->nb_kvm; i++)
     {
-    if (topo->vmit[i].vm_params.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
+    if (topo->kvm[i].vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
       rootfs_type = "persistent writes rootfs";
-    else if (topo->vmit[i].vm_params.vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
+    else if (topo->kvm[i].vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
       rootfs_type = "evanescent writes rootfs";
     else
-      KOUT("%X", topo->vmit[i].vm_params.vm_config_flags);
-    printf("\n%s %s\n", topo->vmit[i].vm_params.name, rootfs_type);
-    printf("Rootfs:%s\n", topo->vmit[i].vm_params.rootfs_used);
-    if (topo->vmit[i].vm_params.vm_config_flags & VM_FLAG_DERIVED_BACKING)
-      printf("Backing:%s\n", topo->vmit[i].vm_params.rootfs_backing); 
+      KOUT("%X", topo->kvm[i].vm_config_flags);
+    printf("\n%s %s\n", topo->kvm[i].name, rootfs_type);
+    printf("Rootfs:%s\n", topo->kvm[i].rootfs_used);
+    if (topo->kvm[i].vm_config_flags & VM_FLAG_DERIVED_BACKING)
+      printf("Backing:%s\n", topo->kvm[i].rootfs_backing); 
     }
   printf("\n\n");
   exit(0);
@@ -110,48 +109,86 @@ static void callback_topo_names(int tid, t_topo_info *topo)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static char *get_type_endp(int type)
+{
+  char *result = "notfound";
+  switch (type)
+    {
+    case endp_type_kvm:
+      result = "kvm"; 
+      break;
+    case endp_type_c2c:
+      result = "c2c"; 
+      break;
+    case endp_type_snf:
+      result = "snf"; 
+      break;
+    case endp_type_tap:
+      result = "tap"; 
+      break;
+    case endp_type_nat:
+      result = "nat"; 
+      break;
+    case endp_type_a2b:
+      result = "a2b"; 
+      break;
+    case endp_type_wif:
+      result = "wif"; 
+      break;
+    case endp_type_raw:
+      result = "raw"; 
+      break;
+    default:
+      KOUT("%d", type);
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void print_endpoint_info(t_topo_endp *endp)
+{
+  int i, nb = endp->lan.nb_lan;
+  t_lan_group_item *lan = endp->lan.lan;
+  printf("\n%s:%s %d  lan:", get_type_endp(endp->type), endp->name, endp->num);  
+  for (i=0; i<nb; i++)
+    printf(" %s", lan[i].lan);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void callback_topo_topo(int tid, t_topo_info *topo)
 {
-  int i, j, k, sat_type;
-  for (i=0; i<topo->nb_vm; i++)
+  int i, type;
+  for (i=0; i<topo->nb_kvm; i++)
     {
     printf("\n");
-    if (topo->vmit[i].vm_params.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)
-      printf("\n%s ID: %d AGENT OK", topo->vmit[i].vm_params.name, 
-                                     topo->vmit[i].vm_id);
+    if (topo->kvm[i].vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)
+      printf("\nkvm:%s ID: %d AGENT OK", topo->kvm[i].name, topo->kvm[i].vm_id);
     else
-      printf("\n%s ID: %d AGENT KO", topo->vmit[i].vm_params.name, 
-                                     topo->vmit[i].vm_id);
-    for (j=0; j<topo->vmit[i].vm_params.nb_eth; j++)
-      {
-      for (k=0; k < topo->vmit[i].lan_eth[j].nb_lan; k++)
-        printf(" %s", topo->vmit[i].lan_eth[j].lan[k].name);
-      }
+      printf("\nkvm:%s ID: %d AGENT KO", topo->kvm[i].name, topo->kvm[i].vm_id);
     }
-
+  for (i=0; i<topo->nb_c2c; i++)
+      printf("\nc2c:%s", topo->c2c[i].name);
+  for (i=0; i<topo->nb_snf; i++)
+      printf("\nsnf:%s", topo->snf[i].name);
   for (i=0; i<topo->nb_sat; i++)
     {
+    type = topo->sat[i].type;
+    if (type == endp_type_tap) 
+      printf("\ntap:%s", topo->sat[i].name);
+    else if (type == endp_type_nat) 
+      printf("\nnat:%s", topo->sat[i].name);
+    else if (type == endp_type_a2b) 
+      printf("\na2b:%s", topo->sat[i].name);
+    else if (type == endp_type_wif) 
+      printf("\nwif:%s", topo->sat[i].name);
+    else if (type == endp_type_raw) 
+      printf("\nraw:%s", topo->sat[i].name);
     printf("\n");
-    sat_type = topo->sati[i].musat_type;
-    if ((sat_type == musat_type_tap) ||
-        (sat_type == musat_type_snf) ||
-        (sat_type == musat_type_c2c) ||
-        (sat_type == musat_type_nat) ||
-        (sat_type == musat_type_a2b)) 
-      printf("\n%s \n    lan:", topo->sati[i].name);
-    else if (sat_type == musat_type_wif) 
-      printf("\n%s wif\n    lan:", topo->sati[i].name);
-    else if (sat_type == musat_type_raw) 
-      printf("\n%s raw\n    lan:", topo->sati[i].name);
-    else
-      KOUT("%d", sat_type);
-    for (k=0; k < topo->sati[i].lan0_sat.nb_lan; k++)
-      printf(" (0)%s", topo->sati[i].lan0_sat.lan[k].name);
-    for (k=0; k < topo->sati[i].lan1_sat.nb_lan; k++)
-      printf(" (1)%s", topo->sati[i].lan1_sat.lan[k].name);
     }
-
-
+  for (i=0; i<topo->nb_endp; i++)
+    print_endpoint_info(&(topo->endp[i]));
   printf("\n\n");
   exit(0);
 }
@@ -390,7 +427,7 @@ int cmd_add_tap(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_tap, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_tap, NULL);
     }
   return result;
 }
@@ -404,7 +441,7 @@ int cmd_add_wif(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_wif, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_wif, NULL);
     }
   return result;
 }
@@ -418,7 +455,7 @@ int cmd_add_raw(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_raw, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_raw, NULL);
     }
   return result;
 }
@@ -432,7 +469,7 @@ int cmd_add_snf(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_snf, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_snf, NULL);
     }
   return result;
 }
@@ -446,7 +483,7 @@ int cmd_add_a2b(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_a2b, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_a2b, NULL);
     }
   return result;
 }
@@ -460,7 +497,7 @@ int cmd_add_nat(int argc, char **argv)
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
-    client_add_sat(0, callback_end, argv[0], musat_type_nat, NULL);
+    client_add_sat(0, callback_end, argv[0], endp_type_nat, NULL);
     }
   return result;
 }
@@ -507,7 +544,7 @@ int cmd_add_c2c(int argc, char **argv)
       strncpy(c2c_req_info.passwd_slave, cnf->passwd, MSG_DIGEST_LEN-1);
       printf("\nc2c is at: %s\n\n", cnf->doors);
       init_connection_to_uml_cloonix_switch();
-      client_add_sat(0, callback_end, c2c, musat_type_c2c, &c2c_req_info);
+      client_add_sat(0, callback_end, c2c, endp_type_c2c, &c2c_req_info);
       }
     }
   return result;
@@ -544,7 +581,7 @@ int cmd_add_vl2sat(int argc, char **argv)
       result = 0;
       lan = argv[2];
       init_connection_to_uml_cloonix_switch();
-      client_add_lan_sat(0, callback_end, name, lan, num);
+      client_add_lan_endp(0, callback_end, name, num, lan);
       }
     }
   return result;
@@ -565,7 +602,7 @@ int cmd_del_vl2sat(int argc, char **argv)
       result = 0;
       lan = argv[2];
       init_connection_to_uml_cloonix_switch();
-      client_del_lan_sat(0, callback_end, name, lan, num);
+      client_del_lan_endp(0, callback_end, name, num, lan);
       }
     }
   return result;
@@ -612,8 +649,9 @@ static void blkd_item_print(t_blkd_item *it)
   char bd_rx[MAX_NAME_LEN];
   get_proper_bandwidth(it->bandwidth_tx, bd_tx);
   get_proper_bandwidth(it->bandwidth_rx, bd_rx);
-  printf("llid:%d %s pid:%d\n", it->llid, it->name, it->pid);
-  printf("llid:%d %s %s %d\n", it->llid, it->sock, it->rank_name, it->rank);
+  printf("llid:%d sock:%s name:%s num:%d rank:%d pid:%d\n", 
+                                  it->llid, it->sock, it->rank_name, 
+                                  it->rank_num, it->rank, it->pid);
   printf("llid:%d TX r:%d s:%d a:%d f:%d q:%d d:%lld b:%s\n",
                                                it->llid, 
                                                it->dist_flow_ctrl_tx,
@@ -722,7 +760,7 @@ int cmd_event_hop(int argc, char **argv)
     if (ptr)
       {
       *ptr = 0;
-      sscanf(ptr+1, "%d", &(g_hop_list[i].eth)); 
+      sscanf(ptr+1, "%d", &(g_hop_list[i].num)); 
       }
     strncpy(g_hop_list[i].name, argv[i], MAX_NAME_LEN-1);
     }
@@ -892,7 +930,7 @@ static void print_stats_counts(t_stats_counts *stats_counts)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void stats_eth_cb(int tid, char *name, int eth, 
+static void stats_endp_cb(int tid, char *name, int num, 
                          t_stats_counts *stats_counts, int status)
 {
   if (status)
@@ -900,21 +938,7 @@ static void stats_eth_cb(int tid, char *name, int eth,
     printf("\nKO\n");
     exit(1); 
     }
-  printf("\n%s eth%d\n", name, eth);
-  print_stats_counts(stats_counts);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void stats_sat_cb(int tid, char *name, 
-                         t_stats_counts *stats_counts, int status)
-{
-  if (status)
-    {
-    printf("\nKO\n");
-    exit(1); 
-    }
-  printf("\n%s\n", name);
+  printf("\n%s %d\n", name, num);
   print_stats_counts(stats_counts);
 }
 /*---------------------------------------------------------------------------*/
@@ -956,20 +980,6 @@ static void stats_sysinfo_cb(int tid, char *name,
 
 
 /*****************************************************************************/
-int cmd_sub_sat(int argc, char **argv)
-{
-  int result = -1;
-  if (argc == 1)
-    {
-    result = 0;
-    init_connection_to_uml_cloonix_switch();
-    client_evt_stats_sat_sub(0, argv[0], 1, stats_sat_cb);
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 int cmd_sub_sysinfo(int argc, char **argv)
 {
   int result = -1;
@@ -984,17 +994,17 @@ int cmd_sub_sysinfo(int argc, char **argv)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int cmd_sub_eth(int argc, char **argv)
+int cmd_sub_endp(int argc, char **argv)
 {
-  int eth, result = -1;
+  int num, result = -1;
   if (argc == 2)
     {
-    eth = param_tester(argv[1], 0, MAX_ETH_VM);
-    if (eth != -1)
+    num = param_tester(argv[1], 0, MAX_ETH_VM);
+    if (num != -1)
       {
       result = 0;
       init_connection_to_uml_cloonix_switch();
-      client_evt_stats_eth_sub(0, argv[0], eth, 1, stats_eth_cb);
+      client_evt_stats_endp_sub(0, argv[0], num, 1, stats_endp_cb);
       }
     }
   return result;

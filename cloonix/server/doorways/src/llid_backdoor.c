@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 #include "sock.h"
@@ -545,7 +544,6 @@ static void rx_from_agent_conclusion(t_backdoor_vm *bvm,
                                      int paylen, char *payload)
 {
   int sub_dido_idx, llid;
-  unsigned long long s2c, c2s, ls2c, lc2s, delta; 
   bvm->ping_agent_rx += 1;
 
   if ((dido_llid != 0) &&

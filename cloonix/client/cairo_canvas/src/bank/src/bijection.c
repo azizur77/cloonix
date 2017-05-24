@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "bijection.h"
 
 #define BASIC_MASK 0xFFF

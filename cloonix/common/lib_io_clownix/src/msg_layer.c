@@ -799,15 +799,13 @@ void msg_mngt_init (char *name, int max_len_per_read)
   act.sa_flags = 0;
   act.sa_handler = signal_pipe;
   sigaction(SIGPIPE, &act, NULL);
-
   first_rx_buf_max = max_len_per_read;
   memset(dchan, 0, CLOWNIX_MAX_CHANNELS*sizeof(t_data_channel));
   channel_init();
-  blkd_init(NULL, name, 
-            channel_tx_local_flow_ctrl, 
-            channel_rx_local_flow_ctrl, 
-            rpct_send_peer_flow_control);
-  rpct_init(NULL, ptr_string_tx, name);
+  blkd_init(NULL, channel_tx_local_flow_ctrl, 
+                  channel_rx_local_flow_ctrl, 
+                  rpct_send_peer_flow_control);
+  rpct_init(NULL, ptr_string_tx);
 } 
 /*---------------------------------------------------------------------------*/
 

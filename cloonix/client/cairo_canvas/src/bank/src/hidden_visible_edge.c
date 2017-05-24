@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "bank.h"
 #include "bank_item.h"

@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <math.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "xml_doors.h"
 #include "doors_rpc.h"
@@ -89,7 +88,7 @@ static void extract_boundary(char *input, char *output)
 
 /****************************************************************************/
 void doors_send_c2c_clone_birth(int llid, int tid, char *net_name, char *name,
-                                int fd, int musat_type,
+                                int fd, int endp_type,
                                 char *bin_path, char *sock)
 {
   int len;
@@ -97,7 +96,7 @@ void doors_send_c2c_clone_birth(int llid, int tid, char *net_name, char *name,
     KOUT(" ");
   if (!name||(strlen(name)==0)||(strlen(name)>=MAX_NAME_LEN))
     KOUT(" ");
-  len = sprintf(sndbuf, C2C_CLONE_BIRTH, tid, net_name, name, fd, musat_type, 
+  len = sprintf(sndbuf, C2C_CLONE_BIRTH, tid, net_name, name, fd, endp_type, 
                                          bin_path, sock);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -282,7 +281,7 @@ void doors_send_del_vm(int llid, int tid, char *name)
 /*****************************************************************************/
 static void dispatcher(int llid, int bnd_evt, char *msg)
 {
-  int pid, fd, musat_type, tid, peer_idx, peer_ip, peer_port, status, local_idx;
+  int pid, fd, endp_type, tid, peer_idx, peer_ip, peer_port, status, local_idx;
   char *ptrs, *ptre;
   char net_name[MAX_NAME_LEN];
   char name[MAX_NAME_LEN];
@@ -293,11 +292,11 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
     {
 
     case bnd_c2c_clone_birth:
-      if (sscanf(msg, C2C_CLONE_BIRTH, &tid, net_name, name, &fd, &musat_type, 
+      if (sscanf(msg, C2C_CLONE_BIRTH, &tid, net_name, name, &fd, &endp_type, 
                                        bin_path, sock) != 7)
         KOUT("%s", msg);
       doors_recv_c2c_clone_birth(llid, tid, net_name, name,
-                                 fd, musat_type, bin_path,sock);
+                                 fd, endp_type, bin_path,sock);
       break;
 
     case bnd_c2c_clone_birth_pid:

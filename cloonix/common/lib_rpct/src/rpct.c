@@ -112,10 +112,6 @@ void rpct_send_report(void *ptr, int llid, t_blkd_item *item)
   char *buf = get_buf_tx(ptr);
   if (!item)
     KOUT(" ");
-  if (strlen(item->name) == 0)
-    KOUT(" ");
-  if (strlen(item->name) >= MAX_NAME_LEN)
-    KOUT("%s", item->name);
   if (strlen(item->sock) == 0)
     KOUT(" ");
   if (strlen(item->sock) >= MAX_PATH_LEN)
@@ -124,7 +120,7 @@ void rpct_send_report(void *ptr, int llid, t_blkd_item *item)
     KOUT(" ");
   if (strlen(item->rank_name) >= MAX_NAME_LEN)
     KOUT("%s", item->rank_name);
-  len = sprintf(buf, BLKD_ITEM, item->name, item->sock, item->rank_name, 
+  len = sprintf(buf, BLKD_ITEM, item->sock, item->rank_name, item->rank_num, 
                                 item->rank, item->pid, item->llid, 
                                 item->fd, item->sel_tx,
                                 item->sel_rx, item->fifo_tx,
@@ -140,27 +136,26 @@ void rpct_send_report(void *ptr, int llid, t_blkd_item *item)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_send_pid_req(void *ptr, int llid, int tid,
-                      int sec_offset, char *name)
+void rpct_send_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
   int len;
   char *buf = get_buf_tx(ptr);
   if (!name || !strlen(name))
     KOUT(" ");
-  len = sprintf(buf, HOP_PID_REQ, tid, sec_offset, name);
+  len = sprintf(buf, HOP_PID_REQ, tid, name, num);
   msg_tx(ptr, llid, len, buf);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 void rpct_send_pid_resp(void *ptr, int llid, int tid,
-                       char *name, int pid)
+                        char *name, int num, int toppid, int pid)
 {
   int len;
   char *buf = get_buf_tx(ptr);
   if (!name || !strlen(name))
     KOUT(" ");
-  len = sprintf(buf, HOP_PID_RESP, tid, name, pid);
+  len = sprintf(buf, HOP_PID_RESP, tid, name, num, toppid, pid);
   msg_tx(ptr, llid, len, buf);
 }
 /*---------------------------------------------------------------------------*/
@@ -298,7 +293,7 @@ static void dispatcher(void *ptr, int llid, int bnd_evt, char *msg)
 {
   int sub;
   t_blkd_item item;
-  int flags_hop, pid, tid, len, cli_llid, cli_tid, sec_offset;
+  int flags_hop, toppid, pid, tid, len, cli_llid, cli_tid, num;
   char *ptrs, *ptre, *line, *txt;
   char name[MAX_NAME_LEN];
 
@@ -314,7 +309,9 @@ static void dispatcher(void *ptr, int llid, int bnd_evt, char *msg)
 
     case bnd_rpct_blkd_item:
     memset(&item, 0, sizeof(t_blkd_item));
-    if (sscanf(msg, BLKD_ITEM, item.name, item.sock, item.rank_name,
+    if (sscanf(msg, BLKD_ITEM, item.sock, 
+                               item.rank_name,
+                               &(item.rank_num),
                                &(item.rank),
                                &(item.pid),
                                &(item.llid),
@@ -339,15 +336,15 @@ static void dispatcher(void *ptr, int llid, int bnd_evt, char *msg)
       break;
 
     case bnd_rpct_pid_req:
-      if (sscanf(msg, HOP_PID_REQ, &tid, &sec_offset, name) != 3)
+      if (sscanf(msg, HOP_PID_REQ, &tid, name, &num) != 3)
         KOUT("%s", msg);
-      rpct_recv_pid_req(ptr, llid, tid, sec_offset, name);
+      rpct_recv_pid_req(ptr, llid, tid, name, num);
       break;
 
     case bnd_rpct_pid_resp:
-      if (sscanf(msg, HOP_PID_RESP, &tid, name, &pid) != 3)
+      if (sscanf(msg, HOP_PID_RESP, &tid, name, &num, &toppid, &pid) != 5)
         KOUT("%s", msg);
-      rpct_recv_pid_resp(ptr, llid, tid, name, pid);
+      rpct_recv_pid_resp(ptr, llid, tid, name, num, toppid, pid);
       break;
 
     case bnd_rpct_hop_evt_sub:
@@ -537,18 +534,18 @@ void rpct_redirect_string_tx(void *ptr, t_rpct_tx rpc_tx)
 
 /*****************************************************************************/
 void rpct_send_peer_flow_control(void *ptr, int llid, 
-                                 char *name, int rank, int stop)
+                                 char *name, int num, int rank, int stop)
 {
   char evt[MAX_PATH_LEN];
   snprintf(evt, MAX_PATH_LEN-1,
-           "cloonix_evt_peer_flow_control=%s rank=%d stop=%d",
-           name, rank, stop);
+           "cloonix_evt_peer_flow_control name=%s num=%d rank=%d stop=%d",
+           name, num, rank, stop);
   rpct_send_evt_msg(ptr, llid, 0, evt);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_init(void *ptr, t_rpct_tx rpc_tx, char *name)
+void rpct_init(void *ptr, t_rpct_tx rpc_tx)
 {
   t_rpct_ctx *ctx;
   t_all_ctx_head *ctx_head;
@@ -564,7 +561,6 @@ void rpct_init(void *ptr, t_rpct_tx rpc_tx, char *name)
     ctx = (t_rpct_ctx *) ctx_head->rpct_ctx;
     }
   memset(ctx, 0, sizeof(t_rpct_ctx));
-  strncpy(ctx->name, name, MAX_NAME_LEN-1);
   ctx->g_buf_tx = (char *) malloc(100000);
   ctx->g_string_tx = rpc_tx;
   ctx->g_pid = (int) getpid();

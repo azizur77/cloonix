@@ -28,8 +28,9 @@
 
 
 /*****************************************************************************/
-t_all_ctx *ioc_ctx_init(char *name, int offset, int max_len_per_read)
+t_all_ctx *ioc_ctx_init(char *name, int num, int max_len_per_read)
 {
+  int i;
   t_all_ctx *all_ctx;
   t_ioc_ctx *ioc_ctx;
   all_ctx = (t_all_ctx *) malloc(sizeof(t_all_ctx));
@@ -37,11 +38,11 @@ t_all_ctx *ioc_ctx_init(char *name, int offset, int max_len_per_read)
   all_ctx->ctx_head.ioc_ctx = (t_ioc_ctx *) malloc(sizeof(t_ioc_ctx));
   memset(all_ctx->ctx_head.ioc_ctx, 0, sizeof(t_ioc_ctx)); 
   strncpy(all_ctx->g_name, name, MAX_NAME_LEN-1);
-  setup_global_second_offset(offset);
+  all_ctx->g_num = num;
   ioc_ctx = (t_ioc_ctx *) all_ctx->ctx_head.ioc_ctx;
   ioc_ctx->g_first_rx_buf_max = max_len_per_read;
-  all_ctx->g_traf[0].timeout_mulan_id = 1;
-  all_ctx->g_traf[1].timeout_mulan_id = 1;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    all_ctx->g_traf_endp[i].timeout_mulan_id = 1;
   return all_ctx;
 }
 /*---------------------------------------------------------------------------*/

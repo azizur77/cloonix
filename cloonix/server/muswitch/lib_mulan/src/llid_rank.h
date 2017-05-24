@@ -15,17 +15,17 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-t_llid_rank *llid_rank_get_with_name(char *name);
+t_llid_rank *llid_rank_get_with_name(char *name, int num);
 t_llid_rank *llid_rank_get_with_llid(int llid);
 t_llid_rank *llid_rank_get_with_prechoice_rank(uint32_t rank);
 t_llid_rank *llid_rank_peer_rank_set(int llid, char *name, int num, 
-                                     uint32_t rank);
+                                     int tidx, uint32_t rank);
 int llid_rank_peer_rank_unset(int llid, char *name, uint32_t rank);
-void llid_rank_llid_create(int llid, char *name, uint32_t rank);
+void llid_rank_llid_create(int llid, char *name, int num, uint32_t rank);
 /*---------------------------------------------------------------------------*/
 void llid_rank_sig_disconnect(t_all_ctx *all_ctx, int llid);
 void llid_rank_traf_disconnect(t_all_ctx *all_ctx, int llid);
-int  llid_rank_traf_connect(t_all_ctx *all_ctx, int llid, char *buf);
+int  llid_rank_traf_connect(t_all_ctx *all_ctx, int llid, char *name, int num);
 int get_llid_traf_tab(t_all_ctx *all_ctx, int llid, int **llid_tab);
 /*---------------------------------------------------------------------------*/
 void init_llid_rank(void);

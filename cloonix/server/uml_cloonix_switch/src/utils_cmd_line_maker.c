@@ -30,7 +30,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "commun_daemon.h"
@@ -41,7 +40,6 @@
 #include "doors_rpc.h"
 #include "file_read_write.h"
 #include "doorways_mngt.h"
-#include "mueth_mngt.h"
 
 
 char **get_saved_environ(void);
@@ -88,16 +86,6 @@ void utils_qemu_img_copy_backing(char *cow, char *dest, char *cmd)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_path_to_tux(void)
-{
-  static char path[MAX_PATH_LEN];
-  memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1, "%s/tux", cfg_get_root_work());
-  return path;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 int utils_get_uid_user(void)
 {
   int result = (int) glob_uid_user;
@@ -114,66 +102,34 @@ int utils_get_gid_user(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_intf_prefix(int is_serial, int vm_id)
+char *utils_get_endp_name(char *name, int num)
 {
-  static char path[MAX_PATH_LEN];
-  if (is_serial)
-    sprintf(path, "%s/%s/%s", cfg_get_work_vm(vm_id), 
-                              DIR_DATA, PREFIX_SER_INTF);
-  else
-    sprintf(path, "%s/%s/%s", cfg_get_work_vm(vm_id), 
-                              DIR_DATA, PREFIX_ETH_INTF);
-  return path;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *utils_get_mueth_path(int vm_id, int eth_num)
-{
-  static char path[MAX_PATH_LEN];
-  sprintf(path, "%s/%s/%s%d", cfg_get_work_vm(vm_id),
-                            DIR_DATA, PREFIX_ETH_MUETH, eth_num);
-  return path;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *utils_get_mueth_name(char *name, int eth_num)
-{
-  static char mueth_name[MAX_NAME_LEN];
-  snprintf(mueth_name, MAX_NAME_LEN-1, QEMU_ETH_FORMAT, name, eth_num);
-  return mueth_name;
+  static char endp_name[MAX_NAME_LEN];
+  snprintf(endp_name, MAX_NAME_LEN-1, "%s_%d", name, num);
+  return endp_name;
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_musat_sock_dir(void)
+char *utils_get_endp_sock_dir(void)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1,"%s/%s", cfg_get_root_work(), MUSAT_SOCK_DIR);
+  snprintf(path, MAX_PATH_LEN-1,"%s/%s", cfg_get_root_work(), ENDP_SOCK_DIR);
   return path;
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_musat_path(char *name)
+char *utils_get_endp_path(char *name, int num)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1, "%s/%s/%s", 
-           cfg_get_root_work(), MUSAT_SOCK_DIR, name);
+  snprintf(path, MAX_PATH_LEN-1, "%s/%s", 
+           utils_get_endp_sock_dir(), utils_get_endp_name(name, num));
   return path;
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *utils_get_musat_name(char *name)
-{
-  return name;
-}
-/*--------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 char *utils_get_qmonitor_path(int vm_id)
@@ -240,20 +196,20 @@ char *utils_get_muswitch_bin_path(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_musat_bin_path(int type)
+char *utils_get_endp_bin_path(int type)
 {
   static char path[MAX_PATH_LEN];
-  if ((type == musat_type_tap)  || 
-      (type == musat_type_raw)  ||
-      (type == musat_type_wif))
+  if ((type == endp_type_tap)  || 
+      (type == endp_type_raw)  ||
+      (type == endp_type_wif))
     sprintf(path, "%s/server/muswitch/mutap/cloonix_mutap", cfg_get_bin_dir());
-  else if (type == musat_type_snf)
+  else if (type == endp_type_snf)
     sprintf(path, "%s/server/muswitch/musnf/cloonix_musnf", cfg_get_bin_dir());
-  else if (type == musat_type_c2c)
+  else if (type == endp_type_c2c)
     sprintf(path, "%s/server/muswitch/muc2c/cloonix_muc2c", cfg_get_bin_dir());
-  else if (type == musat_type_a2b)
+  else if (type == endp_type_a2b)
     sprintf(path, "%s/server/muswitch/mua2b/cloonix_mua2b", cfg_get_bin_dir());
-  else if (type == musat_type_nat)
+  else if (type == endp_type_nat)
     sprintf(path, "%s/server/muswitch/munat/cloonix_munat", cfg_get_bin_dir());
   else
     KOUT("%d", type);
@@ -267,15 +223,6 @@ char *utils_get_muswitch_sock_dir(void)
 {
   static char path[MAX_PATH_LEN];
   sprintf(path, "%s/%s", cfg_get_root_work(), MUSWITCH_SOCK_DIR);
-  return path;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *utils_get_muswitch_key_dir(void)
-{
-  static char path[MAX_PATH_LEN];
-  sprintf(path, "%s/%s", cfg_get_root_work(), MUSWITCH_KEY_DIR);
   return path;
 }
 /*---------------------------------------------------------------------------*/
@@ -318,16 +265,6 @@ char *utils_get_spice_path(int vm_id)
 }
 /*---------------------------------------------------------------------------*/
 
-/****************************************************************************/
-char *utils_get_tux_path(char *name)
-{
-  static char long_name[MAX_PATH_LEN];
-  memset(long_name, 0, MAX_PATH_LEN);
-  snprintf(long_name,MAX_PATH_LEN-1,"%s/%s", utils_path_to_tux(), name);
-  return long_name;
-}
-/*---------------------------------------------------------------------------*/
-
 /*****************************************************************************/
 char *utils_dir_conf(int vm_id)
 {
@@ -357,7 +294,7 @@ int utils_get_pid_of_machine(t_vm *vm)
     pid = vm->saved_pid;
   else
     {
-    pid = machine_read_umid_pid(vm->vm_id);
+    pid = machine_read_umid_pid(vm->kvm.vm_id);
     vm->saved_pid = pid;
     }
   return pid;
@@ -384,7 +321,7 @@ void utils_chk_my_dirs(t_vm *vm)
   char path[MAX_PATH_LEN];
   if (!vm)
     KOUT(" ");
-  vm_id = vm->vm_id;
+  vm_id = vm->kvm.vm_id;
   sprintf(path, "%s", cfg_get_work_vm(vm_id)); 
   if (!file_exists(path, F_OK))
     KOUT(" ");
@@ -423,13 +360,13 @@ static void free_wake_up_eths_and_delete_vm(t_vm *vm, int error_death)
 {
   int llid, tid;
   char err[MAX_PATH_LEN];
-  event_print("DELETE VM %s", vm->vm_params.name);
+  event_print("DELETE VM %s", vm->kvm.name);
   llid = vm->wake_up_eths->llid;
   tid = vm->wake_up_eths->tid;
-  if (cfg_is_a_zombie(vm->vm_params.name))
-    cfg_del_zombie(vm->vm_params.name);
+  if (cfg_is_a_zombie(vm->kvm.name))
+    cfg_del_zombie(vm->kvm.name);
   free_wake_up_eths(vm);
-  machine_death(vm->vm_params.name, error_death);
+  machine_death(vm->kvm.name, error_death);
   if (llid)
     {
     memset(err, 0, MAX_PATH_LEN);
@@ -442,18 +379,6 @@ static void free_wake_up_eths_and_delete_vm(t_vm *vm, int error_death)
     send_status_ko(llid, tid, err);
     }
   event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void start_mueth_qemu(t_vm *vm)
-{
-  int i;
-  for (i=0; i<vm->vm_params.nb_eth; i++)
-    {
-    if(mueth_vm_start(vm->vm_params.name, i))
-      KERR("%s %d", vm->vm_params.name, i);
-    }
 }
 /*---------------------------------------------------------------------------*/
 
@@ -482,9 +407,9 @@ void utils_launched_vm_death(char *nm, int error_death)
     {
     if (!vm->wake_up_eths)
       {
-      if (cfg_is_a_zombie(vm->vm_params.name))
-        cfg_del_zombie(vm->vm_params.name);
-      machine_death(vm->vm_params.name, error_death);
+      if (cfg_is_a_zombie(vm->kvm.name))
+        cfg_del_zombie(vm->kvm.name);
+      machine_death(vm->kvm.name, error_death);
       event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
       }
     else
@@ -505,7 +430,7 @@ void utils_vm_create_fct_abort(void *data)
     KOUT(" ");
   if (!vm->wake_up_eths)
     KOUT(" ");
-  event_print("ABORT %s %s", __FUNCTION__, vm->vm_params.name);
+  event_print("ABORT %s %s", __FUNCTION__, vm->kvm.name);
   free_wake_up_eths_and_delete_vm(vm, error_death_abort);
 }
 /*--------------------------------------------------------------------------*/

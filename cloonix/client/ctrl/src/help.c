@@ -21,7 +21,6 @@
 #include <string.h>
 /*---------------------------------------------------------------------------*/
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -205,14 +204,6 @@ void help_mud_eth(char *line)
 }
 /*---------------------------------------------------------------------------*/
 
-
-/*****************************************************************************/
-void help_sub_sat(char *line)
-{
-  printf("\n\n\n%s <name>\n\n\n", line);
-}
-/*---------------------------------------------------------------------------*/
-
 /*****************************************************************************/
 void help_sub_sysinfo(char *line)
 {
@@ -222,7 +213,7 @@ void help_sub_sysinfo(char *line)
 
 
 /*****************************************************************************/
-void help_sub_eth(char *line)
+void help_sub_endp(char *line)
 {
   printf("\n\n\n%s <name> <num>\n\n\n", line);
 }

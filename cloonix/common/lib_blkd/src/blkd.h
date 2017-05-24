@@ -85,6 +85,7 @@ typedef struct t_llid_blkd
 typedef struct t_blkd_ctx
 {
   char g_name[MAX_NAME_LEN];
+  int  g_num;
   int  g_pid;
   int  g_our_mutype;
   int  g_cloonix_llid;
@@ -105,6 +106,7 @@ int blkd_fd_event_rx(void *ptr, int llid, int fd,
                                 t_blkd_rx_cb rx_ready_cb);
 /*--------------------------------------------------------------------------*/
 int blkd_fd_event_tx(void *ptr, int fd, t_blkd_fifo_tx *fifo_tx);
+void blkd_fd_event_purge_tx(void *ptr, t_blkd_fifo_tx *pool);
 /*--------------------------------------------------------------------------*/
 t_blkd *blkd_rx_fifo_get(t_blkd_fifo_rx *fifo_rx);
 /*--------------------------------------------------------------------------*/

@@ -37,8 +37,6 @@
 
 #define HEARTBEAT_DEFAULT_TIMEOUT 10
 
-static int global_second_offset;
-
 
 void clownix_timer_beat(t_all_ctx *all_ctx);
 void clownix_timer_init(t_all_ctx *all_ctx);
@@ -442,13 +440,6 @@ static int delta_beat(struct timeval *cur, struct timeval *last)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void setup_global_second_offset(int second_offset)
-{
-  global_second_offset = second_offset;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 struct timeval *channel_get_current_time(t_ioc_ctx *ioc_ctx)
 {
   return (&ioc_ctx->g_current_time);
@@ -465,7 +456,7 @@ int heartbeat_mngt(t_all_ctx *all_ctx, int type)
   if (type == 1)
     ioc_ctx->g_heart_count++;
   my_gettimeofday(&cur);
-  ioc_ctx->g_current_time.tv_sec = cur.tv_sec - global_second_offset;
+  ioc_ctx->g_current_time.tv_sec = cur.tv_sec;
   ioc_ctx->g_current_time.tv_usec = cur.tv_usec;
   delta = delta_beat(&cur, &ioc_ctx->g_last_heartbeat);
   if ((type == 0) || (delta >= (ioc_ctx->g_heartbeat_ms_timeout*10)))
@@ -573,13 +564,13 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
   switch (our_mutype)
     {
     case mulan_type:
-    case musat_type_tap:
-    case musat_type_wif:
-    case musat_type_raw:
-    case musat_type_snf:
-    case musat_type_c2c:
-    case musat_type_nat:
-    case musat_type_a2b:
+    case endp_type_tap:
+    case endp_type_wif:
+    case endp_type_raw:
+    case endp_type_snf:
+    case endp_type_c2c:
+    case endp_type_nat:
+    case endp_type_a2b:
       get_max_tx_rx_queues(all_ctx, llid, &max_tx_queued, &max_rx_queued);
       if ((max_tx_queued < MAX_GLOB_BLKD_QUEUED_BYTES/2) && 
           (ioc_ctx->g_channel[cidx].red_to_stop_reading == 0))
@@ -587,7 +578,7 @@ static void evt_set_blkd_epoll(t_all_ctx *all_ctx, int cidx,
       else
         blkd_stop_rx_counter_increment((void *) all_ctx, llid);
       break;
-    case musat_type_eth:
+    case endp_type_kvm:
       if (ioc_ctx->g_channel[cidx].red_to_stop_reading == 0)
         (*evt) |= EPOLLIN;
       else

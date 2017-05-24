@@ -157,15 +157,18 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
-
-  if (idx == 0) 
-    sched_tx_pkt(1, bd);
-  else if (idx == 1)
-    sched_tx_pkt(0, bd);
-  else
-    KOUT(" ");
+  if (bd)
+    {
+    if (tidx == 0) 
+      sched_tx_pkt(1, bd);
+    else if (tidx == MAX_TRAF_ENDPOINT)
+      sched_tx_pkt(0, bd);
+    else
+      KOUT(" ");
+    }
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -173,21 +176,29 @@ void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
 int main (int argc, char *argv[])
 {
   t_all_ctx *all_ctx;
-  int a2b_type;
+  int a2b_type, num;
   char *endptr;
-  if (argc != 5)
+  if (argc != 6)
     KOUT(" ");
-  a2b_type = strtoul(argv[4], &endptr, 10);
+  
+  num = strtoul(argv[3], &endptr, 10);
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
-  if (a2b_type != musat_type_a2b)
+  if ((num != 0) && (num != 1))
+    KOUT("%d", num);
+
+  a2b_type = strtoul(argv[5], &endptr, 10);
+  if ((endptr == NULL)||(endptr[0] != 0))
+    KOUT(" ");
+  if (a2b_type != endp_type_a2b)
     KOUT("%d", a2b_type);
-  all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN);
+  
+  all_ctx = msg_mngt_init((char *) argv[2], num, IO_MAX_BUF_LEN);
   blkd_set_our_mutype((void *) all_ctx, a2b_type);
   clownix_real_timer_init(all_ctx);
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);
   strncpy(all_ctx->g_name, argv[2], MAX_NAME_LEN-1);
-  strncpy(all_ctx->g_path, argv[3], MAX_PATH_LEN-1);
+  strncpy(all_ctx->g_path, argv[4], MAX_PATH_LEN-1);
   sock_fd_init(all_ctx);
   config_init();
   shed_init(all_ctx);

@@ -53,7 +53,7 @@ char *get_local_cloonix_tree(void);
 char *get_distant_cloonix_tree(void);
 
 
-void work_dir_resp(int tid, t_cloonix_config *conf);
+void work_dir_resp(int tid, t_topo_clc *conf);
 char *get_spice_vm_path(int vm_id);
 
 

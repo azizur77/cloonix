@@ -42,7 +42,6 @@ void set_fd_not_to_close(int fd);
 #define MAX_MUTXT_LEN      2500
 #define IO_MAX_BUF_LEN 50000
 #define MAX_STR_LEN 250
-#define MSG_DIGEST_LEN 32
 
 #define MAX_SIZE_BIGGEST_MSG 10000000
 #define MAX_MALLOC_TYPES 30

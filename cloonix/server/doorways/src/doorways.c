@@ -28,7 +28,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 #include "llid_traffic.h"
@@ -188,10 +187,9 @@ void doors_recv_command(int llid, int tid, char *name, char *cmd)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
-  cloonix_set_sec_offset(sec_offset);
-  rpct_send_pid_resp(ptr, llid, tid, name, getpid());
+  rpct_send_pid_resp(ptr, llid, tid, name, num, cloonix_get_pid(), getpid());
 }
 /*---------------------------------------------------------------------------*/
 

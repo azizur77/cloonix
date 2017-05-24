@@ -31,7 +31,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "doors_rpc.h"
@@ -233,7 +232,7 @@ int sav_vm_agent_ok_name(char *name)
 {
   int result = 0;
   t_vm *vm = cfg_get_vm(name);
-  if (vm->vm_params.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)
+  if (vm->kvm.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)
     result = 1;
   return result;
 }
@@ -246,7 +245,7 @@ int sav_vm_agent_ok_all(void)
   t_vm *cur = cfg_get_first_vm(&nb);
   while (cur)
     {  
-    if (!(cur->vm_params.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK))
+    if (!(cur->kvm.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK))
       result = 0;
     cur = cur->next;
     }
@@ -513,19 +512,19 @@ void sav_vm_fifreeze_fithaw(char *name, int is_freeze)
 static void alloc_and_init_svm(t_vm *vm, char *dir_path, char *path, 
                                int llid, int tid, int type)
 {
-  t_sav_vm *svm = alloc_svm(vm->vm_params.name);
+  t_sav_vm *svm = alloc_svm(vm->kvm.name);
   svm->llid = llid;
   svm->tid = tid;
   svm->type = type;
   set_svm_state(svm, state_fifreeze_sent);
-  strncpy(svm->src_rootfs, vm->vm_params.rootfs_used, MAX_PATH_LEN-1);
+  strncpy(svm->src_rootfs, vm->kvm.rootfs_used, MAX_PATH_LEN-1);
   if (dir_path)
     strncpy(svm->dir_path, dir_path, MAX_PATH_LEN-1);
   strncpy(svm->dst_rootfs, path, MAX_PATH_LEN-1);
   strcpy(svm->clone_msg, "NO_MSG");
   clownix_timeout_add(500, timer_svm, (void *) svm, &(svm->abeat_timer),
                                                     &(svm->ref_timer));
-  send_fifreeze_to_cloonix_agent(vm->vm_params.name);
+  send_fifreeze_to_cloonix_agent(vm->kvm.name);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -564,7 +563,7 @@ void sav_all_vm_rootfs(int nb, t_vm *vm, char *dir_path,
     while (cur)
       {
       memset(path, 0, MAX_PATH_LEN);
-      snprintf(path,MAX_PATH_LEN-1,"%s/%s.qcow2",dir_path,cur->vm_params.name);
+      snprintf(path,MAX_PATH_LEN-1,"%s/%s.qcow2",dir_path,cur->kvm.name);
       alloc_and_init_svm(cur, dir_path, path, llid, tid, type);
       cur = cur->next;
       }

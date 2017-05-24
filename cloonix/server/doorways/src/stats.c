@@ -24,7 +24,6 @@
 #include <errno.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 #include "sock.h"

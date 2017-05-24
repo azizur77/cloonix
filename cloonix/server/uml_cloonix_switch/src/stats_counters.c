@@ -28,27 +28,19 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "event_subscriber.h"
 #include "commun_daemon.h"
 #include "header_sock.h"
+#include "endp_mngt.h"
 
 
-
-enum {
-  type_evt_stats_none,
-  type_evt_stats_eth,
-  type_evt_stats_sat,
-  type_evt_stats_max,
-  };
 
 typedef struct t_stats_sub
 {
-  int type_evt_stats;
   char name[MAX_NAME_LEN];
-  int eth;
+  int  num;
   int llid;
   int tid;
   t_stats_counts stats_counts;
@@ -105,12 +97,12 @@ static t_stats_sub *find_stats_sub_with_llid(int llid)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_stats_sub *find_stats_sub_with_name(int type_evt_stats, char *name)
+static t_stats_sub *find_stats_sub_with_name(char *name, int num)
 {
   t_stats_sub *cur = g_head_stats_sub;
   while (cur)
     {
-    if ((cur->type_evt_stats == type_evt_stats) && (!strcmp(cur->name, name)))
+    if ((!strcmp(cur->name, name)) && (cur->num == num))
       break;
     cur = cur->next;
     }
@@ -119,14 +111,12 @@ static t_stats_sub *find_stats_sub_with_name(int type_evt_stats, char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_stats_sub *find_stats_sub(int type_evt_stats, char *name, 
-                                   int eth, int llid)
+static t_stats_sub *find_stats_sub(char *name, int num, int llid)
 {
   t_stats_sub *cur = g_head_stats_sub;
   while (cur)
     {
-    if ((cur->type_evt_stats == type_evt_stats) && (cur->llid == llid) &&
-        (!strcmp(cur->name, name)) && (cur->eth == eth))
+    if ((!strcmp(cur->name, name)) && (cur->num == num) && (cur->llid == llid))
       break;
     cur = cur->next;
     }
@@ -135,19 +125,17 @@ static t_stats_sub *find_stats_sub(int type_evt_stats, char *name,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int alloc_stats_sub(int type_evt_stats, char *name, 
-                           int eth, int llid, int tid)
+static int alloc_stats_sub(char *name, int num, int llid, int tid)
 {
   int result = -1;
-  t_stats_sub *cur = find_stats_sub(type_evt_stats, name, eth, llid);
+  t_stats_sub *cur = find_stats_sub(name, num, llid);
   if (!cur)
     {
     result = 0;
     cur = (t_stats_sub *) clownix_malloc(sizeof(t_stats_sub), 7);
     memset(cur, 0, sizeof(t_stats_sub));
-    cur->type_evt_stats = type_evt_stats;
     strncpy(cur->name, name, MAX_NAME_LEN-1);
-    cur->eth = eth;
+    cur->num = num;
     cur->llid = llid;
     cur->tid = tid;
     if (g_head_stats_sub)
@@ -173,21 +161,20 @@ static void free_stats_sub(t_stats_sub *stats_sub)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int local_stats_sub(int type_evt_stats, int sub, 
-                           char *name, int eth, int llid, int tid)
+static int local_stats_sub(int sub, char *name, int num, int llid, int tid)
 {
   int result = -1;
   t_stats_sub *cur;
   if (sub)
     {
-    if (!(alloc_stats_sub(type_evt_stats, name, eth, llid, tid)))
+    if (!(alloc_stats_sub(name, num, llid, tid)))
       result = 0;
     else
-      KERR("ERROR: %d %s %d", type_evt_stats, name, eth);
+      KERR("ERROR: %s %d", name, num);
     }
   else
     {
-    cur = find_stats_sub(type_evt_stats, name, eth, llid);
+    cur = find_stats_sub(name, num, llid);
     if (cur)
       {
       free_stats_sub(cur);
@@ -199,8 +186,7 @@ static int local_stats_sub(int type_evt_stats, int sub,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_stats_sub *find_next_stats_sub_eth(t_stats_sub *head, 
-                                            char *name, int eth)
+static t_stats_sub *find_next_stats_sub(t_stats_sub *head, char *name, int num)
 {
   t_stats_sub *cur;
   if (head)
@@ -209,12 +195,8 @@ static t_stats_sub *find_next_stats_sub_eth(t_stats_sub *head,
     cur = g_head_stats_sub;
   while (cur)
     {
-    if (cur->type_evt_stats == type_evt_stats_eth)
-      {
-      if ((!strcmp(name, cur->name)) &&
-          (cur->eth == eth))
-        break;
-      }
+    if ((!strcmp(name, cur->name)) && (cur->num == num))
+      break;
     cur = cur->next;
     }
   return cur;
@@ -222,33 +204,11 @@ static t_stats_sub *find_next_stats_sub_eth(t_stats_sub *head,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_stats_sub *find_next_stats_sub_sat(t_stats_sub *head, char *name)
-{
-  t_stats_sub *cur;
-  if (head)
-    cur = head->next;
-  else
-    cur = g_head_stats_sub;
-  while (cur)
-    {
-    if (cur->type_evt_stats == type_evt_stats_sat)
-      {
-      if (!strcmp(name, cur->name))
-        break;
-      }
-    cur = cur->next;
-    }
-  return cur;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void stats_counters_update_tux_tx(t_tux *tux, unsigned int ms, 
-                                  int num, int pkts, int bytes)
+void stats_counters_update_endp_tx(char *name, int num, unsigned int ms, 
+                                   int pkts, int bytes)
 {
   t_stats_count_item *sci;
-  t_stats_sub *sub = find_next_stats_sub_sat(NULL, tux->name);
-  tux->lan_attached[num].eventfull_tx_p += pkts;
+  t_stats_sub *sub = find_next_stats_sub(NULL, name, num);
   while(sub)
     {
     sci = get_next_count(sub, 1);
@@ -258,43 +218,17 @@ void stats_counters_update_tux_tx(t_tux *tux, unsigned int ms,
       sci->pkts = pkts;
       sci->bytes = bytes;
       }
-    sub = find_next_stats_sub_sat(sub, tux->name);
+    sub = find_next_stats_sub(sub, name, num);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void stats_counters_update_eth_tx(t_eth *eth, unsigned int ms, 
-                                  int pkts, int bytes)
+void stats_counters_update_endp_rx(char *name, int num, unsigned int ms, 
+                                   int pkts, int bytes)
 {
   t_stats_count_item *sci;
-  t_stats_sub *sub = find_next_stats_sub_eth(NULL, 
-                                             eth->vm->vm_params.name, 
-                                             eth->eth);
-  eth->lan_attached.eventfull_tx_p += pkts;
-  while (sub)
-    {
-    sci = get_next_count(sub, 1);
-    if (sci)
-      {
-      sci->time_ms = ms;
-      sci->pkts = pkts;
-      sci->bytes = bytes;
-      }
-    sub = find_next_stats_sub_eth(sub, 
-                                  eth->vm->vm_params.name,
-                                  eth->eth);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void stats_counters_update_tux_rx(t_tux *tux, unsigned int ms, 
-                                  int num, int pkts, int bytes)
-{
-  t_stats_count_item *sci;
-  t_stats_sub *sub = find_next_stats_sub_sat(NULL, tux->name);
-  tux->lan_attached[num].eventfull_rx_p += pkts;
+  t_stats_sub *sub = find_next_stats_sub(NULL, name, num);
   while(sub)
     {
     sci = get_next_count(sub, 0);
@@ -304,81 +238,24 @@ void stats_counters_update_tux_rx(t_tux *tux, unsigned int ms,
       sci->pkts = pkts;
       sci->bytes = bytes;
       }
-    sub = find_next_stats_sub_sat(sub, tux->name);
+    sub = find_next_stats_sub(sub, name, num);
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void stats_counters_update_eth_rx(t_eth *eth, unsigned int ms, 
-                                  int pkts, int bytes)
+void recv_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub)
 {
-  t_stats_count_item *sci;
-  t_stats_sub *sub = find_next_stats_sub_eth(NULL,
-                                             eth->vm->vm_params.name,
-                                             eth->eth);
-  eth->lan_attached.eventfull_rx_p += pkts;
-  while(sub)
-    {
-    sci = get_next_count(sub, 0);
-    if (sci)
-      {
-      sci->time_ms = ms;
-      sci->pkts = pkts;
-      sci->bytes = bytes;
-      }
-    sub = find_next_stats_sub_eth(sub, 
-                                  eth->vm->vm_params.name,
-                                  eth->eth);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void recv_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub)
-{
-  char *network_name = cfg_get_cloonix_name();
-  t_vm  *vm;
-  t_eth *peth;
+  char *network = cfg_get_cloonix_name();
+  int type;
   t_stats_counts sc;
   memset(&sc, 0, sizeof(t_stats_counts));
-  vm = cfg_get_vm(name);
-  if (!vm)
-    {
-    send_evt_stats_eth(llid, tid, network_name, name, eth, &sc, 1);
-    }
+  if (!endp_mngt_exists(name, num, &type))
+    send_evt_stats_endp(llid, tid, network, name, num, &sc, 1);
   else
     {
-    peth = cfg_find_eth(vm, eth);
-    if (!peth)
-      {
-      send_evt_stats_eth(llid, tid, network_name, name, eth, &sc, 1);
-      }
-    else
-      {
-      if (local_stats_sub(type_evt_stats_eth, sub, name, eth, llid, tid))
-        {
-        send_evt_stats_eth(llid, tid, network_name, name, eth, &sc, 1);
-        }
-      }
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void recv_evt_stats_sat_sub(int llid, int tid, char *name, int sub)
-{
-  char *network_name = cfg_get_cloonix_name();
-  t_tux *tux;
-  t_stats_counts sc;
-  memset(&sc, 0, sizeof(t_stats_counts));
-  tux = cfg_get_tux(name);
-  if ((!tux) || (!(tux->is_musat)))
-    send_evt_stats_sat(llid, tid, network_name, name, &sc, 1);
-  else
-    {
-    if (local_stats_sub(type_evt_stats_sat, sub, name, 0, llid, tid))
-      send_evt_stats_sat(llid, tid, network_name, name, &sc, 1);
+    if (local_stats_sub(sub, name, num, llid, tid))
+      send_evt_stats_endp(llid, tid, network, name, num, &sc, 1);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -386,57 +263,22 @@ void recv_evt_stats_sat_sub(int llid, int tid, char *name, int sub)
 /****************************************************************************/
 void stats_counters_heartbeat(void)
 {
-  char *network_name = cfg_get_cloonix_name();
+  char *network = cfg_get_cloonix_name();
   t_stats_sub *cur = g_head_stats_sub;
   while (cur)
     {
     if (msg_exist_channel(cur->llid))
       {
-      if (cur->type_evt_stats == type_evt_stats_eth)
+      if ((cur->stats_counts.nb_tx_items) || 
+          (cur->stats_counts.nb_rx_items))
         {
-        if ((cur->stats_counts.nb_tx_items) || 
-            (cur->stats_counts.nb_rx_items))
-          {
-          send_evt_stats_eth(cur->llid, cur->tid, 
-                             network_name, 
-                             cur->name, cur->eth, 
-                             &cur->stats_counts, 0);
-          }
+        send_evt_stats_endp(cur->llid, cur->tid, 
+                            network, cur->name, cur->num,
+                            &cur->stats_counts, 0);
         }
-      else if (cur->type_evt_stats == type_evt_stats_sat)
-        {
-        if ((cur->stats_counts.nb_tx_items) || 
-            (cur->stats_counts.nb_rx_items))
-          {
-          send_evt_stats_sat(cur->llid, cur->tid, 
-                             network_name, 
-                             cur->name, 
-                             &cur->stats_counts, 0);
-          }
-        }
-      else
-        KERR("ERROR: %d", cur->type_evt_stats);
       memset(&cur->stats_counts, 0, sizeof(t_stats_counts));
       }
     cur = cur->next;
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void stats_counters_vm_death(char *name)
-{
-  char *network_name = cfg_get_cloonix_name();
-  t_stats_sub *cur;
-  t_stats_counts sc;
-  memset(&sc, 0, sizeof(t_stats_counts));
-  cur = find_stats_sub_with_name(type_evt_stats_eth, name);
-  while (cur)
-    {
-    send_evt_stats_eth(cur->llid, cur->tid, network_name, 
-                       cur->name, cur->eth, &sc, 1);
-    free_stats_sub(cur);
-    cur = find_stats_sub_with_name(type_evt_stats_eth, name);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -455,18 +297,19 @@ void stats_counters_llid_close(int llid)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void stats_counters_sat_death(char *name)
+void stats_counters_death(char *name, int num)
 {
-  char *network_name = cfg_get_cloonix_name();
+  char *network = cfg_get_cloonix_name();
   t_stats_sub *cur;
   t_stats_counts sc;
   memset(&sc, 0, sizeof(t_stats_counts));
-  cur = find_stats_sub_with_name(type_evt_stats_sat, name);
+  cur = find_stats_sub_with_name(name, num);
   while (cur)
     {
-    send_evt_stats_sat(cur->llid, cur->tid, network_name, cur->name, &sc, 1);
+    send_evt_stats_endp(cur->llid, cur->tid, network, 
+                        cur->name, cur->num, &sc, 1);
     free_stats_sub(cur);
-    cur = find_stats_sub_with_name(type_evt_stats_sat, name);
+    cur = find_stats_sub_with_name(name, num);
     }
 }
 /*--------------------------------------------------------------------------*/

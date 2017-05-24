@@ -18,7 +18,6 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "connect_cloonix.h"
 #include "cloonix_conf_info.h"

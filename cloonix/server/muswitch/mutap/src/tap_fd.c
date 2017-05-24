@@ -70,8 +70,8 @@ static int rx_from_tap(void *ptr, int llid, int fd)
     else
       {
       bd->payload_len = len;
-      if (tap_type == musat_type_tap)
-        sock_fd_tx(all_ctx, 0, bd);
+      if (tap_type == endp_type_tap)
+        sock_fd_tx(all_ctx, bd);
       else
         KOUT(" ");
       bd = blkd_create_tx_empty(0,0,0);

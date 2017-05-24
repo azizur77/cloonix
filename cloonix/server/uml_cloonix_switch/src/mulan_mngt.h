@@ -20,7 +20,7 @@ int mulan_can_be_found_with_name(char *name);
 void mulan_rpct_recv_diag_msg(int llid, int tid, char *line);
 void mulan_rpct_recv_evt_msg(int llid, int tid, char *line);
 int mulan_get_all_llid(int **llid_tab);
-int mulan_start(char *lan, int start_is_vm, char *name, int vm_eth);
+int mulan_start(char *lan, char *name, int num);
 void mulan_test_stop(char *lan);
 int  mulan_get_all_pid(t_lst_pid **lst_pid);
 void mulan_del_all(void);

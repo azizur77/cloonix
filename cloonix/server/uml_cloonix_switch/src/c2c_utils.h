@@ -63,7 +63,6 @@ void c2c_del_timer(t_sc2c *c2c);
 void c2c_arm_timer(t_sc2c *c2c, int val, t_fct_timeout_cb cb);
 void c2c_globtopo_small_event(char *name, char *src, char *dst, int is_ok);
 int c2c_globtopo_add(t_sc2c *c2c);
-void c2c_globtopo_del(char *name);
 t_sc2c *c2c_find(char *name);
 t_sc2c *c2c_find_with_llid(int llid);
 t_sc2c *c2c_alloc(int local_is_master, char *name, 

@@ -127,13 +127,14 @@ int get_llid_traf_tab(t_all_ctx *all_ctx, int llid,  int **llid_tab)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static t_llid_rank *alloc_llid_rank(int llid, char *name, uint32_t rank)
+static t_llid_rank *alloc_llid_rank(int llid, char *name, int num, uint32_t rank)
 {
   t_llid_rank *cur;
   cur = (t_llid_rank *) malloc(sizeof(t_llid_rank));
   memset(cur, 0, sizeof(t_llid_rank));
   cur->llid = llid;
   strncpy(cur->name, name, MAX_NAME_LEN-1);
+  cur->num = num;
   cur->prechoice_rank = rank;
   if (g_head)
     g_head->prev = cur;
@@ -167,12 +168,12 @@ static void free_llid_rank(t_all_ctx *all_ctx, t_llid_rank *dr)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-t_llid_rank *llid_rank_get_with_name(char *name)
+t_llid_rank *llid_rank_get_with_name(char *name, int num)
 {
   t_llid_rank *cur = g_head;
   while (cur)
     {
-    if (!strcmp(cur->name, name))
+    if ((!strcmp(cur->name, name)) && (cur->num == num))
       break;
     cur = cur->next;
     }
@@ -247,7 +248,7 @@ t_llid_rank *llid_rank_get_with_prechoice_rank(uint32_t rank)
 
 /*****************************************************************************/
 t_llid_rank *llid_rank_peer_rank_set(int llid, char *name, int num,
-                                     uint32_t rank)
+                                     int tidx, uint32_t rank)
 {
   t_llid_rank *dr, *result = NULL;
   if ((rank != 0) && (rank < MAX_USOCK_RANKS))
@@ -258,11 +259,11 @@ t_llid_rank *llid_rank_peer_rank_set(int llid, char *name, int num,
       dr = llid_rank_get_with_llid(llid);
       if (dr)
         {
-        if (!strcmp(name, dr->name))
+        if ((!strcmp(name, dr->name)) && (dr->num == num))
           {
           if (dr->prechoice_rank == rank)
             {
-            dr->num = num;
+            dr->tidx = tidx;
             dr->rank = rank;
             result = dr;
             }
@@ -313,17 +314,17 @@ int llid_rank_peer_rank_unset(int llid, char *name, uint32_t rank)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void llid_rank_llid_create(int llid, char *name, uint32_t rank)
+void llid_rank_llid_create(int llid, char *name, int num, uint32_t rank)
 { 
   t_llid_rank *dr;
-  dr = llid_rank_get_with_name(name);
+  dr = llid_rank_get_with_name(name, num);
   if (!dr)
     dr = llid_rank_get_with_llid(llid);
   if (!dr)
     dr = llid_rank_get_with_prechoice_rank(rank);
   if (!dr)
     {
-    alloc_llid_rank(llid, name, rank);
+    alloc_llid_rank(llid, name, num, rank);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -341,25 +342,25 @@ void llid_rank_sig_disconnect(t_all_ctx *all_ctx, int llid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int  llid_rank_traf_connect(t_all_ctx *all_ctx, int llid, char *buf)
+int  llid_rank_traf_connect(t_all_ctx *all_ctx, int llid, char *name, int num)
 {
   int result = -1;
   t_llid_rank *dr;
-  dr = llid_rank_get_with_name(buf);
+  dr = llid_rank_get_with_name(name, num);
   if (dr)
     {
     if (dr->llid_unix_sock_traf)
-      KERR("%s %d %d", buf, llid, dr->llid_unix_sock_traf);
+      KERR("%s %d %d %d", name, num, llid, dr->llid_unix_sock_traf);
     else
       {
-      blkd_set_rank((void *) all_ctx, llid, (int) dr->rank, buf);
+      blkd_set_rank((void *) all_ctx, llid, (int) dr->rank, name, num);
       traf_chain_insert(llid);
       dr->llid_unix_sock_traf = llid;
       }
     result = 0;
     }
   else
-    KERR("%s", buf);
+    KERR("%s %d", name, num);
   return result;
 }
 /*---------------------------------------------------------------------------*/

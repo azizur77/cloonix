@@ -20,7 +20,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "bank.h"
@@ -156,7 +155,7 @@ static void timeout_blink_off_sat(void)
         {
         cur->bitem_sat->pbi.blink_rx = 0;
         cur->bitem_sat->pbi.blink_tx = 0;
-        if (cur->bitem_sat->pbi.mutype == musat_type_a2b)
+        if (cur->bitem_sat->pbi.mutype == endp_type_a2b)
           {
           intf = cur->bitem_sat->head_eth_list;
           if (!intf)
@@ -289,7 +288,7 @@ static void blink_on_sat(void)
       {
       if (cur->bitem_sat)
         {
-        if (cur->bitem_sat->pbi.mutype == musat_type_a2b)
+        if (cur->bitem_sat->pbi.mutype == endp_type_a2b)
           transfert_blink_on_bitem_eth(cur);
         else
           transfert_blink_on_bitem(cur);
@@ -328,60 +327,50 @@ void event_full_timeout_blink_off(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void eventfull_200_ms_node(int nb_vm, t_eventfull_vm *vm)
+static void eventfull_200_ms(int nb_endp, t_eventfull_endp *endp)
 {
-  t_node_blinks *cur;
-  int i, j;
-  for (i=0; i<nb_vm; i++)
+  t_node_blinks *curn;
+  t_sat_blinks *curs;
+  int i, num;
+  for (i=0; i<nb_endp; i++)
     {
-    cur = get_node_blinks_with_name(vm[i].name);
-    if (cur)
+    curn = get_node_blinks_with_name(endp[i].name);
+    if (curn)
       {
-      cur->bitem_node->pbi.pbi_node->node_cpu = vm[i].cpu;
-      cur->bitem_node->pbi.pbi_node->node_ram = vm[i].ram;
-      for (j=0; j<vm[i].nb_eth; j++)
+      num = endp[i].num;
+      if ((num < 0) || (num > MAX_ETH_VM))
+        KOUT("%d", num);
+      curn->bitem_node->pbi.pbi_node->node_cpu = endp[i].cpu;
+      curn->bitem_node->pbi.pbi_node->node_ram = endp[i].ram;
+      if (curn->eth_blinks[num].bitem_eth)
         {
-        if (vm[i].eth[j].eth != j)
+        if (curn->eth_blinks[num].bitem_eth->num != num)
           KOUT(" ");
-        if (cur->eth_blinks[j].bitem_eth)
+        if (endp[i].rx)
           {
-          if (cur->eth_blinks[j].bitem_eth->num != j)
-            KOUT(" ");
-          if (vm[i].eth[j].pkt_rx)
-            {
-            cur->eth_blinks[j].blink_rx = 1;
-            }
-          if (vm[i].eth[j].pkt_tx)
-            {
-            cur->eth_blinks[j].blink_tx = 1;
-            }
+          curn->eth_blinks[num].blink_rx = 1;
+          }
+        if (endp[i].tx)
+          {
+          curn->eth_blinks[num].blink_tx = 1;
           }
         }
       }
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void eventfull_200_ms_sat(int nb_sat, t_eventfull_sat *sat)
-{
-  int i;
-  t_sat_blinks *cur;
-  for (i=0; i<nb_sat; i++)
-    {
-    cur = get_sat_blinks_with_name(sat[i].name);
-    if (cur)
+    else
       {
-      if (cur->bitem_sat)
+      curs = get_sat_blinks_with_name(endp[i].name);
+      if (curs)
         {
-        if (sat[i].pkt_rx0)
-          cur->blink_rx[0] = 1;
-        if (sat[i].pkt_tx0)
-          cur->blink_tx[0] = 1;
-        if (sat[i].pkt_rx1)
-          cur->blink_rx[1] = 1;
-        if (sat[i].pkt_tx1)
-          cur->blink_tx[1] = 1;
+        num = endp[i].num;
+        if ((num < 0) || (num > 1))
+          KOUT("%d", num);
+        if (curs->bitem_sat)
+          {
+          if (endp[i].rx)
+            curs->blink_rx[num] = 1;
+          if (endp[i].tx)
+            curs->blink_tx[num] = 1;
+          }
         }
       }
     }
@@ -393,8 +382,7 @@ void eventfull_200_ms_packets_data(t_eventfull *eventfull)
 {
   if (!eventfull)
     KOUT(" ");
-  eventfull_200_ms_node(eventfull->nb_vm, eventfull->vm);
-  eventfull_200_ms_sat(eventfull->nb_sat, eventfull->sat);
+  eventfull_200_ms(eventfull->nb_endp, eventfull->endp);
   blink_on();
   main_timer_every_200ms_work();
 }

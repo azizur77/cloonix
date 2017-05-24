@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "rpc_c2c.h"
 #include "doorways_mngt.h"
@@ -41,8 +40,8 @@
 #include "llid_trace.h"
 #include "utils_cmd_line_maker.h"
 #include "commun_daemon.h"
-#include "musat_mngt.h"
-#include "musat_events.h"
+#include "endp_mngt.h"
+#include "endp_evt.h"
 
 
 /****************************************************************************/
@@ -102,7 +101,7 @@ void recv_c2c_peer_create(int llid, int tid, char *name,
                           char *master_cloonix, int master_idx,
                           int ip_slave, int port_slave)
 {
-  t_tux *tmptux;
+  int type;
   char info[MAX_PATH_LEN];
   t_sc2c *c2c = c2c_find(name);
 
@@ -130,8 +129,7 @@ void recv_c2c_peer_create(int llid, int tid, char *name,
     }
   else
     {
-    tmptux = cfg_get_tux(name);
-    if (tmptux)
+    if (endp_mngt_exists(name, 0, &type))
       {
       KERR("%s", name);
       send_c2c_ack_peer_create(llid,0,name,"none","none",0,0,1);
@@ -143,8 +141,7 @@ void recv_c2c_peer_create(int llid, int tid, char *name,
       c2c->master_idx = master_idx;
       strncpy(c2c->master_cloonix, master_cloonix, MAX_NAME_LEN-1);
       strncpy(c2c->slave_cloonix, cfg_get_cloonix_name(), MAX_NAME_LEN-1);
-      if (musat_mngt_start(0, 0, name, musat_type_c2c, 0, NULL, NULL, 
-                           ip_slave, port_slave))
+      if (endp_mngt_start(0, 0, name, 0, endp_type_c2c))
         {
         KERR("Bad start of %s", name);
         send_c2c_ack_peer_create(llid,0,name,"none","none",0,0,1);
@@ -329,83 +326,6 @@ int c2c_create_master_begin(char *name,
       KERR("%s", name);
     result = 0;
   return result;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void c2c_add_lan(int llid, int tid, char *name, char *lan)
-{
-  t_sc2c *c2c = c2c_find(name);
-  char info[MAX_PATH_LEN];
-  t_tux *tmptux;
-  event_print("%s %s %s", __FUNCTION__, name, lan);
-  if (!c2c)
-    {
-    snprintf(info, MAX_PATH_LEN-1, "lan add c2c %s not found", name);
-    send_status_ko(llid, tid, info);
-    }
-  else
-    {
-    event_print("%s %s %s %d", __FUNCTION__, name, lan, c2c->local_is_master);
-    if (!cfg_exists_c2c_from_topo(name))
-      {
-      snprintf(info, MAX_PATH_LEN-1, "c2c %s not found in globtopo", name);
-      send_status_ko(llid, tid, info);
-      }
-    else
-      {
-      tmptux = cfg_get_tux(name);
-      if (!tmptux)
-        KOUT("%s", name);
-      if (lan_musat_locked(name, 0))
-        { 
-        sprintf(info, "%s already in a ulan", name);
-        send_status_ko(llid, tid, info);
-        }
-      else
-        {
-        musat_event_admin_add_lan(llid, tid, name, 0, lan);
-        }
-      }
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void c2c_del_lan(int llid, int tid, char *name, char *lan)
-{
-  t_sc2c *c2c = c2c_find(name);
-  char info[MAX_PATH_LEN];
-  int lan_num;
-  if (!c2c)
-    {
-    snprintf(info, MAX_PATH_LEN-1, "lan del c2c %s not found", name);
-    send_status_ko(llid, tid, info);
-    }
-  else if (!cfg_exists_c2c_from_topo(name))
-    {
-    snprintf(info, MAX_PATH_LEN-1, "c2c %s not found in globtopo", name);
-    send_status_ko(llid, tid, info);
-    }
-  else
-    {
-    lan_num = lan_get_with_name(lan);
-    if (!lan_num)
-      {
-      sprintf(info, "lan %s does not exist", lan);
-      send_status_ko(llid, tid, info);
-      }
-    else if (musat_event_admin_del_lan(name, 0, lan))
-      {
-      sprintf(info, "lan %s not found in %s", lan, name);
-      send_status_ko(llid, tid, info);
-      }
-    else
-      {
-      send_status_ok(llid, tid, "c2cdellan");
-      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-      }
-    }
 }
 /*--------------------------------------------------------------------------*/
 

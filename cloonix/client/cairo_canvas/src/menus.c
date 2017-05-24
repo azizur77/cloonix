@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -61,11 +60,9 @@ void call_cloonix_interface_edge_delete(t_bank_item *bitem)
   if (lan->bank_type == bank_type_lan)
     {
     if (intf->bank_type == bank_type_eth) 
-      to_cloonix_switch_delete_eth_edge(intf->name, intf->num,
-                                         intf->bank_type, lan->name);
+      to_cloonix_switch_delete_edge(intf->name, intf->num, lan->name);
     else if (intf->bank_type == bank_type_sat) 
-      to_cloonix_switch_delete_sat_edge(intf->name, lan->name, 
-                                        intf->pbi.mutype, 0);
+      to_cloonix_switch_delete_edge(intf->name, intf->num, lan->name);
     else
       KOUT(" ");
     }
@@ -314,13 +311,13 @@ static int c2c_item_info(char *text,  t_bank_item *bitem)
 {
   int port_slave, len = 0;
   char ip_slave[MAX_NAME_LEN];
-    int_to_ip_string (bitem->pbi.pbi_sat->c2c_info.ip_slave, ip_slave);
-    port_slave = bitem->pbi.pbi_sat->c2c_info.port_slave;
-    len += sprintf(text + len,"\nMaster: %s",bitem->pbi.pbi_sat->c2c_info.master_cloonix);
-    len += sprintf(text + len,"\nSlave: %s",bitem->pbi.pbi_sat->c2c_info.slave_cloonix);
+    int_to_ip_string (bitem->pbi.pbi_sat->topo_c2c.ip_slave, ip_slave);
+    port_slave = bitem->pbi.pbi_sat->topo_c2c.port_slave;
+    len += sprintf(text + len,"\nMaster: %s",bitem->pbi.pbi_sat->topo_c2c.master_cloonix);
+    len += sprintf(text + len,"\nSlave: %s",bitem->pbi.pbi_sat->topo_c2c.slave_cloonix);
     len += sprintf(text + len,"\nip_slave: %s port_slave: %d", 
                               ip_slave, port_slave);
-    if (bitem->pbi.pbi_sat->c2c_info.is_peered)
+    if (bitem->pbi.pbi_sat->topo_c2c.is_peered)
       len += sprintf(text + len, "\n CONNECTION OK");
     else
       len += sprintf(text + len, "\n CONNECTION KO");
@@ -339,17 +336,17 @@ static void sat_item_info(GtkWidget *mn, t_item_ident *pm)
   if (bitem)
     {
     sprintf(title, "%s", bitem->name);
-    if (bitem->pbi.mutype == musat_type_tap)
+    if (bitem->pbi.mutype == endp_type_tap)
       len += sprintf(text + len, "\nTAP");
-    else if (bitem->pbi.mutype == musat_type_snf)
+    else if (bitem->pbi.mutype == endp_type_snf)
       len += sprintf(text + len, "\nSNF");
-    else if (bitem->pbi.mutype == musat_type_nat)
+    else if (bitem->pbi.mutype == endp_type_nat)
       len += sprintf(text + len, "\nNAT");
-    else if (bitem->pbi.mutype == musat_type_wif)
+    else if (bitem->pbi.mutype == endp_type_wif)
       len += sprintf(text + len, "\nWIF");
-    else if (bitem->pbi.mutype == musat_type_c2c)
+    else if (bitem->pbi.mutype == endp_type_c2c)
       len += sprintf(text + len, "\nC2C");
-    else if (bitem->pbi.mutype == musat_type_a2b)
+    else if (bitem->pbi.mutype == endp_type_a2b)
       len += sprintf(text + len, "\nA2B");
 
     if (is_a_c2c(bitem))
@@ -557,7 +554,7 @@ static void sat_item_wireshark(GtkWidget *mn, t_item_ident *pm)
   bitem = look_for_sat_with_id(pm->name);
   if (bitem)
     {
-    if (bitem->pbi.mutype == musat_type_snf)
+    if (bitem->pbi.mutype == endp_type_snf)
       {
       if (!wireshark_present_in_server())
         {
@@ -673,7 +670,7 @@ void sat_ctx_menu(t_bank_item *bitem)
   char cmd[MAX_PATH_LEN];
   t_item_ident *pm = get_and_init_pm(bitem);
   bitem->pbi.menu_on = 1;
-  if (bitem->pbi.mutype == musat_type_snf)
+  if (bitem->pbi.mutype == endp_type_snf)
     {
     memset(cmd, 0, MAX_PATH_LEN);
     if (wireshark_qt_present_in_server())
@@ -685,7 +682,7 @@ void sat_ctx_menu(t_bank_item *bitem)
   item_hidden = gtk_menu_item_new_with_label("Hidden/Visible");
   item_delete = gtk_menu_item_new_with_label("Delete");
   item_info = gtk_menu_item_new_with_label("Info");
-  if (bitem->pbi.mutype == musat_type_snf)
+  if (bitem->pbi.mutype == endp_type_snf)
     g_signal_connect(G_OBJECT(item_wireshark), "activate",
                      G_CALLBACK(sat_item_wireshark), (gpointer) pm);
   g_signal_connect(G_OBJECT(item_delete), "activate",
@@ -696,7 +693,7 @@ void sat_ctx_menu(t_bank_item *bitem)
                    G_CALLBACK(sat_item_info), (gpointer) pm);
   g_signal_connect(G_OBJECT(menu), "hide",
                    G_CALLBACK(menu_hidden), (gpointer) pm);
-  if (bitem->pbi.mutype == musat_type_snf)
+  if (bitem->pbi.mutype == endp_type_snf)
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_wireshark);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_hidden);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_delete);

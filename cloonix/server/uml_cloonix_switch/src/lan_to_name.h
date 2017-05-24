@@ -15,8 +15,6 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-int  lan_mueth_locked(char *vm_name, int vm_eth);
-int  lan_musat_locked(char *name, int num);
 int  lan_add_name(char *name, int llid);
 int  lan_del_name(char *name);
 int  lan_get_with_name(char *name);

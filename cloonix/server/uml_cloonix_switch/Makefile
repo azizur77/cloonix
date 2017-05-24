@@ -45,10 +45,8 @@ SRC = \
       timeout_service.c \
       sav_vm.c \
       mulan_mngt.c \
-      mueth_mngt.c \
-      mueth_events.c \
-      musat_mngt.c \
-      musat_events.c \
+      endp_mngt.c \
+      endp_evt.c \
       list_commands.c \
       stats_counters.c \
       stats_counters_sysinfo.c \

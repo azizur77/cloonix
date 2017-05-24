@@ -20,9 +20,10 @@ typedef struct t_llid_rank
   int llid;
   int llid_unix_sock_traf;
   char name[MAX_NAME_LEN];
+  int num;
   uint32_t prechoice_rank;
   uint32_t rank;
-  int num;
+  int tidx;
   int state;
   struct t_llid_rank *prev;
   struct t_llid_rank *next;

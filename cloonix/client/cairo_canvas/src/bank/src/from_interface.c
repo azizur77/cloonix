@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "bank.h"
 #include "bank_item.h"
@@ -46,66 +45,57 @@ static t_bank_item *edge_does_exist(t_bank_item *bitem, t_bank_item *lan)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void bank_edge_eth_create(char *name, int num, char *lan)
+void bank_edge_create(char *name, int num, char *lan)
 {
   t_bank_item *intf, *blan, *edge_item;
+  t_bank_item *sat;
   intf = look_for_eth_with_id(name, num);
-  blan = look_for_lan_with_id(lan);
-  if (intf && blan)
-    {
-    edge_item = edge_does_exist(intf, blan);
-    if (!edge_item)
-      add_new_edge(intf, blan, eorig_modif);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void bank_edge_sat_create(char *name, char *lan, int num)
-{
-  t_bank_item *sat, *blan, *edge_item;
   sat = look_for_sat_with_id(name);
   blan = look_for_lan_with_id(lan);
-  if (sat && blan)
+  if (blan)
     {
-    edge_item = edge_does_exist(sat, blan);
-    if (!edge_item)
-      add_new_edge(sat, blan, eorig_modif);
+    if (intf)
+      {
+      if (sat)
+        KOUT(" ");
+      edge_item = edge_does_exist(intf, blan);
+      if (!edge_item)
+        add_new_edge(intf, blan, eorig_modif);
+      }
+    if (sat)
+      {
+      edge_item = edge_does_exist(sat, blan);
+      if (!edge_item)
+        add_new_edge(sat, blan, eorig_modif);
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void bank_node_create(char *name, char *ip, char *kernel,
-                      char *rootfs_sod, char *rootfs_backing_file,
-                      char *install_cdrom, char *added_cdrom, 
-                      char *added_disk, int bank_type, 
-                      int num_eth, int *mutype, 
+void bank_node_create(char *name, char *kernel, char *rootfs_used,
+                      char *rootfs_backing, char *install_cdrom,
+                      char *added_cdrom, char *added_disk, int nb_eth,   
                       int color_choice, int vm_id, int vm_config_flags,
                       double x, double y, int hidden_on_graph,
                       double *tx, double *ty, int *thidden_on_graph)
 {
   int i;
-  add_new_node(name, ip, kernel, rootfs_sod, rootfs_backing_file,
-               install_cdrom, added_cdrom, added_disk,  
-               bank_type, x, y, hidden_on_graph, color_choice, 
+  add_new_node(name, kernel, rootfs_used, rootfs_backing, install_cdrom,
+               added_cdrom, added_disk, x, y, hidden_on_graph, color_choice,
                vm_id, vm_config_flags);
-  if (num_eth < 1)
-    KOUT("%d", num_eth);
-
-  for (i=0; i<num_eth; i++)
-    add_new_eth(name, i, bank_type_eth, mutype[i], 
-                 tx[i], ty[i], thidden_on_graph[i]);
+  for (i=0; i<nb_eth; i++)
+    add_new_eth(name, i, tx[i], ty[i], thidden_on_graph[i]);
 }
 /*--------------------------------------------------------------------------*/
 
 
 /****************************************************************************/
 void bank_sat_create(char *name, int mutype,
-                     t_snf_info *snf_info, t_c2c_info *c2c_info,
-                     double x, double y, 
-                     double xa, double ya, 
-                     double xb, double yb, 
+                     t_topo_c2c *c2c, t_topo_snf *snf,
+                     double x, double y,
+                     double xa, double ya,
+                     double xb, double yb,
                      int hidden)
 {
   t_bank_item *sat;
@@ -114,11 +104,11 @@ void bank_sat_create(char *name, int mutype,
     KERR("%s", name);
   else
     {
-    add_new_sat(name, mutype, snf_info, c2c_info, x, y, hidden);
-    if (mutype == musat_type_a2b)
+    add_new_sat(name, mutype, c2c, snf, x, y, hidden);
+    if (mutype == endp_type_a2b)
       {
-      add_new_eth(name, 0, bank_type_eth, mutype, xa, ya, hidden);
-      add_new_eth(name, 1, bank_type_eth, mutype, xb, yb, hidden);
+      add_new_eth(name, 0, xa, ya, hidden);
+      add_new_eth(name, 1, xb, yb, hidden);
       }
     }
 }
@@ -151,22 +141,12 @@ static void finish_delete_edge(t_bank_item *intf, t_bank_item *lan)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void bank_edge_eth_delete(char *name, int num, char *lan)
+void bank_edge_delete(char *name, int num, char *lan)
 {
   t_bank_item *intf, *blan;
   intf = look_for_eth_with_id(name, num);
   blan  = look_for_lan_with_id(lan);
   finish_delete_edge(intf, blan);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void bank_edge_sat_delete(char *name, char *lan, int num)
-{
-  t_bank_item *sat, *blan;
-  sat = look_for_sat_with_id(name);
-  blan = look_for_lan_with_id(lan);
-  finish_delete_edge(sat, blan);
 }
 /*--------------------------------------------------------------------------*/
 

@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
+#include "lib_topo.h"
 #include "xml_interface.h"
 #include "rpc_clownix.h"
 #include "header_sock.h"
@@ -47,10 +47,11 @@ enum
   bnd_add_vm,
   bnd_sav_vm,
   bnd_sav_vm_all,
-  bnd_add_sat,
+  bnd_add_sat_c2c,
+  bnd_add_sat_non_c2c,
   bnd_del_sat,
-  bnd_add_lan_sat,
-  bnd_del_lan_sat,
+  bnd_add_lan_endp,
+  bnd_del_lan_endp,
   bnd_kill_uml_clownix,
   bnd_del_all,
   bnd_list_pid_req,
@@ -69,11 +70,6 @@ enum
   bnd_event_sys_sub,
   bnd_event_sys_unsub,
   bnd_event_sys,
-  bnd_intf_list_req,
-  bnd_intf_list_resp,
-  bnd_event_spy_sub,
-  bnd_event_spy_unsub,
-  bnd_event_spy,
   bnd_work_dir_req,
   bnd_work_dir_resp,
   bnd_vmcmd,
@@ -81,10 +77,8 @@ enum
   bnd_eventfull,
   bnd_mucli_dialog_req,
   bnd_mucli_dialog_resp,
-  bnd_sub_evt_stats_eth,
-  bnd_evt_stats_eth,
-  bnd_sub_evt_stats_sat,
-  bnd_evt_stats_sat,
+  bnd_sub_evt_stats_endp,
+  bnd_evt_stats_endp,
   bnd_sub_evt_stats_sysinfo,
   bnd_evt_stats_sysinfo,
   bnd_blkd_reports,
@@ -203,21 +197,6 @@ void sys_info_free(t_sys_info *sys)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub)
-{
-  int len;
-  if (!name)
-    KOUT(" ");
-  if (strlen(name) < 1)
-    KOUT(" ");
-  if (strlen(name) >= MAX_NAME_LEN)
-    name[MAX_NAME_LEN-1] = 0;
-  len = sprintf(sndbuf, SUB_EVT_STATS_ETH, tid, name, eth, sub);
-  my_msg_mngt_tx(llid, len, sndbuf);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 static int fill_tx_stats(char *buf, int nb, t_stats_count_item *item)
 {
   int i, len = 0;
@@ -299,6 +278,141 @@ static void helper_rx_stats(char *msg, int nb, t_stats_count_item *item)
 }   
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void topo_config_check_str(t_topo_clc *cf, int line)
+{
+  if (strlen(cf->version)  >= MAX_NAME_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->network)  >= MAX_NAME_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->username) >= MAX_NAME_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->work_dir) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->bin_dir)  >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->bulk_dir) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(cf->tmux_bin) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void topo_config_swapon(t_topo_clc *cf, t_topo_clc *icf)
+{
+  memcpy(cf, icf, sizeof(t_topo_clc));
+  if (strlen(cf->version) == 0)
+    strcpy(cf->version, NO_DEFINED_VALUE);
+  if (strlen(cf->network) == 0)
+    strcpy(cf->network, NO_DEFINED_VALUE);
+  if (strlen(cf->username) == 0)
+    strcpy(cf->username, NO_DEFINED_VALUE);
+  if (strlen(cf->work_dir) == 0)
+    strcpy(cf->work_dir, NO_DEFINED_VALUE);
+  if (strlen(cf->bin_dir) == 0)
+    strcpy(cf->bin_dir, NO_DEFINED_VALUE);
+  if (strlen(cf->bulk_dir) == 0)
+    strcpy(cf->bulk_dir, NO_DEFINED_VALUE);
+  if (strlen(cf->tmux_bin) == 0)
+    strcpy(cf->tmux_bin, NO_DEFINED_VALUE);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void topo_config_swapoff(t_topo_clc  *cf, t_topo_clc *icf)
+{
+  memcpy(cf, icf, sizeof(t_topo_clc));
+  if (!strcmp(cf->version, NO_DEFINED_VALUE))
+    memset(cf->version, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->network, NO_DEFINED_VALUE))
+    memset(cf->network, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->username, NO_DEFINED_VALUE))
+    memset(cf->username, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->work_dir, NO_DEFINED_VALUE))
+    memset(cf->work_dir, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->bin_dir, NO_DEFINED_VALUE))
+    memset(cf->bin_dir, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->bulk_dir, NO_DEFINED_VALUE))
+    memset(cf->bulk_dir, 0, MAX_NAME_LEN);
+  if (!strcmp(cf->tmux_bin, NO_DEFINED_VALUE))
+    memset(cf->tmux_bin, 0, MAX_NAME_LEN);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void topo_kvm_check_str(t_topo_kvm *kvm, int line)
+{
+  if (strlen(kvm->name) >= MAX_NAME_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->linux_kernel) >= MAX_NAME_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->rootfs_input) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->rootfs_used) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->rootfs_backing) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->install_cdrom) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->added_cdrom) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->added_disk) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+  if (strlen(kvm->p9_host_share) >= MAX_PATH_LEN)
+    KOUT("%d", line);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void topo_kvm_swapon(t_topo_kvm *kvm, t_topo_kvm *ikvm)
+{
+  memcpy(kvm, ikvm, sizeof(t_topo_kvm));
+  if (strlen(kvm->name) == 0)
+    strcpy(kvm->name, NO_DEFINED_VALUE);
+  if (strlen(kvm->linux_kernel) == 0)
+    strcpy(kvm->linux_kernel, NO_DEFINED_VALUE);
+  if (strlen(kvm->rootfs_input) == 0)
+    strcpy(kvm->rootfs_input, NO_DEFINED_VALUE);
+  if (strlen(kvm->rootfs_used) == 0)
+    strcpy(kvm->rootfs_used, NO_DEFINED_VALUE);
+  if (strlen(kvm->rootfs_backing) == 0)
+    strcpy(kvm->rootfs_backing, NO_DEFINED_VALUE);
+  if (strlen(kvm->install_cdrom) == 0)
+    strcpy(kvm->install_cdrom, NO_DEFINED_VALUE);
+  if (strlen(kvm->added_cdrom) == 0)
+    strcpy(kvm->added_cdrom, NO_DEFINED_VALUE);
+  if (strlen(kvm->added_disk) == 0)
+    strcpy(kvm->added_disk, NO_DEFINED_VALUE);
+  if (strlen(kvm->p9_host_share) == 0)
+    strcpy(kvm->p9_host_share, NO_DEFINED_VALUE);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void topo_kvm_swapoff(t_topo_kvm *kvm, t_topo_kvm *ikvm)
+{
+  memcpy(kvm, ikvm, sizeof(t_topo_kvm));
+  if (!strcmp(kvm->name, NO_DEFINED_VALUE))
+    memset(kvm->name, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->linux_kernel, NO_DEFINED_VALUE))
+    memset(kvm->linux_kernel, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->rootfs_input, NO_DEFINED_VALUE))
+    memset(kvm->rootfs_input, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->rootfs_used, NO_DEFINED_VALUE))
+    memset(kvm->rootfs_used, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->rootfs_backing, NO_DEFINED_VALUE))
+    memset(kvm->rootfs_backing, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->install_cdrom, NO_DEFINED_VALUE))
+    memset(kvm->install_cdrom, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->added_cdrom, NO_DEFINED_VALUE))
+    memset(kvm->added_cdrom, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->added_disk, NO_DEFINED_VALUE))
+    memset(kvm->added_disk, 0, MAX_NAME_LEN);
+  if (!strcmp(kvm->p9_host_share, NO_DEFINED_VALUE))
+    memset(kvm->p9_host_share, 0, MAX_NAME_LEN);
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 void send_hop_evt_doors_sub(int llid, int tid, int flags_hop,
@@ -313,7 +427,7 @@ void send_hop_evt_doors_sub(int llid, int tid, int flags_hop,
         (strlen(list[i].name) >= MAX_NAME_LEN))
       KOUT(" ");
     len += sprintf(sndbuf+len, HOP_LIST_NAME_I, list[i].type_hop,
-                                                list[i].name, list[i].eth);
+                                                list[i].name, list[i].num);
     }
   len += sprintf(sndbuf+len, HOP_EVT_DOORS_SUB_C);
   my_msg_mngt_tx(llid, len, sndbuf);
@@ -362,7 +476,7 @@ void send_hop_name_list_doors(int llid, int tid, int nb, t_hop_list *list)
         (strlen(list[i].name) >= MAX_NAME_LEN))
       KOUT(" ");
     len += sprintf(sndbuf+len, HOP_LIST_NAME_I, list[i].type_hop,
-                                                list[i].name, list[i].eth);
+                                                list[i].name, list[i].num);
     }
   len += sprintf(sndbuf+len, HOP_LIST_NAME_C);
   my_msg_mngt_tx(llid, len, sndbuf);
@@ -382,7 +496,7 @@ static t_hop_list *helper_rx_hop_name_list(char *msg, int nb)
     if (!ptr)
       KOUT("%s", msg);
     if (sscanf(ptr, HOP_LIST_NAME_I, &(list[i].type_hop),
-                                     list[i].name, &(list[i].eth))!= 3)
+                                     list[i].name, &(list[i].num))!= 3)
       KOUT("%s", ptr);
     ptr = strstr(ptr, "</hop_type_item>");
     if (!ptr)
@@ -415,40 +529,8 @@ static char *get_hop_free_txt(char *msg)
 }
 /*---------------------------------------------------------------------------*/
 
-/****************************************************************************/
-void send_evt_stats_eth(int llid, int tid, char *network_name,
-                        char *name, int eth, 
-                        t_stats_counts *sc, int status) 
-{
-  int len;
-  if (!sc)
-    KOUT(" ");
-  if (!network_name)
-    KOUT(" ");
-  if (strlen(network_name) < 1)
-    KOUT(" ");
-  if (strlen(network_name) >= MAX_NAME_LEN)
-    network_name[MAX_NAME_LEN-1] = 0;
-  if (!name)
-    KOUT(" ");
-  if (strlen(name) < 1)
-    KOUT(" ");
-  if (strlen(name) >= MAX_NAME_LEN)
-    name[MAX_NAME_LEN-1] = 0;
-  if ((sc->nb_tx_items < 0) || (sc->nb_tx_items > MAX_STATS_ITEMS) ||
-      (sc->nb_rx_items < 0) || (sc->nb_rx_items > MAX_STATS_ITEMS))
-    KOUT("%d %d", sc->nb_tx_items, sc->nb_rx_items);
-  len = sprintf(sndbuf, EVT_STATS_ETH_O, tid, network_name, name, eth, status, 
-                                         sc->nb_tx_items, sc->nb_rx_items); 
-  len += fill_tx_stats(sndbuf+len, sc->nb_tx_items, sc->tx_item); 
-  len += fill_rx_stats(sndbuf+len, sc->nb_rx_items, sc->rx_item); 
-  len += sprintf(sndbuf+len, EVT_STATS_ETH_C);
-  my_msg_mngt_tx(llid, len, sndbuf);
-}
-/*--------------------------------------------------------------------------*/
-
 /*****************************************************************************/
-void send_evt_stats_sat_sub(int llid, int tid, char *name, int sub)
+void send_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub)
 {
   int len;
   if (!name)
@@ -457,24 +539,25 @@ void send_evt_stats_sat_sub(int llid, int tid, char *name, int sub)
     KOUT(" ");
   if (strlen(name) >= MAX_NAME_LEN)
     name[MAX_NAME_LEN-1] = 0;
-  len = sprintf(sndbuf, SUB_EVT_STATS_SAT, tid, name, sub);
+  len = sprintf(sndbuf, SUB_EVT_STATS_ENDP, tid, name, num, sub);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_evt_stats_sat(int llid, int tid, char *network_name, char *name, 
-                        t_stats_counts *sc, int status)
+void send_evt_stats_endp(int llid, int tid, char *network, 
+                         char *name, int num, 
+                         t_stats_counts *sc, int status)
 {
   int len;
   if (!sc)
     KOUT(" ");
-  if (!network_name)
+  if (!network)
     KOUT(" ");
-  if (strlen(network_name) < 1)
+  if (strlen(network) < 1)
     KOUT(" ");
-  if (strlen(network_name) >= MAX_NAME_LEN)
-    network_name[MAX_NAME_LEN-1] = 0;
+  if (strlen(network) >= MAX_NAME_LEN)
+    network[MAX_NAME_LEN-1] = 0;
   if (!name)
     KOUT(" ");
   if (strlen(name) < 1)
@@ -484,11 +567,11 @@ void send_evt_stats_sat(int llid, int tid, char *network_name, char *name,
   if ((sc->nb_tx_items < 0) || (sc->nb_tx_items > MAX_STATS_ITEMS) ||
       (sc->nb_rx_items < 0) || (sc->nb_rx_items > MAX_STATS_ITEMS))
     KOUT("%d %d", sc->nb_tx_items, sc->nb_rx_items);
-  len = sprintf(sndbuf, EVT_STATS_SAT_O, tid, network_name, name, status, 
+  len = sprintf(sndbuf, EVT_STATS_ENDP_O, tid, network, name, num, status, 
                                          sc->nb_tx_items, sc->nb_rx_items);
   len += fill_tx_stats(sndbuf+len, sc->nb_tx_items, sc->tx_item);
   len += fill_rx_stats(sndbuf+len, sc->nb_rx_items, sc->rx_item);
-  len += sprintf(sndbuf+len, EVT_STATS_SAT_C);
+  len += sprintf(sndbuf+len, EVT_STATS_ENDP_C);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -509,18 +592,18 @@ void send_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_evt_stats_sysinfo(int llid, int tid, char *network_name, char *name,
+void send_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
                             t_stats_sysinfo *si, char *df, int status)
 {
   int len;
   if (!si)
     KOUT(" ");
-  if (!network_name)
+  if (!network)
     KOUT(" ");
-  if (strlen(network_name) < 1)
+  if (strlen(network) < 1)
     KOUT(" ");
-  if (strlen(network_name) >= MAX_NAME_LEN)
-    network_name[MAX_NAME_LEN-1] = 0;
+  if (strlen(network) >= MAX_NAME_LEN)
+    network[MAX_NAME_LEN-1] = 0;
   if (!name)
     KOUT(" ");
   if (strlen(name) < 1)
@@ -532,7 +615,7 @@ void send_evt_stats_sysinfo(int llid, int tid, char *network_name, char *name,
     if (strlen(df) >= MAX_STATS_SYSDF)
       df[MAX_STATS_SYSDF-1] = 0;
     }
-  len = sprintf(sndbuf, EVT_STATS_SYSINFOO, tid, network_name, name, status,
+  len = sprintf(sndbuf, EVT_STATS_SYSINFOO, tid, network, name, status,
                                        si->time_ms,       si->uptime,
                                        si->load1,         si->load5,
                                        si->load15,        si->totalram,     
@@ -599,19 +682,22 @@ void send_work_dir_req(int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_work_dir_resp(int llid, int tid, t_cloonix_config *cloonix_config)
+void send_work_dir_resp(int llid, int tid, t_topo_clc *icf)
 {
+  t_topo_clc cf;
   int len = 0;
+  topo_config_check_str(icf, __LINE__);
+  topo_config_swapon(&cf, icf);
   len = sprintf(sndbuf, WORK_DIR_RESP, tid, 
-                cloonix_config->version,
-                cloonix_config->network_name,
-                cloonix_config->username,
-                cloonix_config->server_port,
-                cloonix_config->work_dir,
-                cloonix_config->bulk_dir,
-                cloonix_config->bin_dir,
-                cloonix_config->tmux_bin,
-                cloonix_config->flags_config);
+                                       cf.version,
+                                       cf.network,
+                                       cf.username,
+                                       cf.server_port,
+                                       cf.work_dir,
+                                       cf.bulk_dir,
+                                       cf.bin_dir,
+                                       cf.tmux_bin,
+                                       cf.flags_config);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -677,23 +763,7 @@ void send_topo_small_event(int llid, int tid, char *name,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int topo_lan_format(char *buf, int nb, t_lan_group_item *lan)
-{
-  int i, tmp, len = 0;
-  for (i=0; i<nb; i++)
-    {
-    tmp = sprintf(buf+len, TOPO_LAN, lan[i].name);
-    if (tmp <= 0)
-      KOUT(" ");
-    len += tmp;
-    }
-  return len;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-static int make_one_eth_param(char *buf, char mac[MAC_ADDR_LEN], int promisc)
+static int topo_eth_format(char *buf, char mac[MAC_ADDR_LEN])
 {
   int len = 0;
   len += sprintf(buf+len, ADD_VM_ETH_PARAMS, (mac[0]) & 0xFF,
@@ -701,107 +771,114 @@ static int make_one_eth_param(char *buf, char mac[MAC_ADDR_LEN], int promisc)
                                              (mac[2]) & 0xFF,
                                              (mac[3]) & 0xFF,
                                              (mac[4]) & 0xFF,
-                                             (mac[5]) & 0xFF,
-                                             promisc);
-  return len;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-static int topo_vmit_format(char *buf, t_vm_item *vmit)
-{
-  int i, nb, len;
-
-  if (vmit->vm_params.rootfs_used[0] == 0)
-    strcpy(vmit->vm_params.rootfs_used, NO_DEFINED_VALUE);
-  if (vmit->vm_params.rootfs_backing[0] == 0)
-    strcpy(vmit->vm_params.rootfs_backing, NO_DEFINED_VALUE);
-
-  len = sprintf(buf, TOPO_VM_O, vmit->vm_params.name, 
-                                vmit->vm_params.install_cdrom,  
-                                vmit->vm_params.added_cdrom,  
-                                vmit->vm_params.added_disk,  
-                                vmit->vm_params.p9_host_share,  
-                                vmit->vm_params.linux_kernel, 
-                                vmit->vm_params.rootfs_used,  
-                                vmit->vm_params.rootfs_backing,  
-                                vmit->vm_id, 
-                                vmit->vm_params.vm_config_flags,  
-                                vmit->vm_params.nb_eth,
-                                vmit->vm_params.mem, vmit->vm_params.cpu); 
-  for (i=0; i<vmit->vm_params.nb_eth; i++)
-    {
-    nb = vmit->lan_eth[i].nb_lan;
-    len += sprintf(buf+len, TOPO_ETH_O, i, nb);
-    len += make_one_eth_param(buf+len, vmit->vm_params.eth_params[i].mac_addr,
-                                      vmit->vm_params.eth_params[i].is_promisc);
-    len += topo_lan_format(buf+len, nb, vmit->lan_eth[i].lan); 
-    len += sprintf(buf+len, TOPO_ETH_C);
-    }
-  len += sprintf(buf+len, TOPO_VM_C);
+                                             (mac[5]) & 0xFF);
   return len;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void fill_names(t_sat_item *sati, char *name, 
-                       char *recpath, char *master, char *slave)
+static int topo_kvm_format(char *buf, t_topo_kvm *ikvm)
 {
-  memset(name, 0, MAX_NAME_LEN);
-  if (!strlen(sati->name))
-    strcpy(name, NO_DEFINED_VALUE);
-  else
-    strncpy(name, sati->name, MAX_NAME_LEN-1);
+  t_topo_kvm kvm;
+  int i, len;
 
-  memset(recpath, 0, MAX_PATH_LEN);
-  if (!strlen(sati->snf_info.recpath))
-    strcpy(recpath, NO_DEFINED_VALUE);
-  else
-    strncpy(recpath, sati->snf_info.recpath, MAX_PATH_LEN-1);
+  topo_kvm_check_str(ikvm, __LINE__);
+  topo_kvm_swapon(&kvm, ikvm); 
 
-  memset(master, 0, MAX_NAME_LEN);
-  if (!strlen(sati->c2c_info.master_cloonix))
-    strcpy(master, NO_DEFINED_VALUE);
-  else
-    strncpy(master, sati->c2c_info.master_cloonix, MAX_NAME_LEN-1);
-
-  memset(slave, 0, MAX_NAME_LEN);
-  if (!strlen(sati->c2c_info.slave_cloonix))
-    strcpy(slave, NO_DEFINED_VALUE);
-  else
-    strncpy(slave, sati->c2c_info.slave_cloonix, MAX_NAME_LEN-1);
+  len = sprintf(buf, EVENT_TOPO_KVM_O, kvm.name, 
+                                       kvm.install_cdrom,  
+                                       kvm.added_cdrom,  
+                                       kvm.added_disk,  
+                                       kvm.p9_host_share,  
+                                       kvm.linux_kernel, 
+                                       kvm.rootfs_used,  
+                                       kvm.rootfs_backing,  
+                                       kvm.vm_id, 
+                                       kvm.vm_config_flags,  
+                                       kvm.nb_eth,
+                                       kvm.mem, 
+                                       kvm.cpu); 
+  for (i=0; i<kvm.nb_eth; i++)
+    len += topo_eth_format(buf+len, kvm.eth_params[i].mac_addr);
+  len += sprintf(buf+len, EVENT_TOPO_KVM_C);
+  return len;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int topo_sat_format(char *buf, t_sat_item *sati)
+static int topo_c2c_format(char *buf, t_topo_c2c *c2c)
 {
-  int nb0, nb1, len;
-  char name[MAX_NAME_LEN];
-  char recpath[MAX_PATH_LEN];
-  char master[MAX_NAME_LEN];
-  char slave[MAX_NAME_LEN];
+  int len;
+  if ((!c2c->name) || (!c2c->master_cloonix) || (!c2c->slave_cloonix))
+    KOUT("%p %p %p", c2c->name, c2c->master_cloonix, c2c->slave_cloonix);
+  if ((!strlen(c2c->name)) ||
+      (!strlen(c2c->master_cloonix)) ||
+      (!strlen(c2c->slave_cloonix)))
+    KOUT("%d %d %d", (int)strlen(c2c->name),
+                     (int)strlen(c2c->master_cloonix),
+                     (int)strlen(c2c->slave_cloonix));
 
-  nb0 = sati->lan0_sat.nb_lan;
-  nb1 = sati->lan1_sat.nb_lan;
-  fill_names(sati, name, recpath, master, slave);
+  len = sprintf(buf, EVENT_TOPO_C2C, c2c->name,
+                                     c2c->master_cloonix,
+                                     c2c->slave_cloonix,
+                                     c2c->local_is_master,
+                                     c2c->is_peered,
+                                     c2c->ip_slave,
+                                     c2c->port_slave);
+  return len;
+}
+/*---------------------------------------------------------------------------*/
 
-  len = sprintf(buf, TOPO_SAT_O, name, sati->musat_type,
-                                 recpath, 
-                                 sati->snf_info.capture_on, 
-                                 master, slave, 
-                                 sati->c2c_info.local_is_master,
-                                 sati->c2c_info.is_peered,
-                                 sati->c2c_info.ip_slave,
-                                 sati->c2c_info.port_slave,
-                                 nb0, nb1);
+/*****************************************************************************/
+static int topo_snf_format(char *buf, t_topo_snf *snf)
+{ 
+  int len;
+  if ((!snf->name) || (!snf->recpath))
+    KOUT("%p %p", snf->name, snf->recpath);
+  if ((!strlen(snf->name)) || (!strlen(snf->recpath)))
+    KOUT("%d %d", (int)strlen(snf->name), (int)strlen(snf->recpath));
 
-  if (len <= 0)
+  len = sprintf(buf, EVENT_TOPO_SNF, snf->name,
+                                     snf->recpath,
+                                     snf->capture_on);
+  return len;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int topo_sat_format(char *buf, t_topo_sat *sat)
+{
+  int len;
+  if (!sat->name)
     KOUT(" ");
-  len += topo_lan_format(buf+len, nb0, sati->lan0_sat.lan);
-  len += topo_lan_format(buf+len, nb1, sati->lan1_sat.lan);
-  len += sprintf(buf+len, TOPO_SAT_C);
+  if (!strlen(sat->name))
+    KOUT(" ");
+  len = sprintf(buf, EVENT_TOPO_SAT, sat->name, sat->type);
+  return len;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int topo_endp_format(char *buf, t_topo_endp *endp)
+{
+  int i, len;
+  if (!endp->name)
+    KOUT(" ");
+  if (!strlen(endp->name))
+    KOUT(" ");
+  len = sprintf(buf, EVENT_TOPO_ENDP_O, endp->name,
+                                        endp->num,
+                                        endp->type,
+                                        endp->lan.nb_lan);
+  for (i=0; i<endp->lan.nb_lan; i++)
+    {
+    if (!endp->lan.lan[i].lan)
+      KOUT(" ");
+    if (!strlen(endp->lan.lan[i].lan))
+      KOUT(" ");
+    len += sprintf(buf+len, EVENT_TOPO_LAN, endp->lan.lan[i].lan);
+    }
+  len += sprintf(buf+len, EVENT_TOPO_ENDP_C);
   return len;
 }
 /*---------------------------------------------------------------------------*/
@@ -810,20 +887,36 @@ static int topo_sat_format(char *buf, t_sat_item *sati)
 void send_event_topo(int llid, int tid, t_topo_info *topo)
 {
   int i, len = 0;
+  t_topo_clc cf;
+  topo_config_check_str(&(topo->clc), __LINE__);
+  topo_config_swapon(&cf, &(topo->clc));
   len = sprintf(sndbuf, EVENT_TOPO_O, tid,
-                topo->cloonix_config.network_name,
-                topo->cloonix_config.username,
-                topo->cloonix_config.server_port,
-                topo->cloonix_config.work_dir,
-                topo->cloonix_config.bulk_dir,
-                topo->cloonix_config.bin_dir,
-                topo->cloonix_config.tmux_bin,
-                topo->nb_vm, topo->nb_sat);
+                                      cf.version,
+                                      cf.network,
+                                      cf.username,
+                                      cf.server_port,
+                                      cf.work_dir,
+                                      cf.bulk_dir,
+                                      cf.bin_dir,
+                                      cf.tmux_bin,
+                                      cf.flags_config,
+                                      topo->nb_kvm,
+                                      topo->nb_c2c,
+                                      topo->nb_snf,
+                                      topo->nb_sat,
+                                      topo->nb_endp);
 
-  for (i=0; i<topo->nb_vm; i++)
-    len += topo_vmit_format(sndbuf+len, &(topo->vmit[i]));
+  for (i=0; i<topo->nb_kvm; i++)
+    len += topo_kvm_format(sndbuf+len, &(topo->kvm[i]));
+  for (i=0; i<topo->nb_c2c; i++)
+    len += topo_c2c_format(sndbuf+len, &(topo->c2c[i]));
+  for (i=0; i<topo->nb_snf; i++)
+    len += topo_snf_format(sndbuf+len, &(topo->snf[i]));
   for (i=0; i<topo->nb_sat; i++)
-    len += topo_sat_format(sndbuf+len, &(topo->sati[i]));
+    len += topo_sat_format(sndbuf+len, &(topo->sat[i]));
+  for (i=0; i<topo->nb_endp; i++)
+    len += topo_endp_format(sndbuf+len, &(topo->endp[i]));
+
   len += sprintf(sndbuf+len, EVENT_TOPO_C);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -913,94 +1006,6 @@ void send_event_sys(int llid, int tid, t_sys_info *sys)
 /*---------------------------------------------------------------------------*/
                                                                         
 /*****************************************************************************/
-static void replace_name(char *name1, char **rname1)
-{
-  static char name1_replace[MAX_NAME_LEN];
-  memset(name1_replace, 0, MAX_NAME_LEN);
-  *rname1 = name1_replace;
-  if (name1)
-    {
-    if (strlen(name1) == 0)
-      strcpy(name1_replace, NO_DEFINED_VALUE);
-    else
-      strncpy(name1_replace, name1, MAX_NAME_LEN);
-    }
-  else
-    strcpy(name1_replace, NO_DEFINED_VALUE);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-void send_event_spy_sub(int llid, int tid, char *iname, 
-                        char *intf, char *dir)
-{
-  int len = 0;
-  char *name;
-  replace_name(iname, &name); 
-  len = sprintf(sndbuf, EVENT_SPY_SUB, tid, name, intf, dir);
-  my_msg_mngt_tx(llid, len, sndbuf);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void send_event_spy_unsub(int llid, int tid, char *iname, 
-                          char *intf, char *dir)
-{
-  int len = 0;
-  char *name;
-  replace_name(iname, &name); 
-  len = sprintf(sndbuf, EVENT_SPY_UNSUB, tid, name, intf, dir);
-  my_msg_mngt_tx(llid, len, sndbuf);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void send_event_spy(int llid, int tid, char *iname, char *intf, char *dir, 
-                    int secs, int usecs, int qty, char *msg)
-{
-  int i, len = 0;
-  char *name;
-  replace_name(iname, &name); 
-  if (qty > MAX_BUF_SIZE)
-    KOUT(" ");
-  len = sprintf(sndbuf, EVENT_SPY_O, tid, name, intf, dir, secs, usecs, qty);
-  for (i=0; i<qty; i++)
-    len += sprintf(sndbuf+len, "%02X ", (msg[i] & 0xFF));
-  len += sprintf(sndbuf+len, EVENT_SPY_C);
-  my_msg_mngt_tx(llid, len, sndbuf);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static char *helper_event_spy(char *msg, int qty)
-{
-  int i, val;
-  char *ptr, *buf = NULL;
-  if (qty > MAX_BUF_SIZE)
-    KOUT(" ");
-  if (qty != -1)
-    {
-    buf = clownix_malloc(qty * sizeof(char), 4);
-    ptr = strstr(msg, "<msg>");
-    if (!ptr)
-      KOUT(" ");
-    ptr += strlen("<msg>");
-    for (i=0; i<qty; i++)
-      {
-      if (sscanf(ptr, "%02X ", &val) != 1)
-        KOUT("%s", ptr);
-      buf[i] = val & 0xFF;
-      ptr += 3;
-      }
-    if (strncmp(ptr, "</msg>", strlen("</msg>")))
-      KOUT("%s", ptr);
-    }
-  return buf;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 void send_status_ok(int llid, int tid, char *txt)
 {
   int len = 0;
@@ -1021,19 +1026,18 @@ void send_status_ko(int llid, int tid, char *reason)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void get_one_eth_param(char *buf, char mac[MAC_ADDR_LEN], int *promisc)
+static void get_one_eth_param(char *buf, char mac[MAC_ADDR_LEN])
 {
   int i;
   char *ptr;
-  int var[MAC_ADDR_LEN];
+  int var[6];
   ptr = strstr(buf, "<eth_params>");
   if (!ptr)
     KOUT("%s\n", buf);
   if (sscanf(ptr, ADD_VM_ETH_PARAMS, &(var[0]), &(var[1]), &(var[2]),
-                                     &(var[3]), &(var[4]), &(var[5]), 
-                                     promisc) != 7)
+                                     &(var[3]), &(var[4]), &(var[5])) != 6) 
       KOUT("%s\n", buf);
-  for (i=0; i<MAC_ADDR_LEN; i++)
+  for (i=0; i<6; i++)
     mac[i] = var[i] & 0xFF;
 }
 /*---------------------------------------------------------------------------*/
@@ -1049,8 +1053,7 @@ static void get_eth_params(char *buf, int nb, t_eth_params *eth_params)
     ptr = strstr(ptr, "<eth_params>");
     if (!ptr)
       KOUT("%s\n%d\n", buf, nb);
-    get_one_eth_param(ptr, eth_params[i].mac_addr, 
-                           &(eth_params[i].is_promisc));
+    get_one_eth_param(ptr, eth_params[i].mac_addr); 
     ptr = strstr(ptr, "</eth_params>");
     if (!ptr)
       KOUT("%s\n%d\n", buf, nb);
@@ -1063,81 +1066,41 @@ static void get_eth_params(char *buf, int nb, t_eth_params *eth_params)
 static int make_eth_params(char *buf, int nb, t_eth_params *eth_params)
 {
   int i, len = 0;
+  char *mac;
   for (i=0; i<nb; i++)
-    len += make_one_eth_param(buf+len, eth_params[i].mac_addr, 
-                                       eth_params[i].is_promisc);
+    {
+    mac = eth_params[i].mac_addr;
+    len += sprintf(buf+len, ADD_VM_ETH_PARAMS, (mac[0]) & 0xFF,
+                                               (mac[1]) & 0xFF,
+                                               (mac[2]) & 0xFF,
+                                               (mac[3]) & 0xFF,
+                                               (mac[4]) & 0xFF,
+                                               (mac[5]) & 0xFF);
+    }
   return len;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_add_vm(int llid, int tid, t_vm_params *vm_params) 
+void send_add_vm(int llid, int tid, t_topo_kvm *ikvm) 
 {
   int len = 0;
-  char install_cdrom[MAX_PATH_LEN];
-  char added_cdrom[MAX_PATH_LEN];
-  char added_disk[MAX_PATH_LEN];
-  char p9_host_share[MAX_PATH_LEN];
-  char linux_kernel[MAX_NAME_LEN];
-  memset(install_cdrom, 0, MAX_PATH_LEN);
-  memset(added_cdrom, 0, MAX_PATH_LEN);
-  memset(added_disk, 0, MAX_PATH_LEN);
-  memset(p9_host_share, 0, MAX_PATH_LEN);
-  memset(linux_kernel, 0, MAX_NAME_LEN);
-  if ((vm_params->name[0] == 0) || (strlen(vm_params->name) >= MAX_NAME_LEN))
-    KOUT(" ");
-  if ((vm_params->rootfs_input[0] == 0) || 
-      (strlen(vm_params->rootfs_input) >= MAX_PATH_LEN))
-    KOUT(" ");
-  if (strlen(vm_params->linux_kernel) >= MAX_NAME_LEN)
-    KOUT(" ");
-  if (strlen(vm_params->install_cdrom) >= MAX_PATH_LEN)
-    KOUT(" ");
-  if (strlen(vm_params->added_cdrom) >= MAX_PATH_LEN)
-    KOUT(" ");
-  if (strlen(vm_params->added_disk) >= MAX_PATH_LEN)
-    KOUT(" ");
-  if (strlen(vm_params->p9_host_share) >= MAX_PATH_LEN)
-    KOUT(" ");
+  t_topo_kvm kvm;
 
-  if (vm_params->rootfs_used[0] != 0) 
-    KOUT(" ");
-  if (vm_params->rootfs_backing[0] != 0) 
-    KOUT(" ");
+  topo_kvm_check_str(ikvm, __LINE__);
+  topo_kvm_swapon(&kvm, ikvm); 
 
-  if (vm_params->linux_kernel[0] == 0) 
-    strcpy(linux_kernel, NO_DEFINED_VALUE);
-  else
-    strcpy(linux_kernel, vm_params->linux_kernel);
+  len = sprintf(sndbuf, ADD_VM_O, tid, kvm.name, 
+                kvm.vm_config_flags, kvm.cpu,  
+                kvm.mem, kvm.nb_eth);
 
-  if (vm_params->install_cdrom[0] == 0)
-    strcpy(install_cdrom, NO_DEFINED_VALUE);
-  else
-    strcpy(install_cdrom, vm_params->install_cdrom);
+  len += make_eth_params(sndbuf+len, kvm.nb_eth, kvm.eth_params);
 
-  if (vm_params->added_cdrom[0] == 0)
-    strcpy(added_cdrom, NO_DEFINED_VALUE);
-  else
-    strcpy(added_cdrom, vm_params->added_cdrom);
+  len += sprintf(sndbuf+len, ADD_VM_C, kvm.linux_kernel, 
+                             kvm.rootfs_input, 
+                             kvm.install_cdrom, kvm.added_cdrom,
+                             kvm.added_disk, kvm.p9_host_share);
 
-  if (vm_params->added_disk[0] == 0)
-    strcpy(added_disk, NO_DEFINED_VALUE);
-  else
-    strcpy(added_disk, vm_params->added_disk);
-
-  if (vm_params->p9_host_share[0] == 0)
-    strcpy(p9_host_share, NO_DEFINED_VALUE);
-  else
-    strcpy(p9_host_share, vm_params->p9_host_share);
-
-  len = sprintf(sndbuf, ADD_VM_O, tid, vm_params->name, 
-                vm_params->vm_config_flags, vm_params->cpu,  
-                vm_params->mem, vm_params->nb_eth);
-  len += make_eth_params(sndbuf+len,vm_params->nb_eth, vm_params->eth_params);
-  len += sprintf(sndbuf+len, ADD_VM_C, linux_kernel, 
-                             vm_params->rootfs_input, 
-                             install_cdrom, added_cdrom,
-                             added_disk, p9_host_share);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -1173,33 +1136,27 @@ void send_sav_vm_all(int llid, int tid, int type, char *sav_rootfs_path)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_add_sat(int llid, int tid, char *name, 
-                  int mutype, t_c2c_req_info *c2c_req_info)
+void send_add_sat(int llid, int tid, char *name, int type, t_c2c_req_info *c2c)
 {
   int len = 0;
-  t_c2c_req_info c2c_req_info_zero;
-  t_c2c_req_info *c2c;
-  char replace[MAX_NAME_LEN];
-  memset(replace, 0, MAX_NAME_LEN);
-  memset(&c2c_req_info_zero, 0, sizeof(t_c2c_req_info));
   if (name[0] == 0)
     KOUT(" "); 
   if (strlen(name) >= MAX_NAME_LEN)
     KOUT(" ");
-  if (c2c_req_info)
-    c2c = c2c_req_info;
+  if (type == endp_type_c2c)
+    {
+    if (!c2c)
+      KOUT(" ");
+    if (strlen(c2c->cloonix_slave) >= MAX_NAME_LEN)
+      KOUT(" ");
+    if (strlen(c2c->cloonix_slave) == 0) 
+      KOUT(" ");
+    len = sprintf(sndbuf, ADD_SAT_C2C, tid, name, c2c->cloonix_slave,
+                                       c2c->ip_slave, c2c->port_slave, 
+                                       c2c->passwd_slave);
+    }
   else
-    c2c = &c2c_req_info_zero;
-  if (strlen(c2c->cloonix_slave) >= MAX_NAME_LEN)
-    KOUT(" ");
-  if (strlen(c2c->cloonix_slave) == 0) 
-    strcpy(replace, NO_DEFINED_VALUE);
-  else
-    strncpy(replace, c2c->cloonix_slave, MAX_NAME_LEN);
-  len = sprintf(sndbuf, ADD_SAT, tid, name, mutype, replace,
-                                            c2c->ip_slave,
-                                            c2c->port_slave, 
-                                            c2c->passwd_slave);
+    len = sprintf(sndbuf, ADD_SAT_NON_C2C, tid, name, type);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -1218,7 +1175,7 @@ void send_del_sat(int llid, int tid, char *name)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_add_lan_sat(int llid, int tid, char *name, char *lan, int num)
+void send_add_lan_endp(int llid, int tid, char *name, int num, char *lan)
 {
   int len = 0;
   if (name[0] == 0)
@@ -1229,13 +1186,13 @@ void send_add_lan_sat(int llid, int tid, char *name, char *lan, int num)
     KOUT(" ");
   if (strlen(lan) >= MAX_NAME_LEN)
     KOUT(" ");
-  len = sprintf(sndbuf, ADD_LAN_SAT, tid, name, lan, num);
+  len = sprintf(sndbuf, ADD_LAN_ENDP, tid, name, num, lan);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void send_del_lan_sat(int llid, int tid, char *name, char *lan, int num)
+void send_del_lan_endp(int llid, int tid, char *name, int num, char *lan)
 {
   int len = 0;
   if (name[0] == 0)
@@ -1246,7 +1203,7 @@ void send_del_lan_sat(int llid, int tid, char *name, char *lan, int num)
     KOUT(" ");
   if (strlen(lan) >= MAX_NAME_LEN)
     KOUT(" ");
-  len = sprintf(sndbuf, DEL_LAN_SAT, tid, name, lan, num);
+  len = sprintf(sndbuf, DEL_LAN_ENDP, tid, name, num, lan);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -1316,10 +1273,6 @@ void send_blkd_reports(int llid, int tid, t_blkd_reports *blkd)
   for (i=0; i<blkd->nb_blkd_reports; i++)
     {
     it = &(blkd->blkd_item[i]);
-    if (strlen(it->name) == 0)
-      KOUT(" ");
-    if (strlen(it->name) >= MAX_NAME_LEN)
-      KOUT("%s %d", it->name, (int)strlen(it->name));
     if (strlen(it->sock) == 0)
       KOUT(" ");
     if (strlen(it->sock) >= MAX_PATH_LEN)
@@ -1329,7 +1282,7 @@ void send_blkd_reports(int llid, int tid, t_blkd_reports *blkd)
     if (strlen(it->rank_name) >= MAX_NAME_LEN)
       KOUT("%s %d", it->rank_name, (int)strlen(it->rank_name));
 
-    len += sprintf(sndbuf+len, BLKD_ITEM, it->name, it->sock, it->rank_name,
+    len += sprintf(sndbuf+len, BLKD_ITEM, it->sock, it->rank_name, it->rank_num,
                                           it->rank, it->pid, it->llid, it->fd,
                                           it->sel_tx, it->sel_rx,
                                           it->fifo_tx, it->fifo_rx,
@@ -1526,112 +1479,93 @@ static void helper_event_sys(char *msg, t_sys_info *sys, int *tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void helper_fill_topo_lan_item(char *msg, 
-                                      t_lan_group *vlg0, 
-                                      t_lan_group *vlg1)
+static void helper_fill_topo_kvm(char *msg, t_topo_kvm *kvm)
 {
-  int i, len;
+  t_topo_kvm ikvm;
+  memset(&ikvm, 0, sizeof(t_topo_kvm));
+  if (sscanf(msg, EVENT_TOPO_KVM_O, ikvm.name, 
+                                    ikvm.install_cdrom,  
+                                    ikvm.added_cdrom,  
+                                    ikvm.added_disk,  
+                                    ikvm.p9_host_share,  
+                                    ikvm.linux_kernel,  
+                                    ikvm.rootfs_used,  
+                                    ikvm.rootfs_backing,  
+                                    &(ikvm.vm_id), 
+                                    &(ikvm.vm_config_flags),  
+                                    &(ikvm.nb_eth),
+                                    &(ikvm.mem), 
+                                    &(ikvm.cpu)) != 13)
+    KOUT("%s", msg);
+  get_eth_params(msg, ikvm.nb_eth, ikvm.eth_params);
+  topo_kvm_swapoff(kvm, &ikvm); 
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void helper_fill_topo_c2c(char *msg, t_topo_c2c *c2c)
+{
+  if (sscanf(msg, EVENT_TOPO_C2C, c2c->name,
+                                  c2c->master_cloonix,
+                                  c2c->slave_cloonix,
+                                  &(c2c->local_is_master),
+                                  &(c2c->is_peered),
+                                  &(c2c->ip_slave),
+                                  &(c2c->port_slave)) != 7) 
+    KOUT("%s", msg);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void helper_fill_topo_snf(char *msg, t_topo_snf *snf)
+{
+  if (sscanf(msg, EVENT_TOPO_SNF, snf->name,
+                                  snf->recpath,
+                                  &(snf->capture_on)) != 3)
+    KOUT("%s", msg);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void helper_fill_topo_sat(char *msg, t_topo_sat *sat)
+{
+  if (sscanf(msg, EVENT_TOPO_SAT, sat->name,
+                                  &(sat->type)) != 2)
+    KOUT("%s", msg);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void helper_fill_topo_lan(char *msg, t_lan_group *vlg)
+{
+  int i, len; 
   char *ptr = msg;
-  len = vlg0->nb_lan * sizeof(t_lan_group_item);
-  vlg0->lan = (t_lan_group_item *) clownix_malloc(len, 9);
-  memset(vlg0->lan, 0, len);
-  for (i=0; i<vlg0->nb_lan; i++)
+  len = vlg->nb_lan * sizeof(t_lan_group_item);
+  vlg->lan = (t_lan_group_item *) clownix_malloc(len, 9);
+  memset(vlg->lan, 0, len);
+  for (i=0; i<vlg->nb_lan; i++)
     {
     ptr = strstr(ptr, "<lan>");
     if (!ptr)
       KOUT("%s", msg);
-    if (sscanf(ptr, TOPO_LAN, vlg0->lan[i].name) != 1)
+    if (sscanf(ptr, EVENT_TOPO_LAN, vlg->lan[i].lan) != 1)
       KOUT(" ");
     ptr = strstr(ptr, "</lan>");
     if (!ptr)
       KOUT("%s", msg);
     }
-  if (vlg1)
-    {
-    len = vlg1->nb_lan * sizeof(t_lan_group_item);
-    vlg1->lan = (t_lan_group_item *) clownix_malloc(len, 9);
-    memset(vlg1->lan, 0, len);
-    for (i=0; i<vlg1->nb_lan; i++)
-      {
-      ptr = strstr(ptr, "<lan>");
-      if (!ptr)
-        KOUT("%s", msg);
-      if (sscanf(ptr, TOPO_LAN, vlg1->lan[i].name) != 1)
-        KOUT(" ");
-      ptr = strstr(ptr, "</lan>");
-      if (!ptr)
-        KOUT("%s", msg);
-      }
-    }
-
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void helper_fill_topo_vm_item(char *msg, t_vm_item *vmit)
+static void helper_fill_topo_endp(char *msg, t_topo_endp *endp)
 {
-  int i, unused;
-  char *ptr = msg;
-  if (sscanf(msg, TOPO_VM_O, vmit->vm_params.name, 
-                             vmit->vm_params.install_cdrom,  
-                             vmit->vm_params.added_cdrom,  
-                             vmit->vm_params.added_disk,  
-                             vmit->vm_params.p9_host_share,  
-                             vmit->vm_params.linux_kernel,  
-                             vmit->vm_params.rootfs_used,  
-                             vmit->vm_params.rootfs_backing,  
-                             &(vmit->vm_id), 
-                             &(vmit->vm_params.vm_config_flags),  
-                             &(vmit->vm_params.nb_eth),
-                             &(vmit->vm_params.mem), 
-                             &(vmit->vm_params.cpu)) != 13)
-    KOUT("%s ", msg);
-  for (i=0; i<vmit->vm_params.nb_eth; i++)
-    {
-    ptr = strstr(ptr, "<eth_infos>");
-    if (!ptr)
-      KOUT(" ");
-    if (sscanf(ptr, TOPO_ETH_O, &unused, &(vmit->lan_eth[i].nb_lan)) != 2)
-    KOUT(" ");
-    if (unused != i)
-      KOUT(" ");
-    get_one_eth_param(ptr, vmit->vm_params.eth_params[i].mac_addr,
-                      &(vmit->vm_params.eth_params[i].is_promisc));
-    helper_fill_topo_lan_item(ptr, &(vmit->lan_eth[i]), NULL);
-    ptr = strstr(ptr, "</eth_infos>");
-    if (!ptr)
-      KOUT(" ");
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void helper_fill_topo_sat_item(char *msg, t_sat_item *sati)
-{
-  char *ptr = msg;
-  if (sscanf(msg, TOPO_SAT_O, sati->name, 
-                              &(sati->musat_type), 
-                              sati->snf_info.recpath, 
-                              &(sati->snf_info.capture_on), 
-                              sati->c2c_info.master_cloonix, 
-                              sati->c2c_info.slave_cloonix, 
-                              &(sati->c2c_info.local_is_master),
-                              &(sati->c2c_info.is_peered),
-                              &(sati->c2c_info.ip_slave),
-                              &(sati->c2c_info.port_slave),
-                              &(sati->lan0_sat.nb_lan),
-                              &(sati->lan1_sat.nb_lan)) != 12)
-
+  if (sscanf(msg, EVENT_TOPO_ENDP_O, endp->name,
+                                     &(endp->num),
+                                     &(endp->type),
+                                     &(endp->lan.nb_lan)) != 4)
     KOUT("%s", msg);
-  if (!strcmp(sati->name, NO_DEFINED_VALUE))
-    memset(sati->name, 0, MAX_NAME_LEN);
-  if (!strcmp(sati->snf_info.recpath, NO_DEFINED_VALUE))
-    memset(sati->snf_info.recpath, 0, MAX_PATH_LEN);
-  if (!strcmp(sati->c2c_info.master_cloonix, NO_DEFINED_VALUE))
-    memset(sati->c2c_info.master_cloonix, 0, MAX_NAME_LEN);
-  if (!strcmp(sati->c2c_info.slave_cloonix, NO_DEFINED_VALUE))
-    memset(sati->c2c_info.slave_cloonix, 0, MAX_NAME_LEN);
-  helper_fill_topo_lan_item(ptr, &(sati->lan0_sat), &(sati->lan1_sat));
+  helper_fill_topo_lan(msg, &(endp->lan));
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1640,42 +1574,85 @@ static t_topo_info *helper_event_topo (char *msg, int *tid)
 {
   int i;
   char *ptr = msg;
+  t_topo_clc icf;
   t_topo_info *topo;
-  topo = (t_topo_info *)clownix_malloc(sizeof(t_topo_info), 15);
+  topo = (t_topo_info *)clownix_malloc(sizeof(t_topo_info), 22);
   memset(topo, 0, sizeof(t_topo_info));
-  if (sscanf(msg, EVENT_TOPO_O, tid, topo->cloonix_config.network_name,
-                                     topo->cloonix_config.username,
-                                     &(topo->cloonix_config.server_port),
-                                     topo->cloonix_config.work_dir,
-                                     topo->cloonix_config.bulk_dir,
-                                     topo->cloonix_config.bin_dir,
-                                     topo->cloonix_config.tmux_bin,
-                                     &(topo->nb_vm),  
-                                     &(topo->nb_sat)) != 10)
+  memset(&icf, 0, sizeof(t_topo_clc));
+  if (sscanf(msg, EVENT_TOPO_O, tid, icf.version,
+                                     icf.network,
+                                     icf.username,
+                                     &(icf.server_port),
+                                     icf.work_dir,
+                                     icf.bulk_dir,
+                                     icf.bin_dir,
+                                     icf.tmux_bin,
+                                     &(icf.flags_config),
+                                     &(topo->nb_kvm),
+                                     &(topo->nb_c2c),
+                                     &(topo->nb_snf),
+                                     &(topo->nb_sat),
+                                     &(topo->nb_endp)) != 15)
     KOUT("%s", msg);
-  topo->vmit= (t_vm_item *) clownix_malloc(topo->nb_vm*sizeof(t_vm_item),16);
-  memset(topo->vmit, 0, topo->nb_vm*sizeof(t_vm_item));
-  topo->sati= (t_sat_item *) clownix_malloc(topo->nb_sat*sizeof(t_sat_item),17);
-  memset(topo->sati, 0, topo->nb_sat*sizeof(t_sat_item));
+  topo_config_swapoff(&(topo->clc), &icf);
+  topo->kvm= (t_topo_kvm *) clownix_malloc(topo->nb_kvm*sizeof(t_topo_kvm),16);
+  memset(topo->kvm, 0, topo->nb_kvm*sizeof(t_topo_kvm));
+  topo->c2c= (t_topo_c2c *) clownix_malloc(topo->nb_c2c*sizeof(t_topo_c2c),16);
+  memset(topo->c2c, 0, topo->nb_c2c*sizeof(t_topo_c2c));
+  topo->snf= (t_topo_snf *) clownix_malloc(topo->nb_snf*sizeof(t_topo_snf),16);
+  memset(topo->snf, 0, topo->nb_snf*sizeof(t_topo_snf));
+  topo->sat= (t_topo_sat *) clownix_malloc(topo->nb_sat*sizeof(t_topo_sat),16);
+  memset(topo->sat, 0, topo->nb_sat*sizeof(t_topo_sat));
+  topo->endp= (t_topo_endp *) clownix_malloc(topo->nb_endp*sizeof(t_topo_endp),16);
+  memset(topo->endp, 0, topo->nb_endp*sizeof(t_topo_endp));
 
-  for (i=0; i<topo->nb_vm; i++)
+  for (i=0; i<topo->nb_kvm; i++)
     {
-    ptr = strstr(ptr, "<vm>");
+    ptr = strstr(ptr, "<kvm>");
     if (!ptr)
-      KOUT("%d,%d\n%s\n", topo->nb_vm, i, msg);
-    helper_fill_topo_vm_item(ptr, &(topo->vmit[i]));
-    ptr = strstr(ptr, "</vm>");
+      KOUT("%d,%d\n%s\n", topo->nb_kvm, i, msg);
+    helper_fill_topo_kvm(ptr, &(topo->kvm[i]));
+    ptr = strstr(ptr, "</kvm>");
     if (!ptr)
       KOUT(" ");
     }
-
+  for (i=0; i<topo->nb_c2c; i++)
+    {
+    ptr = strstr(ptr, "<c2c>");
+    if (!ptr)
+      KOUT("%d,%d\n%s\n", topo->nb_c2c, i, msg);
+    helper_fill_topo_c2c(ptr, &(topo->c2c[i]));
+    ptr = strstr(ptr, "</c2c>");
+    if (!ptr)
+      KOUT(" ");
+    }
+  for (i=0; i<topo->nb_snf; i++)
+    {
+    ptr = strstr(ptr, "<snf>");
+    if (!ptr)
+      KOUT("%d,%d\n%s\n", topo->nb_snf, i, msg);
+    helper_fill_topo_snf(ptr, &(topo->snf[i]));
+    ptr = strstr(ptr, "</snf>");
+    if (!ptr)
+      KOUT(" ");
+    }
   for (i=0; i<topo->nb_sat; i++)
     {
     ptr = strstr(ptr, "<sat>");
     if (!ptr)
-      KOUT(" ");
-    helper_fill_topo_sat_item(ptr, &(topo->sati[i]));
+      KOUT("%d,%d\n%s\n", topo->nb_sat, i, msg);
+    helper_fill_topo_sat(ptr, &(topo->sat[i]));
     ptr = strstr(ptr, "</sat>");
+    if (!ptr)
+      KOUT(" ");
+    }
+  for (i=0; i<topo->nb_endp; i++)
+    {
+    ptr = strstr(ptr, "<endp>");
+    if (!ptr)
+      KOUT("%d,%d\n%s\n", topo->nb_endp, i, msg);
+    helper_fill_topo_endp(ptr, &(topo->endp[i]));
+    ptr = strstr(ptr, "</endp>");
     if (!ptr)
       KOUT(" ");
     }
@@ -1694,103 +1671,43 @@ void send_eventfull_sub(int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int add_eventfull_vm(char *buf, t_eventfull_vm *vm)
-{
-  int i, result = 0;
-  result += sprintf(buf+result, EVENTFULL_VM_O, vm->name, 
-                    vm->ram, vm->cpu, vm->nb_eth);
-  for (i=0; i<vm->nb_eth; i++)
-    result += sprintf(buf+result, EVENTFULL_ETH, vm->eth[i].eth, 
-                                  vm->eth[i].pkt_rx, vm->eth[i].pkt_tx);
-  result += sprintf(buf+result, EVENTFULL_VM_C);
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void send_eventfull(int llid, int tid, 
-                    int nb_vm, t_eventfull_vm *vm,
-                    int nb_sat, t_eventfull_sat *sat)
+void send_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp)
 {
   int i, len = 0;
-  len += sprintf(sndbuf+len, EVENTFULL_O, tid, nb_vm, nb_sat);
-  for (i=0; i<nb_vm; i++)
-    len += add_eventfull_vm(sndbuf+len, &(vm[i]));
-  for (i=0; i<nb_sat; i++)
-    len += sprintf(sndbuf+len,EVENTFULL_SAT, sat[i].name, sat[i].sat_is_ok,
-                                             sat[i].pkt_rx0,sat[i].pkt_tx0,
-                                             sat[i].pkt_rx1,sat[i].pkt_tx1);
+  len += sprintf(sndbuf+len, EVENTFULL_O, tid, nb_endp);
+  for (i=0; i<nb_endp; i++)
+    len += sprintf(sndbuf+len, EVENTFULL_ENDP, endp[i].name, endp[i].num,
+                                               endp[i].type, endp[i].ram,
+                                               endp[i].cpu, endp[i].ok,
+                                               endp[i].rx, endp[i].tx);
   len += sprintf(sndbuf+len, EVENTFULL_C);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void helper_eventfull_sat(char *msg, int nb, t_eventfull_sat *sat)
+static void helper_eventfull_endp(char *msg, int nb, t_eventfull_endp *endp)
 {
   char *ptr = msg;
   int i;
   for (i=0; i<nb; i++)
     {
-    ptr = strstr (ptr, "<eventfull_sat>");
+    ptr = strstr (ptr, "<eventfull_endp>");
     if (!ptr)
       KOUT("%s", msg);
-    if (sscanf(ptr, EVENTFULL_SAT,  sat[i].name,
-                                    &(sat[i].sat_is_ok),
-                                    &(sat[i].pkt_rx0),
-                                    &(sat[i].pkt_tx0),
-                                    &(sat[i].pkt_rx1),
-                                    &(sat[i].pkt_tx1)) != 6)
+    if (sscanf(ptr, EVENTFULL_ENDP,  endp[i].name,
+                                     &(endp[i].num),
+                                     &(endp[i].type),
+                                     &(endp[i].ram),
+                                     &(endp[i].cpu),
+                                     &(endp[i].ok),
+                                     &(endp[i].rx),
+                                     &(endp[i].tx)) != 8)
       KOUT("%s", msg);
-    ptr = strstr (ptr, "</eventfull_sat>");
-    if (!ptr)
-      KOUT("%s", msg);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void helper_eventfull_eth(char *msg, int nb, t_eventfull_eth *eth)
-{
-  char *ptr = msg;
-  int i;
-  for (i=0; i<nb; i++)
-    {
-    ptr = strstr (ptr, "<eventfull_eth>");
-    if (!ptr)
-      KOUT("%s", msg);
-    if (sscanf(ptr, EVENTFULL_ETH, &(eth[i].eth),
-                                    &(eth[i].pkt_rx),
-                                    &(eth[i].pkt_tx)) != 3)
-      KOUT("%s", msg);
-    ptr = strstr (ptr, "</eventfull_eth>");
+    ptr = strstr (ptr, "</eventfull_endp>");
     if (!ptr)
       KOUT("%s", msg);
     }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void helper_eventfull_vm(char *msg, int nb, t_eventfull_vm *vm)
-{
-  char *ptr = msg;
-  int i;
-  for (i=0; i<nb; i++)
-    {
-    ptr = strstr (ptr, "<eventfull_vm>");
-    if (!ptr)
-      KOUT("%s", msg);
-    if (sscanf(ptr, EVENTFULL_VM_O, vm[i].name, 
-               &(vm[i].ram), &(vm[i].cpu), &(vm[i].nb_eth)) != 4) 
-      KOUT("%s", msg);
-    helper_eventfull_eth(ptr, vm[i].nb_eth, vm[i].eth);
-    ptr = strstr (ptr, "</eventfull_vm>");
-    if (!ptr)
-      KOUT("%s", msg);
-    }
-  ptr = strstr (ptr, "<eventfull_vm>");
-  if (ptr)
-    KOUT("%d\n%s", nb, msg);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1806,7 +1723,9 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
     ptr = strstr(ptr, "<blkd_item>");
     if (!ptr)
       KOUT("%s", msg);
-    if (sscanf(ptr, BLKD_ITEM, it->name, it->sock, it->rank_name, 
+    if (sscanf(ptr, BLKD_ITEM,      it->sock, 
+                                    it->rank_name, 
+                                    &(it->rank_num),
                                     &(it->rank),
                                     &(it->pid),
                                     &(it->llid),
@@ -1841,18 +1760,18 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
 /*****************************************************************************/
 static void dispatcher(int llid, int bnd_evt, char *msg)
 {
-  int len, nb_vm, nb_sat, flags_hop, num;
+  int len, nb_endp, flags_hop, num;
   int vmcmd, param, status, sub;
-  int mutype, type, eth, qty, secs, usecs, tid; 
-  t_cloonix_config *cloonix_config;
-  t_eventfull_vm *eventfull_vm;
-  t_eventfull_sat *eventfull_sat;
-  char *pname, *parm1, *parm2;
-  t_vm_params vm_params;
-  char network_name[MAX_NAME_LEN];
+  int mutype, type, eth, qty, tid; 
+  t_topo_clc  icf;
+  t_topo_clc  cf;
+  t_eventfull_endp *eventfull_endp;
+  char *parm1, *parm2;
+  t_topo_kvm ikvm;
+  t_topo_kvm kvm;
+  char network[MAX_NAME_LEN];
   char name[MAX_NAME_LEN];
   char path[MAX_PATH_LEN];
-  char name2[MAX_NAME_LEN];
   char param1[MAX_PATH_LEN];
   char param2[MAX_PATH_LEN];
   char lan[MAX_NAME_LEN];
@@ -1864,7 +1783,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
   t_list_commands *list_commands;
   t_stats_counts stats_counts;
   t_stats_sysinfo stats_sysinfo;
-  t_c2c_req_info c2c_req_info;
+  t_c2c_req_info c2c;
   t_blkd_reports blkd;
   t_hop_list *list;
 
@@ -1910,38 +1829,20 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       clownix_free(list, __FUNCTION__);
       break;
 
-
-    case bnd_sub_evt_stats_eth:
-      if (sscanf(msg, SUB_EVT_STATS_ETH, &tid, name, &eth, &sub) != 4)
+    case bnd_sub_evt_stats_endp:
+      if (sscanf(msg, SUB_EVT_STATS_ENDP, &tid, name, &num, &sub) != 4)
         KOUT("%s", msg);
-      recv_evt_stats_eth_sub(llid, tid, name, eth, sub);
+      recv_evt_stats_endp_sub(llid, tid, name, num, sub);
       break;
 
-    case bnd_evt_stats_eth:
-      if (sscanf(msg, EVT_STATS_ETH_O, &tid, network_name, name, &eth,
-                 &status, &(stats_counts.nb_tx_items),
-                 &(stats_counts.nb_rx_items)) != 7)
+    case bnd_evt_stats_endp:
+      if (sscanf(msg, EVT_STATS_ENDP_O, &tid, network, name, &num,
+                                        &status, &(stats_counts.nb_tx_items), 
+                                        &(stats_counts.nb_rx_items)) != 7)
         KOUT("%s", msg);
       helper_tx_stats(msg, stats_counts.nb_tx_items, stats_counts.tx_item);
       helper_rx_stats(msg, stats_counts.nb_rx_items, stats_counts.rx_item);
-      recv_evt_stats_eth(llid, tid, network_name,
-                         name, eth, &stats_counts, status);
-      break;
-
-    case bnd_sub_evt_stats_sat:
-      if (sscanf(msg, SUB_EVT_STATS_SAT, &tid, name, &sub) != 3)
-        KOUT("%s", msg);
-      recv_evt_stats_sat_sub(llid, tid, name, sub);
-      break;
-
-    case bnd_evt_stats_sat:
-      if (sscanf(msg, EVT_STATS_SAT_O, &tid, network_name, name,
-                 &status, &(stats_counts.nb_tx_items), 
-                 &(stats_counts.nb_rx_items)) != 6)
-        KOUT("%s", msg);
-      helper_tx_stats(msg, stats_counts.nb_tx_items, stats_counts.tx_item);
-      helper_rx_stats(msg, stats_counts.nb_rx_items, stats_counts.rx_item);
-      recv_evt_stats_sat(llid,tid,network_name,name,&stats_counts,status);
+      recv_evt_stats_endp(llid, tid, network, name, num, &stats_counts,status);
       break;
 
     case bnd_sub_evt_stats_sysinfo:
@@ -1951,7 +1852,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       break;
 
     case bnd_evt_stats_sysinfo:
-      if (sscanf(msg, EVT_STATS_SYSINFOO, &tid, network_name, name,
+      if (sscanf(msg, EVT_STATS_SYSINFOO, &tid, network, name,
              &status, &(stats_sysinfo.time_ms), &(stats_sysinfo.uptime),
              &(stats_sysinfo.load1), &(stats_sysinfo.load5),
              &(stats_sysinfo.load15), &(stats_sysinfo.totalram), 
@@ -1979,7 +1880,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
         memcpy(line, ptrs, len);
         line[len] = 0;
         }
-      recv_evt_stats_sysinfo(llid, tid, network_name, name,
+      recv_evt_stats_sysinfo(llid, tid, network, name,
                              &stats_sysinfo, line, status);
       clownix_free(line, __FUNCTION__);
       break;
@@ -2070,7 +1971,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
     case bnd_event_topo:
       topo = helper_event_topo(msg, &tid);
       recv_event_topo(llid, tid, topo);
-      topo_info_free(topo);
+      topo_free_topo(topo);
       break;
 
     case bnd_topo_small_event_sub:
@@ -2126,24 +2027,25 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       break;
 
     case bnd_add_vm:
-      memset(&vm_params, 0, sizeof(t_vm_params));
-      if (sscanf(msg, ADD_VM_O, &tid, vm_params.name, 
-                 &(vm_params.vm_config_flags),
-                 &(vm_params.cpu), &(vm_params.mem), 
-                 &(vm_params.nb_eth)) != 6)
+      memset(&ikvm, 0, sizeof(t_topo_kvm));
+      if (sscanf(msg, ADD_VM_O, &tid, ikvm.name, 
+                 &(ikvm.vm_config_flags),
+                 &(ikvm.cpu), &(ikvm.mem), 
+                 &(ikvm.nb_eth)) != 6)
         KOUT("%s", msg);
-      get_eth_params(msg, vm_params.nb_eth, vm_params.eth_params);
+      get_eth_params(msg, ikvm.nb_eth, ikvm.eth_params);
       ptr = strstr(msg, "<linux_kernel>");
       if (!ptr)
         KOUT("%s", msg);
-      if (sscanf(ptr, ADD_VM_C, vm_params.linux_kernel, 
-                                vm_params.rootfs_input, 
-                                vm_params.install_cdrom, 
-                                vm_params.added_cdrom, 
-                                vm_params.added_disk, 
-                                vm_params.p9_host_share) != 6) 
+      if (sscanf(ptr, ADD_VM_C, ikvm.linux_kernel, 
+                                ikvm.rootfs_input, 
+                                ikvm.install_cdrom, 
+                                ikvm.added_cdrom, 
+                                ikvm.added_disk, 
+                                ikvm.p9_host_share) != 6) 
         KOUT("%s", msg);
-      recv_add_vm(llid, tid, &vm_params);
+      topo_kvm_swapoff(&kvm, &ikvm); 
+      recv_add_vm(llid, tid, &kvm);
       break;
     case bnd_sav_vm:
       if (sscanf(msg, SAV_VM, &tid, name, &type, path) != 4)
@@ -2158,33 +2060,42 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       break;
 
 
-    case bnd_add_sat:
-      memset(&(c2c_req_info), 0, sizeof(t_c2c_req_info));
-      if (sscanf(msg, ADD_SAT, &tid, name, &mutype,
-                               c2c_req_info.cloonix_slave,
-                               &(c2c_req_info.ip_slave),
-                               &(c2c_req_info.port_slave),
-                               c2c_req_info.passwd_slave) != 7)
+    case bnd_add_sat_c2c:
+      memset(&(c2c), 0, sizeof(t_c2c_req_info));
+      if (sscanf(msg, ADD_SAT_C2C, &tid, name, 
+                                   c2c.cloonix_slave,
+                                   &(c2c.ip_slave),
+                                   &(c2c.port_slave),
+                                   c2c.passwd_slave) != 6)
         KOUT("%s", msg);
-      if (!strcmp(c2c_req_info.cloonix_slave, NO_DEFINED_VALUE))
-        memset(c2c_req_info.cloonix_slave, 0, MAX_NAME_LEN);
-      recv_add_sat(llid, tid, name, mutype, &c2c_req_info);
+      if (!strcmp(c2c.cloonix_slave, NO_DEFINED_VALUE))
+        memset(c2c.cloonix_slave, 0, MAX_NAME_LEN);
+      mutype = endp_type_c2c;
+      recv_add_sat(llid, tid, name, mutype, &c2c);
       break;
+
+    case bnd_add_sat_non_c2c:
+      if (sscanf(msg, ADD_SAT_NON_C2C, &tid, name, &mutype) != 3)
+        KOUT("%s", msg);
+      recv_add_sat(llid, tid, name, mutype, NULL);
+      break;
+
     case bnd_del_sat:
       if (sscanf(msg, DEL_SAT, &tid, name) != 2)
         KOUT("%s", msg);
       recv_del_sat(llid, tid, name);
       break;
 
-    case bnd_add_lan_sat:
-      if (sscanf(msg, ADD_LAN_SAT, &tid, name, lan, &num) != 4)
+    case bnd_add_lan_endp:
+      if (sscanf(msg, ADD_LAN_ENDP, &tid, name, &num, lan) != 4)
         KOUT("%s", msg);
-      recv_add_lan_sat(llid, tid, name, lan, num);
+      recv_add_lan_endp(llid, tid, name, num, lan);
       break;
-    case bnd_del_lan_sat:
-      if (sscanf(msg, DEL_LAN_SAT, &tid, name, lan, &num) != 4)
+
+    case bnd_del_lan_endp:
+      if (sscanf(msg, DEL_LAN_ENDP, &tid, name,  &num, lan) != 4)
         KOUT("%s", msg);
-      recv_del_lan_sat(llid, tid, name, lan, num);
+      recv_del_lan_endp(llid, tid, name, num, lan);
       break;
 
     case bnd_kill_uml_clownix:
@@ -2226,61 +2137,26 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
         clownix_free(list_commands, __FUNCTION__);
       break;
 
-    case bnd_event_spy_sub:
-      if (sscanf(msg, EVENT_SPY_SUB, &tid, name, name2, info) != 4)
-        KOUT("%s", msg);
-      if (!strcmp(name, NO_DEFINED_VALUE))
-        pname = NULL;
-      else
-        pname = name;
-      recv_event_spy_sub(llid, tid, pname, name2, info);
-      break;
-    case bnd_event_spy_unsub:
-      if (sscanf(msg, EVENT_SPY_UNSUB, &tid, name, name2, info) != 4)
-        KOUT("%s", msg);
-      if (!strcmp(name, NO_DEFINED_VALUE))
-        pname = NULL;
-      else
-        pname = name;
-      recv_event_spy_unsub(llid, tid, pname, name2, info);
-      break;
-    case bnd_event_spy:
-      if (sscanf(msg, EVENT_SPY_O, &tid, name, name2, info, 
-                                   &secs, &usecs, &qty) != 7)
-        KOUT("%s", msg);
-      if (!strcmp(name, NO_DEFINED_VALUE))
-        pname = NULL;
-      else
-        pname = name;
-      ptr = helper_event_spy(msg, qty);
-      recv_event_spy(llid,tid,pname,name2, info, secs, usecs, qty, ptr);
-      if (ptr)
-        clownix_free(ptr, __FUNCTION__);
-      break;
     case bnd_work_dir_req:
       if (sscanf(msg, WORK_DIR_REQ, &tid) != 1)
         KOUT("%s", msg);
       recv_work_dir_req(llid, tid);
       break;
     case bnd_work_dir_resp:
-      cloonix_config = 
-      (t_cloonix_config *) clownix_malloc(sizeof(t_cloonix_config), 5);
-      memset(cloonix_config, 0, sizeof(t_cloonix_config));
+      memset(&icf, 0, sizeof(t_topo_clc));
       if (sscanf(msg, WORK_DIR_RESP, &tid, 
-                                     cloonix_config->version,
-                                     cloonix_config->network_name,
-                                     cloonix_config->username,
-                                     &(cloonix_config->server_port),
-                                     cloonix_config->work_dir,
-                                     cloonix_config->bulk_dir,
-                                     cloonix_config->bin_dir,
-                                     cloonix_config->tmux_bin,
-                                     &(cloonix_config->flags_config)) != 10)
-
-
+                                     icf.version,
+                                     icf.network,
+                                     icf.username,
+                                     &(icf.server_port),
+                                     icf.work_dir,
+                                     icf.bulk_dir,
+                                     icf.bin_dir,
+                                     icf.tmux_bin,
+                                     &(icf.flags_config)) != 10)
         KOUT("%s", msg);
-      recv_work_dir_resp(llid, tid, cloonix_config);
-      clownix_free(cloonix_config, __FUNCTION__);
+      topo_config_swapoff(&cf, &icf);
+      recv_work_dir_resp(llid, tid, &cf);
       break;
 
     case bnd_vmcmd:
@@ -2297,23 +2173,14 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       break;
 
     case bnd_eventfull:
-      if (sscanf(msg, EVENTFULL_O, &tid, &nb_vm, &nb_sat) != 3)
+      if (sscanf(msg, EVENTFULL_O, &tid, &nb_endp) != 2)
         KOUT("%s", msg);
-
-      len = nb_vm * sizeof(t_eventfull_vm);
-      eventfull_vm = (t_eventfull_vm *)clownix_malloc(len, 22); 
-      memset(eventfull_vm, 0, len);
-      helper_eventfull_vm(msg, nb_vm, eventfull_vm);
-
-      len = nb_sat * sizeof(t_eventfull_sat);
-      eventfull_sat = (t_eventfull_sat *)clownix_malloc(len, 23); 
-      memset(eventfull_sat, 0, len);
-      helper_eventfull_sat(msg, nb_sat, eventfull_sat);
-
-      recv_eventfull(llid, tid, nb_vm, eventfull_vm, 
-                                nb_sat, eventfull_sat);
-      clownix_free(eventfull_vm, __FUNCTION__);
-      clownix_free(eventfull_sat, __FUNCTION__);
+      len = nb_endp * sizeof(t_eventfull_endp);
+      eventfull_endp = (t_eventfull_endp *)clownix_malloc(len, 23); 
+      memset(eventfull_endp, 0, len);
+      helper_eventfull_endp(msg, nb_endp, eventfull_endp);
+      recv_eventfull(llid, tid, nb_endp, eventfull_endp); 
+      clownix_free(eventfull_endp, __FUNCTION__);
       break;
 
     default:
@@ -2344,22 +2211,22 @@ char *llid_trace_lib(int type)
     case type_llid_trace_mulan:
       result = "mulan";
       break;
-    case type_llid_trace_musat_eth:
+    case type_llid_trace_endp_kvm:
       result = "mueth";
       break;
-    case type_llid_trace_musat_tap:
+    case type_llid_trace_endp_tap:
       result = "mutap";
       break;
-    case type_llid_trace_musat_snf:
+    case type_llid_trace_endp_snf:
       result = "musnf";
       break;
-    case type_llid_trace_musat_c2c:
+    case type_llid_trace_endp_c2c:
       result = "muc2c";
       break;
-    case type_llid_trace_musat_a2b:
+    case type_llid_trace_endp_a2b:
       result = "mua2b";
       break;
-    case type_llid_trace_musat_wif:
+    case type_llid_trace_endp_wif:
       result = "muwif";
       break;
     case type_llid_trace_jfs:
@@ -2426,10 +2293,11 @@ void doors_io_basic_xml_init(t_llid_tx llid_tx)
   extract_boundary (ADD_VM_O,       bound_list[bnd_add_vm]);
   extract_boundary (SAV_VM,         bound_list[bnd_sav_vm]);
   extract_boundary (SAV_VM_ALL,     bound_list[bnd_sav_vm_all]);
-  extract_boundary (ADD_SAT,     bound_list[bnd_add_sat]);
+  extract_boundary (ADD_SAT_C2C,     bound_list[bnd_add_sat_c2c]);
+  extract_boundary (ADD_SAT_NON_C2C, bound_list[bnd_add_sat_non_c2c]);
   extract_boundary (DEL_SAT,     bound_list[bnd_del_sat]);
-  extract_boundary (ADD_LAN_SAT, bound_list[bnd_add_lan_sat]);
-  extract_boundary (DEL_LAN_SAT, bound_list[bnd_del_lan_sat]);
+  extract_boundary (ADD_LAN_ENDP, bound_list[bnd_add_lan_endp]);
+  extract_boundary (DEL_LAN_ENDP, bound_list[bnd_del_lan_endp]);
   extract_boundary (KILL_UML_CLOWNIX,bound_list[bnd_kill_uml_clownix]);
   extract_boundary (DEL_ALL,        bound_list[bnd_del_all]);
   extract_boundary (LIST_PID,       bound_list[bnd_list_pid_req]);
@@ -2448,9 +2316,6 @@ void doors_io_basic_xml_init(t_llid_tx llid_tx)
   extract_boundary (EVENT_SYS_SUB, bound_list[bnd_event_sys_sub]);
   extract_boundary (EVENT_SYS_UNSUB, bound_list[bnd_event_sys_unsub]);
   extract_boundary (EVENT_SYS_O, bound_list[bnd_event_sys]);
-  extract_boundary (EVENT_SPY_SUB,  bound_list[bnd_event_spy_sub]);
-  extract_boundary (EVENT_SPY_UNSUB,  bound_list[bnd_event_spy_unsub]);
-  extract_boundary (EVENT_SPY_O,  bound_list[bnd_event_spy]);
   extract_boundary (WORK_DIR_REQ,  bound_list[bnd_work_dir_req]);
   extract_boundary (WORK_DIR_RESP, bound_list[bnd_work_dir_resp]);
   extract_boundary (VMCMD, bound_list[bnd_vmcmd]);
@@ -2458,10 +2323,8 @@ void doors_io_basic_xml_init(t_llid_tx llid_tx)
   extract_boundary (EVENTFULL_O, bound_list[bnd_eventfull]);
   extract_boundary (MUCLI_DIALOG_REQ_O, bound_list[bnd_mucli_dialog_req]);
   extract_boundary (MUCLI_DIALOG_RESP_O, bound_list[bnd_mucli_dialog_resp]);
-  extract_boundary (SUB_EVT_STATS_ETH, bound_list[bnd_sub_evt_stats_eth]);
-  extract_boundary (EVT_STATS_ETH_O, bound_list[bnd_evt_stats_eth]);
-  extract_boundary (SUB_EVT_STATS_SAT, bound_list[bnd_sub_evt_stats_sat]);
-  extract_boundary (EVT_STATS_SAT_O, bound_list[bnd_evt_stats_sat]);
+  extract_boundary (SUB_EVT_STATS_ENDP, bound_list[bnd_sub_evt_stats_endp]);
+  extract_boundary (EVT_STATS_ENDP_O, bound_list[bnd_evt_stats_endp]);
   extract_boundary (SUB_EVT_STATS_SYSINFO, bound_list[bnd_sub_evt_stats_sysinfo]);
   extract_boundary (EVT_STATS_SYSINFOO, bound_list[bnd_evt_stats_sysinfo]);
   extract_boundary (BLKD_REPORTS_O, bound_list[bnd_blkd_reports]);

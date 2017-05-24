@@ -24,14 +24,12 @@
 #include <signal.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_daemon.h"
 #include "event_subscriber.h"
 #include "hop_event.h"
 #include "cfg_store.h"
-#include "musat_mngt.h"
-#include "mueth_mngt.h"
+#include "endp_mngt.h"
 #include "mulan_mngt.h"
 
 
@@ -138,17 +136,14 @@ static void mutimeout_chain(int llid, int cli_llid, int cli_tid,
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_mucli_dialog_req(int llid, int tid, 
-                           char *name, int num, char *line)
+void recv_mucli_dialog_req(int llid, int tid, char *name, int num, char *line)
 {
-  int musat_type;
+  int endp_type;
   int mullid = 0;
   if (!mullid)
     mullid = mulan_can_be_found_with_name(name);
   if (!mullid)
-    mullid = mueth_can_be_found_with_name(name, num);
-  if (!mullid)
-    mullid = musat_mngt_can_be_found_with_name(name, &musat_type);
+    mullid = endp_mngt_can_be_found_with_name(name, num, &endp_type);
   if (!mullid)
     send_mucli_dialog_resp(llid, tid, name, num, "KO NOT FOUND", 1);
   else
@@ -176,51 +171,53 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void update_sat_tux(char *name, char *line)
+static void update_snf(char *name, char *line)
 {
-  t_tux *tux;
-  tux = cfg_get_tux(name);
-  char *ptr;
-  if (tux)
+  int type;
+  char *ptr, *ptrend;
+  if (!endp_mngt_exists(name, 0, &type))
+    KERR("%s", name);
+  else if (type != endp_type_snf)
+    KERR("%s", name);
+  else
     {
-    if (tux->musat_type == musat_type_snf)
+    if (!strcmp(line, "REC_START_OK"))
       {
-      if (!strcmp(line, "REC_START_OK"))
+      endp_mngt_snf_set_capture(name, 0, 1); 
+      snf_globtopo_small_event(name, snf_evt_capture_on, NULL);
+      }
+    else if (!strcmp(line, "REC_STOP_OK"))
+      {
+      endp_mngt_snf_set_capture(name, 0, 0); 
+      snf_globtopo_small_event(name, snf_evt_capture_off, NULL);
+      }
+    else if (!strncmp(line, "SET_CONF_OK", strlen("SET_CONF_OK")))
+      {
+      ptr = line + strlen("SET_CONF_OK");
+      endp_mngt_snf_set_recpath(name, 0, ptr);
+      snf_globtopo_small_event(name, snf_evt_recpath_change, ptr); 
+      }
+    else if (!strncmp(line, "GET_CONF_RESP", strlen("GET_CONF_RESP")))
+      {
+      ptr = line + strlen("GET_CONF_RESP");
+      ptrend = strchr(ptr, ' ');
+      if (!ptrend)
+        KERR("%s", ptr); 
+      else
         {
-        tux->snf_info.capture_on = 1;
-        snf_globtopo_small_event(tux->name, snf_evt_capture_on, NULL);
-        }
-      else if (!strcmp(line, "REC_STOP_OK"))
-        {
-        tux->snf_info.capture_on = 0;
-        snf_globtopo_small_event(tux->name, snf_evt_capture_off, NULL);
-        }
-      else if (!strncmp(line, "SET_CONF_OK", strlen("SET_CONF_OK")))
-        {
-        memset(tux->snf_info.recpath, 0, MAX_PATH_LEN);
-        strncpy(tux->snf_info.recpath, 
-                line + strlen("SET_CONF_OK"), MAX_PATH_LEN - 1);
-        snf_globtopo_small_event(tux->name, snf_evt_recpath_change, 
-                                 tux->snf_info.recpath);
-        }
-      else if (!strncmp(line, "GET_CONF_RESP", strlen("GET_CONF_RESP")))
-        {
-        memset(tux->snf_info.recpath, 0, MAX_PATH_LEN);
-        strncpy(tux->snf_info.recpath, 
-                line + strlen("GET_CONF_RESP"), MAX_PATH_LEN - 1);
-        ptr = strchr(tux->snf_info.recpath, ' ');
-        if (!ptr)
-          KERR("%s", tux->snf_info.recpath); 
+        *ptrend = 0;
+        endp_mngt_snf_set_recpath(name, 0, ptr);
+        snf_globtopo_small_event(name, snf_evt_recpath_change, ptr); 
+        ptr = ptrend + 1;
+        if (ptr[0] == '1')
+          {
+          endp_mngt_snf_set_capture(name, 0, 1); 
+          snf_globtopo_small_event(name, snf_evt_capture_on, NULL);
+          }
         else
           {
-          *ptr = 0;
-          ptr += 1;
-          snf_globtopo_small_event(tux->name, snf_evt_recpath_change, 
-                                   tux->snf_info.recpath);
-          if (ptr[0] == '1')
-            snf_globtopo_small_event(tux->name, snf_evt_capture_on, NULL);
-          else
-            snf_globtopo_small_event(tux->name, snf_evt_capture_off, NULL);
+          endp_mngt_snf_set_capture(name, 0, 0); 
+          snf_globtopo_small_event(name, snf_evt_capture_off, NULL);
           }
         }
       }
@@ -240,14 +237,13 @@ void rpct_recv_cli_resp(void *ptr, int llid, int tid,
     if (!mutimeout_unchain(llid, cli_llid, cli_tid))
       KERR("%d %s", tid, line);
     }
-  if ((!mueth_can_be_found_with_llid(llid, name, &num)) &&
-      (!musat_mngt_can_be_found_with_llid(llid, name, &mutype)) &&
-      (!mulan_can_be_found_with_llid(llid, name)))
-    KERR("CANNOT BE %s", line);
-  if (musat_mngt_can_be_found_with_llid(llid, name, &mutype))
+  if (endp_mngt_can_be_found_with_llid(llid, name, &num, &mutype))
     {
-    update_sat_tux(name, line);
+    if (mutype == endp_type_snf)
+      update_snf(name, line);
     }
+  else if (!mulan_can_be_found_with_llid(llid, name))
+    KERR("CANNOT BE %s", line);
   send_mucli_dialog_resp(cli_llid, cli_tid, name, num, line, 0);
 }
 /*---------------------------------------------------------------------------*/
@@ -257,14 +253,9 @@ void rpct_recv_evt_msg(void *ptr, int llid, int tid, char *line)
 {
   char name[MAX_NAME_LEN];
   int num, mutype;
-  if (mueth_can_be_found_with_llid(llid, name, &num))
+  if (endp_mngt_can_be_found_with_llid(llid, name, &num, &mutype))
     {
-    mueth_rpct_recv_evt_msg(llid, tid, line);
-    hop_event_hook(llid, FLAG_HOP_EVT, line);
-    }
-  else if (musat_mngt_can_be_found_with_llid(llid, name, &mutype))
-    {
-    musat_mngt_rpct_recv_evt_msg(llid, tid, line);
+    endp_mngt_rpct_recv_evt_msg(llid, tid, line);
     hop_event_hook(llid, FLAG_HOP_EVT, line);
     }
   else if (mulan_can_be_found_with_llid(llid, name))
@@ -290,10 +281,8 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
   char name[MAX_NAME_LEN];
   int num, mutype;
   hop_event_hook(llid, FLAG_HOP_DIAG, line);
-  if (mueth_can_be_found_with_llid(llid, name, &num))
-    mueth_rpct_recv_diag_msg(llid, tid, line);
-  else if (musat_mngt_can_be_found_with_llid(llid, name, &mutype))
-    musat_mngt_rpct_recv_diag_msg(llid, tid, line);
+  if (endp_mngt_can_be_found_with_llid(llid, name, &num, &mutype))
+    endp_mngt_rpct_recv_diag_msg(llid, tid, line);
   else if (mulan_can_be_found_with_llid(llid, name))
     mulan_rpct_recv_diag_msg(llid, tid, line);
   else

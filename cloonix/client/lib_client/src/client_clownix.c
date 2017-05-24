@@ -24,7 +24,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "doorways_sock.h"
@@ -41,8 +40,7 @@ static t_sys_cb   clownix_sys_cb;
 static t_topo_small_event_cb clownix_topo_small_event_cb;
 static t_topo_cb  clownix_topo_cb;
 
-static t_evt_stats_eth_cb clownix_evt_stats_eth_cb;
-static t_evt_stats_sat_cb clownix_evt_stats_sat_cb;
+static t_evt_stats_endp_cb clownix_evt_stats_endp_cb;
 static t_evt_stats_sysinfo_cb clownix_evt_stats_sysinfo_cb;
 static t_evt_blkd_reports_cb clownix_evt_blkd_reports_cb;
 
@@ -139,7 +137,7 @@ int get_clownix_main_llid(void)
 
 
 /****************************************************************************/
-void recv_work_dir_resp(int llid, int tid, t_cloonix_config *conf)
+void recv_work_dir_resp(int llid, int tid, t_topo_clc *conf)
 {
   if (clownix_get_path_cb)
     clownix_get_path_cb(tid, conf);
@@ -209,8 +207,7 @@ void recv_list_commands_resp(int llid, int tid, int qty, t_list_commands *list)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_eventfull(int llid, int tid, int nb_vm, t_eventfull_vm *vm,
-                    int nb_sat, t_eventfull_sat *sat)
+void recv_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp)
 {
   if (!msg_exist_channel(llid))
     KOUT(" ");
@@ -218,7 +215,7 @@ void recv_eventfull(int llid, int tid, int nb_vm, t_eventfull_vm *vm,
     KOUT(" ");
   if (!clownix_eventfull_cb)
     KOUT(" ");
-  clownix_eventfull_cb(nb_vm, vm, nb_sat, sat);
+  clownix_eventfull_cb(nb_endp, endp);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(llid);
 #endif
@@ -248,20 +245,6 @@ void recv_topo_small_event(int llid, int tid, char *name,
     KOUT(" ");
   if (clownix_topo_small_event_cb)
     clownix_topo_small_event_cb(tid, name, p1, p2, evt);
-#ifdef WITH_GLIB
-  glib_prepare_rx_tx(llid);
-#endif
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void recv_evt_stats_sat(int llid, int tid, char *network_name, char *name,
-                        t_stats_counts *stats_counts, int status)
-{
-  if (!msg_exist_channel(llid))
-    KOUT(" ");
-  if (clownix_evt_stats_sat_cb)
-    clownix_evt_stats_sat_cb(tid, name, stats_counts, status);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(llid);
 #endif
@@ -309,14 +292,14 @@ void recv_blkd_reports(int llid, int tid, t_blkd_reports *blkd)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_evt_stats_eth(int llid, int tid, char *network_name, 
-                        char *name, int eth,
-                        t_stats_counts *stats_counts, int status)
+void recv_evt_stats_endp(int llid, int tid, char *network_name, 
+                         char *name, int num,
+                         t_stats_counts *stats_counts, int status)
 {
   if (!msg_exist_channel(llid))
     KOUT(" ");
-  if (clownix_evt_stats_eth_cb)
-    clownix_evt_stats_eth_cb(tid, name, eth, stats_counts, status);
+  if (clownix_evt_stats_endp_cb)
+    clownix_evt_stats_endp_cb(tid, name, num, stats_counts, status);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(llid);
 #endif
@@ -430,33 +413,33 @@ void client_add_vm(int tid, t_end_cb cb, char *nm,
                    char *added_disk, char *p9_host_share,
                    t_eth_params *eth_params)
 {
-  t_vm_params vm_params;
+  t_topo_kvm kvm;
   int new_tid;
   if (!g_llid)
     KOUT(" ");
   new_tid = set_response_callback(cb, tid);
-  memset(&vm_params, 0, sizeof(t_vm_params));
+  memset(&kvm, 0, sizeof(t_topo_kvm));
   if ((!nm) || (!root_fs))
     KOUT(" ");
-  strncpy(vm_params.name, nm, MAX_NAME_LEN - 1);
-  vm_params.vm_config_flags = vm_config_flags;
-  vm_params.cpu = cpu_qty;
-  vm_params.mem = mem_qty;
-  vm_params.nb_eth = nb_eth;
+  strncpy(kvm.name, nm, MAX_NAME_LEN - 1);
+  kvm.vm_config_flags = vm_config_flags;
+  kvm.cpu = cpu_qty;
+  kvm.mem = mem_qty;
+  kvm.nb_eth = nb_eth;
   if (eth_params)
-    memcpy(vm_params.eth_params, eth_params, MAX_ETH_VM * sizeof(t_eth_params));
+    memcpy(kvm.eth_params, eth_params, MAX_ETH_VM * sizeof(t_eth_params));
   if (kernel)
-    strncpy(vm_params.linux_kernel, kernel, MAX_NAME_LEN - 1);
-  strncpy(vm_params.rootfs_input, root_fs, MAX_PATH_LEN - 1);
+    strncpy(kvm.linux_kernel, kernel, MAX_NAME_LEN - 1);
+  strncpy(kvm.rootfs_input, root_fs, MAX_PATH_LEN - 1);
   if (install_cdrom)
-    strncpy(vm_params.install_cdrom, install_cdrom, MAX_PATH_LEN - 1);
+    strncpy(kvm.install_cdrom, install_cdrom, MAX_PATH_LEN - 1);
   if (added_cdrom)
-    strncpy(vm_params.added_cdrom, added_cdrom, MAX_PATH_LEN - 1);
+    strncpy(kvm.added_cdrom, added_cdrom, MAX_PATH_LEN - 1);
   if (added_disk)
-    strncpy(vm_params.added_disk, added_disk, MAX_PATH_LEN - 1);
+    strncpy(kvm.added_disk, added_disk, MAX_PATH_LEN - 1);
   if (p9_host_share)
-    strncpy(vm_params.p9_host_share, p9_host_share, MAX_PATH_LEN - 1);
-  send_add_vm(g_llid, new_tid, &vm_params);
+    strncpy(kvm.p9_host_share, p9_host_share, MAX_PATH_LEN - 1);
+  send_add_vm(g_llid, new_tid, &kvm);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif  
@@ -570,14 +553,13 @@ void client_del_sat(int tid, t_end_cb cb, char *name)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void client_add_lan_sat(int tid, t_end_cb cb, char *name, 
-                        char *lan, int num)
+void client_add_lan_endp(int tid, t_end_cb cb, char *name, int num, char *lan) 
 {
   int new_tid;
   if (!g_llid)
     KOUT(" ");
   new_tid = set_response_callback(cb, tid);
-  send_add_lan_sat(g_llid, new_tid, name, lan, num);
+  send_add_lan_endp(g_llid, new_tid, name, num, lan);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif
@@ -585,14 +567,13 @@ void client_add_lan_sat(int tid, t_end_cb cb, char *name,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void client_del_lan_sat(int tid, t_end_cb cb, char *name, 
-                        char *lan, int num)
+void client_del_lan_endp(int tid, t_end_cb cb, char *name, int num, char *lan) 
 {
   int new_tid;
   if (!g_llid)
     KOUT(" ");
   new_tid = set_response_callback(cb, tid);
-  send_del_lan_sat(g_llid, new_tid, name, lan, num);
+  send_del_lan_endp(g_llid, new_tid, name, num, lan);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif
@@ -687,31 +668,17 @@ void client_topo_unsub(void)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void client_evt_stats_eth_sub(int tid, char *name, int eth, int sub, 
-                              t_evt_stats_eth_cb  cb)
+void client_evt_stats_endp_sub(int tid, char *name, int num, int sub, 
+                               t_evt_stats_endp_cb  cb)
 {
   if (!g_llid)
     KOUT(" ");
-  clownix_evt_stats_eth_cb = cb;
-  send_evt_stats_eth_sub(g_llid, tid, name, eth, sub);
+  clownix_evt_stats_endp_cb = cb;
+  send_evt_stats_endp_sub(g_llid, tid, name, num, sub);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif
 
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void client_evt_stats_sat_sub(int tid, char *name, int sub, 
-                              t_evt_stats_sat_cb  cb)
-{
-  if (!g_llid)
-    KOUT(" ");
-  clownix_evt_stats_sat_cb = cb;
-  send_evt_stats_sat_sub(g_llid, tid, name, sub);
-#ifdef WITH_GLIB
-  glib_prepare_rx_tx(g_llid);
-#endif
 }
 /*--------------------------------------------------------------------------*/
 

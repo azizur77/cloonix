@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "cfg_store.h"
@@ -36,14 +35,6 @@
 #include "stats_counters_sysinfo.h"
 #include "blkd_sub.h"
 
-/*---------------------------------------------------------------------------*/
-typedef struct t_tux_to_llid
-{
-  int llid;
-  char tux[MAX_PATH_LEN];
-  struct t_tux_to_llid *prev;
-  struct t_tux_to_llid *next;
-} t_tux_to_llid;
 /*---------------------------------------------------------------------------*/
 typedef struct t_event_to_llid
 {
@@ -81,8 +72,6 @@ static int trace_fd_qty[type_llid_max];
 static t_llid_trace_data *llid_trace_data[CLOWNIX_MAX_CHANNELS];
 static t_vm_to_llid *vm_to_llid[MAX_VM];
 static t_event_to_llid *event_to_llid[sub_evt_max];
-static t_tux_to_llid *tux_to_llid;
-static t_tux_to_llid *tux_listen_to_llid;
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
@@ -113,23 +102,23 @@ static char *llid_trace_translate_type(int type_llid_trace)
     case type_llid_trace_mulan:
       result = "trace_mulan";
       break;
-    case type_llid_trace_musat_eth:
-      result = "trace_musat_eth";
+    case type_llid_trace_endp_kvm:
+      result = "trace_endp_kvm";
       break;
-    case type_llid_trace_musat_snf:
-      result = "trace_musat_snf";
+    case type_llid_trace_endp_snf:
+      result = "trace_endp_snf";
       break;
-    case type_llid_trace_musat_tap:
-      result = "trace_musat_tap";
+    case type_llid_trace_endp_tap:
+      result = "trace_endp_tap";
       break;
-    case type_llid_trace_musat_wif:
-      result = "trace_musat_wif";
+    case type_llid_trace_endp_wif:
+      result = "trace_endp_wif";
       break;
-    case type_llid_trace_musat_c2c:
-      result = "trace_musat_c2c";
+    case type_llid_trace_endp_c2c:
+      result = "trace_endp_c2c";
       break;
-    case type_llid_trace_musat_a2b:
-      result = "trace_musat_a2b";
+    case type_llid_trace_endp_a2b:
+      result = "trace_endp_a2b";
       break;
     case type_llid_trace_jfs:
       result = "trace_jfs";
@@ -370,7 +359,7 @@ void llid_trace_alloc(int llid, char *name, int vm_id, int guest_fd, int type)
   if(llid_trace_data[llid])
     KOUT("%d %d %d", llid, guest_fd, type);
   llid_trace_data[llid] = 
-  (t_llid_trace_data *) clownix_malloc(sizeof(t_llid_trace_data), 15);
+  (t_llid_trace_data *) clownix_malloc(sizeof(t_llid_trace_data), 23);
   memset(llid_trace_data[llid], 0, sizeof(t_llid_trace_data));
   strcpy(llid_trace_data[llid]->name, name);
   llid_trace_data[llid]->type = type;
@@ -583,8 +572,6 @@ void llid_trace_init(void)
   memset(llid_trace_data,0,CLOWNIX_MAX_CHANNELS*sizeof(t_llid_trace_data *));
   memset(vm_to_llid, 0, MAX_VM*sizeof(t_vm_to_llid));
   memset(event_to_llid, 0, sub_evt_max*sizeof(t_event_to_llid));
-  tux_to_llid = NULL;
-  tux_listen_to_llid = NULL;
 }
 /*---------------------------------------------------------------------------*/
 

@@ -21,7 +21,6 @@
 #include <string.h>
 /*---------------------------------------------------------------------------*/
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -183,8 +182,7 @@ struct cmd_struct level_mud_cmd[] = {
 
 /****************************************************************************/
 struct cmd_struct level_sub_cmd[] = {
-{"eth",  "Packet counter for eth", NULL, cmd_sub_eth, help_sub_eth},
-{"sat",  "Packet counter for tap,snf,c2c", NULL, cmd_sub_sat, help_sub_sat},
+{"endp",  "Packet counter ", NULL, cmd_sub_endp, help_sub_endp},
 {"sys",  "Sysinfo of guest vm", NULL, cmd_sub_sysinfo, help_sub_sysinfo},
 {"help",  "",                     level_sub_cmd, NULL, NULL},
 };
@@ -452,10 +450,8 @@ static void stub_topo(int tid, t_topo_info *topo)
     {
     if (g_cloonix_conf_info[i].doors_llid == g_current_llid)
       {
-      if (strcmp(topo->cloonix_config.network_name,  
-                 g_cloonix_conf_info[i].name)) 
-        KERR("%s %s", topo->cloonix_config.network_name,
-                      g_cloonix_conf_info[i].name);
+      if (strcmp(topo->clc.network,  g_cloonix_conf_info[i].name)) 
+        KERR("%s %s", topo->clc.network, g_cloonix_conf_info[i].name);
       print_reacheability(i, "reachable");
       }
     }
@@ -532,22 +528,11 @@ static char *init_local_cloonix_bin_path(char *curdir, char *callbin)
 }
 /*--------------------------------------------------------------------------*/
 
-/*****************************************************************************/
-static int file_exists_exec(char *path)
-{
-  int err, result = 0;
-  err = access(path, X_OK);
-  if (!err)
-    result = 1;
-  return result;
-}
-/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static void fix_ld_library_path(char *cloonix_tree)
 {
   char ld_lib[MAX_PATH_LEN];
-  char tmux[MAX_PATH_LEN];
   snprintf(ld_lib, MAX_PATH_LEN-1, 
            "%s/common/spice/spice_lib",
            cloonix_tree);

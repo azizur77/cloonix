@@ -24,7 +24,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 
@@ -72,8 +71,9 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
                     int cli_llid, int cli_tid, char *line){KOUT(" ");};
 void rpct_recv_cli_resp(void *ptr, int llid, int tid,
                      int cli_llid, int cli_tid, char *line){KOUT(" ");};
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int secoffset, char *name){KOUT(" ");};
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid){KOUT(" ");};
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num){KOUT(" ");};
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name,
+                        int toppid, int pid){KOUT(" ");};
 void rpct_recv_hop_sub(void *ptr, int llid, int tid, int flags_hop){KOUT(" ");};
 void rpct_recv_hop_unsub(void *ptr, int llid, int tid){KOUT(" ");};
 void rpct_recv_hop_msg(void *ptr, int llid, int tid,

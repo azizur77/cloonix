@@ -49,7 +49,7 @@ static void rx_from_tcp(void *ptr, int llid)
     {
     while(bd)
       {
-      sock_fd_tx(all_ctx, 0, bd);
+      sock_fd_tx(all_ctx, bd);
       bd = blkd_get_rx(ptr, llid);
       }
     }

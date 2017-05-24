@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <math.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "xml_layout.h"
 #include "layout_rpc.h"

@@ -2,10 +2,6 @@
  * Stolen for cloonix from:
  * Dropbear - a SSH2 server
  * SSH client implementation
- * 
- * Copyright (c) 2002,2003 Matt Johnston
- * Copyright (c) 2004 by Mihnea Stoenescu
- * All rights reserved.
 */
 
 #include "includes.h"

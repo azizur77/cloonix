@@ -25,7 +25,6 @@
 #include <sys/statvfs.h>
 #include <errno.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "cfg_store.h"
@@ -51,6 +50,7 @@
 
 void uml_clownix_switch_error_cb(void *ptr, int llid, int err, int from);
 void uml_clownix_switch_rx_cb(int llid, int len, char *buf);
+void arm_utils_finish_vm_init(char *name, int val);
 
 
 static void doorways_start(void);
@@ -239,8 +239,7 @@ static void monitoring_doorways(void *data)
   g_ref_timer = 0;
   clownix_timeout_add(500, monitoring_doorways, NULL, 
                    &(g_abs_beat_timer), &(g_ref_timer));
-  rpct_send_pid_req(NULL, g_doorways_llid, type_hop_doors, 
-                   cloonix_get_sec_offset(), "doors");
+  rpct_send_pid_req(NULL, g_doorways_llid, type_hop_doors, "doors", 0);
   old_nb_pid_resp = g_nb_pid_resp;
 }
 /*--------------------------------------------------------------------------*/
@@ -280,8 +279,7 @@ static void timer_doorways_connect(void *data)
       KERR(" ");
     llid_trace_alloc(llid, "DOORWAYS", 0,0,type_llid_trace_doorways);
     qhvc0_reinit_vm_in_doorways();
-    rpct_send_pid_req(NULL, llid, type_hop_doors,
-                      cloonix_get_sec_offset(),"doors");
+    rpct_send_pid_req(NULL, llid, type_hop_doors, "doors", 0);
     if (g_abs_beat_timer)
       clownix_timeout_del(g_abs_beat_timer, g_ref_timer, __FILE__, __LINE__);
     clownix_timeout_add(500, monitoring_doorways, NULL, 
@@ -332,7 +330,7 @@ static void doorways_start()
     g_killed = 0;
 //VIP
     pid_clone_launch(utils_execve, killed, NULL, (void *) argv,
-                     NULL, NULL, "doorways_tux", -1, 1);
+                     NULL, NULL, "doorways", -1, 1);
 
     clownix_timeout_add(500, timer_doorways_protect, NULL, NULL, NULL); 
     clownix_timeout_add(50, timer_doorways_connect, 

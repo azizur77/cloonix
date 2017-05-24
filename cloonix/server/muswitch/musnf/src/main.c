@@ -71,11 +71,16 @@ void error_detected(t_all_ctx *all_ctx, char *err)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
-  long long usec = cloonix_get_usec();
-  pcap_file_rx_packet(all_ctx, usec, bd->payload_len, bd->payload_blkd);
-  blkd_free((void *)all_ctx, bd);
+  long long usec;
+  if (bd)
+    {
+    usec = cloonix_get_usec();
+    pcap_file_rx_packet(all_ctx, usec, bd->payload_len, bd->payload_blkd);
+    blkd_free((void *)all_ctx, bd);
+    }
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -90,7 +95,7 @@ int main (int argc, char *argv[])
   snf_type = strtoul(argv[4], &endptr, 10);
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
-  if (snf_type != musat_type_snf)
+  if (snf_type != endp_type_snf)
     KOUT("%d", snf_type);
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
   blkd_set_our_mutype((void *) all_ctx, snf_type);

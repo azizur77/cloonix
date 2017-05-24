@@ -21,12 +21,11 @@
 #include <math.h>
 #include "io_clownix.h"
 #include "commun_daemon.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "cfg_store.h"
 #include "event_subscriber.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 #include "lan_to_name.h"
 #include "llid_trace.h"
 
@@ -154,19 +153,21 @@ void make_default_layout_lan(t_layout_lan *layout, char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void make_default_layout_sat(t_layout_sat *layout, char *name)
+static void make_default_layout_sat(t_layout_sat *layout, char *name, int type)
 {
   int mutype;
-  memset(layout, 0, sizeof(t_layout_sat));
-  if (!musat_mngt_exists(name, &mutype))
+  if (!endp_mngt_exists(name, 0, &mutype))
     KERR("%s", name);
+  else if (mutype != type)
+    KERR("%s %d %d", name, mutype, type);
   else
     {
+    memset(layout, 0, sizeof(t_layout_sat));
     strncpy(layout->name, name, MAX_NAME_LEN-1);
-    layout->mutype = mutype;
+    layout->mutype = type;
     layout->x = 50;
     layout->y = 50;
-    if (mutype == musat_type_a2b)
+    if (type == endp_type_a2b)
       {
       layout->xa = A2B_DIA * VAL_INTF_POS_A2B;
       layout->ya = A2B_DIA * VAL_INTF_POS_A2B;
@@ -537,13 +538,11 @@ void recv_layout_sat(int llid, int tid, t_layout_sat *layout)
 {
   t_layout_sub *cur = g_head_layout_sub;
   t_layout_sat_xml *xml;
-  int mutype;
-  if (!musat_mngt_exists(layout->name, &mutype))
+  int type;
+  if (!endp_mngt_exists(layout->name, 0, &type))
     KERR("%s", layout->name);
   else
     {
-    if (mutype != layout->mutype)
-      KERR("%s %d %d", layout->name, mutype, layout->mutype);
     if (authorized_to_modify_data_bank_layout(llid, tid))
       {
       while(cur)
@@ -684,7 +683,7 @@ static void layout_modif_eth(int llid, int tid, char *name, int num,
   t_layout_node_xml *cur;
   cur = find_node_xml(name);
   vm = cfg_get_vm(name);
-  if ((vm) && (!cfg_get_eth(name, num)))
+  if (vm)
     {
     if (!cur)
       KERR("%s", name);
@@ -788,11 +787,22 @@ static void layout_modif_sat(int llid, int tid,
 {
   char info[MAX_PRINT_LEN];
   t_layout_sat layout;
-  int musat_type_sat;
   double real_val1, real_val2;
+  int mutype;
   t_layout_sat_xml *cur;
   cur = find_sat_xml(name);
-  if (musat_mngt_exists(name, &musat_type_sat))
+  if (!endp_mngt_exists(name, 0, &mutype))
+    {
+    sprintf(info, "KO %s not found", name);
+    send_status_ko(llid, tid, info);
+    }
+  else if (mutype != type)
+    {
+    KERR("%s %d %d", name, mutype, type);
+    sprintf(info, "KO %s not found", name);
+    send_status_ko(llid, tid, info);
+    }
+  else
     {
     if (!cur)
       KERR("%s", name);
@@ -824,11 +834,6 @@ static void layout_modif_sat(int llid, int tid,
     recv_layout_sat(0, 0, &layout);
     sprintf(info, "OK %s %d", name, val1);
     send_status_ok(llid, tid, info);
-    }
-  else
-    {
-    sprintf(info, "KO %s not found", name);
-    send_status_ko(llid, tid, info);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -1051,7 +1056,7 @@ void layout_add_vm(char *name, int llid)
     KERR("%s", name);
   else
     {
-    make_default_layout_node(&layout, name, vm->vm_params.nb_eth);
+    make_default_layout_node(&layout, name, vm->kvm.nb_eth);
     add_layout_node(&layout);
     if (!(g_head_layout_sub) ||
          ((g_head_layout_sub) && (g_head_layout_sub->llid != llid)))
@@ -1076,14 +1081,13 @@ void layout_del_vm(char *name)
 /*****************************************************************************/
 void layout_add_sat(char *name, int llid)
 {
-  t_tux *tux;
   t_layout_sat layout;
-  tux  = cfg_get_tux(name);
-  if (!tux)
+  int type;
+  if (!endp_mngt_exists(name, 0, &type))
     KERR("%s", name);
   else
     {
-    make_default_layout_sat(&layout, name);
+    make_default_layout_sat(&layout, name, type);
     add_layout_sat(&layout);
     if (!(g_head_layout_sub) ||
          ((g_head_layout_sub) && (g_head_layout_sub->llid != llid)))

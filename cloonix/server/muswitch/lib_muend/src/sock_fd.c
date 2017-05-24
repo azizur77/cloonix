@@ -41,65 +41,40 @@
 
 
 /*****************************************************************************/
-static void collect_eventfull(t_all_ctx *all_ctx, int idx, 
+static void collect_eventfull(t_all_ctx *all_ctx, int tidx,
                               int *nb_pkt_tx, int *nb_bytes_tx,
                               int *nb_pkt_rx, int *nb_bytes_rx)
 {
-  *nb_pkt_tx = all_ctx->g_traf[idx].nb_pkt_tx;
-  *nb_bytes_tx = all_ctx->g_traf[idx].nb_bytes_tx;
-  *nb_pkt_rx = all_ctx->g_traf[idx].nb_pkt_rx;
-  *nb_bytes_rx = all_ctx->g_traf[idx].nb_bytes_rx;
-  all_ctx->g_traf[idx].nb_pkt_tx = 0;
-  all_ctx->g_traf[idx].nb_bytes_tx = 0;
-  all_ctx->g_traf[idx].nb_pkt_rx = 0;
-  all_ctx->g_traf[idx].nb_bytes_rx = 0;
+  *nb_pkt_tx = all_ctx->g_traf_endp[tidx].nb_pkt_tx;
+  *nb_bytes_tx = all_ctx->g_traf_endp[tidx].nb_bytes_tx;
+  *nb_pkt_rx = all_ctx->g_traf_endp[tidx].nb_pkt_rx;
+  *nb_bytes_rx = all_ctx->g_traf_endp[tidx].nb_bytes_rx;
+  all_ctx->g_traf_endp[tidx].nb_pkt_tx = 0;
+  all_ctx->g_traf_endp[tidx].nb_bytes_tx = 0;
+  all_ctx->g_traf_endp[tidx].nb_pkt_rx = 0;
+  all_ctx->g_traf_endp[tidx].nb_bytes_rx = 0;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void eventfull_sat(t_all_ctx *all_ctx, int cloonix_llid, int idx)
+static void eventfull_endp(t_all_ctx *all_ctx, int cloonix_llid, int tidx)
 {
   int nb_pkt_tx, nb_pkt_rx, nb_bytes_tx, nb_bytes_rx;
   char txt[2*MAX_NAME_LEN];
-  collect_eventfull(all_ctx, idx, &nb_pkt_tx, &nb_bytes_tx, 
-                                  &nb_pkt_rx, &nb_bytes_rx);
+  collect_eventfull(all_ctx, tidx, &nb_pkt_tx, &nb_bytes_tx, 
+                                   &nb_pkt_rx, &nb_bytes_rx);
   if (nb_pkt_tx)
     {
     memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "musat_eventfull_tx %u %d %d %d",
-             cloonix_get_msec(), idx, nb_pkt_tx, nb_bytes_tx);
+    snprintf(txt, (2*MAX_NAME_LEN) - 1, "endp_eventfull_tx %u %d %d %d",
+             cloonix_get_msec(), tidx, nb_pkt_tx, nb_bytes_tx);
     rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
     }
   if (nb_pkt_rx)
     {
     memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "musat_eventfull_rx %u %d %d %d",
-             cloonix_get_msec(), idx, nb_pkt_rx, nb_bytes_rx);
-    rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void eventfull_qemu(t_all_ctx *all_ctx, int cloonix_llid)
-{
-  int eth, nb_pkt_tx, nb_pkt_rx, nb_bytes_tx, nb_bytes_rx;
-  char txt[2*MAX_NAME_LEN];
-  all_ctx->cb_collect_eventfull(all_ctx, &eth,
-                                &nb_pkt_tx, &nb_bytes_tx,
-                                &nb_pkt_rx, &nb_bytes_rx);
-  if (nb_pkt_tx)
-    {
-    memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "mueth_eventfull_tx %u %d %d %d",
-             cloonix_get_msec(), eth, nb_pkt_tx, nb_bytes_tx);
-    rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
-    }
-  if (nb_pkt_rx)
-    {
-    memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "mueth_eventfull_rx %u %d %d %d",
-             cloonix_get_msec(), eth, nb_pkt_rx, nb_bytes_rx);
+    snprintf(txt, (2*MAX_NAME_LEN) - 1, "endp_eventfull_rx %u %d %d %d",
+             cloonix_get_msec(), tidx, nb_pkt_rx, nb_bytes_rx);
     rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
     }
 }
@@ -112,18 +87,11 @@ static void eventfull_can_be_sent(t_all_ctx *all_ctx, void *data)
   int is_blkd, cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
   if (cidx)
     {
-    if (all_ctx->qemu_mueth_state)
+    for (i=0; i<2*MAX_TRAF_ENDPOINT; i++)
       {
-      if ((all_ctx->g_traf[0].nb_pkt_tx) || (all_ctx->g_traf[0].nb_pkt_rx))
-        eventfull_qemu(all_ctx, llid);
-      }
-    else
-      {
-      for (i=0; i<2; i++)
-        {
-        if ((all_ctx->g_traf[i].nb_pkt_tx) || (all_ctx->g_traf[i].nb_pkt_rx))
-          eventfull_sat(all_ctx, llid, i);
-        }
+      if ((all_ctx->g_traf_endp[i].nb_pkt_tx) || 
+          (all_ctx->g_traf_endp[i].nb_pkt_rx))
+        eventfull_endp(all_ctx, llid, i);
       }
     }
   clownix_timeout_add(all_ctx, 5, eventfull_can_be_sent, NULL, NULL, NULL);
@@ -131,108 +99,85 @@ static void eventfull_can_be_sent(t_all_ctx *all_ctx, void *data)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void main_tx_arrival(t_all_ctx *all_ctx, int idx, int nb_pkt, int nb_bytes)
+void main_tx_arrival(t_all_ctx *all_ctx, int tidx, int nb_pkt, int nb_bytes)
 {
-  all_ctx->g_traf[idx].nb_pkt_tx += nb_pkt;
-  all_ctx->g_traf[idx].nb_bytes_tx += nb_bytes;
+  all_ctx->g_traf_endp[tidx].nb_pkt_tx += nb_pkt;
+  all_ctx->g_traf_endp[tidx].nb_bytes_tx += nb_bytes;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void main_rx_arrival(t_all_ctx *all_ctx, int idx, int nb_pkt, int nb_bytes)
+void main_rx_arrival(t_all_ctx *all_ctx, int tidx, int nb_pkt, int nb_bytes)
 {
-  all_ctx->g_traf[idx].nb_pkt_rx += nb_pkt;
-  all_ctx->g_traf[idx].nb_bytes_rx += nb_bytes;
+  all_ctx->g_traf_endp[tidx].nb_pkt_rx += nb_pkt;
+  all_ctx->g_traf_endp[tidx].nb_bytes_rx += nb_bytes;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx0_blkd_sock_cb(void *ptr, int llid)
+static int get_tidx(t_all_ctx *all_ctx, int llid, int line)
+{
+  int i, tidx = -1;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    if (llid == all_ctx->g_traf_endp[i].llid_traf)
+      {
+      tidx = i;
+      break;
+      }
+    }
+  if (tidx == -1)
+    KOUT("%d", line);
+  return tidx;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void rx_blkd_sock_cb(void *ptr, int llid)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
+  int tidx = get_tidx(all_ctx, llid, __LINE__);
   t_blkd *blkd;
-  if (all_ctx->qemu_mueth_state)
+  if (!rx_from_traffic_sock(all_ctx, tidx, NULL))
     {
-    if (all_ctx->g_nb_elem_rx_ready == 0)
-      all_ctx->g_cb_prepare_rx_packet(all_ctx, &all_ctx->g_nb_elem_rx_ready);
-    if (all_ctx->g_nb_elem_rx_ready)
-      {
-      blkd = blkd_get_rx(ptr, llid);
-      while(blkd)
-        {
-        all_ctx->g_cb_rx_packet(all_ctx, 0,
-                                  (uint32_t) blkd->payload_len,
-                                  (uint8_t *) blkd->payload_blkd);
-        all_ctx->g_nb_elem_rx_ready -= 1;
-        blkd_free(ptr, blkd);
-        blkd = NULL;
-        if (!all_ctx->g_nb_elem_rx_ready)
-          all_ctx->g_cb_prepare_rx_packet(all_ctx,&all_ctx->g_nb_elem_rx_ready);
-        if (all_ctx->g_nb_elem_rx_ready)
-          blkd = blkd_get_rx(ptr, llid);
-        }
-      }
-    }
-  else
-    {  
-    blkd = blkd_get_rx(ptr, llid);
-    if (!blkd)
-      KERR(" ");
-    else
-      {
-      while(blkd)
-        {
-        main_rx_arrival(all_ctx, 0, 1, blkd->payload_len);
-        rx_from_traffic_sock(all_ctx, 0, blkd);
-        blkd = blkd_get_rx(ptr, llid);
-        }
-      }
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void rx1_blkd_sock_cb(void *ptr, int llid)
-{
-  t_all_ctx *all_ctx = (t_all_ctx *) ptr;
-  t_blkd *blkd = blkd_get_rx(ptr, llid);
-  if (!blkd)
-    KERR(" ");
-  else
-    {
+    blkd = blkd_get_rx((void *) all_ctx, llid);
     while(blkd)
       {
-      main_rx_arrival(all_ctx, 1, 1, blkd->payload_len);
-      rx_from_traffic_sock(all_ctx, 1, blkd);
-      blkd = blkd_get_rx(ptr, llid);
+      main_rx_arrival(all_ctx, tidx, 1, blkd->payload_len);
+      if (rx_from_traffic_sock(all_ctx, tidx, blkd))
+        break;
+      blkd = blkd_get_rx((void *) all_ctx, llid);
       }
     }
 }
 /*---------------------------------------------------------------------------*/
 
-
 /*****************************************************************************/
-static void err0_sock_cb(void *ptr, int llid, int err, int from)
+static void err_sock_cb(void *ptr, int llid, int err, int from)
 {
-  sock_fd_finish((t_all_ctx *) ptr, 0);
+  t_all_ctx *all_ctx = (t_all_ctx *) ptr;
+  int tidx = get_tidx(all_ctx, llid, __LINE__);
+  sock_fd_finish(all_ctx, tidx);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void err1_sock_cb(void *ptr, int llid, int err, int from)
-{
-  sock_fd_finish((t_all_ctx *) ptr, 1);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-void sock_fd_tx(t_all_ctx *all_ctx, int idx, t_blkd *blkd)
+void sock_fd_tx(t_all_ctx *all_ctx, t_blkd *blkd)
 { 
-  int tx_queued, rx_queued;
-  int llid = all_ctx->g_traf[idx].llid_traf;
-  int is_blkd, cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
-  if (cidx)
+  int i, lid, is_blkd, j=0;
+  int llid[MAX_TRAF_ENDPOINT];
+  memset(llid, 0, MAX_TRAF_ENDPOINT*sizeof(int));
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    lid = all_ctx->g_traf_endp[i].llid_traf;
+    if (lid && (msg_exist_channel(all_ctx, lid, &is_blkd, __FUNCTION__)))
+      {
+      main_tx_arrival(all_ctx, i, 1, blkd->payload_len);
+      llid[j] = lid;
+      j += 1;
+      }
+    }
+  if (j)
     {
     if ((blkd->payload_len > PAYLOAD_BLKD_SIZE) ||
         (blkd->payload_len <=0))
@@ -242,51 +187,41 @@ void sock_fd_tx(t_all_ctx *all_ctx, int idx, t_blkd *blkd)
       }
     else
       {
-      main_tx_arrival(all_ctx, idx, 1, blkd->payload_len);
-      blkd_put_tx((void *) all_ctx, 1, &llid, blkd);
-      }
-    if (idx == 0)
-      {
-      blkd_get_tx_rx_queues((void *) all_ctx, llid, &tx_queued, &rx_queued);
-      all_ctx->g_tx_queue_len_unix_sock = tx_queued;
+      blkd_put_tx((void *) all_ctx, 1, llid, blkd);
       }
     }
   else
+    {
     blkd_free((void *) all_ctx, blkd);
+    }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int sock_fd_open(t_all_ctx *all_ctx, char *lan, int idx, char *path)
+int sock_fd_open(t_all_ctx *all_ctx, char *lan, int tidx, char *path)
 {
   int llid, result = -1;
 
-  if (all_ctx->qemu_mueth_state)
-    pool_tx_init(&(all_ctx->tx_pool));
-  if (idx == 0)
-    llid = blkd_client_connect((void *) all_ctx, lan, path, rx0_blkd_sock_cb, 
-                                                             err0_sock_cb);
+  if ((tidx>=0) && (tidx < MAX_TRAF_ENDPOINT))
+    llid = blkd_client_connect((void *) all_ctx, path, rx_blkd_sock_cb, 
+                                                       err_sock_cb);
   else
-    llid = blkd_client_connect((void *) all_ctx, lan, path, rx1_blkd_sock_cb, 
-                                                             err1_sock_cb);
+    KOUT("%d", tidx);
   if (llid <= 0)
     KERR("Bad connection to %s", path);
   else
     {
-    all_ctx->g_traf[idx].llid_traf = llid;
+    all_ctx->g_traf_endp[tidx].llid_traf = llid;
     result = 0;
-    if (all_ctx->g_cb_client_cmd)
-      all_ctx->g_cb_client_cmd(all_ctx, 0,
-                                "local_command_connection_eth_req", NULL);
     }
   return result;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void sock_fd_finish(t_all_ctx *all_ctx, int idx)
+void sock_fd_finish(t_all_ctx *all_ctx, int tidx)
 {
-  t_traf_sat *traf = &(all_ctx->g_traf[idx]);
+  t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   int is_blkd, cidx, llid;
   llid = traf->llid_traf;
   if (llid)
@@ -304,11 +239,6 @@ void sock_fd_finish(t_all_ctx *all_ctx, int idx)
       msg_delete_channel(all_ctx, llid);
     }
   traf->llid_lan = 0;
-  if (all_ctx->g_cb_client_cmd)
-    {
-    all_ctx->g_cb_client_cmd(all_ctx, 0,
-                           "local_command_disconnection_eth_req", NULL);
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -359,16 +289,15 @@ static void timeout_blkd_heartbeat(t_all_ctx *all_ctx, void *data)
 /*****************************************************************************/
 void sock_fd_local_flow_control(t_all_ctx *all_ctx, int stop)
 {
-  t_traf_sat *traf0 = &(all_ctx->g_traf[0]);
-  t_traf_sat *traf1 = &(all_ctx->g_traf[1]);
-  if ((traf0->llid_traf) && (!traf1->llid_traf))
-    blkd_rx_local_flow_control((void *) all_ctx, traf0->llid_traf, stop);
+  KERR("TODO FLOW CONTROL");
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 void sock_fd_init(t_all_ctx *all_ctx)
 {
+  if (all_ctx->qemu_mueth_state)
+    pool_tx_init(&(all_ctx->tx_pool));
   if (string_server_unix(all_ctx, all_ctx->g_path, cloonix_connect) == 0)
     KOUT("PROBLEM WITH: %s", all_ctx->g_path);
   clownix_timeout_add(all_ctx, 500, eventfull_can_be_sent, NULL, NULL, NULL);

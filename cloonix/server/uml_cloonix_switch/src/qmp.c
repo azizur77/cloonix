@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_qmonitor.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
@@ -737,7 +736,7 @@ static void timer_qvm_connect_qmp(void *data)
       }
     else
       {
-      qmon = utils_get_qmp_path(vm->vm_id);
+      qmon = utils_get_qmp_path(vm->kvm.vm_id);
       if (!util_nonblock_client_socket_unix(qmon, &fd))
         {
         if (fd <= 0)
@@ -895,7 +894,7 @@ static void timer_burst_balloon(void *data)
     {
     qvm = vm_get_with_name(name);
     if (qvm)
-      request_balloon(qvm, vm->vm_params.mem);
+      request_balloon(qvm, vm->kvm.mem);
     }
   clownix_free(name, __FUNCTION__);
 }
@@ -910,27 +909,27 @@ void qmp_agent_sysinfo(char *name, int used_mem_agent)
   int a,b;
   vm = cfg_get_vm(name);
   if ((vm) && 
-      (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_BALLOONING))
+      (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_BALLOONING))
     {
     qvm = vm_get_with_name(name);
     if (qvm)
       {
-      if (vm->vm_params.mem < 200)
+      if (vm->kvm.mem < 200)
         {
         a = 200000;
         b = 80; 
         }
-      else if (vm->vm_params.mem < 400) 
+      else if (vm->kvm.mem < 400) 
         {
         a = 280000;
         b = 130; 
         }
-      else if (vm->vm_params.mem < 1000) 
+      else if (vm->kvm.mem < 1000) 
         {
         a = 370000;
         b = 180;
         }
-      else if (vm->vm_params.mem < 2000) 
+      else if (vm->kvm.mem < 2000) 
         {
         a = 450000;
         b = 250;

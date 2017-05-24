@@ -31,10 +31,8 @@ char *utils_get_uname_r_mod_path(void);
 void utils_init(void);
 int utils_get_uid_user(void);
 int utils_get_gid_user(void);
-char *utils_get_intf_prefix(int is_serial, int vm_id);
 char *utils_get_cdrom_path_name(int vm_id);
 
-char *utils_path_to_tux(void);
 char *utils_get_disks_path_name(int vm_id);
 char *utils_get_qmonitor_path(int vm_id);
 char *utils_get_qmp_path(int vm_id);
@@ -52,27 +50,19 @@ char *utils_get_spice_path(int vm_id);
 /*--------------------------------------------------------------------------*/
 char *utils_get_cloonix_switch_path(void);
 /*--------------------------------------------------------------------------*/
-char *utils_get_tux_path(char *name);
-/*--------------------------------------------------------------------------*/
 void free_wake_up_eths(t_vm *vm);
 /*--------------------------------------------------------------------------*/
 char *utils_get_muswitch_bin_path(void);
-char *utils_get_musat_bin_path(int musat_type);
+char *utils_get_endp_bin_path(int endp_type);
 /*--------------------------------------------------------------------------*/
 char *utils_get_muswitch_sock_dir(void);
-char *utils_get_muswitch_key_dir(void);
 char *utils_get_muswitch_traf_dir(void);
-/*--------------------------------------------------------------------------*/
-char *utils_get_mueth_path(int vm_id, int eth_num);
-char *utils_get_mueth_name(char *name, int eth_num);
 /*--------------------------------------------------------------------------*/
 char *utils_mulan_get_sock_path(char *name);
 /*--------------------------------------------------------------------------*/
-char *utils_get_musat_sock_dir(void);
-char *utils_get_musat_path(char *name);
-char *utils_get_musat_name(char *name);
-/*--------------------------------------------------------------------------*/
-void start_mueth_qemu(t_vm *vm);
+char *utils_get_endp_sock_dir(void);
+char *utils_get_endp_path(char *name, int num);
+char *utils_get_endp_name(char *name, int num);
 /*--------------------------------------------------------------------------*/
 void utils_format_gene(char *start, char *err, char *name, char **argv);
 /*--------------------------------------------------------------------------*/

@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -366,7 +365,7 @@ void start_wireshark(char *name, t_bank_item *bitem)
   char cmd[2*MAX_PATH_LEN];
   char *doors = get_doors_client_addr();
   char *password = get_password();
-  char *recpath = bitem->pbi.pbi_sat->snf_info.recpath;
+  char *recpath = bitem->pbi.pbi_sat->topo_snf.recpath;
   char *argv[] = {bin_path, doors, password, "-t", "local_host_dropbear", cmd,
                   "1>/dev/null", "2>&1", NULL}; 
   memset(bin_path, 0, MAX_PATH_LEN);

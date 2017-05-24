@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
@@ -39,7 +38,7 @@
 #include "doorways_sock.h"
 #include "llid_trace.h"
 #include "c2c_utils.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 
 
 
@@ -134,22 +133,19 @@ void c2c_globtopo_small_event(char *name, char *src, char *dst, int evt)
 /****************************************************************************/
 int c2c_globtopo_add(t_sc2c *c2c)
 {
-  int result = -1;
-  if (!cfg_insert_c2c_to_topo(c2c->local_is_master, c2c->name,   
-                              c2c->master_cloonix, c2c->slave_cloonix))
+  int type, result = -1;
+  if (!endp_mngt_exists(c2c->name, 0, &type))
+    KERR("%s", c2c->name);
+  else if (type != endp_type_c2c)
+    KERR("%s %d", c2c->name, type);
+  else
     {
+    endp_mngt_c2c_info(c2c->name, 0, c2c->local_is_master,
+                       c2c->master_cloonix, c2c->slave_cloonix,
+                       c2c->ip_slave, c2c->port_slave);
     result = 0;
     }
   return result;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void c2c_globtopo_del(char *name)
-{
-  if (cfg_remove_c2c_from_topo(name))
-    KERR("%s", name);
-  event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
 }
 /*--------------------------------------------------------------------------*/
 
@@ -263,8 +259,7 @@ static void timer_llid_trace_free(void *data)
 static void timer_globtopo_free(void *data)
 {
   char *name = (char *) data;
-  c2c_globtopo_del(name);
-  musat_mngt_stop(name);
+  endp_mngt_stop(name, 0);
   clownix_free(name, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
@@ -385,9 +380,9 @@ void c2c_set_state(t_sc2c *c2c, int state)
     KOUT("%d", state);
   c2c->state = state; 
   if (c2c->state == state_peered)
-    cfg_c2c_is_peered(c2c->name, 1);
+    endp_mngt_c2c_peered(c2c->name, 0, 1);
   else
-    cfg_c2c_is_peered(c2c->name, 0);
+    endp_mngt_c2c_peered(c2c->name, 0, 0);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -432,16 +427,6 @@ void c2c_free_all(void)
     }
 }
 /*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void c2c_free_tux(char *name)
-{
-  t_sc2c *cur = c2c_find(name);
-  if (cur)
-    c2c_free(cur);
-}
-/*--------------------------------------------------------------------------*/
-
 
 /****************************************************************************/
 static void peer_err_cb (int llid)
@@ -489,7 +474,7 @@ static int callback_connect(void *ptr, int llid, int fd)
                                                  peer_err_cb, peer_rx_cb);
       if (doors_llid)
         {
-        llid_trace_alloc(doors_llid,c2c->name,0,0,type_llid_trace_musat_c2c);
+        llid_trace_alloc(doors_llid,c2c->name,0,0,type_llid_trace_endp_c2c);
         c2c->peer_switch_llid = doors_llid;
         c2c_set_state(c2c, state_master_waiting_idx);
         c2c_tx_req_idx_to_doors(c2c->name);

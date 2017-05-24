@@ -19,13 +19,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
 #include "interface.h"
 #include "commun_consts.h"
 #include "bank.h"
+#include "lib_topo.h"
 #include "utils.h"
 #include "move.h"
 #include "layout_x_y.h"
@@ -225,7 +225,7 @@ void get_gene_layout_x_y(int bank_type, char *name, int mutype,
     {
     *x = START_POS;
     *y = START_POS;
-    if (mutype == musat_type_a2b)
+    if (mutype == endp_type_a2b)
       {
       *xa = A2B_DIA * VAL_INTF_POS_A2B;
       *ya = A2B_DIA * VAL_INTF_POS_A2B;

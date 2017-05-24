@@ -84,7 +84,7 @@ typedef struct t_topo
 /*****************************************************************************/
 static t_topo mytopo;
 /*---------------------------------------------------------------------------*/
-static int nb_topo_alloc = 0;
+static int nb_topoalloc = 0;
 static int nb_node_alloc = 0;
 /*---------------------------------------------------------------------------*/
 
@@ -115,12 +115,12 @@ static void summary_node_free (int idx)
 /*****************************************************************************/
 
 /*****************************************************************************/
-/* FUNCTION:            topo_alloc                                           */
+/* FUNCTION:            topoalloc                                           */
 /*---------------------------------------------------------------------------*/
-static void *topo_alloc (size_t size)
+static void *topoalloc (size_t size)
 {
   void *res = clownix_malloc(size, 22);
-  nb_topo_alloc++;
+  nb_topoalloc++;
   if (!res)
     KOUT(" ");
   return(res);
@@ -128,13 +128,13 @@ static void *topo_alloc (size_t size)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-/* FUNCTION:           topo_free                                             */
+/* FUNCTION:           topofree                                             */
 /*---------------------------------------------------------------------------*/
-static void topo_free (void * addr)
+static void topofree (void * addr)
 {
   if (addr)
     {
-    nb_topo_alloc--;
+    nb_topoalloc--;
     clownix_free (addr, __FUNCTION__);
     }
 }
@@ -648,7 +648,7 @@ void alloc_topo (int imax_nodes, int imax_neighbors)
   t_topo *top = &mytopo;
   if (top->sig_topo_state)
     KOUT(" ");
-  nb_topo_alloc = 0;
+  nb_topoalloc = 0;
   max_nodes = imax_nodes + 20;
   max_neighbors = imax_neighbors + 20;
   get_hashing_val( max_nodes, &hash_val, &hash_bits);
@@ -659,19 +659,19 @@ void alloc_topo (int imax_nodes, int imax_neighbors)
   top->hash_val = hash_val;
   top->hash_bits = hash_bits;
   alloc_size = max_nodes * sizeof(t_node_name);
-  top->summary.nodes_tab = (t_node_name *) topo_alloc(alloc_size);
+  top->summary.nodes_tab = (t_node_name *) topoalloc(alloc_size);
   alloc_size = top->max_links*sizeof(t_links);
-  top->summary.nei_links_tab = (t_links *) topo_alloc(alloc_size);
+  top->summary.nei_links_tab = (t_links *) topoalloc(alloc_size);
   alloc_size = max_nodes * sizeof(t_links *);
-  top->summary.links_tab = (t_links **) topo_alloc(alloc_size);
-  top->summary.node_free_index = (int *) topo_alloc((max_nodes)*sizeof(int));
-  top->hash2index_tab = (int *) topo_alloc(top->hash_val*sizeof(int));
+  top->summary.links_tab = (t_links **) topoalloc(alloc_size);
+  top->summary.node_free_index = (int *) topoalloc((max_nodes)*sizeof(int));
+  top->hash2index_tab = (int *) topoalloc(top->hash_val*sizeof(int));
   alloc_size = top->hash_val * sizeof(t_node_name);
-  top->hash2name_tab = (t_node_name *) topo_alloc(alloc_size);
+  top->hash2name_tab = (t_node_name *) topoalloc(alloc_size);
   alloc_size = ((max_nodes*max_neighbors+1)+max_nodes+1)*sizeof(t_element);
   alloc_size += (max_nodes+1)*sizeof(t_chain_inode);
-  top->nei_matrix = (t_element *) topo_alloc(alloc_size);
-  top->matrix = (t_element **) topo_alloc(max_nodes*sizeof(t_element *));
+  top->nei_matrix = (t_element *) topoalloc(alloc_size);
+  top->matrix = (t_element **) topoalloc(max_nodes*sizeof(t_element *));
   top->best_prev = &(top->nei_matrix[top->max_links]);
   top->list_node=(t_chain_inode*)(&(top->nei_matrix[top->max_links+max_nodes]));
   for (i=0; i<max_nodes; i++)
@@ -689,17 +689,17 @@ void alloc_topo (int imax_nodes, int imax_neighbors)
 void free_topo  (void)
 {
   t_topo *top = &mytopo;
-  topo_free(top->hash2name_tab);
-  topo_free(top->hash2index_tab);
-  topo_free(top->summary.nei_links_tab);
-  topo_free(top->summary.links_tab);
-  topo_free(top->summary.nodes_tab);
-  topo_free(top->summary.node_free_index);
-  topo_free(top->nei_matrix);
-  topo_free(top->matrix);
+  topofree(top->hash2name_tab);
+  topofree(top->hash2index_tab);
+  topofree(top->summary.nei_links_tab);
+  topofree(top->summary.links_tab);
+  topofree(top->summary.nodes_tab);
+  topofree(top->summary.node_free_index);
+  topofree(top->nei_matrix);
+  topofree(top->matrix);
   memset (top, 0, sizeof(t_topo));
-  if (nb_topo_alloc)
-    KOUT("%d", nb_topo_alloc);
+  if (nb_topoalloc)
+    KOUT("%d", nb_topoalloc);
 }
 /*---------------------------------------------------------------------------*/
 

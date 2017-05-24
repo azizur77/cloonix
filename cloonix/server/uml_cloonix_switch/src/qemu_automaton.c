@@ -27,7 +27,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "commun_daemon.h"
@@ -45,6 +44,7 @@
 #include "doorways_mngt.h"
 #include "doors_rpc.h"
 #include "file_read_write.h"
+#include "endp_mngt.h"
 
 #define DRIVE_PARAMS " -drive file=%s,index=%d,media=disk,if=virtio,cache=writeback"
 
@@ -252,14 +252,14 @@ static void derived_file_creation_request(t_vm *vm)
   t_cprootfs_config *cprootfs;
   if (!vm)
     KOUT(" ");
-  name = vm->vm_params.name;
+  name = vm->kvm.name;
   cprootfs=(t_cprootfs_config *)clownix_malloc(sizeof(t_cprootfs_config),13);
   memset(cprootfs, 0, sizeof(t_cprootfs_config));
   strncpy(cprootfs->name, name, MAX_NAME_LEN-1);
   strcpy(cprootfs->msg, "NO_MSG");
 
-  strncpy(cprootfs->used, vm->vm_params.rootfs_used, MAX_PATH_LEN-1);
-  strncpy(cprootfs->backing, vm->vm_params.rootfs_backing, MAX_PATH_LEN-1);
+  strncpy(cprootfs->used, vm->kvm.rootfs_used, MAX_PATH_LEN-1);
+  strncpy(cprootfs->backing, vm->kvm.rootfs_backing, MAX_PATH_LEN-1);
 
   event_print("%s %s", __FUNCTION__, name);
   pid_clone_launch(cprootfs_clone, cprootfs_clone_death,
@@ -269,23 +269,21 @@ static void derived_file_creation_request(t_vm *vm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static char *format_virtkvm_net_mueth_cmd(t_vm *vm, int eth)
+static char *format_virtkvm_net(t_vm *vm, int eth)
 {
   static char net_cmd[MAX_PATH_LEN*3];
-  char *name;
   int len = 0;
   char *mac_addr;
   len+=sprintf(net_cmd+len,
-               " -device virtio-muethnet,tx=bh,netdev=eth%d,mac=",
-               eth);
-  mac_addr = vm->vm_params.eth_params[eth].mac_addr;
+               " -device virtio-muethnet,tx=bh,netdev=eth%d,mac=", eth);
+  mac_addr = vm->kvm.eth_params[eth].mac_addr;
   len += sprintf(net_cmd+len,"%02X:%02X:%02X:%02X:%02X:%02X",
                  mac_addr[0] & 0xFF, mac_addr[1] & 0xFF, mac_addr[2] & 0xFF,
                  mac_addr[3] & 0xFF, mac_addr[4] & 0xFF, mac_addr[5] & 0xFF);
-  name = utils_get_mueth_name(vm->vm_params.name, eth);
   len += sprintf(net_cmd+len, 
-      " -netdev mueth,id=eth%d,munetname=%s,muname=%s,sock=%s,mutype=1", eth,
-      cfg_get_cloonix_name(), name, utils_get_mueth_path(vm->vm_id, eth)); 
+  " -netdev mueth,id=eth%d,munetname=%s,muname=%s,munum=%d,sock=%s,mutype=1",
+                 eth,cfg_get_cloonix_name(), vm->kvm.name, eth, 
+                 utils_get_endp_path(vm->kvm.name, eth)); 
   return net_cmd;
 }
 /*--------------------------------------------------------------------------*/
@@ -331,33 +329,24 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
   char *spice_path, *cdrom;
   if (!vm)
     KOUT(" ");
-  spice_path = utils_get_spice_path(vm->vm_id);
-  nb_cpu = vm->vm_params.cpu;
-  if (vm->vm_params.has_kvm_virt) 
+  spice_path = utils_get_spice_path(vm->kvm.vm_id);
+  nb_cpu = vm->kvm.cpu;
+  strcpy(option_kvm_txt, "-enable-kvm");
+  if (inside_cloonix(&gname))
     {
-    strcpy(option_kvm_txt, "-enable-kvm");
-    if (inside_cloonix(&gname))
-      {
-      strcpy(cpu_type, "kvm64");
-      }
-    else
-      {
-      strcpy(cpu_type, "host,+vmx");
-      }
+    strcpy(cpu_type, "kvm64");
     }
   else
     {
-    strcpy(cpu_type, "qemu64");
-    strcpy(option_kvm_txt, "-no-kvm");
+    strcpy(cpu_type, "host,+vmx");
     }
-
   sprintf(cmd_start, QEMU_OPTS, 
-          vm->vm_params.mem,
-          vm->vm_params.name,
-          utils_get_qmonitor_path(vm->vm_id),
-          utils_get_qmp_path(vm->vm_id),
-          utils_get_qbackdoor_path(vm->vm_id),
-          utils_get_qhvc0_path(vm->vm_id));
+          vm->kvm.mem,
+          vm->kvm.name,
+          utils_get_qmonitor_path(vm->kvm.vm_id),
+          utils_get_qmp_path(vm->kvm.vm_id),
+          utils_get_qbackdoor_path(vm->kvm.vm_id),
+          utils_get_qhvc0_path(vm->kvm.vm_id));
   len += sprintf(linux_cmd+len, " %s"
                                 " -pidfile %s/%s/pid"
                                 " -cpu %s"
@@ -365,59 +354,59 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
                                 " %s"
                                 " -vga qxl",
                                 //" -vga virtio -display gtk,gl=on",
-          cmd_start, cfg_get_work_vm(vm->vm_id), DIR_UMID,
+          cmd_start, cfg_get_work_vm(vm->kvm.vm_id), DIR_UMID,
           cpu_type, nb_cpu, nb_cpu, option_kvm_txt);
   if (spice_libs_exists())
     len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
-  if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
+  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
-    if (vm->vm_params.p9_host_share[0] == 0) 
+    if (vm->kvm.p9_host_share[0] == 0) 
       KERR(" ");
     else
       {
-      if (!is_directory_readable(vm->vm_params.p9_host_share))
-        KERR("%s", vm->vm_params.p9_host_share);
+      if (!is_directory_readable(vm->kvm.p9_host_share))
+        KERR("%s", vm->kvm.p9_host_share);
       else
-        len += sprintf(linux_cmd+len, VIRTIO_9P, vm->vm_params.p9_host_share,
-                                                 vm->vm_params.name);
+        len += sprintf(linux_cmd+len, VIRTIO_9P, vm->kvm.p9_host_share,
+                                                 vm->kvm.name);
       }
     }
 
-  rootfs = vm->vm_params.rootfs_used;
-  added_disk = vm->vm_params.added_disk;
+  rootfs = vm->kvm.rootfs_used;
+  added_disk = vm->kvm.added_disk;
 
-  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT)
+  if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_NO_REBOOT)
     {
     len += sprintf(linux_cmd+len, " -no-reboot");
     }
-  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
+  if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_INSTALL_CDROM)
     {
     len += sprintf(linux_cmd+len, INSTALL_DISK, rootfs, 0);
-    len += sprintf(linux_cmd+len, ADDED_CDROM, vm->vm_params.install_cdrom);
+    len += sprintf(linux_cmd+len, ADDED_CDROM, vm->kvm.install_cdrom);
     }
   else
     {
-    if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
+    if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
       len += sprintf(linux_cmd+len, DRIVE_FULL_VIRT, rootfs, 0);
     else
       len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
   
-    cdrom = utils_get_cdrom_path_name(vm->vm_id);
+    cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
     len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
   
-    if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
+    if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
       len += sprintf(linux_cmd+len, DRIVE_PARAMS, added_disk, 1);
     }
 
-  if  (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)
+  if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)
     {
-    len += sprintf(linux_cmd+len, ADDED_CDROM, vm->vm_params.added_cdrom);
+    len += sprintf(linux_cmd+len, ADDED_CDROM, vm->kvm.added_cdrom);
     }
 
 
-  for (i=0; i<vm->vm_params.nb_eth; i++)
+  for (i=0; i<vm->kvm.nb_eth; i++)
     {
-    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net_mueth_cmd(vm,i));
+    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
     }
   return len;
 }
@@ -463,7 +452,7 @@ static char **create_qemu_argv(t_vm *vm)
   argv[i++] = alloc_argv(utils_get_tmux_sock_path());
   argv[i++] = alloc_argv("new-session");
   argv[i++] = alloc_argv("-s");
-  argv[i++] = alloc_argv(vm->vm_params.name);
+  argv[i++] = alloc_argv(vm->kvm.name);
   argv[i++] = alloc_argv("-d");
   argv[i++] = kvm_exe;
   argv[i++] = NULL;
@@ -496,7 +485,7 @@ static int launch_qemu_vm(t_vm *vm)
   char **argv;
   int result = -1;
   argv = create_qemu_argv(vm);
-  utils_send_creation_info(vm->vm_params.name, argv);
+  utils_send_creation_info(vm->kvm.name, argv);
 
 //VIP
 // gdb ...
@@ -504,7 +493,7 @@ static int launch_qemu_vm(t_vm *vm)
 
   pid_clone_launch(start_launch_args, launcher_death, NULL, 
                    (void *)argv, (void *)argv, NULL, 
-                   vm->vm_params.name, -1, 1);
+                   vm->kvm.name, -1, 1);
   result = 0;
 
   return result;
@@ -551,7 +540,7 @@ void arm_utils_finish_vm_init(char *name, int val)
 void qemu_vm_automaton(void *unused_data, int status, char *name) 
 {
   char err[MAX_PRINT_LEN];
-  int state;
+  int i, state;
   t_vm   *vm = cfg_get_vm(name);
   t_wake_up_eths *wake_up_eths;
   t_small_evt vm_evt;
@@ -579,13 +568,13 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
       break;
     case auto_create_disk:
       wake_up_eths->state = auto_create_vm_launch;
-      if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
+      if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
         clownix_timeout_add(1, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
-      else if (vm->vm_params.vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
+      else if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
         derived_file_creation_request(vm);
       else
-        KOUT("%X", vm->vm_params.vm_config_flags);
+        KOUT("%X", vm->kvm.vm_config_flags);
       break;
     case auto_create_vm_launch:
       wake_up_eths->state = auto_create_vm_connect;
@@ -602,13 +591,17 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
       qmonitor_begin_qemu_unix(name);
       qmp_begin_qemu_unix(name);
       qhvc0_begin_qemu_unix(name);
-      doors_send_add_vm(get_doorways_llid(), 0, vm->vm_params.name,
-                        utils_get_qbackdoor_path(vm->vm_id));
+      doors_send_add_vm(get_doorways_llid(), 0, vm->kvm.name,
+                        utils_get_qbackdoor_path(vm->kvm.vm_id));
       memset(&vm_evt, 0, sizeof(t_small_evt));
       strncpy(vm_evt.name, name, MAX_NAME_LEN-1);
       vm_evt.evt = vm_evt_tmux_launch_ok;
       event_subscriber_send(topo_small_event, (void *) &vm_evt);
-      start_mueth_qemu(vm);
+      for (i=0; i<vm->kvm.nb_eth; i++)
+        {
+        if (endp_mngt_start(0, 0, vm->kvm.name, i, endp_type_kvm)) 
+          KERR("%s %d", vm->kvm.name, i);
+        }
       break;
     default:
       KOUT(" ");

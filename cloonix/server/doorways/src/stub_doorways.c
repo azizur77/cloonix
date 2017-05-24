@@ -28,7 +28,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 /*--------------------------------------------------------------------------*/
@@ -99,7 +98,8 @@ void doors_recv_status(int llid, int itid, char *name, char *cmd)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid)
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num,
+                        int toppid, int pid)
 {
   KOUT(" ");
 }

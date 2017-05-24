@@ -22,14 +22,12 @@
 #include <errno.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "mulan_mngt.h"
 #include "doorways_mngt.h"
 #include "cfg_store.h"
-#include "mueth_mngt.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 #include "blkd_data.h"
 
 /*--------------------------------------------------------------------------*/

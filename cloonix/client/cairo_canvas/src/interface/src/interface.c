@@ -21,7 +21,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "cloonix.h"
@@ -34,9 +33,21 @@
 #include "bank.h"
 #include "eventfull_eth.h"
 #include "layout_rpc.h"
+#include "lib_topo.h"
 #include "utils.h"
 
 int check_before_start_launch(char **argv);
+
+/*---------------------------------------------------------------------------*/
+typedef struct t_vm_config
+{
+  char name[MAX_NAME_LEN];
+  char ip[MAX_NAME_LEN];
+  char status[MAX_NAME_LEN];
+  int vm_id;
+  int vm_config_flags;
+} t_vm_config;
+/*---------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------*/
 static t_topo_info *current_topo = NULL;
@@ -59,10 +70,10 @@ void layout_set_ready_for_send(void);
 int get_vm_id_from_topo(char *name)
 {
   int i, found = 0;
-  for (i=0; i< current_topo->nb_vm; i++)
-    if (!strcmp(name, current_topo->vmit[i].vm_params.name))
+  for (i=0; i< current_topo->nb_kvm; i++)
+    if (!strcmp(name, current_topo->kvm[i].name))
       {
-      found = current_topo->vmit[i].vm_id;
+      found = current_topo->kvm[i].vm_id;
       break;
       }
   return found;
@@ -121,13 +132,13 @@ void launch_xterm_double_click(char *name_vm, int vm_config_flags)
 void callback_topo(int tid, t_topo_info *topo)
 {
   t_topo_differences *diffs = NULL;
-  if ((!current_topo) || (topo_info_diff(topo, current_topo)))
+  if ((!current_topo) || (topo_compare(topo, current_topo)))
     {
-    diffs = get_topo_diffs(topo, current_topo);
-    topo_info_free(current_topo);
-    current_topo = topo_info_dup(topo);
+    diffs = topo_get_diffs(topo, current_topo);
+    topo_free_topo(current_topo);
+    current_topo = topo_duplicate(topo);
     process_all_diffs(diffs);
-    free_diffs(diffs);
+    topo_free_diffs(diffs);
     }
   if (g_not_first_callback_topo == 0)
     {
@@ -145,15 +156,13 @@ static void timeout_eventfull(void *data)
     KOUT(" ");
   eventfull_has_arrived();
   eventfull_200_ms_packets_data(eventfull);
-  clownix_free(eventfull->vm, __FUNCTION__);
-  clownix_free(eventfull->sat, __FUNCTION__);
+  clownix_free(eventfull->endp, __FUNCTION__);
   clownix_free(eventfull, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void eventfull_cb(int nb_vm, t_eventfull_vm *vm, 
-                         int nb_sat, t_eventfull_sat *sat)
+static void eventfull_cb(int nb_endp, t_eventfull_endp *endp)
 {
   t_eventfull *eventfull;
   int len;
@@ -161,14 +170,10 @@ static void eventfull_cb(int nb_vm, t_eventfull_vm *vm,
   eventfull = (t_eventfull *) clownix_malloc(len, 13);
   memset(eventfull, 0, len);
 
-  len = nb_vm * sizeof(t_eventfull_vm);
-  eventfull->vm = (t_eventfull_vm *) clownix_malloc(len, 13);
-  len = nb_sat * sizeof(t_eventfull_sat);
-  eventfull->sat = (t_eventfull_sat *) clownix_malloc(len, 13);
-  eventfull->nb_vm  = nb_vm;
-  eventfull->nb_sat = nb_sat;
-  memcpy(eventfull->vm,  vm,  nb_vm  * sizeof(t_eventfull_vm));
-  memcpy(eventfull->sat, sat, nb_sat * sizeof(t_eventfull_sat));
+  len = nb_endp * sizeof(t_eventfull_endp);
+  eventfull->endp = (t_eventfull_endp *) clownix_malloc(len, 13);
+  eventfull->nb_endp  = nb_endp;
+  memcpy(eventfull->endp,  endp,  nb_endp  * sizeof(t_eventfull_endp));
   clownix_timeout_add(1, timeout_eventfull, (void *) eventfull, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
@@ -254,7 +259,7 @@ void interface_switch_init(char *path, char *password)
 /****************************************************************************/
 t_topo_info *get_current_topo(void)
 {
-  t_topo_info *topo = topo_info_dup(current_topo);
+  t_topo_info *topo = topo_duplicate(current_topo);
   return topo;
 }
 /*--------------------------------------------------------------------------*/

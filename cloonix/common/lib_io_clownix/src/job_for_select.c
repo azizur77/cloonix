@@ -203,7 +203,7 @@ void *job_for_select_alloc(int ref_id, int *llid1, int *llid2)
 {
   t_jfs_obj *result;
   int fds[2];
-  result = (t_jfs_obj *) clownix_malloc(sizeof(t_jfs_obj), 15); 
+  result = (t_jfs_obj *) clownix_malloc(sizeof(t_jfs_obj), 21); 
   memset(result, 0, sizeof(t_jfs_obj));
   result->magic_number = 0xFECACAFE;
   result->ref_id = ref_id;

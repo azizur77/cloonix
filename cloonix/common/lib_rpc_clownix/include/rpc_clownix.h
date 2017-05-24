@@ -23,9 +23,8 @@
 #define DROPBEAR_SOCK "dropbear"
 #define DROPBEAR_PID "dropbear_pid"
 #define MUSWITCH_SOCK_DIR "mu"
-#define MUSWITCH_KEY_DIR "kmu"
 #define MUSWITCH_TRAF_DIR "tmu"
-#define MUSAT_SOCK_DIR "musat"
+#define ENDP_SOCK_DIR "endp"
 
 
 #define MAX_STATS_ITEMS 30
@@ -53,8 +52,7 @@
 enum {
     type_hop_unused = 0,
     type_hop_mulan,
-    type_hop_musat,
-    type_hop_mueth,
+    type_hop_endp,
     type_hop_snf,
     type_hop_doors,
     type_hop_max
@@ -102,14 +100,14 @@ enum
   type_llid_trace_listen_clone,
   type_llid_trace_doorways,
   type_llid_trace_mulan,
-  type_llid_trace_musat_eth,
-  type_llid_trace_musat_snf,
-  type_llid_trace_musat_tap,
-  type_llid_trace_musat_c2c,
-  type_llid_trace_musat_nat,
-  type_llid_trace_musat_a2b,
-  type_llid_trace_musat_raw,
-  type_llid_trace_musat_wif,
+  type_llid_trace_endp_kvm,
+  type_llid_trace_endp_tap,
+  type_llid_trace_endp_raw,
+  type_llid_trace_endp_wif,
+  type_llid_trace_endp_snf,
+  type_llid_trace_endp_c2c,
+  type_llid_trace_endp_nat,
+  type_llid_trace_endp_a2b,
   type_llid_trace_jfs,
   type_llid_trace_unix_qmonitor,
   type_llid_max,
@@ -119,7 +117,7 @@ typedef struct t_hop_list
 {
   int type_hop;
   char name[MAX_NAME_LEN];
-  int eth;
+  int  num;
 } t_hop_list;
 /*---------------------------------------------------------------------------*/
 typedef struct t_queue_tx
@@ -143,6 +141,14 @@ typedef struct t_blkd_reports
   int nb_blkd_reports;
   t_blkd_item *blkd_item;
 } t_blkd_reports;
+/*---------------------------------------------------------------------------*/
+typedef struct t_c2c_req_info
+  {
+  char cloonix_slave[MAX_NAME_LEN];
+  char passwd_slave[MSG_DIGEST_LEN];
+  int ip_slave;
+  int port_slave;
+  } t_c2c_req_info;
 /*---------------------------------------------------------------------------*/
 typedef struct t_sys_info
 {
@@ -215,34 +221,18 @@ typedef struct t_list_commands
   char cmd[MAX_LIST_COMMANDS_LEN];
 } t_list_commands;
 /*---------------------------------------------------------------------------*/
-typedef struct t_eventfull_sat
+typedef struct t_eventfull_endp
 {
   char name[MAX_NAME_LEN];
-  int sat_is_ok;
-  int pkt_rx0;
-  int pkt_tx0;
-  int pkt_rx1;
-  int pkt_tx1;
-} t_eventfull_sat;
-/*---------------------------------------------------------------------------*/
-typedef struct t_eventfull_eth
-{
-  int eth;
-  int pkt_rx;
-  int pkt_tx;
-} t_eventfull_eth;
-/*---------------------------------------------------------------------------*/
-typedef struct t_eventfull_vm
-{
-  char name[MAX_NAME_LEN];
+  int  num;
+  int  type;
   int  ram;
   int  cpu;
-  int nb_eth;
-  t_eventfull_eth eth[MAX_ETH_VM];
-} t_eventfull_vm;
+  int  ok;
+  int  rx;
+  int  tx;
+} t_eventfull_endp;
 /*---------------------------------------------------------------------------*/
-
-
 void doors_io_basic_xml_init(t_llid_tx llid_tx);
 int  doors_io_basic_decoder (int llid, int len, char *buf);
 /*---------------------------------------------------------------------------*/
@@ -272,48 +262,35 @@ void recv_hop_name_list_doors(int llid, int tid, int nb, t_hop_list *list);
 void send_work_dir_req(int llid, int tid);
 void recv_work_dir_req(int llid, int tid);
 
-void send_work_dir_resp(int llid, int tid, t_cloonix_config *cloonix_config);
-void recv_work_dir_resp(int llid, int tid, t_cloonix_config *cloonix_config);
+void send_work_dir_resp(int llid, int tid, t_topo_clc *clc);
+void recv_work_dir_resp(int llid, int tid, t_topo_clc *clc);
 
 void send_status_ok(int llid, int tid, char *txt);
 void recv_status_ok(int llid, int tid, char *txt);
 void send_status_ko(int llid, int tid, char *reason);
 void recv_status_ko(int llid, int tid, char *reason);
 
-void send_add_vm(int llid, int tid, t_vm_params *vm_params);
-void recv_add_vm(int llid, int tid, t_vm_params *vm_params);
+void send_add_vm(int llid, int tid, t_topo_kvm *kvm);
+void recv_add_vm(int llid, int tid, t_topo_kvm *kvm);
 void send_sav_vm(int llid, int tid, char *name, int type, char *sav_vm_path);
 void recv_sav_vm(int llid, int tid, char *name, int type, char *sav_vm_path);
 void send_sav_vm_all(int llid, int tid, int type, char *sav_vm_path);
 void recv_sav_vm_all(int llid, int tid, int type, char *sav_vm_path);
 
-void send_add_sat(int llid, int tid, char *name, 
-                  int mutype, t_c2c_req_info *c2c_req_info);
-void recv_add_sat(int llid, int tid, char *name, 
-                  int mutype, t_c2c_req_info *c2c_req_info);
+void send_add_sat(int llid, int tid, char *name,int type,t_c2c_req_info *c2c);
+void recv_add_sat(int llid, int tid, char *name,int type,t_c2c_req_info *c2c);
 void send_del_sat(int llid, int tid, char *name);
 void recv_del_sat(int llid, int tid, char *name);
 
-void send_add_lan_sat(int llid, int tid, char *name, char *lan, int num);
-void recv_add_lan_sat(int llid, int tid, char *name, char *lan, int num);
-void send_del_lan_sat(int llid, int tid, char *name, char *lan, int num);
-void recv_del_lan_sat(int llid, int tid, char *name, char *lan, int num);
-
-void send_event_spy_sub(int llid, int tid, char *name, char *intf, char *dir);
-void recv_event_spy_sub(int llid, int tid, char *name, char *intf, char *dir);
-void send_event_spy_unsub(int llid, int tid, char *name, char *intf, char *dir);
-void recv_event_spy_unsub(int llid, int tid, char *name, char *intf, char *dir);
-void send_event_spy(int llid, int tid, char *name, char *intf, char *dir,
-                    int secs, int usecs, int len, char *msg);
-void recv_event_spy(int llid, int tid, char *name, char *intf, char *dir,
-                    int secs, int usecs, int len, char *msg);
+void send_add_lan_endp(int llid, int tid, char *name, int num, char *lan);
+void recv_add_lan_endp(int llid, int tid, char *name, int num, char *lan);
+void send_del_lan_endp(int llid, int tid, char *name, int num, char *lan);
+void recv_del_lan_endp(int llid, int tid, char *name, int num, char *lan);
 
 void send_eventfull_sub(int llid, int tid);
 void recv_eventfull_sub(int llid, int tid);
-void send_eventfull(int llid, int tid, int nb_vm, t_eventfull_vm *vm,
-                    int nb_sat, t_eventfull_sat *sat); 
-void recv_eventfull(int llid, int tid, int nb_vm, t_eventfull_vm *vm, 
-                    int nb_sat, t_eventfull_sat *sat);
+void send_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp); 
+void recv_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp);
 
 void send_list_pid_req(int llid, int tid);
 void recv_list_pid_req(int llid, int tid);
@@ -352,28 +329,19 @@ void recv_evt_print_unsub(int llid, int tid);
 void send_evt_print(int llid, int tid, char *info);
 void recv_evt_print(int llid, int tid, char *info);
 
-void send_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub);
-void recv_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub);
-void send_evt_stats_eth(int llid, int tid, char *network_name,
-                        char *name, int eth, 
-                        t_stats_counts *stats_counts, int status);
-void recv_evt_stats_eth(int llid, int tid, char *network_name,
-                        char *name, int eth, 
-                        t_stats_counts *stats_counts, int status);
-
-void send_evt_stats_sat_sub(int llid, int tid, char *name, int sub);
-void recv_evt_stats_sat_sub(int llid, int tid, char *name, int sub);
-void send_evt_stats_sat(int llid, int tid, char *network_name, char *name,
-                        t_stats_counts *stats_counts, int status);
-void recv_evt_stats_sat(int llid, int tid, char *network_name, char *name,
-                        t_stats_counts *stats_counts, int status);
+void send_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub);
+void recv_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub);
+void send_evt_stats_endp(int llid, int tid, char *network, char *name, int num,
+                         t_stats_counts *stats_counts, int status);
+void recv_evt_stats_endp(int llid, int tid, char *network, char *name, int num,
+                         t_stats_counts *stats_counts, int status);
 
 void send_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub);
 void recv_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub);
-void send_evt_stats_sysinfo(int llid, int tid, char *network_name, char *name,
+void send_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
                             t_stats_sysinfo *stats_sysinfo, 
                             char *df, int status);
-void recv_evt_stats_sysinfo(int llid, int tid, char *network_name, char *name,
+void recv_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
                             t_stats_sysinfo *stats_sysinfo, 
                             char *df, int status);
 
@@ -401,11 +369,11 @@ void send_vmcmd(int llid, int tid, char *name, int vmcmd, int param);
 void recv_vmcmd(int llid, int tid, char *name, int vmcmd, int param);
 
 /*---------------------------------------------------------------------------*/
-void send_mucli_dialog_req(int llid, int tid, char *name, int eth, char *line);
-void recv_mucli_dialog_req(int llid, int tid, char *name, int eth, char *line);
-void send_mucli_dialog_resp(int llid, int tid, char *name, int eth, 
+void send_mucli_dialog_req(int llid, int tid, char *name, int num, char *line);
+void recv_mucli_dialog_req(int llid, int tid, char *name, int num, char *line);
+void send_mucli_dialog_resp(int llid, int tid, char *name, int num, 
                             char *line, int status);
-void recv_mucli_dialog_resp(int llid, int tid, char *name, int eth,
+void recv_mucli_dialog_resp(int llid, int tid, char *name, int num,
                             char *line, int status);
 /*---------------------------------------------------------------------------*/
 char *prop_flags_ascii_get(int prop_flags);

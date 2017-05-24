@@ -272,7 +272,7 @@ static int rx_from_raw(void *ptr, int llid, int fd)
   else
     {
     bd->payload_len = len;
-    sock_fd_tx(all_ctx, 0, bd);
+    sock_fd_tx(all_ctx, bd);
     }
   return len;
 }

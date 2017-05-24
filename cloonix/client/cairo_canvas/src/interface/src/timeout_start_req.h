@@ -38,21 +38,10 @@ typedef struct t_item_req
   double yb;
 } t_item_req;
 /*--------------------------------------------------------------------------*/
-typedef struct t_edge_eth_req
-{
-  int bank_type;
-  char name[MAX_NAME_LEN];
-  char lan[MAX_NAME_LEN];
-  int mutype;
-  int num;
-} t_edge_eth_req;
-/*--------------------------------------------------------------------------*/
 typedef struct t_edge_req
 {
-  int  bank_type;
   char name[MAX_PATH_LEN];
   char lan[MAX_NAME_LEN];
-  int mutype;
   int  num;
 } t_edge_req;
 /*--------------------------------------------------------------------------*/
@@ -67,10 +56,8 @@ typedef struct t_delete_item_req
 void timer_create_item_node_req(void *param);
 void timer_create_item_sat_req(void *param);
 void timer_create_item_req(void *param);
-void timer_create_edge_eth_req(void *param);
 void timer_create_edge_req(void *param);
 /*--------------------------------------------------------------------------*/
-void timer_delete_edge_eth_req(void *param);
 void timer_delete_item_req(void *param);
 void timer_delete_edge_req(void *param);
 /*--------------------------------------------------------------------------*/

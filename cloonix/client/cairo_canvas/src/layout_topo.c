@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "layout_topo.h"
@@ -311,7 +310,7 @@ static void add_layout_sat(t_layout_sat *sat)
       modif_position_layout(bitem, sat->x - acur->x,
                                    sat->y - acur->y);
 
-      if (bitem->pbi.mutype == musat_type_a2b)
+      if (bitem->pbi.mutype == endp_type_a2b)
         {
         eth_bitem = look_for_eth_with_id(sat->name, 0);
         if (!eth_bitem)

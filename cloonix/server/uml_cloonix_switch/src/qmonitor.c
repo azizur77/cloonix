@@ -28,7 +28,6 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_qmonitor.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
@@ -383,7 +382,7 @@ static void timer_qvm_connect_qmonitor(void *data)
       }
     else
       {
-      qmon = utils_get_qmonitor_path(vm->vm_id);
+      qmon = utils_get_qmonitor_path(vm->kvm.vm_id);
       if (!util_nonblock_client_socket_unix(qmon, &fd))
         {
         if (fd <= 0)

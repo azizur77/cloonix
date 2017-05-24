@@ -21,7 +21,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "pid_clone.h"
 #include "cfg_store.h"
@@ -151,25 +150,25 @@ static void cdrom_config_creation(t_vm *vm, int nb_eth)
 {
   char *genisobin = util_get_genisoimage();
   t_cdrom_config *cdrom_conf;
-  char *tmp_conf  = utils_dir_conf_tmp(vm->vm_id);
-  char *cdrom_path = utils_get_cdrom_path_name(vm->vm_id);
+  char *tmp_conf  = utils_dir_conf_tmp(vm->kvm.vm_id);
+  char *cdrom_path = utils_get_cdrom_path_name(vm->kvm.vm_id);
   if (access(genisobin, X_OK))
     KOUT("%s not found", genisobin);
   if (access(tmp_conf, F_OK))
     KOUT("%s not found", tmp_conf);
   cdrom_conf = (t_cdrom_config *) clownix_malloc(sizeof(t_cdrom_config), 13); 
   memset(cdrom_conf, 0, sizeof(t_cdrom_config));
-  strncpy(cdrom_conf->name, vm->vm_params.name, MAX_NAME_LEN-1);
-  cdrom_conf->vm_id = vm->vm_id;
+  strncpy(cdrom_conf->name, vm->kvm.name, MAX_NAME_LEN-1);
+  cdrom_conf->vm_id = vm->kvm.vm_id;
   cdrom_conf->nb_eth = nb_eth;
-  cdrom_conf->has_p9_host_share = vm->vm_params.vm_config_flags & 
+  cdrom_conf->has_p9_host_share = vm->kvm.vm_config_flags & 
                                  VM_CONFIG_FLAG_9P_SHARED;
   strncpy(cdrom_conf->tmp_conf, tmp_conf, MAX_PATH_LEN-1);
   strncpy(cdrom_conf->cdrom_path, cdrom_path, MAX_PATH_LEN-1);
   pid_clone_launch(fct_in_clone_context, death_of_clone_in_main_context,
                    msg_from_clone_in_main_context, 
                    cdrom_conf, cdrom_conf, cdrom_conf,
-                   vm->vm_params.name, -1, 1);
+                   vm->kvm.name, -1, 1);
 }
 /*---------------------------------------------------------------------------*/
 

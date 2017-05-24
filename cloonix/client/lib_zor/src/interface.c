@@ -28,7 +28,6 @@
 #include <sys/socket.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "cloonix_conf_info.h"
@@ -290,12 +289,12 @@ static void doorways_client_rx(int llid, int tid, int type, int val,
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void recv_work_dir_resp(int llid, int tid, t_cloonix_config *conf)
+void recv_work_dir_resp(int llid, int tid, t_topo_clc *conf)
 {
   char *version = cloonix_conf_info_get_version();
   t_cloonix *cloonix = find_cloonix_with_doors_llid(llid);
-  if (strcmp(conf->network_name, cloonix->name))
-    KERR("%s %s", conf->network_name, cloonix->name);
+  if (strcmp(conf->network, cloonix->name))
+    KERR("%s %s", conf->network, cloonix->name);
   else if (strcmp(conf->version, version))
     KERR("%s %s", conf->version, version);
   else

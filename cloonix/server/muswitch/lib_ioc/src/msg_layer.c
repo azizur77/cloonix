@@ -529,23 +529,21 @@ void data_tx(t_all_ctx *all_ctx, int llid, int len, char *str_tx)
 
 
 /*****************************************************************************/
-t_all_ctx *msg_mngt_init (char *name, int offset, int max_len_per_read)
+t_all_ctx *msg_mngt_init (char *name, int num, int max_len_per_read)
 {
-  t_all_ctx *all_ctx = ioc_ctx_init(name, offset, max_len_per_read);
+  t_all_ctx *all_ctx = ioc_ctx_init(name, num, max_len_per_read);
   struct sigaction act;
   memset(&act, 0, sizeof(act));
   sigfillset(&act.sa_mask);
   act.sa_flags = 0;
   act.sa_handler = signal_pipe;
   sigaction(SIGPIPE, &act, NULL);
-  cloonix_set_sec_offset(offset);
   channel_init(all_ctx);
   init_wake_out_epoll(all_ctx);
-  blkd_init(all_ctx, name, 
-            channel_tx_local_flow_ctrl,
-            channel_rx_local_flow_ctrl,
-            rpct_send_peer_flow_control);
-  rpct_init(all_ctx, ptr_string_tx, name);
+  blkd_init(all_ctx, channel_tx_local_flow_ctrl,
+                     channel_rx_local_flow_ctrl,
+                     rpct_send_peer_flow_control);
+  rpct_init(all_ctx, ptr_string_tx);
   linker_helper1_fct();
   return (all_ctx);
 } 

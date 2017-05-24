@@ -20,32 +20,27 @@
 #include <stdint.h>
 #include <syslog.h>
 #include <string.h>
-void cloonix_set_sec_offset(int offset);
-int cloonix_get_sec_offset(void);
 unsigned int cloonix_get_msec(void);
 long long cloonix_get_usec(void);
 void cloonix_set_pid(int pid);
 int cloonix_get_pid(void);
-void cloonix_set_name(char *name);
-char *cloonix_get_name(void);
-char *cloonix_get_short(const char *full_name);
-
-
 
 #define KERR(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "%07u %d %s %s"           \
+    syslog(LOG_ERR | LOG_USER, "%07u %d %s"           \
     " line:%d " format "\n", cloonix_get_msec(),         \
-    cloonix_get_pid(), cloonix_get_name(),               \
-    cloonix_get_short(__FILE__), __LINE__, ## a);        \
+    cloonix_get_pid(),                                   \
+    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
+     __LINE__, ## a);                                    \
     } while (0)
 
 #define KOUT(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "KILL %07u %d %s %s"      \
+    syslog(LOG_ERR | LOG_USER, "KILL %07u %d %s"      \
     " line:%d   " format "\n\n", cloonix_get_msec(),     \
-    cloonix_get_pid(), cloonix_get_name(),               \
-    cloonix_get_short(__FILE__), __LINE__, ## a);        \
+    cloonix_get_pid(),                                  \
+    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
+     __LINE__, ## a);                                    \
     exit(-1);                                            \
     } while (0)
 
@@ -57,8 +52,7 @@ char *cloonix_get_short(const char *full_name);
 #define CLOWNIX_MAX_CHANNELS 10000
 #define MAX_SELECT_CHANNELS 500
 
-
-#define QEMU_ETH_FORMAT "%s_%d"
+#define MAX_TRAF_ENDPOINT 4
 
 #define MAX_POLAR_COORD 314
 #define NODE_DIA 75
@@ -90,20 +84,40 @@ char *cloonix_get_short(const char *full_name);
 #define MAX_TX_BLKD_QUEUED_BYTES (10 * GROUP_BLKD_MAX_SIZE)
 #define MAX_GLOB_BLKD_QUEUED_BYTES (100 * GROUP_BLKD_MAX_SIZE)
 
+#define MAC_ADDR_LEN 6
+#define VM_CONFIG_FLAG_PERSISTENT      0x0001
+#define VM_CONFIG_FLAG_EVANESCENT      0x0002
+#define VM_CONFIG_FLAG_9P_SHARED       0x0004
+#define VM_CONFIG_FLAG_FULL_VIRT       0x0008
+#define VM_CONFIG_FLAG_BALLOONING      0x0010
+#define VM_CONFIG_FLAG_INSTALL_CDROM   0x0020
+#define VM_CONFIG_FLAG_NO_REBOOT       0x0040
+#define VM_CONFIG_FLAG_ADDED_CDROM     0x0080
+#define VM_CONFIG_FLAG_ADDED_DISK      0x0100
+#define VM_CONFIG_FLAG_CISCO           0x0200
+#define VM_FLAG_DERIVED_BACKING        0x10000
+#define VM_FLAG_IS_INSIDE_CLOONIX      0x20000
+#define VM_FLAG_CLOONIX_AGENT_PING_OK  0x80000
 
 
+#define WIRESHARK_BINARY_QT "/usr/bin/wireshark-qt"
+#define WIRESHARK_BINARY "/usr/bin/wireshark"
+#define FLAGS_CONFIG_WIRESHARK_QT_PRESENT 0x0001
+#define FLAGS_CONFIG_WIRESHARK_PRESENT 0x0002
+
+#define MSG_DIGEST_LEN 32
 
 enum {
   mutype_none = 0,
   mulan_type,
-  musat_type_eth,
-  musat_type_tap,
-  musat_type_wif,
-  musat_type_raw,
-  musat_type_snf,
-  musat_type_c2c,
-  musat_type_a2b,
-  musat_type_nat,
+  endp_type_tap,
+  endp_type_wif,
+  endp_type_raw,
+  endp_type_snf,
+  endp_type_c2c,
+  endp_type_a2b,
+  endp_type_nat,
+  endp_type_kvm,
 };
 
 
@@ -137,5 +151,111 @@ enum{
   doors_val_init_link_ko,
   doors_val_max,
 };
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_clc
+{
+  char version[MAX_NAME_LEN];
+  char network[MAX_NAME_LEN];
+  char username[MAX_NAME_LEN];
+  int  server_port;
+  char work_dir[MAX_PATH_LEN];
+  char bin_dir[MAX_PATH_LEN];
+  char bulk_dir[MAX_PATH_LEN];
+  char tmux_bin[MAX_PATH_LEN];
+  int  flags_config;
+} t_topo_clc;
+/*---------------------------------------------------------------------------*/
+typedef struct t_lan_group_item
+{
+  char lan[MAX_NAME_LEN];
+} t_lan_group_item;
+/*---------------------------------------------------------------------------*/
+typedef struct t_lan_group
+{
+  int nb_lan;
+  t_lan_group_item *lan;
+} t_lan_group;
+/*---------------------------------------------------------------------------*/
+typedef struct t_eth_params
+{
+  char mac_addr[MAC_ADDR_LEN];
+} t_eth_params;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_kvm
+{
+  char name[MAX_NAME_LEN];
+  int  vm_config_flags;
+  int  cpu;
+  int  mem;
+  int  nb_eth; 
+  t_eth_params eth_params[MAX_ETH_VM];
+  char linux_kernel[MAX_NAME_LEN];
+  char rootfs_input[MAX_PATH_LEN];
+  char rootfs_used[MAX_PATH_LEN];
+  char rootfs_backing[MAX_PATH_LEN];
+  char install_cdrom[MAX_PATH_LEN];
+  char added_cdrom[MAX_PATH_LEN];
+  char added_disk[MAX_PATH_LEN];
+  char p9_host_share[MAX_PATH_LEN];
+  int vm_id;
+} t_topo_kvm;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_c2c
+  {
+  char name[MAX_NAME_LEN];
+  char master_cloonix[MAX_NAME_LEN];
+  char slave_cloonix[MAX_NAME_LEN];
+  int local_is_master;
+  int is_peered;
+  int ip_slave;
+  int port_slave;
+  } t_topo_c2c;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_snf
+  {
+  char name[MAX_NAME_LEN];
+  char recpath[MAX_PATH_LEN];
+  int capture_on;
+  } t_topo_snf;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_sat
+  {
+  char name[MAX_NAME_LEN];
+  int  type;
+  } t_topo_sat;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_endp
+{
+  char name[MAX_NAME_LEN];
+  int  num;
+  int  type;
+  t_lan_group lan;
+} t_topo_endp;
+/*---------------------------------------------------------------------------*/
+typedef struct t_topo_info
+{
+  t_topo_clc clc;
+
+  int nb_kvm;
+  t_topo_kvm *kvm;
+
+  int nb_c2c;
+  t_topo_c2c *c2c;
+
+  int nb_snf;
+  t_topo_snf *snf;
+
+  int nb_sat;
+  t_topo_sat *sat;
+
+  int nb_endp;
+  t_topo_endp *endp;
+
+} t_topo_info;
+/*---------------------------------------------------------------------------*/
+
+
+
+
 
 

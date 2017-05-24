@@ -21,10 +21,8 @@ typedef void (*t_evt_vm_exists_cb)(char *net_name, char *name,
 typedef void (*t_evt_sat_exists_cb)(char *net_name, char *name, 
                                     int type, int exists);
 typedef void (*t_evt_lan_exists_cb)(char *net_name, char *name, int exists);
-typedef void (*t_evt_stats_eth_cb)(char *net_name, char *name, int eth, 
-                                   t_stats_counts *stats_counts);
-typedef void (*t_evt_stats_sat_cb)(char *net_name, char *name, 
-                                   t_stats_counts *stats_counts);
+typedef void (*t_evt_stats_endp_cb)(char *net_name, char *name, int num, 
+                                    t_stats_counts *stats_counts);
 typedef void (*t_evt_stats_sysinfo_cb)(char *net_name, char *name, 
                                        t_stats_sysinfo *stats,
                                        char *df);
@@ -36,8 +34,7 @@ void connect_cloonix_init(char *conf_path,
                           t_evt_vm_exists_cb   vm_exists,
                           t_evt_sat_exists_cb  sat_exists,
                           t_evt_lan_exists_cb  lan_exists,
-                          t_evt_stats_eth_cb   stats_eth,
-                          t_evt_stats_sat_cb   stats_sat,
+                          t_evt_stats_endp_cb  stats_endp,
                           t_evt_stats_sysinfo_cb stats_sysinfo);
 /****************************************************************************/
 

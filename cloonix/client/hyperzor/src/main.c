@@ -19,7 +19,6 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "connect_cloonix.h"
 #include "cloonix_conf_info.h"
@@ -258,7 +257,6 @@ void store_evt_lan_exists(char *net_name, char *name, int exists)
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
-  char tmux[MAX_PATH_LEN];
   char ld_lib[MAX_PATH_LEN];
   char current_directory[MAX_PATH_LEN];
   memset(g_cloonix_root_tree, 0, MAX_PATH_LEN);
@@ -286,8 +284,7 @@ int main(int argc, char *argv[])
                        store_evt_vm_exists,
                        store_evt_sat_exists,
                        store_evt_lan_exists,
-                       stats_eth,
-                       stats_sat,
+                       stats_endp,
                        stats_sysinfo);
   g_timeout_add(100, refresh_request_timeout, (gpointer) NULL);
   store_init();

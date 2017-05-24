@@ -42,7 +42,7 @@ enum
 };
 int machine_death(char *name, int error_death);
 void machine_recv_kill_clownix(void);
-void machine_recv_add_vm(int llid, int tid, t_vm_params *vm_params, int vm_id); 
+void machine_recv_add_vm(int llid, int tid, t_topo_kvm *kvm, int vm_id); 
 int get_nb_mask(char *mask_string);
 void machine_init(void);
 

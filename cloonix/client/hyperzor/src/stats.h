@@ -45,10 +45,8 @@ enum {
 };
 
 
-void stats_eth(char *net_name, char *name, int eth,
-               t_stats_counts *stats_counts);
-void stats_sat(char *net_name, char *name,
-               t_stats_counts *stats_counts);
+void stats_endp(char *net_name, char *name, int num,
+                t_stats_counts *stats_counts);
 void stats_sysinfo(char *net_name, char *name,
                    t_stats_sysinfo *si, char *df);
 void stats_net_alloc(char *net_name);

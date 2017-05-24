@@ -24,7 +24,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "layout_rpc.h"
 #include "cfg_store.h"
@@ -35,6 +34,7 @@
 #include "pid_clone.h"
 #include "llid_trace.h"
 #include "layout_topo.h"
+#include "lib_topo.h"
 
 
 /*****************************************************************************/
@@ -76,7 +76,7 @@ static void subscribing_llid_send(int sub_evt, void *info)
       sys_info_free((t_sys_info *)info);
     break;
     case sub_evt_topo:
-      topo_info_free((t_topo_info *)info);
+      topo_free_topo((t_topo_info *)info);
     break;
     }      
 }   

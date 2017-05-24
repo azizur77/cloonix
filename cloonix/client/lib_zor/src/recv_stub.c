@@ -22,7 +22,6 @@
 #include <sys/stat.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 
 void recv_hop_evt_doors_sub(int llid, int tid, int flags_hop, int nb, t_hop_list *list){KOUT();}
@@ -32,8 +31,9 @@ void recv_hop_get_name_list_doors(int llid, int tid){KOUT();}
 void recv_hop_name_list_doors(int llid, int tid, int nb, t_hop_list *list){KOUT();}
 
 
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int secoffset, char *name){KOUT();}
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid){KOUT();}
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num){KOUT();}
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name,
+                        int num, int toppid, int pid){KOUT();}
 void rpct_recv_hop_sub(void *ptr, int llid, int tid, int flags_hop){KOUT();}
 void rpct_recv_hop_unsub(void *ptr, int llid, int tid){KOUT();}
 void rpct_recv_hop_msg(void *ptr, int llid, int tid, int flags_hop, char *txt){KOUT();}
@@ -59,23 +59,20 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item)
 void recv_work_dir_req(int llid, int tid){KOUT(" ");}
 void recv_status_ok(int llid, int tid, char *txt){KOUT(" ");}
 void recv_status_ko(int llid, int tid, char *reason){KOUT(" ");}
-void recv_add_vm(int llid, int tid, t_vm_params *vm_params){KOUT(" ");}
+void recv_add_vm(int llid, int tid, t_topo_kvm *kvm){KOUT(" ");}
 void recv_sav_vm(int llid, int tid, char *name, int type, char *sav_vm_path){KOUT(" ");}
 void recv_sav_vm_all(int llid, int tid,  int type, char *sav_vm_path){KOUT(" ");}
 void recv_add_sat(int llid, int tid, char *name, int mutype,
                   t_c2c_req_info *c2c_req_info){KOUT(" ");}
 void recv_del_sat(int llid, int tid, char *sat){KOUT(" ");}
-void recv_add_lan_eth(int llid, int tid, char *name, int eth, char *lan){KOUT(" ");}
-void recv_del_lan_eth(int llid, int tid, char *name, int eth, char *lan){KOUT(" ");}
-void recv_add_lan_sat(int llid, int tid, char *sat, char *lan, int num){KOUT(" ");}
-void recv_del_lan_sat(int llid, int tid, char *sat, char *lan, int num){KOUT(" ");}
+void recv_add_lan_endp(int llid, int tid, char *name, int num, char *lan){KOUT(" ");}
+void recv_del_lan_endp(int llid, int tid, char *name, int num, char *lan){KOUT(" ");}
 void recv_event_spy_sub(int llid, int tid, char *name, char *intf, char *dir){KOUT(" ");}
 void recv_event_spy_unsub(int llid, int tid, char *name, char *intf, char *dir){KOUT(" ");}
 void recv_event_spy(int llid, int tid, char *name, char *intf, char *dir,
                     int secs, int usecs, int len, char *msg){KOUT(" ");}
 void recv_eventfull_sub(int llid, int tid){KOUT(" ");}
-void recv_eventfull(int llid, int tid, int nb_vm, t_eventfull_vm *vm, 
-                    int nb_sat, t_eventfull_sat *sat){KOUT(" ");}
+void recv_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp){KOUT(" ");} 
 void recv_list_pid_req(int llid, int tid){KOUT(" ");}
 void recv_list_pid_resp(int llid, int tid, int qty, t_pid_lst *pid){KOUT(" ");}
 void recv_list_commands_req(int llid, int tid){KOUT(" ");}
@@ -88,8 +85,7 @@ void recv_evt_print_sub(int llid, int tid){KOUT(" ");}
 void recv_evt_print_unsub(int llid, int tid){KOUT(" ");}
 void recv_evt_print(int llid, int tid, char *info){KOUT(" ");}
 
-void recv_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub){KOUT(" ");}
-void recv_evt_stats_sat_sub(int llid, int tid, char *name, int sub){KOUT(" ");}
+void recv_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub){KOUT(" ");}
 void recv_evt_stats_sysinfo_sub(int llid, int tid, char *name, int sub){KOUT(" ");}
 void recv_blkd_reports_sub(int llid, int tid, int sub){KOUT(" ");}
 

@@ -30,7 +30,6 @@
 #include <readline/history.h>
 #include <pthread.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "util_sock.h"
 #include "rpc_qmonitor.h"
 #include "file_read_write.h"
@@ -50,10 +49,9 @@ static char g_password[MSG_DIGEST_LEN];
 static char g_cloonix_doors[MAX_PATH_LEN];
 /*****************************************************************************/
 
-void rpct_recv_pid_req(void *ptr, int llid, int tid, 
-                      int secoffset, char *name){KOUT();}
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, 
-                       char *name, int pid){KOUT();}
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num) {KOUT();}
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num, 
+                       int toppid, int pid){KOUT();}
 void rpct_recv_hop_sub(void *ptr, int llid, int tid, int flags_hop){KOUT();}
 void rpct_recv_hop_unsub(void *ptr, int llid, int tid){KOUT();}
 void rpct_recv_hop_msg(void *ptr, int llid, int tid, 

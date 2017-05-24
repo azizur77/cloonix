@@ -73,13 +73,17 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
   int is_blkd, llid = all_ctx->g_llid_tcp;
-  if (msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__))
-    blkd_put_tx((void *) all_ctx, 1, &llid, bd);
-  else
-    blkd_free((void *) all_ctx, bd);
+  if (bd)
+    {
+    if (msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__))
+      blkd_put_tx((void *) all_ctx, 1, &llid, bd);
+    else
+      blkd_free((void *) all_ctx, bd);
+    }
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -96,7 +100,7 @@ int main (int argc, char *argv[])
     KOUT(" ");
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
-  if (c2c_type != musat_type_c2c)
+  if (c2c_type != endp_type_c2c)
     KOUT("%d", c2c_type);
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);

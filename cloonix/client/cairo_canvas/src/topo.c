@@ -21,7 +21,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "interface.h"
@@ -123,7 +122,7 @@ void snf_add_recpath_and_capture_on(t_bank_item *bitem)
   item = (CrItem *) bitem->cr_item;
   child1 = (CrItem *) bitem->pbi.pbi_sat->snf_cr_item_onoff;
   child2 = (CrItem *) bitem->pbi.pbi_sat->snf_cr_item_recpath;
-  if (bitem->pbi.pbi_sat->snf_info.capture_on)
+  if (bitem->pbi.pbi_sat->topo_snf.capture_on)
     strcpy(onoff, "ON"); 
   else
     strcpy(onoff, "OFF"); 
@@ -142,7 +141,7 @@ void snf_add_recpath_and_capture_on(t_bank_item *bitem)
                                (void *) cr_text_new (CR_ITEM(bitem->cr_item),
                                         bitem->pbi.x0 -13,
                                         bitem->pbi.y0 + 3,
-                                        bitem->pbi.pbi_sat->snf_info.recpath,
+                                        bitem->pbi.pbi_sat->topo_snf.recpath,
                                         "font", "Sans 7", NULL);
 }
 /*--------------------------------------------------------------------------*/
@@ -247,7 +246,7 @@ void modif_position_eth(t_bank_item *bitem, double xi, double yi)
     }
   else
     {
-    if (bitem->att_node->pbi.mutype == musat_type_a2b)
+    if (bitem->att_node->pbi.mutype == endp_type_a2b)
       {
       tx = (vx * (A2B_DIA*VAL_INTF_POS_A2B))/dist;
       ty = (vy * (A2B_DIA*VAL_INTF_POS_A2B))/dist;
@@ -311,7 +310,7 @@ static void process_mouse_double_click(t_bank_item *bitem)
       bitem->pbi.flag = flag_normal;
       if (is_a_snf(bitem))
         {
-        if (bitem->pbi.pbi_sat->snf_info.capture_on)
+        if (bitem->pbi.pbi_sat->topo_snf.capture_on)
           client_mud_cli_cmd(0, bitem->name, 0, "-rec_stop");
         else
           client_mud_cli_cmd(0, bitem->name, 0, "-rec_start");
@@ -344,8 +343,7 @@ static void process_mouse_motion(GdkEvent *event,
     topo_get_matrix_inv_transform_point(&x, &y);
     modif_position_eth(bitem, x, y);
     }
-  else if ((bitem->bank_type == bank_type_edge_eth2lan)   ||
-           (bitem->bank_type == bank_type_edge_sat2lan))
+  else if (bitem->bank_type == bank_type_edge)
     {
     }
   else
@@ -382,8 +380,7 @@ static void menu_caller(t_bank_item *bitem)
         }
       break;
 
-    case bank_type_edge_eth2lan:
-    case bank_type_edge_sat2lan:
+    case bank_type_edge:
       edge_ctx_menu(bitem);
       bitem->pbi.menu_on = 1;
       break;
@@ -428,7 +425,7 @@ static void fct_bitem_moved_by_operator(t_bank_item *bitem)
     }
   else if (bitem->bank_type == bank_type_eth)
     {
-    if (bitem->pbi.mutype == musat_type_a2b)
+    if (bitem->pbi.mutype == endp_type_a2b)
       {
       layout_sat = make_layout_sat(bitem->att_node);
       layout_send_layout_sat(layout_sat);
@@ -571,7 +568,7 @@ static void paint_select_source_color(t_bank_item *bitem, cairo_t *c)
     case bank_type_sat:
       if (is_a_c2c(bitem))
         {
-        if (bitem->pbi.pbi_sat->c2c_info.is_peered)
+        if (bitem->pbi.pbi_sat->topo_c2c.is_peered)
           paint_select(c,flag,flag_trace,&lightgreen,&red,&lightmagenta);
         else
           paint_select(c,flag,flag_trace,&lightred,&red,&lightmagenta);
@@ -580,8 +577,7 @@ static void paint_select_source_color(t_bank_item *bitem, cairo_t *c)
     case bank_type_lan:
       paint_select(c,flag,flag_trace,&lightgrey,&red,&lightmagenta);
       break;
-    case bank_type_edge_eth2lan:
-    case bank_type_edge_sat2lan:
+    case bank_type_edge:
       paint_select(c,flag,flag_trace,&lightgreen,&red,&lightmagenta);
       break;
     default:
@@ -602,8 +598,7 @@ static void cairo_elem(cairo_t *c, int bank_type, double x0, double y0,
 {
   switch (bank_type)
     {
-    case bank_type_edge_eth2lan:
-    case bank_type_edge_sat2lan:
+    case bank_type_edge:
       cairo_new_path(c);
       cairo_move_to (c, x0, y0);
       cairo_line_to (c, x1, y1);
@@ -638,7 +633,7 @@ static void on_item_paint_snf(CrItem *item, cairo_t *c)
   paint_select(c,flag,flag_trace,&myorange,&red,&lightmagenta);
   cairo_fill(c);
   cairo_arc (c, bitem->pbi.x0, bitem->pbi.y0, SNIFF_RAD/2, 0, 2*M_PI);
-  if (bitem->pbi.pbi_sat->snf_info.capture_on)
+  if (bitem->pbi.pbi_sat->topo_snf.capture_on)
     cairo_set_source_rgba (c, red.r, red.g, red.b, 1.0);
   else
     cairo_set_source_rgba (c, green.r, green.g, green.b, 1.0);
@@ -954,7 +949,7 @@ static void on_item_paint_c2c(CrItem *item, cairo_t *c)
   else
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_stroke_preserve(c);
-  if (!bitem->pbi.pbi_sat->c2c_info.is_peered)
+  if (!bitem->pbi.pbi_sat->topo_c2c.is_peered)
     cairo_set_source_rgba (c, lightred.r, lightred.g, lightred.b, 0.8);
   else
     cairo_set_source_rgba (c, lightgreen.r, lightgreen.g, lightgreen.b, 1.0);
@@ -1027,8 +1022,7 @@ static CrItem *on_item_test(CrItem *item, cairo_t *c, double x, double y)
   y0 = bitem->pbi.y0;
   y1 = bitem->pbi.y1;
   dist = bitem->pbi.dist;
-  if((bitem->bank_type == bank_type_edge_eth2lan) ||
-     (bitem->bank_type == bank_type_edge_sat2lan))
+  if(bitem->bank_type == bank_type_edge)
     edge_sensitivity_surface(c, x0, y0, x1, y1, dist); 
   else
     {
@@ -1081,8 +1075,7 @@ static gboolean on_item_calcb(CrItem *item, cairo_t *c,
   cairo_save(c);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_new_path(c);
-  if ((bitem->bank_type == bank_type_edge_eth2lan) ||
-      (bitem->bank_type == bank_type_edge_sat2lan))
+  if (bitem->bank_type == bank_type_edge)
     edge_sensitivity_surface(c, bitem->pbi.x0, bitem->pbi.y0, 
                              bitem->pbi.x1, bitem->pbi.y1, 
                              bitem->pbi.dist); 
@@ -1380,8 +1373,7 @@ void topo_get_absolute_coords(t_bank_item *bitem)
       bitem->pbi.position_y = y;
     break;
 
-    case bank_type_edge_eth2lan:
-    case bank_type_edge_sat2lan:
+    case bank_type_edge:
     break;
     default:
       KOUT("%d", bitem->bank_type);

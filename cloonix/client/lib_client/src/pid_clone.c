@@ -36,7 +36,6 @@
 
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "pid_clone.h"
 
@@ -408,15 +407,6 @@ void pid_clone_kill_all(void)
 }
 /*---------------------------------------------------------------------------*/
 
-static char *get_new_name(void)
-{
-  static char new_name[MAX_NAME_LEN];
-  memset(new_name, 0, MAX_NAME_LEN);
-  snprintf(new_name, MAX_NAME_LEN-1, "clone_%s", cloonix_get_name());
-  return new_name;
-}
-
-
 /*****************************************************************************/
 static int forked_fct(void *ptr)
 {
@@ -452,7 +442,6 @@ static int forked_fct(void *ptr)
         }
       }
     }
-  cloonix_set_name(get_new_name());
   cloonix_set_pid(getpid());
   ctx->fct(ctx->param_data_start);
   return 0;

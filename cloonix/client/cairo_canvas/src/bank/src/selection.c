@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "bank.h"
 #include "bank_item.h"
@@ -44,26 +43,19 @@ static int selectioned_resolve(t_bank_item *bitem)
           KOUT(" ");
         if (bitem->att_node->bank_type == bank_type_sat)
           {
-          if (bitem->att_node->pbi.mutype != musat_type_a2b) 
+          if (bitem->att_node->pbi.mutype != endp_type_a2b) 
             KERR("%s %d", bitem->name, bitem->att_node->pbi.mutype);
           else
             {
 
             KERR("%s %d  %d", bitem->name, bitem->att_node->pbi.mutype, bitem->num);
 
-            to_cloonix_switch_create_sat_edge(bitem->name, 
-                                              selectioned_lan->name, 
-                                              selectioned_lan->pbi.mutype, 
-                                              bitem->num);
+            to_cloonix_switch_create_edge(bitem->name, bitem->num, selectioned_lan->name); 
             }
           }
         else
           {
-          to_cloonix_switch_create_eth_edge(bitem->name, 
-                                             bitem->num, 
-                                             bitem->bank_type, 
-                                             selectioned_lan->name, 
-                                             selectioned_lan->pbi.mutype);
+          to_cloonix_switch_create_edge(bitem->name, bitem->num, selectioned_lan->name); 
           }
         selectioned_lan->pbi.flag = flag_normal;
         selectioned_lan = NULL;
@@ -75,11 +67,9 @@ static int selectioned_resolve(t_bank_item *bitem)
         {
         if ((!selectioned_lan->name) || (!strlen(selectioned_lan->name)))
           KOUT(" ");
-        if (selectioned_lan->pbi.mutype != musat_type_a2b)
+        if (selectioned_lan->pbi.mutype != endp_type_a2b)
           {
-          to_cloonix_switch_create_sat_edge(bitem->name, 
-                                            selectioned_lan->name, 
-                                            selectioned_lan->pbi.mutype, 0);
+          to_cloonix_switch_create_edge(bitem->name, 0, selectioned_lan->name); 
           }
         selectioned_lan->pbi.flag = flag_normal;
         selectioned_lan = NULL;

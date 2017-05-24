@@ -16,9 +16,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
-typedef void (*t_evt_stats_eth_cb)(int tid, char *name, int eth,
-                                   t_stats_counts *stats_counts, int status);
-typedef void (*t_evt_stats_sat_cb)(int tid, char *name,
+typedef void (*t_evt_stats_endp_cb)(int tid, char *name, int num,
                                    t_stats_counts *stats_counts, int status);
 typedef void (*t_evt_stats_sysinfo_cb)(int tid, char *name,
                                        t_stats_sysinfo *stats, 
@@ -31,7 +29,7 @@ typedef void (*t_mud_cli_dialog_cb)(int tid, char *name, int num,
 typedef void (*t_list_commands_cb)(int tid, int qty, t_list_commands *list);
 typedef void (*t_progress_txt_cb)(int status, int last, char *txt);
 typedef void (*t_end_cb)(int tid, int status, char *err);
-typedef void (*t_get_path_cb)(int tid, t_cloonix_config *conf);
+typedef void (*t_get_path_cb)(int tid, t_topo_clc *conf);
 typedef void (*t_print_cb)(int tid, char *str);
 typedef void (*t_topo_cb)(int tid, t_topo_info *topo);
 typedef void (*t_sys_cb)(int tid, t_sys_info *sys);
@@ -39,8 +37,7 @@ typedef void (*t_topo_small_event_cb)(int tid, char *name,
                                       char *p1, char *p2, int evt);
 typedef void (*t_pid_cb)(int tid, int qty, t_pid_lst *pid);
 
-typedef void (*t_eventfull_cb)(int nb_vm, t_eventfull_vm *vm,
-                               int nb_sat, t_eventfull_sat *sat);
+typedef void (*t_eventfull_cb)(int nb_endp, t_eventfull_endp *endp);
 typedef void (*t_hop_event_cb)(int tid, char *name, char *txt);
 typedef void (*t_hop_name_list_cb)(int nb, t_hop_list *list);
 
@@ -76,8 +73,8 @@ void client_del_vm(int tid, t_end_cb cb, char *nm);
 void client_add_sat(int tid, t_end_cb cb, char *name, 
                     int mutype, t_c2c_req_info *c2c_req_info);
 void client_del_sat(int tid, t_end_cb cb, char *name);
-void client_add_lan_sat(int tid, t_end_cb cb, char *name, char *lan, int num); 
-void client_del_lan_sat(int tid, t_end_cb cb, char *name, char *lan, int num); 
+void client_add_lan_endp(int tid, t_end_cb cb, char *name, int num, char *lan); 
+void client_del_lan_endp(int tid, t_end_cb cb, char *name, int num, char *lan); 
 void client_del_all(int tid, t_end_cb cb);
 void client_kill_daemon(int tid, t_end_cb cb);
 
@@ -90,10 +87,8 @@ void client_topo_unsub(void);
 void client_sys_sub(int tid, t_sys_cb cb);
 void client_sys_unsub(void);
 
-void client_evt_stats_eth_sub(int tid, char *name, int eth, int sub, 
-                              t_evt_stats_eth_cb  cb);
-void client_evt_stats_sat_sub(int tid, char *name, int sub, 
-                              t_evt_stats_sat_cb  cb);
+void client_evt_stats_endp_sub(int tid, char *name, int num, int sub, 
+                               t_evt_stats_endp_cb  cb);
 void client_evt_stats_sysinfo_sub(int tid, char *name, int sub, 
                                   t_evt_stats_sysinfo_cb  cb);
 

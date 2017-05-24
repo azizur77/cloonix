@@ -72,27 +72,26 @@ typedef struct t_qstats
                        "</blkd_item_sub>"
 
 #define BLKD_ITEM      "<blkd_item>\n"\
-                       "  <name> %s </name>\n"\
-                       "  <sock> %s </sock>\n"\
-                       "  <rank_name> %s </rank_name>\n"\
-                       "  <rank> %d </rank>\n"\
-                       "  <pid> %d </pid>\n"\
-                       "  <llid> %d </llid>\n"\
-                       "  <fd> %d </fd>\n"\
-                       "  <sel_tx> %d </sel_tx>\n"\
-                       "  <sel_rx> %d </sel_rx>\n"\
-                       "  <fifo_tx> %d </fifo_tx>\n"\
-                       "  <fifo_rx> %d </fifo_rx>\n"\
-                       "  <queue_tx> %d <queue_tx>\n"\
-                       "  <queue_rx> %d <queue_rx>\n"\
-                       "  <bandwidth_tx> %d <bandwidth_tx>\n"\
-                       "  <bandwidth_rx> %d <bandwidth_rx>\n"\
-                       "  <stop_tx> %d <stop_tx>\n"\
-                       "  <stop_rx> %d <stop_rx>\n"\
-                       "  <flow_ctrl_tx> %d <flow_ctrl_tx>\n"\
-                       "  <flow_ctrl_rx> %d <flow_ctrl_rx>\n"\
-                       "  <drop_tx> %lld <drop_tx>\n"\
-                       "  <drop_rx> %lld <drop_rx>\n"\
+                       "  sock:%s \n"\
+                       "  rank_name:%s rank_num:%d \n"\
+                       "  rank:%d \n"\
+                       "  pid:%d \n"\
+                       "  llid:%d \n"\
+                       "  fd:%d \n"\
+                       "  sel_tx:%d \n"\
+                       "  sel_rx:%d \n"\
+                       "  fifo_tx:%d \n"\
+                       "  fifo_rx:%d \n"\
+                       "  queue_tx:%d \n"\
+                       "  queue_rx:%d \n"\
+                       "  bandwidth_tx:%d \n"\
+                       "  bandwidth_rx:%d \n"\
+                       "  stop_tx:%d \n"\
+                       "  stop_rx:%d \n"\
+                       "  flow_ctrl_tx:%d \n"\
+                       "  flow_ctrl_rx:%d \n"\
+                       "  drop_tx:%lld \n"\
+                       "  drop_rx:%lld \n"\
                        "</blkd_item>"
 
 
@@ -138,14 +137,12 @@ typedef struct t_qstats
 /*---------------------------------------------------------------------------*/
 #define HOP_PID_REQ   "<hop_req_pid>\n"\
                        "  <tid> %d </tid>\n"\
-                       "  <sec_offset> %d </sec_offset>\n"\
-                       "  <name> %s </name>\n"\
+                       "  name:%s num:%d \n"\
                        "</hop_req_pid>"
 /*---------------------------------------------------------------------------*/
 #define HOP_PID_RESP  "<hop_resp_pid>\n"\
                        "  <tid> %d </tid>\n"\
-                       "  <name> %s </name>\n"\
-                       "  <pid> %d </pid>\n"\
+                       "  name:%s num:%d toppid:%d pid:%d \n"\
                        "</hop_resp_pid>"
 /*---------------------------------------------------------------------------*/
 #define HOP_EVT_O "<hop_event_txt>\n"\
@@ -182,11 +179,13 @@ void rpct_send_cli_resp(void *ptr, int llid, int tid,
 void rpct_recv_cli_resp(void *ptr, int llid, int tid,
                      int cli_llid, int cli_tid, char *line);
 /*---------------------------------------------------------------------------*/
-void rpct_send_pid_req(void *ptr, int llid, int tid, int secoffset, char *name);
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int secoffset, char *name);
+void rpct_send_pid_req(void *ptr, int llid, int tid, char *name, int num);
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num);
 /*---------------------------------------------------------------------------*/
-void rpct_send_pid_resp(void *ptr, int llid, int tid, char *name, int pid);
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid);
+void rpct_send_pid_resp(void *ptr, int llid, int tid,
+                        char *name, int num, int toppid, int pid);
+void rpct_recv_pid_resp(void *ptr, int llid, int tid,
+                        char *name, int num, int toppid, int pid);
 /*---------------------------------------------------------------------------*/
 void rpct_send_hop_sub(void *ptr, int llid, int tid, int flags_hop);
 void rpct_recv_hop_sub(void *ptr, int llid, int tid, int flags_hop);
@@ -213,7 +212,8 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item);
 void rpct_clean_all(void *ptr);
 void rpct_redirect_string_tx(void *ptr, t_rpct_tx rpc_tx);
 void rpct_send_peer_flow_control(void *ptr, int llid,
-                                 char *name, int rank, int stop);
-void rpct_init(void *ptr, t_rpct_tx rpc_tx, char *name);
+                                 char *name, int num,
+                                 int rank, int stop);
+void rpct_init(void *ptr, t_rpct_tx rpc_tx);
 /****************************************************************************/
 

@@ -29,16 +29,18 @@ void delete_bitem(t_bank_item *bitem);
 void selectioned_item_init(void);
 void selectioned_item_delete(t_bank_item *bitem);
 /*--------------------------------------------------------------------------*/
-int add_new_node(char *name, char *ip, char *kernel, char *rootfs_sod,
-                 char *rootfs_backing_file,  char *install_cdrom, 
-                 char *added_cdrom, char *added_disk, int bank_type, 
+
+int add_new_node(char *name, char *kernel, char *rootfs_used,
+                 char *rootfs_backing,  char *install_cdrom, 
+                 char *added_cdrom, char *added_disk,
                  double x, double y, int hidden_on_graph, 
                  int color_choice, int vm_id, int vm_config_flags);
-int add_new_eth(char *name, int num, int type, int mutype,
+
+int add_new_eth(char *name, int num,
                  double x, double y, int hidden_on_graph);
 int add_new_lan(char *name, double x, double y, int hidden_on_graph);
 int add_new_sat(char *name, int mutype,
-                t_snf_info *snf_info, t_c2c_info *c2c_info,
+                t_topo_c2c *c2c, t_topo_snf *snf,
                 double x, double y, int hidden_on_graph);
 void add_new_edge(t_bank_item *bi_eth, t_bank_item *bi_lan, int eorig);
 

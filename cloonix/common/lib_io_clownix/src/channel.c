@@ -470,7 +470,7 @@ int heartbeat_mngt(int type)
   if (type == 1)
     heart_count++;
   my_gettimeofday(&cur);
-  current_time.tv_sec = cur.tv_sec - cloonix_get_sec_offset();
+  current_time.tv_sec = cur.tv_sec;
   current_time.tv_usec = cur.tv_usec;
   delta = delta_beat(&cur, &last_heartbeat);
   if ((type == 0) || (delta >= (glob_heartbeat_ms_timeout*10)))

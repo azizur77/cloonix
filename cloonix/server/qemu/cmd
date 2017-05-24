@@ -79,8 +79,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-tcmalloc
                      --disable-jemalloc"
 
-#                     --disable-replication"
-
 
 ./configure  $CONFIGURATION_OPTS
 

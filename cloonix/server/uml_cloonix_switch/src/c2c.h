@@ -17,14 +17,10 @@
 /*****************************************************************************/
 int c2c_create_master_begin(char *name, int ip_slave, int port_slave, 
                             char *passwd_slave);
-void c2c_add_lan(int llid, int tid, char *name, char *lan);
-void c2c_del_lan(int llid, int tid, char *name, char *lan);
-
 void rx_c2c_resp_idx_from_doors(char *name, int local_idx);
 void rx_c2c_event_conx_from_doors(char *name, int fd, int status);
 int c2c_exists(char *name);
 void c2c_free_all(void);
-void c2c_free_tux(char *tuxname);
 void init_c2c(void);
 /*--------------------------------------------------------------------------*/
 

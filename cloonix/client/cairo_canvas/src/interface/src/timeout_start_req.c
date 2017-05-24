@@ -21,7 +21,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
@@ -63,39 +62,6 @@ static void gene_delete_item_req(int bank_type, char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void gene_create_edge_req(int bank_type, char *name, 
-                                 char *lan, int mutype, int num)
-{
-  t_edge_req *pa;
-  pa=(t_edge_req *)clownix_malloc(sizeof(t_edge_req), 12);
-  memset(pa, 0, sizeof(t_edge_req));
-  pa->bank_type = bank_type;
-  strncpy(pa->name, name, MAX_PATH_LEN-1);
-  strncpy(pa->lan, lan, MAX_NAME_LEN-1);
-  pa->mutype = mutype;
-  pa->num = num;
-  clownix_timeout_add(1, timer_create_edge_req, (void *)pa, NULL, NULL);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void gene_delete_edge_req(int bank_type, char *name, 
-                                 char *lan, int mutype, int num)
-{
-  t_edge_req *pa;
-  pa=(t_edge_req *)clownix_malloc(sizeof(t_edge_req), 12);
-  memset(pa, 0, sizeof(t_edge_req));
-  pa->bank_type = bank_type;
-  strncpy(pa->name, name, MAX_NAME_LEN-1);
-  strncpy(pa->lan, lan, MAX_NAME_LEN-1);
-  pa->mutype = mutype;
-  pa->num = num;
-  clownix_timeout_add(1, timer_delete_edge_req, (void *)pa, NULL, NULL);
-}
-/*--------------------------------------------------------------------------*/
-
-
-/****************************************************************************/
 void to_cloonix_switch_create_node(double x, double y,
                                    double *tx, double *ty)
 {
@@ -113,8 +79,7 @@ void to_cloonix_switch_create_node(double x, double y,
 /****************************************************************************/
 void to_cloonix_switch_create_sat(char *name, int mutype, 
                                   t_c2c_req_info *c2c_req_info,
-                                  double x, double y,
-                                  double xa, double ya, double xb, double yb)
+                                  double x, double y)
 {
   t_item_req *pa;
   pa = (t_item_req *) clownix_malloc(sizeof(t_item_req), 12);
@@ -126,10 +91,6 @@ void to_cloonix_switch_create_sat(char *name, int mutype,
     memcpy(&(pa->c2c_req_info), c2c_req_info, sizeof(t_c2c_req_info));
   pa->x = x;
   pa->y = y;
-  pa->xa = xa;
-  pa->ya = ya;
-  pa->xb = xb;
-  pa->yb = yb;
   clownix_timeout_add(1, timer_create_item_req, (void *)pa, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
@@ -168,58 +129,28 @@ void to_cloonix_switch_delete_lan(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void to_cloonix_switch_create_eth_edge(char *name, int num, int bank_type, 
-                                        char *lan, int mutype)
+void to_cloonix_switch_create_edge(char *name, int num, char *lan)
 {
-  t_edge_eth_req *pa;
-  pa=(t_edge_eth_req *)clownix_malloc(sizeof(t_edge_eth_req), 12);
-  memset(pa, 0, sizeof(t_edge_eth_req));
-  pa->bank_type = bank_type;
-  strncpy(pa->name, name, MAX_NAME_LEN-1);
-  strncpy(pa->lan, lan, MAX_NAME_LEN-1);
-  pa->mutype = mutype;
-  pa->num = num;
-  clownix_timeout_add(1,timer_create_edge_eth_req,(void *)pa, NULL, NULL);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void to_cloonix_switch_delete_eth_edge(char *name, int num, int bank_type,
-                                        char *lan)
-{
-  t_edge_eth_req *pa;
-  pa=(t_edge_eth_req *)clownix_malloc(sizeof(t_edge_eth_req), 12);
-  memset(pa, 0, sizeof(t_edge_eth_req));
-  pa->bank_type = bank_type;
+  t_edge_req *pa;
+  pa=(t_edge_req *)clownix_malloc(sizeof(t_edge_req), 12);
+  memset(pa, 0, sizeof(t_edge_req));
   strncpy(pa->name, name, MAX_NAME_LEN-1);
   strncpy(pa->lan, lan, MAX_NAME_LEN-1);
   pa->num = num;
-  clownix_timeout_add(1,timer_delete_edge_eth_req,(void *)pa, NULL, NULL);
+  clownix_timeout_add(1,timer_create_edge_req,(void *)pa, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void to_cloonix_switch_create_sat_edge(char *name, char *lan, 
-                                       int mutype, int num)
+void to_cloonix_switch_delete_edge(char *name, int num, char *lan)
 {
-  gene_create_edge_req(bank_type_edge_sat2lan, name, lan, mutype, num);
+  t_edge_req *pa;
+  pa=(t_edge_req *)clownix_malloc(sizeof(t_edge_req), 12);
+  memset(pa, 0, sizeof(t_edge_req));
+  strncpy(pa->name, name, MAX_NAME_LEN-1);
+  strncpy(pa->lan, lan, MAX_NAME_LEN-1);
+  pa->num = num;
+  clownix_timeout_add(1,timer_delete_edge_req,(void *)pa, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void to_cloonix_switch_delete_sat_edge(char *name, char *lan,
-                                       int mutype, int num)
-{
-  gene_delete_edge_req(bank_type_edge_sat2lan, name, lan, mutype, num);
-}
-/*--------------------------------------------------------------------------*/
-
-
-
-
-
-
-
-
-
 

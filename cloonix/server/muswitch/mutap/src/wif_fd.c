@@ -271,7 +271,7 @@ static int rx_from_wif(void *ptr, int llid, int fd)
         if (llid != g_llid_wif)
           KOUT(" ");
         bd->payload_len = len;
-        sock_fd_tx(all_ctx, 0, bd);
+        sock_fd_tx(all_ctx, bd);
         }
       else
         blkd_free(ptr, bd);

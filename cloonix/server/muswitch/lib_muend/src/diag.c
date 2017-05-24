@@ -37,7 +37,7 @@ int  raw_fd_open(t_all_ctx *all_ctx, char *tap_name);
 typedef struct t_timer_data
 {
   int timeout_mulan_id;
-  int idx;
+  int tidx;
   int num;
   char lan[MAX_NAME_LEN];
 } t_timer_data;
@@ -53,56 +53,12 @@ static void db_rpct_send_diag_msg(t_all_ctx *all_ctx,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int our_mutype_is_qemu(void *ptr)
-{
-  int result;
-  int our_mutype = blkd_get_our_mutype(ptr);
-  if (our_mutype == musat_type_eth)
-    {
-    result = 1;
-    }
-  else 
-  if ((our_mutype == musat_type_tap) ||
-      (our_mutype == musat_type_raw) ||
-      (our_mutype == musat_type_wif) ||
-      (our_mutype == musat_type_snf) ||
-      (our_mutype == musat_type_c2c) ||
-      (our_mutype == musat_type_nat) ||
-      (our_mutype == musat_type_a2b))
-    result = 0;
-  else
-    KOUT("%d", our_mutype);
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static int adjust_local_num_to_0_or_1(void *ptr, int num)
-{
-  int result;
-  if (our_mutype_is_qemu(ptr))
-    {
-    result = 0;
-    }
-  else
-    {
-    result = num;
-    }
-  if ((result != 0) && (result != 1))
-    KOUT("%d", result);
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-
-
-/*****************************************************************************/
 static void resp_send_mueth_con_ko(t_all_ctx *all_ctx, char *lan,
-                                   int num, int idx)
+                                   int num, int tidx)
 {
   char resp[MAX_PATH_LEN];
   int llid, is_blkd, cidx;
-  t_traf_sat *traf = &(all_ctx->g_traf[idx]);
+  t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   llid = traf->con_llid;
   if (llid)
     {
@@ -110,8 +66,8 @@ static void resp_send_mueth_con_ko(t_all_ctx *all_ctx, char *lan,
     if (cidx)
       {
       snprintf(resp, MAX_PATH_LEN-1, 
-               "cloonix_resp_connect_ko lan=%s sat=%s num=%d",     
-               lan, all_ctx->g_name, num);
+               "cloonix_resp_connect_ko lan=%s name=%s num=%d tidx=%d",     
+               lan, all_ctx->g_name, num, tidx);
       db_rpct_send_diag_msg(all_ctx, llid, traf->con_tid, resp);
       }
     else
@@ -125,24 +81,26 @@ static void resp_send_mueth_con_ko(t_all_ctx *all_ctx, char *lan,
 
 /*****************************************************************************/
 static void resp_send_mueth_con_ok(t_all_ctx *all_ctx, char *lan, 
-                                   int num, int idx)
+                                   int num, int tidx)
 {
   char resp[MAX_PATH_LEN];
   char savedlan[MAX_NAME_LEN];
-  int rank, llid, cidx, is_blkd;
-  t_traf_sat *traf = &(all_ctx->g_traf[idx]);
+  int rank, llid, cidx, is_blkd, savednum;
+  t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   llid = traf->con_llid;
   if (llid)
     {
     cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
     if (cidx)
       {
-      rank = blkd_get_rank((void *) all_ctx, traf->llid_traf, savedlan);
+      rank = blkd_get_rank((void *) all_ctx, traf->llid_traf, savedlan, &savednum);
       if (strcmp(savedlan, lan))
-        KERR("%s", lan);
+        KERR("%s %s", lan, savedlan);
+      if (num != savednum)
+        KERR("%s %d %d", lan, num, savednum);
       snprintf(resp, MAX_PATH_LEN-1, 
-               "cloonix_resp_connect_ok lan=%s sat=%s num=%d rank=%d",     
-               lan, all_ctx->g_name, num, rank);
+               "cloonix_resp_connect_ok lan=%s name=%s num=%d tidx=%d rank=%d",     
+               lan, all_ctx->g_name, num, tidx, rank);
       db_rpct_send_diag_msg(all_ctx, llid, traf->con_tid, resp);
       }
     else
@@ -155,84 +113,82 @@ static void resp_send_mueth_con_ok(t_all_ctx *all_ctx, char *lan,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int lan_diag(t_all_ctx *all_ctx, char *line, int *num, char *resp_lan)
+static int lan_diag(t_all_ctx *all_ctx, char *line, 
+                    int *num, int *tidx, char *resp_lan)
 {
-  int is_blkd, idx, result = 0;
+  int is_blkd, result = 0;
   char err[MAX_ERR_LEN];
   char lan[MAX_NAME_LEN];
-  char sat[MAX_NAME_LEN];
+  char name[MAX_NAME_LEN];
   char sock[MAX_PATH_LEN];
+  char opening[MAX_PATH_LEN];
   uint32_t rank;
   t_blkd *blkd;
-  t_traf_sat *traf;
+  t_traf_endp *traf;
   memset(err, 0, MAX_ERR_LEN);
   if (sscanf(line, 
-             "mulan_req_start lan=%s sat=%s num=%d rank=%d",
-             lan, sat, num, &rank) == 4)
+             "mulan_req_start lan=%s name=%s num=%d tidx=%d rank=%d",
+             lan, name, num, tidx, &rank) == 5)
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, *num);
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    resp_send_mueth_con_ok(all_ctx, lan, *num, idx);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
+    resp_send_mueth_con_ok(all_ctx, lan, *num, *tidx);
     }
   else if (sscanf(line, 
-                  "mulan_req_end lan=%s sat=%s num=%d rank=%d",
-                   lan, sat, num, &rank) == 4)
+           "mulan_req_end lan=%s name=%s num=%d tidx=%d rank=%d",
+           lan, name, num, tidx, &rank) == 5)
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, *num);
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    sock_fd_finish(all_ctx, idx);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
+    sock_fd_finish(all_ctx, *tidx);
     KERR("%s", line);
     }
   else if (sscanf(line, 
-                  "muend_resp_handshake_ok lan=%s sat=%s num=%d",
-                  lan, sat, num) == 3)
+           "muend_resp_handshake_ok lan=%s name=%s num=%d tidx=%d",
+           lan, name, num, tidx) == 4)
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, *num);
-    traf = &(all_ctx->g_traf[idx]);
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
+    traf = &(all_ctx->g_traf_endp[*tidx]);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
     if (!msg_exist_channel(all_ctx, traf->llid_lan, &is_blkd, __FUNCTION__))
-      KOUT("%s %s %d %d", lan, sat, *num, traf->llid_lan);
+      KOUT("%s %s %d %d", lan, name, *num, traf->llid_lan);
     if (strcmp(traf->con_name, lan))
       KOUT("%s %s", traf->con_name, lan);
     snprintf(resp_lan, MAX_RESP_LEN-1, 
-             "muend_req_rank lan=%s sat=%s num=%d",
-             lan, sat, *num);
+             "muend_req_rank lan=%s name=%s num=%d tidx=%d",
+             lan, name, *num, *tidx);
     }
   else if (sscanf(line, 
-                  "muend_resp_rank_alloc_ko lan=%s sat=%s num=%d",
-                  lan, sat, num) == 3)
+           "muend_resp_rank_alloc_ko lan=%s name=%s num=%d tidx=%d",
+           lan, name, num, tidx) == 4)
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, *num);
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    sock_fd_finish(all_ctx, idx);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
+    sock_fd_finish(all_ctx, *tidx);
     KERR("%s", line);
     }
   else if (sscanf(line, 
-           "muend_resp_rank_alloc_ok lan=%s sat=%s num=%d rank=%d traf=%s",
-           lan, sat, num, &rank, sock) == 5)
+     "muend_resp_rank_alloc_ok lan=%s name=%s num=%d tidx=%d rank=%d traf=%s",
+     lan, name, num, tidx, &rank, sock) == 6)
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, *num);
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    if (sock_fd_open(all_ctx, lan, idx, sock))
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
+    if (sock_fd_open(all_ctx, lan, *tidx, sock))
       {
-      sock_fd_finish(all_ctx, idx);
+      sock_fd_finish(all_ctx, *tidx);
       KERR("%s", line);
       }
     else
       {
-      traf = &(all_ctx->g_traf[idx]);
-      blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan);
-      blkd = blkd_create_tx_full_copy(strlen(all_ctx->g_name) + 1, 
-                                      all_ctx->g_name, 0, 0, 0);
+      traf = &(all_ctx->g_traf_endp[*tidx]);
+      blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan, 0);
+      memset(opening, 0, MAX_PATH_LEN);
+      snprintf(opening, MAX_PATH_LEN-1,"OPENING: name=%s num=%d",name,*num);
+      blkd = blkd_create_tx_full_copy(strlen(opening) + 1, opening, 0, 0, 0);
       blkd_put_tx((void *) all_ctx, 1, &(traf->llid_traf), blkd);
       snprintf(resp_lan, MAX_RESP_LEN-1, 
-               "muend_ack_rank lan=%s sat=%s num=%d rank=%d", 
-               lan, all_ctx->g_name, *num, rank); 
+               "muend_ack_rank lan=%s name=%s num=%d tidx=%d rank=%d", 
+               lan, all_ctx->g_name, *num, *tidx, rank); 
       }
     }
   else
@@ -264,15 +220,15 @@ void rpct_recv_evt_msg(void *ptr, int llid, int tid, char *line)
 
 /*****************************************************************************/
 static void send_req_handshake_to_mulan(t_all_ctx *all_ctx, 
-                                        char *lan, char *sat, 
-                                        int num, int idx)
+                                        char *lan, char *name, 
+                                        int num, int tidx)
 {
   char msg[MAX_PATH_LEN];
   memset(msg, 0, MAX_PATH_LEN);
   snprintf(msg, MAX_PATH_LEN-1, 
-           "muend_req_handshake lan=%s sat=%s num=%d",
-           lan, sat, num);
-  db_rpct_send_diag_msg(all_ctx, all_ctx->g_traf[idx].llid_lan, 0, msg);
+           "muend_req_handshake lan=%s name=%s num=%d tidx=%d",
+           lan, name, num, tidx);
+  db_rpct_send_diag_msg(all_ctx, all_ctx->g_traf_endp[tidx].llid_lan, 0, msg);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -293,10 +249,14 @@ void rpct_recv_hop_unsub(void *ptr, int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
-  setup_global_second_offset(sec_offset);
-  rpct_send_pid_resp(ptr, llid, tid, name, getpid());
+  t_all_ctx *all_ctx = (t_all_ctx *) ptr;
+  if (strcmp(name, all_ctx->g_name))
+    KERR("%s %s", name, all_ctx->g_name);
+  if (all_ctx->g_num != num)
+    KERR("%s %d %d", name, num, all_ctx->g_num);
+  rpct_send_pid_resp(ptr, llid, tid, name, num, cloonix_get_pid(), getpid());
 }
 /*---------------------------------------------------------------------------*/
 
@@ -304,19 +264,19 @@ void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
 static void fct_timeout_mulan(t_all_ctx *all_ctx, void *data)
 {
   t_timer_data *td = (t_timer_data *) data;
-  int id, idx;
-  t_traf_sat *traf;
+  int id, tidx;
+  t_traf_endp *traf;
   if (td == NULL)
     KOUT(" ");
-  idx = td->idx;
+  tidx = td->tidx;
   id = td->timeout_mulan_id;
-  if ((idx != 0) && (idx != 1))
-    KOUT("%d", idx);
-  traf = &(all_ctx->g_traf[idx]);
+  if ((tidx < 0) || (tidx > MAX_TRAF_ENDPOINT))
+    KOUT("%d", tidx);
+  traf = &(all_ctx->g_traf_endp[tidx]);
   if (id == traf->timeout_mulan_id)
     {
-    resp_send_mueth_con_ko(all_ctx, td->lan, td->num, td->idx);
-    sock_fd_finish(all_ctx, td->idx);
+    resp_send_mueth_con_ko(all_ctx, td->lan, td->num, td->tidx);
+    sock_fd_finish(all_ctx, td->tidx);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -333,18 +293,21 @@ static void rx_cb (t_all_ctx *all_ctx, int llid, int len, char *buf)
 static void err_cb (void *ptr, int llid, int err, int from)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
-  int is_blkd, idx = -1;
-  if (llid == all_ctx->g_traf[0].llid_lan)
-    idx = 0;
-  else if (llid == all_ctx->g_traf[1].llid_lan)
-    idx = 1;
-  else
-    KERR("%d %d %d", llid, all_ctx->g_traf[0].llid_lan, 
-                    all_ctx->g_traf[1].llid_lan);
+  int i, is_blkd, tidx = -1;
   if (msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__))
     msg_delete_channel(all_ctx, llid);
-  if (idx != -1)
-    all_ctx->g_traf[idx].llid_lan = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    if (llid == all_ctx->g_traf_endp[i].llid_lan)
+      {
+      tidx = i;
+      break;
+      }
+    }
+  if (tidx != -1)
+    all_ctx->g_traf_endp[tidx].llid_lan = 0;
+  else
+    KERR(" ");
 }
 /*---------------------------------------------------------------------------*/
 
@@ -379,20 +342,19 @@ static int check_and_set_uid(void)
 
 /*****************************************************************************/
 static void connect_req_process(void *ptr, int llid, int tid, 
-                               char *resp_cloonix,
-                               char *sock, char *lan, 
-                               char *sat, int num)
+                               char *resp_cloonix, char *sock, char *lan, 
+                               char *name, int num, int tidx)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
-  int is_blkd, idx = adjust_local_num_to_0_or_1(ptr, num);
-  t_traf_sat *traf = &(all_ctx->g_traf[idx]);
+  int is_blkd;
+  t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   t_timer_data *td;
   if (msg_exist_channel(all_ctx, traf->llid_lan, &is_blkd, __FUNCTION__))
     {
     snprintf(resp_cloonix, MAX_PATH_LEN-1,
-             "cloonix_resp_connect_ko lan=%s sat=%s num=%d",
-             lan, sat, num);
-    KERR("%s %s", sat, lan);
+             "cloonix_resp_connect_ko lan=%s name=%s num=%d tidx=%d",
+             lan, name, num, tidx);
+    KERR("%s %s", name, lan);
     }
   else
     {
@@ -400,15 +362,15 @@ static void connect_req_process(void *ptr, int llid, int tid,
     if (traf->llid_lan == 0)
       {
       snprintf(resp_cloonix, MAX_PATH_LEN-1,
-               "cloonix_resp_connect_ko lan=%s sat=%s num=%d",
-               lan, sat, num);
+               "cloonix_resp_connect_ko lan=%s name=%s num=%d tidx=%d",
+               lan, name, num, tidx);
       KERR("%s", sock);
       }
     else
       {
       td = (t_timer_data *) malloc(sizeof(t_timer_data));
       memset(td, 0, sizeof(t_timer_data));
-      td->idx = idx;
+      td->tidx = tidx;
       td->num = num;
       strncpy(td->lan, lan, MAX_NAME_LEN-1);
       td->timeout_mulan_id = traf->timeout_mulan_id;
@@ -417,7 +379,7 @@ static void connect_req_process(void *ptr, int llid, int tid,
       strncpy(traf->con_name, lan, MAX_NAME_LEN-1);
       traf->con_llid = llid;
       traf->con_tid = tid;
-      send_req_handshake_to_mulan(all_ctx, lan, sat, num, idx);
+      send_req_handshake_to_mulan(all_ctx, lan, name, num, tidx);
       }
     }
 }
@@ -431,8 +393,8 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
   char resp_lan[MAX_PATH_LEN];
   char sock[MAX_PATH_LEN];
   char lan[MAX_NAME_LEN];
-  char sat[MAX_NAME_LEN];
-  int idx, num=-1, cloonix_llid;
+  char name[MAX_NAME_LEN];
+  int tidx, num=-1, cloonix_llid;
 
   memset(resp_cloonix, 0, MAX_PATH_LEN);
   memset(resp_lan, 0, MAX_PATH_LEN);
@@ -445,25 +407,25 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
     }
 /*---------------------------------------------------------------------------*/
   else if (sscanf(line,
-                  "cloonix_req_connect sock=%s lan=%s sat=%s num=%d",
-                   sock, lan, sat, &num) == 4)
+           "cloonix_req_connect sock=%s lan=%s name=%s num=%d tidx=%d",
+           sock, lan, name, &num, &tidx) == 5)
     {
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    connect_req_process(ptr, llid, tid, resp_cloonix, sock, lan, sat, num);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
+    connect_req_process(ptr, llid, tid, resp_cloonix, sock, lan, 
+                        name, num, tidx);
     }
 /*---------------------------------------------------------------------------*/
   else if (sscanf(line, 
-                  "cloonix_req_disconnect lan=%s sat=%s num=%d",
-                  lan, sat, &num) == 3)
+           "cloonix_req_disconnect lan=%s name=%s num=%d tidx=%d",
+           lan, name, &num, &tidx) == 4)
     {
-    if (strcmp(all_ctx->g_name, sat))
-      KOUT("%s %s", all_ctx->g_name, sat);
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, num);
+    if (strcmp(all_ctx->g_name, name))
+      KOUT("%s %s", all_ctx->g_name, name);
     snprintf(resp_cloonix, MAX_PATH_LEN-1, 
-             "cloonix_resp_disconnect_ok lan=%s sat=%s num=%d",     
-             lan, sat, num);
-    sock_fd_finish(all_ctx, idx);
+             "cloonix_resp_disconnect_ok lan=%s name=%s num=%d tidx=%d",     
+             lan, name, num, tidx);
+    sock_fd_finish(all_ctx, tidx);
     }
   else if (!mycmp(line, "cloonix_req_suidroot"))
     {
@@ -518,7 +480,7 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
     {
     snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_nat_ok");
     }
-  else if (lan_diag(all_ctx, line, &num, resp_lan))
+  else if (lan_diag(all_ctx, line, &num, &tidx, resp_lan))
     KERR("%s", line);
 /*---------------------------------------------------------------------------*/
   if (resp_cloonix[0])
@@ -532,11 +494,10 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
     }
   if (resp_lan[0])
     {
-    idx = adjust_local_num_to_0_or_1((void *) all_ctx, num);
-    if (!all_ctx->g_traf[idx].llid_lan)
+    if (!all_ctx->g_traf_endp[tidx].llid_lan)
       KOUT(" ");
-    if (all_ctx->g_traf[idx].llid_lan != llid)
-      KOUT("%d %d", all_ctx->g_traf[idx].llid_lan, llid);
+    if (all_ctx->g_traf_endp[tidx].llid_lan != llid)
+      KOUT("%d %d", all_ctx->g_traf_endp[tidx].llid_lan, llid);
     db_rpct_send_diag_msg(all_ctx, llid, 0, resp_lan);
     }
 }

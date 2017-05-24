@@ -55,7 +55,7 @@
                         "  <net_name> %s </net_name>\n"\
                         "  <name> %s </name>\n"\
                         "  <fd>  %d </fd>\n"\
-                        "  <musat_type>  %d </musat_type>\n"\
+                        "  <endp_type>  %d </endp_type>\n"\
                         "  <bin_path> %s </bin_path>\n"\
                         "  <sock> %s </sock>\n"\
                         "</c2c_clone_birth>\n"

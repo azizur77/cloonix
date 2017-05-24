@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 
 
@@ -111,14 +110,7 @@ void recv_c2c_del_lan(int llid, int tid, char *name, char *lan)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void recv_evt_stats_eth_sub(int llid, int tid, char *name, int eth, int sub)
-{
-  KOUT(" ");
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void recv_evt_stats_sat_sub(int llid, int tid, char *name, int sub)
+void recv_evt_stats_endp_sub(int llid, int tid, char *name, int num, int sub)
 {
   KOUT(" ");
 }
@@ -176,16 +168,16 @@ void recv_set_all_paths(int llid, int tid,   char *ios)
   KOUT(" ");
 }
 /*---------------------------------------------------------------------------*/
-void recv_add_vm(int llid, int tid, t_vm_params *vm_params)
+void recv_add_vm(int llid, int tid, t_topo_kvm *kvm)
 {
   KOUT(" ");
 }
 /*---------------------------------------------------------------------------*/
-void recv_add_lan_sat(int llid, int tid, char *name, char *lan, int num)
+void recv_add_lan_endp(int llid, int tid, char *name, int num, char *lan)
 {
   KOUT(" ");
 }
-void recv_del_lan_sat(int llid, int tid, char *name, char *lan, int num)
+void recv_del_lan_endp(int llid, int tid, char *name, int num, char *lan)
 {
   KOUT(" ");
 }
@@ -348,14 +340,15 @@ void recv_sav_vm_all(int llid, int tid, int type, char *path)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
   KOUT(" ");
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid)
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num,
+                        int toppid, int pid)
 {
   KOUT(" ");
 }

@@ -166,11 +166,6 @@ int use_hvc_console(int use_hvc)
   int len;
   if (use_hvc)
     {
-    sleep(1);
-    system("sed -i s\"/T9:23:/#T9:23:/\" /etc/inittab");
-    system("kill -HUP 1");
-    sleep(1);
-    system("sed -i s\"/#T9:23:/T9:23:/\" /etc/inittab");
     g_fd_tty = open_pty("/dev/hvc0");
     for (;;)
       {

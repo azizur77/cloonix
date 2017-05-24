@@ -120,7 +120,7 @@ void packet_output_to_slirptux(int len, char *data)
 {
   t_blkd *blkd;
   blkd = blkd_create_tx_full_copy(len, data, 0, 0, 0);
-  sock_fd_tx(get_all_ctx(), 0, blkd);
+  sock_fd_tx(get_all_ctx(), blkd);
 }
 /*---------------------------------------------------------------------------*/
 

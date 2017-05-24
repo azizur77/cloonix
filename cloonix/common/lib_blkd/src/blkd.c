@@ -128,7 +128,7 @@ static void set_llid2blkd(void *ptr, int llid, t_llid_blkd *val)
 
 /****************************************************************************/
 static t_llid_blkd *alloc_llid_blkd(void *ptr, int llid, int fd, 
-                                    char *sock_type, char *name, char *sock)
+                                    char *sock_type, char *sock)
 {
   t_blkd_ctx *ctx = get_blkd_ctx(ptr);
   t_llid_blkd *result = NULL;
@@ -150,8 +150,8 @@ static t_llid_blkd *alloc_llid_blkd(void *ptr, int llid, int fd,
     blkd_rx_init(&(result->fifo_rx));
     set_llid2blkd(ptr, llid, result);
     add_to_llid_list(llid, llid_list, llid_list_max);
-    strncpy(result->report_item.name, ctx->g_name, MAX_NAME_LEN);
     strncpy(result->report_item.rank_name, "undefined", MAX_NAME_LEN);
+    result->report_item.rank_num = -1;
     result->report_item.pid = ctx->g_pid;
     result->report_item.llid = result->llid;
     result->report_item.fd = result->fd;
@@ -177,6 +177,7 @@ static void free_llid_blkd(void *ptr, int llid)
     KERR("%d %d", llid, llid2blkd->llid);
   else
     {
+    blkd_fd_event_purge_tx(ptr, &(llid2blkd->fifo_tx));
     del_from_llid_list(llid, llid_list, *llid_list_max);
     free(llid2blkd);
     set_llid2blkd(ptr, llid, NULL);
@@ -291,8 +292,7 @@ static int new_connect_from_client(void *ptr, int listen_llid, int fd)
       if (llid > 0)
         {
         result = 0;
-        cur = alloc_llid_blkd(ptr, llid, fd_new, "Server", 
-                              listen_cur->name, listen_cur->sock);
+        cur = alloc_llid_blkd(ptr, llid, fd_new, "Server", listen_cur->sock); 
         if (!cur)
           KOUT(" ");
         cur->fd = fd_new;
@@ -309,7 +309,7 @@ static int new_connect_from_client(void *ptr, int listen_llid, int fd)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int blkd_server_listen(void *ptr, char *name, char *sock, t_fd_connect connect_cb) 
+int blkd_server_listen(void *ptr, char *sock, t_fd_connect connect_cb) 
 {
   t_llid_blkd *listen_cur;
   int llid=0, listen_fd;
@@ -322,8 +322,7 @@ int blkd_server_listen(void *ptr, char *name, char *sock, t_fd_connect connect_c
                                (char *) __FUNCTION__);
     if (llid > 0)
       {
-      listen_cur = alloc_llid_blkd(ptr, llid, listen_fd, 
-                                   "Listen", name, sock);
+      listen_cur = alloc_llid_blkd(ptr, llid, listen_fd, "Listen", sock);
       if (!listen_cur)
         KOUT(" ");
       listen_cur->fd = listen_fd;
@@ -359,7 +358,7 @@ void blkd_server_set_callbacks(void *ptr, int llid,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int blkd_client_connect(void *ptr, char *name, char *sock,
+int blkd_client_connect(void *ptr, char *sock,
                              t_blkd_rx_cb rx_cb,
                              t_fd_error err_cb)
 {
@@ -374,7 +373,7 @@ int blkd_client_connect(void *ptr, char *name, char *sock,
                                (char *) __FUNCTION__);
     if (llid > 0)
       {
-      cur = alloc_llid_blkd(ptr, llid, fd, "Client", name, sock); 
+      cur = alloc_llid_blkd(ptr, llid, fd, "Client", sock); 
       if (!cur)
         KOUT(" ");
       if (!rx_cb)
@@ -639,16 +638,16 @@ void blkd_free(void *ptr, t_blkd *blkd)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int blkd_watch_fd(void *ptr, char *name, int fd,
+int blkd_watch_fd(void *ptr, char *strident, int fd,
                   t_blkd_rx_cb rx_cb,
                   t_fd_error err_cb)
 {
   t_llid_blkd *cur;
   int llid;
-  if (!name)
+  if (!strident)
     KOUT(" ");
-  if ((strlen(name) < 2) || (strlen(name) >= MAX_PATH_LEN))
-    KOUT("%s", name);
+  if ((strlen(strident) < 2) || (strlen(strident) >= MAX_PATH_LEN))
+    KOUT("%s", strident);
   llid = blkd_channel_create(ptr, fd,
                              rx_blkd_channel,
                              tx_blkd_channel,
@@ -656,7 +655,7 @@ int blkd_watch_fd(void *ptr, char *name, int fd,
                              (char *) __FUNCTION__);
   if (llid > 0)
     {
-    cur = alloc_llid_blkd(ptr, llid, fd, "Watch_fd", name, name);
+    cur = alloc_llid_blkd(ptr, llid, fd, "Watch_fd", strident);
     if (!cur)
       KOUT(" ");
     if (!rx_cb)
@@ -875,7 +874,7 @@ int blkd_get_llid_with_rank(void *ptr, int rank)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void blkd_set_rank(void *ptr, int llid, int rank, char *name)
+void blkd_set_rank(void *ptr, int llid, int rank, char *name, int num)
 {
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
   if (!cur)
@@ -884,13 +883,14 @@ void blkd_set_rank(void *ptr, int llid, int rank, char *name)
     {
     memset(cur->report_item.rank_name, 0, MAX_NAME_LEN);
     strncpy(cur->report_item.rank_name, name, MAX_NAME_LEN-1);
+    cur->report_item.rank_num = num;
     cur->report_item.rank = rank;
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int blkd_get_rank(void *ptr, int llid, char *name)
+int blkd_get_rank(void *ptr, int llid, char *name, int *num)
 {
   int result = 0;
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
@@ -900,6 +900,7 @@ int blkd_get_rank(void *ptr, int llid, char *name)
     {
     memset(name, 0, MAX_NAME_LEN);
     strncpy(name, cur->report_item.rank_name, MAX_NAME_LEN-1);
+    *num = cur->report_item.rank_num;
     result = cur->report_item.rank;
     }
   return result;
@@ -950,7 +951,7 @@ void blkd_drop_rx_counter_increment(void *ptr, int llid, int val)
 void blkd_heartbeat(void *ptr)
 {
   t_llid_blkd *cur;
-  int rank, llid, i, *llid_list = get_llid_blkd_list(ptr);
+  int num, rank, llid, i, *llid_list = get_llid_blkd_list(ptr);
   int llid_list_max = get_llid_blkd_list_max(ptr);
   char name[MAX_NAME_LEN];
   for (i=0; i < llid_list_max; i++)
@@ -966,9 +967,9 @@ void blkd_heartbeat(void *ptr)
           cur->fifo_rx.dist_flow_control_count -= 1;
           if (cur->fifo_rx.dist_flow_control_count == 0) 
             {
-            rank = blkd_get_rank(ptr, llid, name);
+            rank = blkd_get_rank(ptr, llid, name, &num);
             cur->fifo_rx.dist_flow_control_on = 0;
-            blkd_rx_dist_flow_control(ptr, name, rank, 0);
+            blkd_rx_dist_flow_control(ptr, name, num, rank, 0);
             }
           }
 
@@ -1016,27 +1017,21 @@ void blkd_tx_local_flow_control(void *ptr, int llid, int stop)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void blkd_rx_dist_flow_control(void *ptr, char *name, int rank, int stop)
+void blkd_rx_dist_flow_control(void *ptr, char *name, int num, 
+                               int rank, int stop)
 {
   t_blkd_ctx *ctx = get_blkd_ctx(ptr);
-  ctx->dist_flow_ctrl(ptr, ctx->g_cloonix_llid, name, rank, stop);
+  ctx->dist_flow_ctrl(ptr, ctx->g_cloonix_llid, name, num, rank, stop);
 }
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void blkd_init(void *ptr, char *name,
-               t_fd_local_flow_ctrl lfc_tx,
-               t_fd_local_flow_ctrl lfc_rx,
-               t_fd_dist_flow_ctrl dfc)
+void blkd_init(void *ptr, t_fd_local_flow_ctrl lfc_tx,
+                          t_fd_local_flow_ctrl lfc_rx,
+                          t_fd_dist_flow_ctrl dfc)
 {
   t_all_ctx_head *ctx_head;
   t_blkd_ctx *ctx;
-  if (!name)
-    KOUT(" ");
-  if ((strlen(name) < 2) || (strlen(name) >= MAX_NAME_LEN))
-    KOUT("%s", name);
-  cloonix_set_name(name);
-  cloonix_set_pid(getpid());
   if (!ptr) 
     {
     g_blkd_ctx = (t_blkd_ctx *) malloc(sizeof(t_blkd_ctx));
@@ -1049,7 +1044,6 @@ void blkd_init(void *ptr, char *name,
     ctx = ctx_head->blkd_ctx;
     }
   memset(ctx, 0, sizeof(t_blkd_ctx));
-  strncpy(ctx->g_name, name, MAX_NAME_LEN-1);
   ctx->g_pid = (int) getpid();
   ctx->local_flow_ctrl_tx = lfc_tx;
   ctx->local_flow_ctrl_rx = lfc_rx;

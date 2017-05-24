@@ -24,7 +24,6 @@
 #include <signal.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_daemon.h"
 #include "event_subscriber.h"
@@ -35,10 +34,8 @@
 #include "llid_trace.h"
 #include "file_read_write.h"
 #include "lan_to_name.h"
-#include "mueth_mngt.h"
-#include "musat_mngt.h"
-#include "mueth_events.h"
-#include "musat_events.h"
+#include "endp_mngt.h"
+#include "endp_evt.h"
 #include "automates.h"
 #include "hop_event.h"
 
@@ -56,7 +53,7 @@ enum {
 /****************************************************************************/
 typedef struct t_zombie_kill
 {
-  char name[MAX_NAME_LEN];
+  char lan[MAX_NAME_LEN];
   int pid_to_kill;
   int count;
   struct t_zombie_kill *prev;
@@ -68,17 +65,15 @@ typedef struct t_zombie_kill
 /****************************************************************************/
 typedef struct t_mulan
 {
-  char name[MAX_NAME_LEN];
+  char lan[MAX_NAME_LEN];
   char sock[MAX_PATH_LEN];
-  char key[MAX_PATH_LEN];
   char traf[MAX_PATH_LEN];
   int llid;
   int clone_start_pid;
   int pid;
   int traffic_lan_link_state;
-  char start_vm[MAX_NAME_LEN];
-  int  start_eth;
-  char start_sat[MAX_NAME_LEN];
+  char name[MAX_NAME_LEN];
+  int  num;
   int periodic_count;
   struct t_mulan *prev;
   struct t_mulan *next;
@@ -88,7 +83,7 @@ typedef struct t_mulan
 /****************************************************************************/
 typedef struct t_mulan_arg
 {
-  char name[MAX_NAME_LEN];
+  char lan[MAX_NAME_LEN];
   char sock[MAX_PATH_LEN];
 } t_mulan_arg;
 /*--------------------------------------------------------------------------*/
@@ -99,7 +94,7 @@ static t_zombie_kill *g_head_zombie;
 
 
 /****************************************************************************/
-static int try_rpct_send_diag_msg(char *name, int llid, int pid, char *msg)
+static int try_rpct_send_diag_msg(int llid, int pid, char *msg)
 {
   int result = -1;
   if (llid)
@@ -116,10 +111,10 @@ static int try_rpct_send_diag_msg(char *name, int llid, int pid, char *msg)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_mulan *mulan_find_with_name(char *name)
+static t_mulan *mulan_find_with_name(char *lan)
 {
   t_mulan *cur = g_head_mulan;
-  while(cur && (strcmp(cur->name, name)))
+  while(cur && (strcmp(cur->lan, lan)))
     cur = cur->next;
   return cur;
 }
@@ -140,21 +135,21 @@ int mulan_exists(char *lan)
 static void timer_zombie_kill(void *data)
 {
   t_zombie_kill *zk = (t_zombie_kill *) data;
-  if (mulan_exists(zk->name))
+  if (mulan_exists(zk->lan))
     {
-    KERR("Retime for zombie: %s", zk->name);
+    KERR("Retime for zombie: %s", zk->lan);
     clownix_timeout_add(500, timer_zombie_kill, (void *) zk, NULL, NULL);
     zk->count += 1;
     if (zk->count > 3)
       {
       if (!zk->pid_to_kill)
-        KERR("%s", zk->name);
+        KERR("%s", zk->lan);
       else
         {
         if (!kill(zk->pid_to_kill, SIGTERM))
-          KERR("Emergency SIGTERM kill for %s", zk->name);
+          KERR("Emergency SIGTERM kill for %s", zk->lan);
         else
-          KERR("Fail Emergency SIGTERM kill for %s", zk->name);
+          KERR("Fail Emergency SIGTERM kill for %s", zk->lan);
         }
       }
     }
@@ -172,32 +167,31 @@ static void timer_zombie_kill(void *data)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_zombie_kill *zombie_find_with_name(char *name)
+static t_zombie_kill *zombie_find_with_name(char *lan)
 {
   t_zombie_kill *cur = g_head_zombie;
-  while(cur && (strcmp(cur->name, name)))
+  while(cur && (strcmp(cur->lan, lan)))
     cur = cur->next;
   return cur;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void trigger_zombie_kill(char *name, int llid, int pid_to_kill)
+static void trigger_zombie_kill(char *lan, int llid, int pid_to_kill)
 {
-  t_zombie_kill *zk = zombie_find_with_name(name);
+  t_zombie_kill *zk = zombie_find_with_name(lan);
   if (zk)
     {
     if (zk->pid_to_kill != pid_to_kill)
-      KERR("%s %d %d", name, zk->pid_to_kill, pid_to_kill);
+      KERR("%s %d %d", lan, zk->pid_to_kill, pid_to_kill);
     }
   else
     {
-    mueth_event_mulan_death(name);
-    musat_event_mulan_death(name);
-    try_rpct_send_diag_msg(name, llid, pid_to_kill, "cloonix_req_quit");
+    endp_mulan_death(lan);
+    try_rpct_send_diag_msg(llid, pid_to_kill, "cloonix_req_quit");
     zk = (t_zombie_kill *) clownix_malloc(sizeof(t_zombie_kill), 4);
     memset(zk, 0,  sizeof(t_zombie_kill));
-    strncpy(zk->name, name, MAX_NAME_LEN-1);
+    strncpy(zk->lan, lan, MAX_NAME_LEN-1);
     zk->pid_to_kill = pid_to_kill;
     if (g_head_zombie)
       g_head_zombie->prev = zk;
@@ -212,16 +206,16 @@ static void trigger_zombie_kill(char *name, int llid, int pid_to_kill)
 static void trace_alloc(t_mulan *mulan)
 {
   char *sock = mulan->sock;
-  char *name = mulan->name;
+  char *lan = mulan->lan;
   int llid;
   llid = string_client_unix(sock, uml_clownix_switch_error_cb, 
                                   uml_clownix_switch_rx_cb, "mulan");
   if (llid)
     {
     mulan->llid = llid;
-    if (hop_event_alloc(llid, type_hop_mulan, name, 0))
-       KERR("BAD HOP CONNECT %s", name);
-    llid_trace_alloc(llid, name, 0, 0, type_llid_trace_mulan);
+    if (hop_event_alloc(llid, type_hop_mulan, lan, 0))
+       KERR("BAD HOP CONNECT %s", lan);
+    llid_trace_alloc(llid, lan, 0, 0, type_llid_trace_mulan);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -239,17 +233,17 @@ static t_mulan *mulan_find_with_llid(int llid)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int mulan_can_be_found_with_llid(int llid, char *name)
+int mulan_can_be_found_with_llid(int llid, char *lan)
 {
   t_mulan *cur = g_head_mulan;
-  memset(name, 0, MAX_NAME_LEN);
+  memset(lan, 0, MAX_NAME_LEN);
   if ((llid <1) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%d", llid);
   while(cur && (cur->llid != llid))
     cur = cur->next;
   if (cur)
     {
-    strncpy(name, cur->name, MAX_NAME_LEN-1); 
+    strncpy(lan, cur->lan, MAX_NAME_LEN-1); 
     return 1;
     }
   else
@@ -258,10 +252,10 @@ int mulan_can_be_found_with_llid(int llid, char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int mulan_can_be_found_with_name(char *name)
+int mulan_can_be_found_with_name(char *lan)
 {
   int result = 0;
-  t_mulan *cur = mulan_find_with_name(name);
+  t_mulan *cur = mulan_find_with_name(lan);
   if (cur)
     {
     if (msg_exist_channel(cur->llid))
@@ -272,45 +266,30 @@ int mulan_can_be_found_with_name(char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static char *get_key_path(char *name)
+static char *get_traf_path(char *lan)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path,MAX_PATH_LEN-1,"%s/%s",utils_get_muswitch_key_dir(),name);
+  snprintf(path, MAX_PATH_LEN-1, "%s/%s", utils_get_muswitch_traf_dir(), lan);
   return path;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static char *get_traf_path(char *name)
-{
-  static char path[MAX_PATH_LEN];
-  memset(path, 0, MAX_PATH_LEN);
-  snprintf(path,MAX_PATH_LEN-1,"%s/%s",utils_get_muswitch_traf_dir(),name);
-  return path;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static t_mulan *mulan_alloc(char *name, int start_is_vm,
-                            char *start_name, int start_eth)
+static t_mulan *mulan_alloc(char *lan, char *name, int num)
 {
   t_mulan *mulan = NULL;
-  if (name[0] == 0)
+  if (lan[0] == 0)
     KOUT(" ");
-  if (!mulan_find_with_name(name))
+  if (!mulan_find_with_name(lan))
     {
     mulan = (t_mulan *) clownix_malloc(sizeof(t_mulan), 4);
     memset(mulan, 0, sizeof(t_mulan));
-    strncpy(mulan->name, name, MAX_NAME_LEN-1);
+    strncpy(mulan->lan, lan, MAX_NAME_LEN-1);
     strncpy(mulan->sock, utils_mulan_get_sock_path(name), MAX_PATH_LEN-1);
-    strncpy(mulan->key, get_key_path(name), MAX_PATH_LEN-1);
     strncpy(mulan->traf, get_traf_path(name), MAX_PATH_LEN-1);
-    if (start_is_vm)
-      strncpy(mulan->start_vm, start_name, MAX_NAME_LEN-1);
-    else
-      strncpy(mulan->start_sat, start_name, MAX_NAME_LEN-1);
-    mulan->start_eth = start_eth;
+    strncpy(mulan->name, name, MAX_NAME_LEN-1);
+    mulan->num = num;
     if (g_head_mulan)
       g_head_mulan->prev = mulan;
     mulan->next = g_head_mulan;
@@ -324,7 +303,7 @@ static t_mulan *mulan_alloc(char *name, int start_is_vm,
 /****************************************************************************/
 static void mulan_request_quit(t_mulan *mulan)
 {
-  trigger_zombie_kill(mulan->name, mulan->llid, mulan->clone_start_pid);
+  trigger_zombie_kill(mulan->lan, mulan->llid, mulan->clone_start_pid);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -382,7 +361,7 @@ int  mulan_get_all_pid(t_lst_pid **lst_pid)
       {
       if (cur->pid)
         {
-        strncpy(glob_lst[i].name, cur->name, MAX_NAME_LEN-1);
+        strncpy(glob_lst[i].name, cur->lan, MAX_NAME_LEN-1);
         glob_lst[i].pid = cur->pid;
         i++;
         }
@@ -397,21 +376,21 @@ int  mulan_get_all_pid(t_lst_pid **lst_pid)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void mulan_pid_resp(int llid, char *name, int pid)
+void mulan_pid_resp(int llid, char *lan, int pid)
 {
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
-    if (strcmp(name, mulan->name))
-      KERR("%s %s", name, mulan->name);
+    if (strcmp(lan, mulan->lan))
+      KERR("%s %s", lan, mulan->lan);
     if (mulan->pid == 0)
       {
       if (mulan->clone_start_pid != pid)
         {
-        KERR("WRONG PID %s %d %d", name, pid, mulan->clone_start_pid);
+        KERR("WRONG PID %s %d %d", lan, pid, mulan->clone_start_pid);
         if (mulan->clone_start_pid == 0)
           {
-          KERR("MODIFYING START PID %s %d", name, pid);
+          KERR("MODIFYING START PID %s %d", lan, pid);
           mulan->clone_start_pid = pid;
           }
         }
@@ -421,23 +400,26 @@ void mulan_pid_resp(int llid, char *name, int pid)
     else
       {
       if (mulan->pid != pid)
-        KERR("%s %d %d", name, pid, mulan->pid);
+        KERR("%s %d %d", lan, pid, mulan->pid);
       }
     }
   else
-    KERR("%s %d", name, pid);
+    KERR("%s %d", lan, pid);
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int llid_flow_to_restrict(char *name)
+static int llid_flow_to_restrict(char *name, int num)
 {
   char *ptr;
-  int eth, musat_type;
-  int llid = musat_mngt_can_be_found_with_name(name, &musat_type);
+  int eth, type;
+  int llid = endp_mngt_can_be_found_with_name(name, num, &type);
   char vm_name[MAX_NAME_LEN];
-  if (!llid)
+  if (llid)
+KERR("%s %d %d", name, num, llid);
+else
     {
+KERR("%s %d %d", name, num, llid);
     memset(vm_name, 0, MAX_NAME_LEN);
     strncpy(vm_name, name, MAX_NAME_LEN-1);
     ptr = strrchr(vm_name, '_');
@@ -446,7 +428,8 @@ static int llid_flow_to_restrict(char *name)
       if (sscanf(ptr, "_%d", &eth) == 1)
         {
         *ptr = 0;
-        llid = mueth_can_be_found_with_name(vm_name, eth);
+        llid = endp_mngt_can_be_found_with_name(vm_name, eth, &type);
+KERR("%s %d %d", name, num, llid);
         }
       }
     }
@@ -457,7 +440,7 @@ static int llid_flow_to_restrict(char *name)
     KERR("%s", name);
   else
     {
-    if (musat_type == musat_type_c2c)
+    if (endp_type == endp_type_c2c)
       {
       llid = 0;
       KERR("%s", name);
@@ -471,15 +454,16 @@ static int llid_flow_to_restrict(char *name)
 /*****************************************************************************/
 void mulan_rpct_recv_evt_msg(int llid, int tid, char *line)
 {
-  int rank, stop;
-  char nm[MAX_NAME_LEN];
+  int num, rank, stop;
+  char name[MAX_NAME_LEN];
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
-    if (sscanf(line, "cloonix_evt_peer_flow_control=%s rank=%d stop=%d",
-                     nm, &rank, &stop) == 3)
+    if (sscanf(line, 
+        "cloonix_evt_peer_flow_control name=%s num=%d rank=%d stop=%d",
+        name, &num, &rank, &stop) == 4)
       {
-      llid = llid_flow_to_restrict(nm);
+      llid = llid_flow_to_restrict(name, num);
       if (llid)
         murpc_dispatch_send_tx_flow_control(llid, rank, stop);
       }
@@ -497,7 +481,7 @@ void mulan_rpct_recv_diag_msg(int llid, int tid, char *line)
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
-    lan = mulan->name;
+    lan = mulan->lan;
     if (!strcmp(line, "cloonix_resp_quit"))
       {
       }
@@ -508,8 +492,7 @@ void mulan_rpct_recv_diag_msg(int llid, int tid, char *line)
         if (!strcmp(tmpbuf, mulan->traf))
           {
           mulan->traffic_lan_link_state = traffic_lan_link_done; 
-          mueth_event_mulan_birth(lan);
-          musat_event_mulan_birth(lan);
+          endp_mulan_birth(lan);
           }
         else
           KERR("%s %s %s", lan, mulan->traf, tmpbuf);
@@ -521,16 +504,6 @@ void mulan_rpct_recv_diag_msg(int llid, int tid, char *line)
       {
       KERR("%s %s", lan, tmpbuf);
       mulan_request_quit(mulan);
-      if (mulan->start_vm[0])
-        {
-        mueth_event_timer_ko_resp(1, mulan->start_vm, 
-                                  mulan->start_eth, lan, "alloc unix ko"); 
-        }
-      else if (mulan->start_sat[0])
-        {
-        musat_event_timer_ko_resp(1, mulan->start_sat, 
-                                  mulan->start_eth, lan, "alloc unix ko");
-        }
       }
     else if (!strcmp(line, "SELF-DESTROYING"))
       {
@@ -549,31 +522,30 @@ void mulan_err_cb (int llid)
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
-    event_print("%s %s", __FUNCTION__, mulan->name);
+    event_print("%s %s", __FUNCTION__, mulan->lan);
     if (mulan->llid != llid)
       KERR("BAD  %d %d", mulan->llid, llid);
     mulan->llid = 0;
-    trigger_zombie_kill(mulan->name, llid, mulan->clone_start_pid);
+    trigger_zombie_kill(mulan->lan, llid, mulan->clone_start_pid);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void mulan_death(void *data, int status, char *name)
+static void mulan_death(void *data, int status, char *lan)
 {
   t_mulan_arg *mu = (t_mulan_arg *) data;
-  t_mulan *mulan = mulan_find_with_name(mu->name);
-  if (strcmp(name, mu->name))
-    KOUT("%s %s", name, mu->name);
-  event_print("End muswitch %s", name);
+  t_mulan *mulan = mulan_find_with_name(mu->lan);
+  if (strcmp(lan, mu->lan))
+    KOUT("%s %s", lan, mu->lan);
+  event_print("End muswitch %s", lan);
   if (!mulan)
-    KERR("%s", name);
+    KERR("%s", lan);
   else
     {
     if (mulan->llid)
       llid_trace_free(mulan->llid, 0, __FUNCTION__);
-    mueth_event_mulan_death(mulan->name);
-    musat_event_mulan_death(mulan->name);
+    endp_mulan_death(mulan->lan);
     unlink(mulan->sock);
     unlink(mulan->traf);
     if (mulan->prev)
@@ -609,7 +581,6 @@ static int mulan_birth(void *data)
   char **argv = (char **) data;
   char *bin_path = utils_get_muswitch_bin_path();
   my_mkdir(utils_get_muswitch_sock_dir());
-  my_mkdir(utils_get_muswitch_key_dir());
   my_mkdir(utils_get_muswitch_traf_dir());
 
 
@@ -626,18 +597,18 @@ static int mulan_birth(void *data)
 static void timer_mulan_watchdog(void *data)
 {
   t_mulan_arg *mu = (t_mulan_arg *) data;
-  t_mulan *mulan = mulan_find_with_name(mu->name);
+  t_mulan *mulan = mulan_find_with_name(mu->lan);
   if (mulan)
     {
     if ((!mulan->llid) || (!mulan->pid))
-      KERR("%s", mu->name);
+      KERR("%s", mu->lan);
     }
   clownix_free(mu, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int mulan_start(char *lan, int start_is_vm, char *name, int eth)
+int mulan_start(char *lan, char *name, int num)
 {
   int pid;
   char **argv;
@@ -653,26 +624,24 @@ int mulan_start(char *lan, int start_is_vm, char *name, int eth)
     result = 0;
     if (file_exists(utils_mulan_get_sock_path(lan), F_OK))
       unlink(utils_mulan_get_sock_path(lan));
-    if (file_exists(get_key_path(lan), F_OK))
-      unlink(get_key_path(lan));
     if (file_exists(get_traf_path(lan), F_OK))
       unlink(get_traf_path(lan));
-    mulan = mulan_alloc(lan, start_is_vm, name, eth);
+    mulan = mulan_alloc(lan, name, num);
     if (!mulan)
       KOUT("Exists %s", lan);
     mu1 = (t_mulan_arg *) clownix_malloc(sizeof(t_mulan_arg), 4);
     mu2 = (t_mulan_arg *) clownix_malloc(sizeof(t_mulan_arg), 4);
     memset(mu1, 0, sizeof(t_mulan_arg));
     memset(mu2, 0, sizeof(t_mulan_arg));
-    strncpy(mu1->name, mulan->name, MAX_NAME_LEN-1);
+    strncpy(mu1->lan, mulan->lan, MAX_NAME_LEN-1);
     strncpy(mu1->sock, mulan->sock, MAX_PATH_LEN-1);
-    strncpy(mu2->name, mulan->name, MAX_NAME_LEN-1);
+    strncpy(mu2->lan, mulan->lan, MAX_NAME_LEN-1);
     strncpy(mu2->sock, mulan->sock, MAX_PATH_LEN-1);
     clownix_timeout_add(300, timer_mulan_watchdog, (void *) mu1, NULL, NULL);
     argv = mulan_birth_argv(mu2);
     utils_send_creation_info("mulan", argv);
     pid = pid_clone_launch(mulan_birth, mulan_death, NULL,
-                           argv, mu2, NULL, mu2->name, -1, 1);
+                           argv, mu2, NULL, mu2->lan, -1, 1);
     mulan->clone_start_pid = pid;
 
 //VIP
@@ -689,14 +658,8 @@ void mulan_test_stop(char *lan)
   t_mulan *mulan = mulan_find_with_name(lan);
   if (mulan)
     {
-    if (!mueth_event_lan_is_in_use(lan))
-      {
-      if (!musat_event_lan_is_in_use(lan, 0))
-        {
-        if (!musat_event_lan_is_in_use(lan, 1))
-          mulan_request_quit(mulan);
-        }
-      }
+    if (!endp_lan_is_in_use(lan))
+      mulan_request_quit(mulan);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -713,14 +676,13 @@ static void timer_mulan_beat(void *data)
     else if (cur->llid == 0)
       trace_alloc(cur);
     else if (cur->pid == 0) 
-      rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, 
-                       cloonix_get_sec_offset(), cur->name);
+      rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
     else if (cur->traffic_lan_link_state == traffic_lan_link_idle)
       {
       memset(cmd, 0, MAX_PATH_LEN);
       snprintf(cmd,MAX_PATH_LEN-1,"cloonix_req_listen=%s lan=%s",
-                                  cur->traf, cur->name);
-      if (!try_rpct_send_diag_msg(cur->name, cur->llid, cur->pid, cmd))
+                                  cur->traf, cur->lan);
+      if (!try_rpct_send_diag_msg(cur->llid, cur->pid, cmd))
         cur->traffic_lan_link_state = traffic_lan_link_wait; 
       }
 
@@ -729,8 +691,7 @@ static void timer_mulan_beat(void *data)
       cur->periodic_count += 1;
       if (cur->periodic_count >= 10)
         {
-        rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, 
-                         cloonix_get_sec_offset(), cur->name);
+        rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
         cur->periodic_count = 1;
         }
       }

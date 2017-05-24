@@ -28,20 +28,18 @@
 #include <netinet/in.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
-#include "cfg_store.h"
 #include "event_subscriber.h"
 #include "lan_to_name.h"
 #include "llid_trace.h"
 #include "system_callers.h"
 #include "commun_daemon.h"
+#include "endp_mngt.h"
+#include "cfg_store.h"
 #include "utils_cmd_line_maker.h"
 #include "c2c.h"
-#include "mueth_events.h"
-#include "musat_events.h"
 #include "stats_counters.h"
-#include "musat_mngt.h"
+#include "endp_evt.h"
 #include "c2c_utils.h"
 #include "layout_rpc.h"
 #include "layout_topo.h"
@@ -63,30 +61,6 @@ static t_newborn *head_newborn;
 
 
 /*****************************************************************************/
-static t_tux *find_tux(char *name)
-{
-  int i;
-  t_tux *cur = cfg.tux_head;
-  t_tux *result = NULL;
-  for (i=0; i<cfg.nb_tux; i++)
-    {
-    if (!cur)
-      KOUT(" ");
-    if (!strcmp(cur->name, name))
-      {
-      result = cur;
-      break;
-      }
-    cur = cur->next;
-    }
-  if (i == cfg.nb_tux)
-    if (cur)
-      KOUT(" ");
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 static t_vm *find_vm(char *name)
 {
   int i;
@@ -96,7 +70,7 @@ static t_vm *find_vm(char *name)
     {
     if (!cur)
       KOUT(" ");
-    if (!strcmp(cur->vm_params.name, name))
+    if (!strcmp(cur->kvm.name, name))
       {
       result = cur;
       break;
@@ -113,12 +87,9 @@ static t_vm *find_vm(char *name)
 /*****************************************************************************/
 int cfg_name_is_in_use(int is_lan, char *name, char *use)
 {
-  int result = 0;
+  int type, result = 0;
   t_sc2c *c2c = c2c_find(name);
-  t_tux *tux;
   memset(use, 0, MAX_PATH_LEN);
-  tux = find_tux(name);
-
   if (c2c)
     {
     snprintf(use, MAX_NAME_LEN, "%s is used by a sat c2c", name);
@@ -145,25 +116,24 @@ int cfg_name_is_in_use(int is_lan, char *name, char *use)
     snprintf(use, MAX_NAME_LEN, "%s is running vm", name);
     result = 1;
     }
-  else if (tux)
+  else if (endp_mngt_exists(name, 0, &type))
     {
-    if (tux->is_musat)
-      {
-      if (musat_mngt_is_tap(tux->musat_type))
-        snprintf(use, MAX_NAME_LEN, "%s is a tap", name);
-      else if (musat_mngt_is_snf(tux->musat_type))
-        snprintf(use, MAX_NAME_LEN, "%s is a snf", name);
-      else if (musat_mngt_is_a2b(tux->musat_type))
-        snprintf(use, MAX_NAME_LEN, "%s is a a2b", name);
-      else if (musat_mngt_is_nat(tux->musat_type))
-        snprintf(use, MAX_NAME_LEN, "%s is a nat", name);
-      else if (musat_mngt_is_c2c(tux->musat_type))
-        snprintf(use, MAX_NAME_LEN, "%s is a c2c", name);
-      else
-        KERR(" ");
-      }
+    if (type == endp_type_tap)
+      snprintf(use, MAX_NAME_LEN, "%s is a tap", name);
+    else if (type == endp_type_wif)
+      snprintf(use, MAX_NAME_LEN, "%s is a wif", name);
+    else if (type == endp_type_raw)
+      snprintf(use, MAX_NAME_LEN, "%s is a raw", name);
+    else if (type == endp_type_snf)
+      snprintf(use, MAX_NAME_LEN, "%s is a snf", name);
+    else if (type == endp_type_a2b)
+      snprintf(use, MAX_NAME_LEN, "%s is a a2b", name);
+    else if (type == endp_type_nat)
+      snprintf(use, MAX_NAME_LEN, "%s is a nat", name);
+    else if (type == endp_type_c2c)
+      snprintf(use, MAX_NAME_LEN, "%s is a c2c", name);
     else
-      snprintf(use, MAX_NAME_LEN, "%s is a tux", name);
+      KERR("%d ", type);
     result = 1;
     }
   else if ((!is_lan) && (lan_get_with_name(name)))
@@ -185,7 +155,7 @@ t_vm *find_vm_with_id(int vm_id)
     {
     if (!cur)
       KOUT(" ");
-    if (cur->vm_id == vm_id)
+    if (cur->kvm.vm_id == vm_id)
       { 
       result = cur;
       break;
@@ -234,98 +204,16 @@ int cfg_alloc_vm_id(void)
 }
 /*---------------------------------------------------------------------------*/
 
-
 /*****************************************************************************/
-t_eth *cfg_find_eth(t_vm *vm, int eth)
-{
-  int i;
-  t_eth *cur;
-  t_eth *result = NULL;
-  if (vm)
-    {
-    cur = vm->eth_head;
-    for (i=0; i<vm->nb_eth; i++)
-      {
-      if (!cur)
-        KOUT(" ");
-      if (cur->eth == eth)
-        {
-        result = cur;
-        break; 
-        }
-      cur = cur->next;
-      }
-    if (i == vm->nb_eth)
-      if (cur)
-        KOUT(" ");
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static t_tux *alloc_tux(int is_musat, int musat_type, char *name)
-{
-  t_tux *tmptux = (t_tux *) clownix_malloc(sizeof(t_tux),23);
-  memset(tmptux, 0, sizeof(t_tux));
-  tmptux->is_musat = is_musat;
-  tmptux->musat_type = musat_type;
-  strncpy(tmptux->name, name, MAX_NAME_LEN-1);
-  return tmptux;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static t_vm *alloc_vm(t_vm_params *vm_params, int vm_id)
+static t_vm *alloc_vm(t_topo_kvm *kvm, int vm_id)
 {
   t_vm *vm = (t_vm *) clownix_malloc(sizeof(t_vm),24);
   memset(vm, 0, sizeof(t_vm));
-  memcpy(&(vm->vm_params), vm_params, sizeof(t_vm_params));
-  vm->vm_id = vm_id;
+  memcpy(&(vm->kvm), kvm, sizeof(t_topo_kvm));
+  vm->kvm.vm_id = vm_id;
   return vm;
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static t_eth *alloc_eth(int eth, t_vm *vm, char *data)
-{ 
-  t_eth *tmpeth = (t_eth *) clownix_malloc(sizeof(t_eth),25);
-  memset(tmpeth, 0, sizeof(t_eth));
-  if (!data)
-    KOUT(" ");
-  strncpy(tmpeth->data_path, data, MAX_PATH_LEN-1);
-  tmpeth->eth = eth;
-  tmpeth->vm = vm;
-  return tmpeth;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void extract_tux(t_cfg *cf, t_tux *tux)
-{
-  t_tux *cur;
-  if (!tux)
-    KOUT(" ");
-  if (cf->nb_tux <= 0)
-    KOUT(" ");
-  cur = cf->tux_head;
-  if (cur == tux)
-    {
-    cf->tux_head = cur->next;
-    if (cur->next)
-      cur->next->prev = NULL;
-    }
-  else
-    {
-    if (tux->next)
-      tux->next->prev = tux->prev;
-    if (tux->prev)
-      tux->prev->next = tux->next;
-    }
-  cf->nb_tux -= 1;
-}
-/*---------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 static void extract_vm(t_cfg *cf, t_vm *vm)
@@ -350,65 +238,6 @@ static void extract_vm(t_cfg *cf, t_vm *vm)
       vm->prev->next = vm->next;
     }
   cf->nb_vm -= 1;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void extract_eth_vm(t_vm *vm, t_eth *eth)
-{
-  t_eth *cur;
-  if ((!vm)||(!eth))
-    KOUT(" ");
-  if (vm->nb_eth <= 0)
-    KOUT(" ");
-  cur = vm->eth_head;
-  if (cur == eth)
-    {
-    vm->eth_head = cur->next;
-    if (cur->next)
-      cur->next->prev = NULL;
-    }
-  else 
-    {
-    if (eth->next)
-      eth->next->prev = eth->prev;
-    if (eth->prev)
-      eth->prev->next = eth->next;
-    }
-  vm->nb_eth -= 1;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void insert_eth_vm(t_vm *vm, t_eth *eth)
-{
-  int i;
-  t_eth *cur;
-  if ((!eth)||(!vm))
-    KOUT(" ");
-  cur = vm->eth_head;
-  if (vm->nb_eth > 0)
-    {
-    for(i=0; i < vm->nb_eth - 1; i++)
-      {
-      if (!cur)
-        KOUT(" ");
-      cur = cur->next;
-      }
-    if (cur->next)
-      KOUT(" ");
-    cur->next = eth;
-    eth->prev = cur;
-    }
-  else
-    {
-    if (vm->nb_eth != 0)
-      KOUT(" ");
-    if (cur)
-      KOUT(" ");
-    vm->eth_head = eth;
-    }
-  vm->nb_eth += 1;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -446,287 +275,39 @@ static void insert_vm(t_vm *vm)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void insert_tux(t_tux *tux)
-{
-  int i;
-  t_tux *cur;
-  if (!tux)
-    KOUT(" ");
-  cur = cfg.tux_head;
-  if (cfg.nb_tux > 0)
-    {
-    for(i=0; i < cfg.nb_tux - 1; i++)
-      {
-      if (!cur)
-        KOUT(" ");
-      cur = cur->next;
-      }
-    if (cur->next)
-      KOUT(" ");
-    cur->next = tux;
-    tux->prev = cur;
-    }
-  else
-    {
-    if (cfg.nb_tux != 0)
-      KOUT(" ");
-    if (cur)
-      KOUT(" ");
-    cfg.tux_head = tux;
-    }
-  cfg.nb_tux += 1;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-int cfg_set_tux(int is_musat, int musat_type, char *name, int llid)
+int cfg_set_vm(t_topo_kvm *kvm, int vm_id, int llid)
 {
   int result = -1;
-  t_tux *tmptux = find_tux(name);
-  if (!tmptux)
-    {
-    tmptux = alloc_tux(is_musat, musat_type, name);
-    insert_tux(tmptux);
-    result = 0;
-    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-    if (is_musat)
-      layout_add_sat(name, llid);
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-int cfg_unset_tux(char *name)
-{
-  int result = -1;
-  t_tux *tmptux = find_tux(name);
-  if (tmptux)
-    {
-    if (tmptux->is_musat)
-      {
-      musat_mngt_update_unset_tux_action(name, tmptux);
-      layout_del_sat(name);
-      }
-    unlink(utils_get_tux_path(name));
-    extract_tux(&cfg, tmptux);
-    stats_counters_sat_death(name);
-    clownix_free(tmptux, __FUNCTION__);
-    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-    result = 0;
-    }
-  return result;
-} 
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_set_vm(t_vm_params *vm_params, int vm_id, int llid)
-{
-  int result = -1;
-  t_vm *vm = find_vm(vm_params->name);
+  t_vm *vm = find_vm(kvm->name);
   if (!vm)
     {
-    vm = alloc_vm(vm_params, vm_id);
+    vm = alloc_vm(kvm, vm_id);
     insert_vm(vm);
-    layout_add_vm(vm_params->name, llid);
-    musat_mngt_add_vm(vm_params->name, vm_id, 
-                      vm_params->nb_eth, 
-                      vm_params->eth_params);
+    layout_add_vm(kvm->name, llid);
+    endp_mngt_add_mac_eth_vm(kvm->name, vm_id, kvm->nb_eth, kvm->eth_params);
     result = 0;
     }
   return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void cfg_unset_eth(t_vm *vm, t_eth *eth)
-{
-  char *name = vm->vm_params.name;
-  int lan = eth->lan_attached.lan;
-  extract_eth_vm(vm, eth);
-  if (lan)
-    {
-    KERR("ERROR %s %d", name, lan);
-    }
-  if (strncmp(eth->data_path, cfg_get_work(), strlen(cfg_get_work())))
-    KOUT("%s %s\n", eth->data_path, cfg_get_work());
-  unlink(eth->data_path);
-  clownix_free(eth, __FUNCTION__);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int cfg_unset_vm(t_vm *vm)
 {
-  int vm_id = vm->vm_id;
-
+  int id = vm->kvm.vm_id;
   if (vm->wake_up_eths != NULL)
     {
-    KERR("BUG %s", vm->vm_params.name);
+    KERR("BUG %s", vm->kvm.name);
     free_wake_up_eths(vm);
     }
-  musat_mngt_del_vm(vm->vm_params.name, vm_id, 
-                    vm->vm_params.nb_eth, 
-                    vm->vm_params.eth_params);
-  layout_del_vm(vm->vm_params.name);
+  endp_mngt_del_mac_eth_vm(vm->kvm.name,id,vm->kvm.nb_eth,vm->kvm.eth_params);
+  layout_del_vm(vm->kvm.name);
   extract_vm(&cfg, vm);
   clownix_free(vm, __FUNCTION__);
-  llid_trace_vm_delete(vm_id);
-  return vm_id;
+  llid_trace_vm_delete(id);
+  return id;
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_set_eth(t_vm_params *vm_params, int eth, char *data)
-{
-  int result = -1;
-  t_vm *vm = find_vm(vm_params->name);
-  t_eth *tmpeth;
-  if (vm)
-    {
-    tmpeth = cfg_find_eth(vm, eth);
-    if (!tmpeth)
-      {
-      tmpeth = alloc_eth(eth, vm, data);
-      insert_eth_vm(vm, tmpeth);
-      result = 0;
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_set_eth_lan(char *name, int num, char *lan, int llid_req)
-{
-  int result = -1;
-  t_vm *vm = find_vm(name);
-  t_eth *tmpeth;
-  int lan_num;
-  if (vm)
-    {
-    tmpeth = cfg_find_eth(vm, num);
-    if (tmpeth)
-      {
-      if (tmpeth->lan_attached.lan == 0)
-        {
-        lan_num = lan_add_name(lan, llid_req);
-        if ((lan_num <= 0) || (lan_num >= MAX_LAN))
-          KOUT("%s", lan);
-        tmpeth->lan_attached.lan = lan_num;
-        result = 0;
-        }
-      else
-        KERR(" %s %d %s", name, num, lan);
-      }
-    else
-      KERR(" %s %d ", name, num);
-    }
-  else
-    KERR(" %s %d ", name, num);
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_unset_eth_lan(char *name, int num, char *lan)
-{
-  int lan_num, result = -1;
-  t_vm *vm = find_vm(name);
-  t_eth *tmpeth;
-  lan_num = lan_get_with_name(lan);
-  if (vm)
-    {
-    if ((lan_num <= 0) || (lan_num >= MAX_LAN))
-      KERR("%s %d %s", name, num, lan);
-    else
-      {
-      tmpeth = cfg_find_eth(vm, num);
-      if (tmpeth) 
-        {
-        if (tmpeth->lan_attached.lan == lan_num)
-          {
-          if (lan_del_name(lan) != lan_num)
-            KOUT("%s", lan);
-          memset(&(tmpeth->lan_attached), 0, sizeof(t_lan_attached));
-          result = 0;
-          }
-        else
-          KERR("%s %d %s", name, num, lan);
-        }
-      else
-        KERR("%s %d %s", name, num, lan);
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_set_tux_lan(char *tux, int num, char *lan, int llid_req)
-{
-  int lan_num, result = -1;
-  t_tux *tmptux = find_tux(tux);
-  if ((num != 0) && (num != 1))
-    KOUT("%d", num);
-  if (tmptux)
-    {
-    if (tmptux->lan_attached[num].lan == 0)
-      {
-      lan_num = lan_add_name(lan, llid_req);
-      if ((lan_num <= 0) || (lan_num >= MAX_LAN))
-        KOUT("%d", lan_num);
-      tmptux->lan_attached[num].lan = lan_num;
-      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-      result = 0;
-      }
-    else
-      KERR("%s %d", tux, num); 
-    }
-  else
-    KERR("%s %d", tux, num); 
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_unset_tux_lan(char *name, int num, char *lan)
-{
-  int lan_num, result = -1;
-  t_tux *tmptux = find_tux(name);
-  lan_num = lan_get_with_name(lan);
-  if ((lan_num <= 0) || (lan_num >= MAX_LAN))
-    KOUT("%d", lan_num);
-  if ((num != 0) && (num != 1))
-    KOUT("%d", num);
-  if (tmptux)
-    {
-    if (tmptux->lan_attached[num].lan == lan_num)
-      {
-      if (lan_del_name(lan) != lan_num)
-        KOUT(" ");
-      memset(&(tmptux->lan_attached[num]), 0, sizeof(t_lan_attached));
-      result = 0;
-      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
-      }
-    else
-      KERR("%s %s", lan, name);
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-t_tux *cfg_get_tux(char *tux)
-{
-  t_tux *tmptux = find_tux(tux);
-  return tmptux;
-}
-/*---------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 t_vm *cfg_get_vm(char *name) 
@@ -737,76 +318,9 @@ t_vm *cfg_get_vm(char *name)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int cfg_get_eth(char *name, int eth)
-{
-  int mutype, result = -1;
-  t_vm *vm = find_vm(name);
-  t_eth *tmpeth;
-  if (vm)
-    {
-    tmpeth = cfg_find_eth(vm, eth);
-    if (tmpeth)
-      result = 0;
-    }
-  else
-    {
-    if ((musat_mngt_exists(name, &mutype)) &&
-        (musat_mngt_is_a2b(mutype)))
-      {
-      if ((eth == 0) || (eth == 1))
-        {
-        result = 0;
-        }
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_check_eth(int vm_id, int eth, char *path)
-{
-  int result = -1;
-  t_vm *vm = find_vm_with_id(vm_id);
-  t_eth *tmpeth = cfg_find_eth(vm, eth);
-  if (tmpeth)
-    {
-    result = 0;
-    if (path)
-      {
-      memset(path, 0, MAX_PATH_LEN);
-      strncpy(path, tmpeth->data_path, MAX_PATH_LEN-1);
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 t_vm   *cfg_get_first_vm(int *nb)
 {
   *nb = cfg.nb_vm; return cfg.vm_head;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-t_tux  *cfg_get_first_tux(int *nb)
-{
-  *nb = cfg.nb_tux; return cfg.tux_head;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-t_eth  *cfg_get_first_eth(char *name, int *nb)
-{
-  t_vm *vm = find_vm(name);
-  *nb = 0;
-  if (vm)
-    {
-    *nb = vm->nb_eth;
-    return (vm->eth_head);
-    }
-  return NULL;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -958,32 +472,32 @@ t_newborn *cfg_is_a_newborn(char *name)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void cfg_set_host_conf(t_cloonix_config *conf)
+void cfg_set_host_conf(t_topo_clc *conf)
 {
-  if (cfg.cloonix_config.network_name[0])
+  if (cfg.clc.network[0])
     KOUT(" ");
-  memcpy(&(cfg.cloonix_config), conf, sizeof(t_cloonix_config));
+  memcpy(&(cfg.clc), conf, sizeof(t_topo_clc));
   snprintf(conf->tmux_bin, MAX_PATH_LEN-1, "%s", utils_get_tmux_bin_path());
-  snprintf(cfg.cloonix_config.tmux_bin, MAX_PATH_LEN-1, "%s", 
+  snprintf(cfg.clc.tmux_bin, MAX_PATH_LEN-1, "%s", 
            utils_get_tmux_bin_path());
   if (file_exists(WIRESHARK_BINARY_QT, X_OK))
-    cfg.cloonix_config.flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;
+    cfg.clc.flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;
   else if (file_exists(WIRESHARK_BINARY, X_OK))
-    cfg.cloonix_config.flags_config |= FLAGS_CONFIG_WIRESHARK_PRESENT;
+    cfg.clc.flags_config |= FLAGS_CONFIG_WIRESHARK_PRESENT;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-t_cloonix_config *cfg_get_cloonix_config(void)
+t_topo_clc *cfg_get_topo_clc(void)
 {
-  return (&(cfg.cloonix_config));
+  return (&(cfg.clc));
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int cfg_get_server_port(void)
 {
-  int result = cfg.cloonix_config.server_port;
+  int result = cfg.clc.server_port;
   if (!result)
     KOUT(" ");
   return result;
@@ -1003,9 +517,9 @@ char *cfg_get_ctrl_doors_sock(void)
 /*****************************************************************************/
 char *cfg_get_root_work(void)
 {
-  if (cfg.cloonix_config.work_dir[0] == 0)
+  if (cfg.clc.work_dir[0] == 0)
     KOUT(" ");
-  return(cfg.cloonix_config.work_dir);
+  return(cfg.clc.work_dir);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1034,9 +548,9 @@ char *cfg_get_work_vm(int vm_id)
 /*****************************************************************************/
 char *cfg_get_bin_dir(void)
 {
-  if (cfg.cloonix_config.bin_dir[0] == 0)
+  if (cfg.clc.bin_dir[0] == 0)
     KOUT(" ");
-  return(cfg.cloonix_config.bin_dir);
+  return(cfg.clc.bin_dir);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1045,10 +559,10 @@ char *cfg_get_bin_dir(void)
 char *cfg_get_bulk(void)
 {
   static char path[MAX_PATH_LEN];
-  if (cfg.cloonix_config.bulk_dir[0] == 0)
+  if (cfg.clc.bulk_dir[0] == 0)
     KOUT(" ");
   memset(path, 0, MAX_PATH_LEN);
-  sprintf(path,"%s", cfg.cloonix_config.bulk_dir);
+  sprintf(path,"%s", cfg.clc.bulk_dir);
   return path;
 }
 /*---------------------------------------------------------------------------*/
@@ -1056,127 +570,212 @@ char *cfg_get_bulk(void)
 /*****************************************************************************/
 char *cfg_get_cloonix_name(void)
 {
-  return (cfg.cloonix_config.network_name);
+  return (cfg.clc.network);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 char *cfg_get_version(void)
 {
-  return (cfg.cloonix_config.version);
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
-int cfg_compute_qty_elements(void)
-{
-  int i,j, qty, nb_vm, nb_eth, nb_tux;
-  t_vm *vm = cfg_get_first_vm(&nb_vm);
-  t_eth *eth;
-  cfg_get_first_tux(&nb_tux);
-  qty = nb_tux;
-  for (i=0; i<nb_vm; i++)
-    {
-    eth = cfg_get_first_eth(vm->vm_params.name, &nb_eth);
-    for (j=0; j<nb_eth; j++)
-      {
-      qty += 1;
-      eth = eth->next;
-      }
-    vm = vm->next;
-    }
-  return qty;
+  return (cfg.clc.version);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void topo_vlg(t_lan_group *vlg, int lan)
+static void topo_vlg(t_lan_group *vlg, t_lan_attached *lan_att)
 {
   int i, len;
-  if (lan) 
-    vlg->nb_lan = 1;
-  else
-    vlg->nb_lan = 0;
+  char *ascii_lan;
+
+  vlg->nb_lan = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    if (lan_att[i].lan_num)
+      vlg->nb_lan += 1;
+    }
+
   len = vlg->nb_lan * sizeof(t_lan_group_item);
   vlg->lan = (t_lan_group_item *) clownix_malloc(len, 29);
   memset(vlg->lan, 0, len);
+
   for (i=0; i<vlg->nb_lan; i++)
     {
-    if (!lan_get_with_num(lan))
+    ascii_lan = lan_get_with_num(lan_att[i].lan_num);
+    if (!ascii_lan)
       KOUT(" ");
-    strncpy(vlg->lan[i].name, lan_get_with_num(lan), MAX_NAME_LEN-1); 
+    strncpy(vlg->lan[i].lan, ascii_lan, MAX_NAME_LEN-1);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void produce_topovm_item(t_vm *vm, t_vm_item *vi)
+static void fill_topo_kvm(t_topo_kvm *kvm, t_vm *vm)
 {
-  int i;
-  t_eth *eth = vm->eth_head;
-  memcpy(&(vi->vm_params), &(vm->vm_params), sizeof(t_vm_params)); 
-  vi->vm_id     = vm->vm_id;
-  for (i=0; i<vm->nb_eth; i++)
+  memcpy(kvm, &(vm->kvm), sizeof(t_topo_kvm));
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void fill_topo_c2c(t_topo_c2c *c2c, t_endp *endp)
+{
+  memcpy(c2c, &(endp->c2c), sizeof(t_topo_c2c));
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void fill_topo_snf(t_topo_snf *snf, t_endp *endp)
+{
+  memcpy(snf, &(endp->snf), sizeof(t_topo_snf));
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void fill_topo_sat(t_topo_sat *sat, t_endp *endp)
+{
+  strncpy(sat->name, endp->name, MAX_NAME_LEN-1);
+  sat->type = endp->endp_type;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void fill_topo_endp(t_topo_endp *topo_endp, t_endp *endp)
+{
+  strncpy(topo_endp->name, endp->name, MAX_NAME_LEN-1);
+  topo_endp->num = endp->num;
+  topo_endp->type = endp->endp_type;
+  topo_vlg(&(topo_endp->lan), endp->lan_attached);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static t_topo_info *alloc_all_fields(int nb_vm)
+{
+  t_topo_info *topo = (t_topo_info *) clownix_malloc(sizeof(t_topo_info), 3);
+  memset(topo, 0, sizeof(t_topo_info));
+  topo->nb_kvm = nb_vm;
+  topo->nb_c2c = endp_mngt_get_nb(endp_type_c2c);
+  topo->nb_snf = endp_mngt_get_nb(endp_type_snf);
+  topo->nb_sat = endp_mngt_get_nb_sat();
+  topo->nb_endp = endp_mngt_get_nb_all();
+ if (topo->nb_kvm)
     {
-    topo_vlg(&(vi->lan_eth[i]), eth->lan_attached.lan); 
-    eth = eth->next;
+    topo->kvm =
+    (t_topo_kvm *)clownix_malloc(topo->nb_kvm * sizeof(t_topo_kvm),3);
+    memset(topo->kvm, 0, topo->nb_kvm * sizeof(t_topo_kvm));
     }
+
+  if (topo->nb_c2c)
+    {
+    topo->c2c =
+    (t_topo_c2c *)clownix_malloc(topo->nb_c2c * sizeof(t_topo_c2c),3);
+    memset(topo->c2c, 0, topo->nb_c2c * sizeof(t_topo_c2c));
+    }
+
+  if (topo->nb_snf)
+    {
+    topo->snf =
+    (t_topo_snf *)clownix_malloc(topo->nb_snf * sizeof(t_topo_snf),3);
+    memset(topo->snf, 0, topo->nb_snf * sizeof(t_topo_snf));
+    }
+
+  if (topo->nb_sat)
+    {
+    topo->sat =
+    (t_topo_sat *)clownix_malloc(topo->nb_sat * sizeof(t_topo_sat),3);
+    memset(topo->sat, 0, topo->nb_sat * sizeof(t_topo_sat));
+    }
+
+  if (topo->nb_endp)
+    {
+    topo->endp =
+    (t_topo_endp *)clownix_malloc(topo->nb_endp * sizeof(t_topo_endp),3);
+    memset(topo->endp, 0, topo->nb_endp * sizeof(t_topo_endp));
+    }
+  return topo;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 t_topo_info *cfg_produce_topo_info(void)
 {
-  int i, j, nb_vm, nb_tux, nb_sat;
+  int i, nb_vm, nb_endp;
+  int i_c2c=0, i_snf=0, i_sat=0; 
   t_vm  *vm  = cfg_get_first_vm(&nb_vm);
-  t_tux *tux = cfg_get_first_tux(&nb_tux);
-  t_topo_info  *topo = (t_topo_info *) clownix_malloc(sizeof(t_topo_info),17);
-  t_sat_item *si = NULL;
-  t_vm_item  *vi = NULL;
+  t_endp *next, *cur;
+  t_topo_info *topo = alloc_all_fields(nb_vm);
 
-  memset(topo, 0, sizeof(t_topo_info));
-  if (nb_vm)
+  memcpy(&(topo->clc), &(cfg.clc), sizeof(t_topo_clc));
+
+  if (topo->nb_kvm)
     {
-    vi = (t_vm_item *) clownix_malloc(nb_vm * sizeof(t_vm_item),17); 
-    memset(vi, 0, nb_vm * sizeof(t_vm_item));
+    for (i=0; i<topo->nb_kvm; i++)
+      {
+      if (!vm)
+        KOUT(" ");
+      fill_topo_kvm(&(topo->kvm[i]), vm);
+      vm = vm->next;
+      }
+    if (vm)
+      KOUT(" ");
     }
-  if (nb_tux)
+
+  cur = endp_mngt_get_first(&nb_endp);
+  for (i=0; i<nb_endp; i++)
     {
-    si = (t_sat_item *) clownix_malloc(nb_tux * sizeof(t_sat_item),17);
-    memset(si, 0, nb_tux * sizeof(t_sat_item));
-    }
-  for (i=0; i<nb_vm; i++)
-    {
-    produce_topovm_item(vm, &(vi[i]));
-    vm = vm->next;
-    }
-  for (i=0, j=0; i<nb_tux; i++)
-    { 
-    if (tux->is_musat)
-      { 
-      if ((musat_mngt_is_c2c(tux->musat_type)) ||
-          (musat_event_exists(tux->name)))
+    if (!cur)
+      KOUT(" ");
+    if (cur->num == 0)
+      {
+      switch (cur->endp_type)
         {
-        si[j].musat_type = tux->musat_type;
-        strncpy(si[j].name, tux->name, MAX_NAME_LEN-1);
-        memcpy(&(si[j].snf_info), &(tux->snf_info), sizeof(t_snf_info));
-        memcpy(&(si[j].c2c_info), &(tux->c2c_info), sizeof(t_c2c_info));
-        topo_vlg(&(si[j].lan0_sat), tux->lan_attached[0].lan);
-        topo_vlg(&(si[j].lan1_sat), tux->lan_attached[1].lan);
-        j++;
+
+        case endp_type_c2c:
+          if (cur->c2c.name[0])
+            { 
+            if (i_c2c == topo->nb_c2c)
+              KOUT(" ");
+            fill_topo_c2c(&(topo->c2c[i_c2c]), cur);
+            i_c2c += 1;
+            }
+          break;
+
+        case endp_type_snf:
+          if (cur->snf.name[0])
+            { 
+            if (i_snf == topo->nb_snf)
+              KOUT(" ");
+            fill_topo_snf(&(topo->snf[i_snf]), cur);
+            i_snf += 1;
+            }
+          break;
+  
+        case endp_type_tap:
+        case endp_type_wif:
+        case endp_type_raw:
+        case endp_type_a2b:
+        case endp_type_nat:
+          if (i_sat == topo->nb_sat)
+            KOUT(" ");
+          fill_topo_sat(&(topo->sat[i_sat]), cur);
+          i_sat += 1;
+          break;
+
+        case endp_type_kvm:
+          break;
+  
+        default:
+          KOUT("%d", cur->endp_type);
         }
       }
-    tux = tux->next;
+    fill_topo_endp(&(topo->endp[i]), cur);
+    next = endp_mngt_get_next(cur);
+    clownix_free(cur, __FUNCTION__);
+    cur = next;
     }
-  nb_sat = j;
-
-  memcpy(&(topo->cloonix_config), &(cfg.cloonix_config), 
-         sizeof(t_cloonix_config));
-  topo->nb_vm    = nb_vm;
-  topo->vmit       = vi;
-  topo->nb_sat   = nb_sat;
-  topo->sati       = si;
+  if (cur)
+    KOUT(" ");
+  topo->nb_c2c = i_c2c;
+  topo->nb_snf = i_snf;
   return topo;
 }
 /*---------------------------------------------------------------------------*/
@@ -1199,108 +798,6 @@ void cfg_set_vm_locked(t_vm *vm)
 void cfg_reset_vm_locked(t_vm *vm)
 {
   vm->locked_vm = 0;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_insert_c2c_to_topo(int local_is_master, char *name, 
-                           char *master_cloonix, char *slave_cloonix)
-{
-  int result = -1;
-  t_tux *tux = cfg_get_tux(name);
-  if (tux)
-    {
-    if ((tux->is_musat) && (musat_mngt_is_c2c(tux->musat_type)))
-      {
-      tux->c2c_info.local_is_master = local_is_master;
-      strncpy(tux->c2c_info.master_cloonix, master_cloonix, MAX_NAME_LEN-1);
-      strncpy(tux->c2c_info.slave_cloonix, slave_cloonix, MAX_NAME_LEN-1);
-      result = 0;
-      }
-    else
-      KERR("%s", name);
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_remove_c2c_from_topo(char *name)
-{
-  int result = -1;
-  t_tux *tux;
-  tux = cfg_get_tux(name);
-  if (tux)
-    {
-    if ((tux->is_musat) && (musat_mngt_is_c2c(tux->musat_type)))
-      {
-      cfg_unset_tux(name);
-      result = 0;
-      }
-    else
-      KERR("%s", name);
-    }
-  else
-    KERR("%s", name);
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_exists_c2c_from_topo(char *name)
-{
-  int result = 0;
-  t_tux *tux;
-  tux = cfg_get_tux(name);
-  if (tux)
-    {
-    if ((tux->is_musat) && (musat_mngt_is_c2c(tux->musat_type)))
-      result = 1;
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-t_tux *cfg_get_c2c_tux(char *name)
-{
-  t_tux *result = NULL;
-  t_tux *tux;
-  tux = cfg_get_tux(name);
-  if (tux)
-    {
-    if ((tux->is_musat) && (musat_mngt_is_c2c(tux->musat_type)))
-      result = tux;
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void cfg_c2c_is_peered(char *name, int is_peered)
-{
-  t_tux *tux;
-  tux = cfg_get_tux(name);
-  if (tux)
-    {
-    if ((tux->is_musat) && (musat_mngt_is_c2c(tux->musat_type)))
-      tux->c2c_info.is_peered = is_peered;
-    else
-      KERR("%s", name);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cfg_get_musat_type(char *name)
-{
-  t_tux *tux = cfg_get_tux(name);
-  int type = -1; 
-  if (tux->is_musat)
-    {
-    type = tux->musat_type;
-    }
-  return type;
 }
 /*---------------------------------------------------------------------------*/
 

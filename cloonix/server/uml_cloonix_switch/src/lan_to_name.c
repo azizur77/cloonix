@@ -19,12 +19,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_daemon.h"
 #include "mulan_mngt.h"
-#include "mueth_events.h"
-#include "musat_events.h"
 #include "layout_rpc.h"
 #include "layout_topo.h"
 
@@ -121,24 +118,6 @@ static int find_free_idx_for_name(char *name)
       idx = 1;
     }
   return idx;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int lan_mueth_locked(char *vm_name, int vm_eth)
-{
-  int result;
-  result = mueth_event_already_in_lan(vm_name, vm_eth);
-  return result; 
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int lan_musat_locked(char *name, int num)
-{
-  int result;
-  result = musat_event_already_in_lan(name, num);
-  return result;
 }
 /*---------------------------------------------------------------------------*/
 

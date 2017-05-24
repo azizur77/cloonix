@@ -16,12 +16,12 @@
 /*                                                                           */
 /*****************************************************************************/
 void sock_fd_local_flow_control(t_all_ctx *all_ctx, int stop);
-void sock_fd_tx(t_all_ctx *all_ctx, int idx, t_blkd *blkd);
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd);
-int sock_fd_open(t_all_ctx *all_ctx, char *lan, int idx, char *sock_path);
-void sock_fd_finish(t_all_ctx *all_ctx, int idx);
+void sock_fd_tx(t_all_ctx *all_ctx, t_blkd *blkd);
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd);
+int sock_fd_open(t_all_ctx *all_ctx, char *lan, int tidx, char *sock_path);
+void sock_fd_finish(t_all_ctx *all_ctx, int tidx);
 void sock_fd_init(t_all_ctx *all_ctx);
-void rx0_blkd_sock_cb(void *ptr, int llid);
+void rx_blkd_sock_cb(void *ptr, int llid);
 /*---------------------------------------------------------------------------*/
 
 

@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include "ioc_top.h"
 
+
 #define MAX_MUTXT_LEN      2500
 #define IO_MAX_BUF_LEN 50000
 #define MAX_SIZE_BIGGEST_MSG 100000
@@ -61,7 +62,7 @@ typedef struct t_tx_sock_async_pool
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-typedef struct t_traf_sat
+typedef struct t_traf_endp
 {
   char path_traf[MAX_PATH_LEN];
   int  llid_traf;
@@ -74,7 +75,7 @@ typedef struct t_traf_sat
   int  nb_bytes_tx;
   int  nb_pkt_rx;
   int  nb_bytes_rx;
-} t_traf_sat;
+} t_traf_endp;
 /*---------------------------------------------------------------------------*/
 
 
@@ -89,17 +90,8 @@ void clownix_real_timer_init(struct t_all_ctx *all_ctx);
 
 
 /****************************************************************************/
-typedef void (*t_client_cmd)(struct t_all_ctx *all_ctx, int llid,
-                             char *req, char *resp);
 typedef void (*t_client_hop_dialog)(struct t_all_ctx *all_ctx, char *name,
                                     char *req,char *resp);
-typedef void (*t_prepare_rx_packet)(struct t_all_ctx *all_ctx, int *can_rx_nb); 
-typedef void (*t_rx_packet)(struct t_all_ctx *all_ctx, uint64_t usec, 
-                                   uint32_t len, uint8_t *data);
-typedef void (*t_collect_eventfull)(struct t_all_ctx *all_ctx, int *eth,
-                                    int *nb_pkt_tx, int *nb_bytes_tx,
-                                    int *nb_pkt_rx, int *nb_bytes_rx);
-
 /*--------------------------------------------------------------------------*/
 typedef t_blkd_chain *(*t_get_blkd_from_elem)(struct t_all_ctx *ctx,
                                               void *ptrelem); 
@@ -110,16 +102,13 @@ typedef void (*t_wake_out_epoll)(struct t_all_ctx *all_ctx);
 typedef struct t_all_ctx
 {
   t_all_ctx_head ctx_head;
-  int volatile g_lock_handle_tx;
-  int volatile g_lock_timer_tx;
-  int volatile g_lock_handle_rx;
-  int volatile g_lock_thread_rx;
   int g_out_evt_fd;
   int g_nb_elem_rx_ready;
   t_wake_out_epoll g_cb[MAX_TYPE_CB];
 
   char g_net_name[MAX_NAME_LEN];
   char g_name[MAX_NAME_LEN];
+  int  g_num;
   char g_path[MAX_PATH_LEN];
   char g_addr_port[MAX_NAME_LEN];
   int  g_fd_tcp;
@@ -128,7 +117,7 @@ typedef struct t_all_ctx
   char g_listen_traf_path[MAX_PATH_LEN];
   int  g_llid_listen_traf;
 
-  t_traf_sat g_traf[2];
+  t_traf_endp g_traf_endp[MAX_TRAF_ENDPOINT];
 
   void *bh_trigger;
   t_tx_elem_free_pool tx_elem_free_pool;
@@ -136,15 +125,9 @@ typedef struct t_all_ctx
   void *qemu_mueth_state;
   int qemu_guest_hdr_len;
 
-  int  g_tx_queue_len_unix_sock;
   int g_cloonix_net_status_ok;
   int g_qemu_net_status_ok;
-  t_client_cmd g_cb_client_cmd;
   t_get_blkd_from_elem get_blkd_from_elem;
-  t_prepare_rx_packet g_cb_prepare_rx_packet;
-  t_rx_packet g_cb_rx_packet;
-  t_collect_eventfull cb_collect_eventfull;
-
 
 } t_all_ctx;
 
@@ -169,7 +152,7 @@ typedef void (*t_heartbeat_cb)(t_all_ctx *all_ctx, int delta);
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-t_all_ctx *msg_mngt_init (char *name, int offset, int max_len_per_read);
+t_all_ctx *msg_mngt_init (char *name, int num, int max_len_per_read);
 int msg_exist_channel(t_all_ctx *all_ctx, int llid, 
                       int *is_blkd, const char *fct);
 void msg_delete_channel(t_all_ctx *all_ctx, int llid);
@@ -194,8 +177,6 @@ void green_light_for_rx(t_all_ctx *all_ctx);
 /*****************************************************************************/
 int channel_get_tx_queue_len(t_all_ctx *all_ctx, int llid,
                              int *tx_queued, int *rx_queued);
-/*---------------------------------------------------------------------------*/
-void setup_global_second_offset(int second_offset);
 /*---------------------------------------------------------------------------*/
 void channel_sync(void *ptr, int llid);
 /*---------------------------------------------------------------------------*/

@@ -52,33 +52,33 @@ static char g_buf[MAX_SLIRP_RX_PROCESS];
 void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line)
 {
   char name[MAX_NAME_LEN];
-  int vm_id, num;
+  int vm_id, vm_eth;
   int m[6];
   char mac[MAX_NAME_LEN];
 
   DOUT(ptr, FLAG_HOP_APP, "%s", line);
 
-  if (sscanf(line, "add_machine_mac name=%s vm_id=%d num=%d "
+  if (sscanf(line, "add_machine_mac name=%s vm_id=%d vm_eth=%d "
                    "mac=%02X:%02X:%02X:%02X:%02X:%02X", 
-                   name, &vm_id, &num, &(m[0]), &(m[1]),&(m[2]),
+                   name, &vm_id, &vm_eth, &(m[0]), &(m[1]),&(m[2]),
                    &(m[3]), &(m[4]),&(m[5])) == 9) 
     {
     memset(mac, 0, MAX_NAME_LEN);
     snprintf(mac, MAX_NAME_LEN-1, "%02X:%02X:%02X:%02X:%02X:%02X", 
                                   m[0]&0xFF, m[1]&0xFF, m[2]&0xFF,
                                   m[3]&0xFF, m[4]&0xFF, m[5]&0xFF);
-    set_dhcp_addr(name, vm_id, num, mac);
+    set_dhcp_addr(name, vm_id, vm_eth, mac);
     }
-  else if (sscanf(line, "del_machine_mac name=%s vm_id=%d num=%d "
+  else if (sscanf(line, "del_machine_mac name=%s vm_id=%d vm_eth=%d "
                    "mac=%02X:%02X:%02X:%02X:%02X:%02X",
-                   name, &vm_id, &num, &(m[0]), &(m[1]),&(m[2]),
+                   name, &vm_id, &vm_eth, &(m[0]), &(m[1]),&(m[2]),
                    &(m[3]), &(m[4]),&(m[5])) == 9) 
     {
     memset(mac, 0, MAX_NAME_LEN);
     snprintf(mac, MAX_NAME_LEN-1, "%02X:%02X:%02X:%02X:%02X:%02X",
                                   m[0]&0xFF, m[1]&0xFF, m[2]&0xFF,
                                   m[3]&0xFF, m[4]&0xFF, m[5]&0xFF);
-    unset_dhcp_addr(name, vm_id, num, mac);
+    unset_dhcp_addr(name, vm_id, vm_eth, mac);
     }
   else
     KERR("%s", line);
@@ -195,10 +195,14 @@ void err_udp_so(void *ptr, int llid, int err, int from)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rx_from_traffic_sock(t_all_ctx *all_ctx, int idx, t_blkd *bd)
+int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
-  packet_input_from_slirptux(bd->payload_len, bd->payload_blkd);
-  blkd_free((void *) all_ctx, bd);
+  if (bd)
+    {
+    packet_input_from_slirptux(bd->payload_len, bd->payload_blkd);
+    blkd_free((void *) all_ctx, bd);
+    }
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -245,7 +249,7 @@ int main (int argc, char *argv[])
   nat_type = strtoul(argv[4], &endptr, 10);
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
-  if (nat_type != musat_type_nat)
+  if (nat_type != endp_type_nat)
     KOUT("%d", nat_type);
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN);
   blkd_set_our_mutype((void *) all_ctx, nat_type);

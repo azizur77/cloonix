@@ -108,37 +108,16 @@
                          "  <tid> %d </tid>\n"\
                          "</eventfull_sub>"
 /*---------------------------------------------------------------------------*/
-#define EVENTFULL_SAT    "<eventfull_sat>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <sat_is_ok> %d </sat_is_ok>\n"\
-                         "  <pkt_rx0> %d </pkt_rx0>\n"\
-                         "  <pkt_tx0> %d </pkt_tx0>\n"\
-                         "  <pkt_rx1> %d </pkt_rx1>\n"\
-                         "  <pkt_tx1> %d </pkt_tx1>\n"\
-                         "</eventfull_sat>"
-
-#define EVENTFULL_ETH    "<eventfull_eth>\n"\
-                         "  <eth> %d </eth>\n"\
-                         "  <pkt_rx> %d </pkt_rx>\n"\
-                         "  <pkt_tx> %d </pkt_tx>\n"\
-                         "</eventfull_eth>"
-
-#define EVENTFULL_VM_O   "<eventfull_vm>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <ram> %d </ram>\n"\
-                         "  <cpu> %d </cpu>\n"\
-                         "  <nb_eth> %d </nb_eth>\n"
-
-#define EVENTFULL_VM_C   "</eventfull_vm>"
-
-
 #define EVENTFULL_O      "<eventfull>\n"\
                          "  <tid> %d </tid>\n"\
-                         "  <nb_vm> %d </nb_vm>\n"\
-                         "  <nb_sat> %d </nb_sat>\n"
+                         "  nb_endp:%d \n"
 
-#define EVENTFULL_C \
-                         "</eventfull>"
+#define EVENTFULL_C      "</eventfull>"
+/*---------------------------------------------------------------------------*/
+#define EVENTFULL_ENDP   "<eventfull_endp>\n"\
+                         "name:%s num:%d type:%d \n"\
+                         "ram:%d cpu:%d ok:%d rx:%d tx:%d \n"\
+                         "</eventfull_endp>"
 /*---------------------------------------------------------------------------*/
 #define ADD_VM_O         "<add_vm>\n"\
                          "  <tid> %d </tid>\n"\
@@ -150,7 +129,6 @@
 
 #define ADD_VM_ETH_PARAMS "<eth_params>\n"\
                           "  <mac> %02X %02X %02X %02X %02X %02X </mac>\n"\
-                          "  <is_promisc> %d </is_promisc>\n"\
                           "</eth_params>"
 
 #define ADD_VM_C         "  <linux_kernel> %s </linux_kernel>\n"\
@@ -175,41 +153,32 @@
                          "</sav_vm_all>"
 
 
-#define EVT_ADD_ETH      "<add_eth>\n"\
+#define ADD_SAT_C2C      "<sat_c2c>\n"\
                          "  <tid> %d </tid>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <eth> %d </eth>\n"\
-                         "</add_eth>"
+                         "  name:%s \n"\
+                         "  c2c_slave:%s ip_slave:%d \n"\
+                         "  port_slave:%d passwd_slave:%s \n"\
+                         "</sat_c2c>\n"
 
-
-#define ADD_SAT          "<add_sat>\n"\
+#define ADD_SAT_NON_C2C "<sat_non_c2c>\n"\
                          "  <tid> %d </tid>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <musat_type> %d </musat_type>\n"\
-                         "  <c2c_slave> %s </c2c_slave>\n"\
-                         "  <ip_slave> %d </ip_slave>\n"\
-                         "  <port_slave> %d </port_slave>\n"\
-                         "  <passwd_slave> %s </passwd_slave>\n"\
-                         "</add_sat>"
+                        "  name:%s type:%d \n"\
+                        "</sat_non_c2c>\n"
 
 #define DEL_SAT          "<del_sat>\n"\
                          "  <tid> %d </tid>\n"\
                          "  <name> %s </name>\n"\
                          "</del_sat>"
 
-#define ADD_LAN_SAT     "<add_lan_sat>\n"\
+#define ADD_LAN_ENDP     "<add_lan_endp>\n"\
                          "  <tid> %d </tid>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <vl> %s </vl>\n"\
-                         "  <num> %d </num>\n"\
-                         "</add_lan_sat>"
+                         "  name:%s num:%d lan:%s \n"\
+                         "</add_lan_endp>"
 
-#define DEL_LAN_SAT     "<del_lan_sat>\n"\
+#define DEL_LAN_ENDP     "<del_lan_endp>\n"\
                          "  <tid> %d </tid>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <vl> %s </vl>\n"\
-                         "  <num> %d </num>\n"\
-                         "</del_lan_sat>"
+                         "  name:%s num:%d lan:%s \n"\
+                         "</del_lan_endp>"
 
 /*---------------------------------------------------------------------------*/
 #define KILL_UML_CLOWNIX      "<kill_uml_clownix>\n"\
@@ -335,84 +304,55 @@
                               "  <tid> %d </tid>\n"\
                               "</event_topo_unsub>"
 
+
+
 #define EVENT_TOPO_O          "<event_topo>\n"\
                               "  <tid> %d </tid>\n"\
-                              "  <network_name> %s </network_name>\n"\
-                              "  <username> %s </username>\n"\
-                              "  <server_port> %d </server_port>\n"\
-                              "  <work_dir> %s </work_dir>\n"\
-                              "  <bulk_dir> %s </bulk_dir>\n"\
-                              "  <bin_dir> %s </bin_dir>\n"\
-                              "  <tmux_bin> %s </tmux_bin>\n"\
-                              "  <nb_vm> %d </nb_vm> \n"\
-                              "  <nb_sat> %d </nb_sat>\n"
+                              "  version:%s \n"\
+                              "  network:%s username:%s server_port:%d \n"\
+                              "  work_dir:%s bulk_dir:%s bin_dir:%s \n"\
+                              "  tmux_bin:%s flags_config:%d \n"\
+                              "  nb_kvm:%d nb_c2c:%d nb_snf:%d \n"\
+                              "  nb_sat:%d nb_endp:%d \n"
 
-#define TOPO_VM_O        "  <vm>\n"\
-                         "    name: %s \n"\
-                         "    install_cdrom: %s \n"\
-                         "    added_cdrom: %s \n"\
-                         "    added_disk: %s \n"\
-                         "    p9_host_share: %s \n"\
-                         "    linux_kernel: %s \n"\
-                         "    rootfs_used: %s \n"\
-                         "    rootfs_backing: %s \n"\
-                         "    vm_id: %d vm_config_flags: %d \n"\
-                         "    nb_eth: %d mem: %d cpu: %d \n"
+#define EVENT_TOPO_C          "</event_topo>\n"\
+
+#define EVENT_TOPO_KVM_O      "<kvm>\n"\
+                              "  name: %s \n"\
+                              "  install_cdrom: %s \n"\
+                              "  added_cdrom: %s \n"\
+                              "  added_disk: %s \n"\
+                              "  p9_host_share: %s \n"\
+                              "  linux_kernel: %s \n"\
+                              "  rootfs_used: %s \n"\
+                              "  rootfs_backing: %s \n"\
+                              "  vm_id: %d vm_config_flags: %d \n"\
+                              "  nb_eth: %d mem: %d cpu: %d \n"
+
+#define EVENT_TOPO_KVM_C      "</kvm>\n"
                         
+#define EVENT_TOPO_C2C        "<c2c>\n"\
+                              "  name:%s \n"\
+                              "  master:%s slave:%s local_is_master:%d \n"\
+                              "  peered:%d ip_slave:%x port_slave%d \n"\
+                              "</c2c>\n"
 
-#define TOPO_LAN        "      <lan> %s </lan>\n"
+#define EVENT_TOPO_SNF        "<snf>\n"\
+                              "  name:%s \n"\
+                              "  recpath:%s capture_on:%d \n"\
+                              "</snf>\n"
 
-#define TOPO_ALAN        "      <alan> %s </alan>\n"
+#define EVENT_TOPO_SAT        "<sat>\n"\
+                              "  name:%s \n"\
+                              "  type:%d \n"\
+                              "</sat>\n"
 
-#define TOPO_BLAN        "      <blan> %s </blan>\n"
+#define EVENT_TOPO_LAN        "  <lan> %s </lan>\n"
 
-#define TOPO_ETH_O       "      <eth_infos>\n"\
-                         "      id: %d nb_lan: %d \n"
+#define EVENT_TOPO_ENDP_O     "<endp>\n"\
+                              "  name:%s num:%d type:%d nb_lan:%d \n"\
 
-#define TOPO_ETH_C       " </eth_infos>\n"
-
-#define TOPO_VM_C        "  </vm>\n"
-
-#define TOPO_SAT_O       "  <sat>\n"\
-                         "    name: %s \n"\
-                         "    <musat_type> %d </musat_type>\n"\
-                         "    recpath: %s capture_on: %d \n"\
-                         "    master: %s slave: %s \n"\
-                         "    local_is_master:%d peered: %d \n"\
-                         "    ip_slave: %d port_slave: %d \n"\
-                         "    nb_lan0: %d nb_lan1: %d\n"
-
-#define TOPO_SAT_C       "  </sat>\n"
-
-
-#define EVENT_TOPO_C \
-                      "</event_topo>"
-/*---------------------------------------------------------------------------*/
-#define EVENT_SPY_SUB          "<event_spy_sub> \n"\
-                               "  <tid> %d </tid>\n"\
-                               "  <nm>  %s </nm> \n"\
-                               "  <if>  %s </if> \n"\
-                               "  <dir> %s </dir> \n"\
-                               "</event_spy_sub>"
-
-#define EVENT_SPY_UNSUB        "<event_spy_unsub> \n"\
-                               "  <tid> %d </tid>\n"\
-                               "  <nm>  %s </nm> \n"\
-                               "  <if>  %s </if> \n"\
-                               "  <dir> %s </dir> \n"\
-                               "</event_spy_unsub>"
-
-#define EVENT_SPY_O           "<event_spy> \n"\
-                              "  <tid> %d </tid>\n"\
-                              "  <nm>  %s </nm> \n"\
-                              "  <if>  %s </if> \n"\
-                              "  <dir> %s </dir> \n"\
-                              "  <secs>  %d </secs> \n"\
-                              "  <usecs>  %d </usecs> \n"\
-                              "  <qty> %d </qty> \n"\
-                              "  <msg>"
-#define EVENT_SPY_C           "</msg>\n"\
-                              "</event_spy>"
+#define EVENT_TOPO_ENDP_C     "</endp>\n"\
 /*---------------------------------------------------------------------------*/
 #define VMCMD            "<vmcmd>\n"\
                          "  <tid> %d </tid>\n"\
@@ -420,13 +360,6 @@
                          "  <cmd> %d </cmd>\n"\
                          "  <param> %d </param>\n"\
                          "</vmcmd>"
-/*---------------------------------------------------------------------------*/
-#define SUB_EVT_STATS_ETH "<sub_evt_stats_eth>\n"\
-                          "  <tid> %d </tid>\n"\
-                          "  <name> %s </name>\n"\
-                          "  <eth> %d </eth>\n"\
-                          "  <sub_on> %d </sub_on>\n"\
-                          "</sub_evt_stats_eth>\n"
 /*---------------------------------------------------------------------------*/
 #define EVT_STATS_TX_ITEM   "<tx_item>\n"\
                             "  ms: %d p: %d b: %d \n"\
@@ -436,32 +369,17 @@
                             "  ms: %d p: %d b: %d \n"\
                             "</rx_item>"
 /*---------------------------------------------------------------------------*/
-#define EVT_STATS_ETH_O  "<evt_stats_eth>\n"\
-                         "  <tid> %d </tid>\n"\
-                         "  <network_name> %s </network_name>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <eth> %d </eth>\n"\
-                         "  <status> %d </status>\n"\
-                         "  <nb_tx_items> %d </nb_tx_items>\n"\
-                         "  <nb_rx_items> %d </nb_rx_items>\n"
+#define SUB_EVT_STATS_ENDP  "<sub_evt_stats_endp>\n"\
+                            "  <tid> %d </tid>\n"\
+                            "  name:%s num:%d sub_on:%d \n"\
+                            "</sub_evt_stats_endp>\n"
 /*---------------------------------------------------------------------------*/
-#define EVT_STATS_ETH_C  "</evt_stats_eth>\n"\
+#define EVT_STATS_ENDP_O    "<evt_stats_endp>\n"\
+                            "  <tid> %d </tid>\n"\
+                            "  network:%s name:%s num:%d status:%d \n"\
+                            "  nb_tx_items:%d nb_rx_items:%d \n"\
 /*---------------------------------------------------------------------------*/
-#define SUB_EVT_STATS_SAT "<sub_evt_stats_sat>\n"\
-                          "  <tid> %d </tid>\n"\
-                          "  <name> %s </name>\n"\
-                          "  <sub_on> %d </sub_on>\n"\
-                          "</sub_evt_stats_sat>\n"
-/*---------------------------------------------------------------------------*/
-#define EVT_STATS_SAT_O  "<evt_stats_sat>\n"\
-                         "  <tid> %d </tid>\n"\
-                         "  <network_name> %s </network_name>\n"\
-                         "  <name> %s </name>\n"\
-                         "  <status> %d </status>\n"\
-                         "  <nb_tx_items> %d </nb_tx_items>\n"\
-                         "  <nb_rx_items> %d </nb_rx_items>\n"
-/*---------------------------------------------------------------------------*/
-#define EVT_STATS_SAT_C  "</evt_stats_sat>"
+#define EVT_STATS_ENDP_C  "</evt_stats_endp>"
 /*---------------------------------------------------------------------------*/
 #define SUB_EVT_STATS_SYSINFO "<sub_evt_stats_sysinfo>\n"\
                               "  <tid> %d </tid>\n"\

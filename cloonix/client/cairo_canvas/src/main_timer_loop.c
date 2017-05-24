@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "commun_consts.h"
 #include "bank.h"
@@ -116,13 +115,13 @@ static void timer_ping_evt(void *data)
     {
     bitem = look_for_sat_with_id(evt->name);
     if (bitem)
-      bitem->pbi.pbi_sat->c2c_info.is_peered = 1;
+      bitem->pbi.pbi_sat->topo_c2c.is_peered = 1;
     }
   else if (evt->evt == c2c_evt_connection_ko)
     {
     bitem = look_for_sat_with_id(evt->name);
     if (bitem)
-      bitem->pbi.pbi_sat->c2c_info.is_peered = 0;
+      bitem->pbi.pbi_sat->topo_c2c.is_peered = 0;
     }
   else
     {

@@ -31,7 +31,8 @@ printf("useless");
 }
 
 /*****************************************************************************/
-void rpct_recv_pid_resp(void *ptr,int llid,int tid,char *name,int pid){KOUT(" ");}
+void rpct_recv_pid_resp(void *ptr,int llid,int tid,char *name,int num,
+                        int toppid, int pid){KOUT(" ");}
 void rpct_recv_hop_msg(void *ptr, int llid, int tid, int flags_hop, char *txt){KOUT(" ");}
 void rpct_recv_cli_resp(void *ptr,int llid,int tid,int cllid,int ctid,char *line){KOUT(" ");}
 void rpct_recv_report(void *ptr, int llid, t_blkd_item *item){KOUT(" ");}

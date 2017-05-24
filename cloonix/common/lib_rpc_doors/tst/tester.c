@@ -24,7 +24,6 @@
 #include <sys/time.h>
 #include <math.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 
@@ -111,14 +110,14 @@ static void heartbeat (int delta)
 /****************************************************************************/
 void doors_recv_c2c_clone_birth(int llid, int itid, 
                                 char *inet_name, char *iname,
-                                int ifd, int imusat_type,
+                                int ifd, int iendp_type,
                                 char *ibin_path, char *isock)
 {
   static char net_name[MAX_NAME_LEN];
   static char name[MAX_NAME_LEN];
   static char bin_path[MAX_PATH_LEN];
   static char sock[MAX_PATH_LEN];
-  static int tid, fd, musat_type;
+  static int tid, fd, endp_type;
   if (i_am_client)
     {
     if (count_c2c_clone_birth)
@@ -133,24 +132,24 @@ void doors_recv_c2c_clone_birth(int llid, int itid,
         KOUT(" ");
       if (ifd != fd)
         KOUT(" ");
-      if (imusat_type != musat_type)
+      if (iendp_type != endp_type)
         KOUT(" ");
       if (itid != tid)
         KOUT(" ");
       }
     tid = rand();
     fd = rand();
-    musat_type = rand();
+    endp_type = rand();
     random_choice_str(net_name, MAX_NAME_LEN);
     random_choice_str(name, MAX_NAME_LEN);
     random_choice_str(bin_path, MAX_PATH_LEN);
     random_choice_str(sock, MAX_PATH_LEN);
     doors_send_c2c_clone_birth(llid, tid, net_name, name,
-                               fd, musat_type, bin_path, sock);
+                               fd, endp_type, bin_path, sock);
     }
   else
     doors_send_c2c_clone_birth(llid, itid,inet_name, iname,
-                               ifd, imusat_type, ibin_path, isock);
+                               ifd, iendp_type, ibin_path, isock);
   count_c2c_clone_birth++;
 }
 /*--------------------------------------------------------------------------*/

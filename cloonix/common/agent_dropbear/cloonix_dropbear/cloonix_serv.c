@@ -40,8 +40,9 @@ void rpct_recv_cli_req(void *ptr, int llid, int tid,
                     int cli_llid, int cli_tid, char *line){KOUT(" ");}
 void rpct_recv_cli_resp(void *ptr, int llid, int tid,
                      int cli_llid, int cli_tid, char *line){KOUT(" ");}
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int secoffset, char *name){KOUT(" ");}
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid){KOUT(" ");}
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num){KOUT(" ");}
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num, 
+                        int toppid, int pid){KOUT(" ");}
 void rpct_recv_hop_sub(void *ptr, int llid, int tid, int flags_hop){KOUT(" ");}
 void rpct_recv_hop_unsub(void *ptr, int llid, int tid){KOUT(" ");}
 void rpct_recv_hop_msg(void *ptr, int llid, int tid,
@@ -157,7 +158,7 @@ static int ident_readln(int fd, char* buf, int count)
 {
   char in, ret, result = -1;
   int pos = 0;
-  int num = 0;
+  int len = 0;
   fd_set fds;
   if (count >= 1)
     {
@@ -174,9 +175,9 @@ static int ident_readln(int fd, char* buf, int count)
         }
       else if ((ret>0) && (FD_ISSET(fd, &fds)))
         {
-        num = read(fd, &in, 1);
-        if ((num==0) || 
-            ((num < 0) && ((errno != EINTR) && (errno != EAGAIN))))
+        len = read(fd, &in, 1);
+        if ((len==0) || 
+            ((len < 0) && ((errno != EINTR) && (errno != EAGAIN))))
           {
           KERR("%d %d", pos, count);
           break;

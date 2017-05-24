@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
@@ -29,8 +28,7 @@
 #include "hop_event.h"
 #include "doorways_mngt.h"
 #include "mulan_mngt.h"
-#include "mueth_mngt.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 
 
 /*---------------------------------------------------------------------------*/
@@ -58,7 +56,7 @@ typedef struct t_hop_record
 {
   int type_hop;
   char name[MAX_NAME_LEN];
-  int eth;
+  int  num;
   int llid;
   int nb_client_allocated;
   t_clients *clients;
@@ -76,10 +74,7 @@ static char *hop_name(t_hop_record *hop)
 {
   static char name[MAX_NAME_LEN];
   memset(name, 0, MAX_NAME_LEN);
-  if (hop->type_hop == type_hop_mueth)
-    snprintf(name, MAX_NAME_LEN-1, "%s,%d", hop->name, hop->eth);
-  else
-    snprintf(name, MAX_NAME_LEN-1, "%s", hop->name);
+  snprintf(name, MAX_NAME_LEN-1, "%s,%d", hop->name, hop->num);
   return name;
 }
 /*---------------------------------------------------------------------------*/
@@ -147,13 +142,13 @@ static t_hop_record *get_hop_with_llid(int llid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static t_hop_record *get_hop_with_name(char *name, int eth)
+static t_hop_record *get_hop_with_name(char *name, int num)
 {
   t_hop_record *cur = g_head_hop;
   while (cur)
     {
     if ((!strcmp(cur->name, name)) &&
-        (eth == cur->eth))
+        (num == cur->num))
       break;
     cur = cur->next;
     }
@@ -266,14 +261,14 @@ static void alloc_client(t_hop_record *hop, int llid, int tid, int flags_hop)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void alloc_hop(int llid, int type_hop, char *name, int eth)
+static void alloc_hop(int llid, int type_hop, char *name, int num)
 {
   t_hop_record *hop = (t_hop_record *) clownix_malloc(sizeof(t_hop_record), 7);
   memset(hop, 0, sizeof(t_hop_record));
   strncpy(hop->name, name, MAX_NAME_LEN-1);
   hop->llid = llid;
   hop->type_hop = type_hop;
-  hop->eth = eth;
+  hop->num = num;
   if (g_head_hop)
     g_head_hop->prev = hop;
   hop->next = g_head_hop;
@@ -368,7 +363,7 @@ void recv_hop_evt_doors_unsub(int llid, int tid)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int hop_event_alloc(int llid, int type_hop, char *name, int eth)
+int hop_event_alloc(int llid, int type_hop, char *name, int num)
 {
   int result = -1;
   t_hop_record *hop;
@@ -376,17 +371,17 @@ int hop_event_alloc(int llid, int type_hop, char *name, int eth)
     KOUT(" ");
   hop = get_hop_with_llid(llid);
   if (hop)
-    KERR("%d %s %d", llid, name, eth);
+    KERR("%d %s %d", llid, name, num);
   else
     {
     if (strlen(name) == 0)
       KOUT(" ");
-    hop = get_hop_with_name(name, eth);
+    hop = get_hop_with_name(name, num);
     if (hop)
-      KERR("%d %s %d", llid, name, eth);
+      KERR("%d %s %d", llid, name, num);
     else
       {
-      alloc_hop(llid, type_hop, name, eth);
+      alloc_hop(llid, type_hop, name, num);
       update_flags_hop_clients();
       result = 0;
       }
@@ -418,7 +413,7 @@ t_hop_list *hop_get_name_list(int *onb)
   while (cur)
     {
     list[i].type_hop = cur->type_hop;
-    list[i].eth = cur->eth;
+    list[i].num = cur->num;
     strcpy(list[i].name, cur->name);
     i++;
     cur = cur->next;
@@ -462,16 +457,15 @@ void rpct_recv_hop_msg(void *ptr, int llid, int tid, int flags_hop, char *txt)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int pid)
+void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num,
+                        int toppid, int pid)
 {
   if (tid == type_hop_doors)
     doors_pid_resp(llid, name, pid);
   else if (tid == type_hop_mulan)
     mulan_pid_resp(llid, name, pid);
-  else if (tid == type_hop_mueth)
-    mueth_pid_resp(llid, name, pid);
-  else if (tid == type_hop_musat)
-    musat_mngt_pid_resp(llid, name, pid);
+  else if (tid == type_hop_endp)
+    endp_mngt_pid_resp(llid, name, pid);
   else
     KERR("%d %s %d", tid, name, pid);
 }

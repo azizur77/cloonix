@@ -25,45 +25,16 @@
 
 #include "ioc_top.h"
 
-static char g_name[MAX_NAME_LEN];
-static int g_start_off_second_offset;
 static int g_pid;
-
-/*****************************************************************************/
-char *cloonix_get_short(const char *full_name)
-{
-  char *ptr = strrchr(full_name, '/');
-  if (ptr != NULL)
-    ptr += 1;
-  else
-    ptr = (char *) full_name;
-  return ptr;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void cloonix_set_sec_offset(int offset)
-{
-  g_start_off_second_offset = offset;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int cloonix_get_sec_offset(void)
-{
-  return g_start_off_second_offset;
-}
-/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 unsigned int cloonix_get_msec(void)
 {
   struct timespec ts;
   unsigned int result;
-//  if (clock_gettime(CLOCK_MONOTONIC, &ts))
   if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts))
     KOUT(" ");
-  result = (unsigned int) (ts.tv_sec - g_start_off_second_offset);
+  result = (unsigned int) (ts.tv_sec);
   result *= 1000;
   result += ((unsigned int) ts.tv_nsec) / 1000000;
   return result;
@@ -75,10 +46,9 @@ long long cloonix_get_usec(void)
 {
   struct timespec ts;
   long long result;
-//  if (clock_gettime(CLOCK_MONOTONIC, &ts))
   if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts))
     KOUT(" ");
-  result = (long long) (ts.tv_sec - g_start_off_second_offset);
+  result = (long long) (ts.tv_sec);
   result *= 1000000;
   result += ts.tv_nsec / 1000;
   return result;
@@ -99,36 +69,4 @@ int cloonix_get_pid(void)
 }
 /*---------------------------------------------------------------------------*/
 
-/*****************************************************************************/
-void cloonix_set_name(char *name)
-{
-  char *ptr;
-  if (strlen(g_name))
-    {
-    /*QEMU_ETH_FORMAT*/
-    memset(g_name, 0, MAX_NAME_LEN);
-    strncpy(g_name, name, MAX_NAME_LEN-1);
-    ptr = strrchr(g_name, '_'); 
-    if (ptr)
-      *ptr = 0;
-    if (!strlen(g_name))
-      {
-      strcpy(g_name, "error_name");
-      KERR(" ");
-      }
-    }
-  else
-    {
-    memset(g_name, 0, MAX_NAME_LEN);
-    strncpy(g_name, name, MAX_NAME_LEN-1);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *cloonix_get_name(void)
-{
-  return g_name;
-}
-/*---------------------------------------------------------------------------*/
 

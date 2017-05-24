@@ -127,8 +127,5 @@ link%:
 	-rm -f $*$(EXEEXT)
 	-ln -s dropbearmulti$(EXEEXT) $*$(EXEEXT)
 
-.PHONY : clean
-
-
 clean:
-	-rm -f dropbear dbclient scp *.o  
+	@-rm -f dropbear dbclient scp *.o  

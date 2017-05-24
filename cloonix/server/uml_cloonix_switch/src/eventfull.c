@@ -22,14 +22,13 @@
 #include <sys/sysinfo.h>
 
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "commun_daemon.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
 #include "event_subscriber.h"
 #include "machine_create.h"
 #include "utils_cmd_line_maker.h"
-#include "musat_mngt.h"
+#include "endp_mngt.h"
 
 
 /*****************************************************************************/
@@ -125,9 +124,9 @@ static void timeout_delete_vm(void *data)
     if (!vm->vm_to_be_killed)
       {
       event_print("The pid was not found in the /proc, KILLING machine %s", 
-                  vm->vm_params.name);
-      KERR("PID NOT FOUND %s", vm->vm_params.name);
-      machine_death(vm->vm_params.name, error_death_nopid);
+                  vm->kvm.name);
+      KERR("PID NOT FOUND %s", vm->kvm.name);
+      machine_death(vm->kvm.name, error_death_nopid);
       }
     }
   clownix_free(data, __FUNCTION__);
@@ -160,7 +159,7 @@ static int update_pid_infos(t_vm *vm)
       {
       name = (char *) clownix_malloc(MAX_NAME_LEN, 13);
       memset(name, 0, MAX_NAME_LEN);
-      strncpy(name, vm->vm_params.name, MAX_NAME_LEN-1);
+      strncpy(name, vm->kvm.name, MAX_NAME_LEN-1);
       clownix_timeout_add(1, timeout_delete_vm, (void *)name, NULL, NULL);
       }
     else
@@ -190,65 +189,56 @@ static int update_pid_infos(t_vm *vm)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int helper_collect_sat(t_eventfull_sat *eventfull, int nb, t_tux *tux)
+static int add_all_tidx_rx(t_lan_attached *lan_attached)
 {
-  int i, j;
-  t_tux *cur = tux;
-  for (i=0, j=0; i<nb; i++)
+  int i, result = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
     {
-    if (!cur)
-      KOUT(" ");
-    if (cur->is_musat)
-      {
-      strncpy(eventfull[j].name, cur->name, MAX_NAME_LEN-1);
-      eventfull[j].sat_is_ok = cur->c2c_info.is_peered;
-      eventfull[j].pkt_rx0 = cur->lan_attached[0].eventfull_rx_p;
-      eventfull[j].pkt_tx0 = cur->lan_attached[0].eventfull_tx_p;
-      eventfull[j].pkt_rx1 = cur->lan_attached[1].eventfull_rx_p;
-      eventfull[j].pkt_tx1 = cur->lan_attached[1].eventfull_tx_p;
-      j++;
-      cur->lan_attached[0].eventfull_rx_p = 0;
-      cur->lan_attached[0].eventfull_tx_p = 0;
-      cur->lan_attached[1].eventfull_rx_p = 0;
-      cur->lan_attached[1].eventfull_tx_p = 0;
-      }
-    cur = cur->next;
+    result += lan_attached[i].eventfull_rx_p;
+    lan_attached[i].eventfull_rx_p = 0;
     }
-  if (cur)
-    KOUT(" ");
-  return j;
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void helper_collect(t_eventfull_vm *eventfull, int nb, t_vm *head_vm) 
+static int add_all_tidx_tx(t_lan_attached *lan_attached)
 {
-  int i, j;
-  t_vm *cur = head_vm;
-  t_eth *cur_eth;
+  int i, result = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    result += lan_attached[i].eventfull_tx_p;
+    lan_attached[i].eventfull_tx_p = 0;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
+{
+  int i;
+  t_endp *next, *cur = endp;
+  t_vm *vm;
   for (i=0; i<nb; i++)
     {
     if (!cur)
       KOUT(" ");
-    strncpy(eventfull[i].name, cur->vm_params.name, MAX_NAME_LEN-1);
-    eventfull[i].nb_eth = cur->nb_eth;
-    eventfull[i].ram = cur->ram;
-    eventfull[i].cpu = cur->cpu;
-    cur_eth = cur->eth_head;
-    for (j=0; j<cur->nb_eth; j++)
+    strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
+    eventfull[i].num  = cur->num;
+    eventfull[i].type = cur->endp_type;
+    if ((cur->endp_type == endp_type_kvm) && (cur->num == 0)) 
       {
-      if (!cur_eth)
-        KOUT(" ");
-      eventfull[i].eth[j].eth = cur_eth->eth;
-      eventfull[i].eth[j].pkt_rx = cur_eth->lan_attached.eventfull_rx_p; 
-      eventfull[i].eth[j].pkt_tx = cur_eth->lan_attached.eventfull_tx_p;
-      cur_eth->lan_attached.eventfull_rx_p = 0;
-      cur_eth->lan_attached.eventfull_tx_p = 0;
-      cur_eth = cur_eth->next;  
+      vm = cfg_get_vm(cur->name);
+      eventfull[i].ram  = vm->ram;
+      eventfull[i].cpu  = vm->cpu;
       }
-    if (cur_eth)
-      KOUT(" ");
-    cur = cur->next;
+    eventfull[i].ok   = cur->c2c.is_peered;
+    eventfull[i].rx   = add_all_tidx_rx(cur->lan_attached);
+    eventfull[i].tx   = add_all_tidx_tx(cur->lan_attached);
+    next = endp_mngt_get_next(cur);
+    clownix_free(cur, __FILE__);
+    cur = next;
     }
   if (cur)
     KOUT(" ");
@@ -267,7 +257,7 @@ static void refresh_ram_cpu_vm(int nb, t_vm *head_vm)
     if (!cur->vm_to_be_killed)
       {
       if (update_pid_infos(cur))
-        event_print("PROBLEM FOR %s", cur->vm_params.name);
+        event_print("PROBLEM FOR %s", cur->kvm.name);
       }
     cur = cur->next;
     }
@@ -280,42 +270,35 @@ static void refresh_ram_cpu_vm(int nb, t_vm *head_vm)
 static void timeout_collect_eventfull(void *data)
 {
   static int count = 0;
-  t_eventfull_vm *eventfull_vm;
-  t_eventfull_sat *eventfull_sat;
-  int nb_vm, nb_tux, nb_sat, llid, tid;
+  t_eventfull_endp *eventfull_endp;
+  int nb_endp, nb_vm, llid, tid;
   t_vm *vm   = cfg_get_first_vm(&nb_vm);
-  t_tux *tux = cfg_get_first_tux(&nb_tux);
+  t_endp *endp   = endp_mngt_get_first(&nb_endp);
   t_eventfull_subs *cur = head_eventfull_subs;
-  eventfull_vm = 
-      (t_eventfull_vm *) clownix_malloc(nb_vm * sizeof(t_eventfull_vm), 13);
-  memset(eventfull_vm, 0, nb_vm * sizeof(t_eventfull_vm));
-  eventfull_sat = 
-      (t_eventfull_sat *) clownix_malloc(nb_tux * sizeof(t_eventfull_sat), 13);
-  memset(eventfull_sat, 0, nb_tux * sizeof(t_eventfull_sat));
+  eventfull_endp = 
+  (t_eventfull_endp *) clownix_malloc(nb_endp * sizeof(t_eventfull_endp), 13);
+  memset(eventfull_endp, 0, nb_endp * sizeof(t_eventfull_endp));
   count++;
   if (count == 10)
     {
     refresh_ram_cpu_vm(nb_vm, vm);
     count = 0;
     }
-  helper_collect(eventfull_vm, nb_vm, vm); 
-  nb_sat = helper_collect_sat(eventfull_sat, nb_tux, tux); 
+  collect(eventfull_endp, nb_endp, endp); 
   while (cur)
     {
     llid = cur->llid;
     tid = cur->tid;
     if (msg_exist_channel(llid))
       {
-      send_eventfull(llid, tid, nb_vm, eventfull_vm, 
-                                nb_sat, eventfull_sat);
+      send_eventfull(llid, tid, nb_endp, eventfull_endp); 
       }
     else
       event_print ("EVENTFULL ERROR!!!!!!");
     cur = cur->next;
     }
   clownix_timeout_add(20, timeout_collect_eventfull, NULL, NULL, NULL);
-  clownix_free(eventfull_vm, __FUNCTION__); 
-  clownix_free(eventfull_sat, __FUNCTION__); 
+  clownix_free(eventfull_endp, __FUNCTION__); 
 }
 /*---------------------------------------------------------------------------*/
 

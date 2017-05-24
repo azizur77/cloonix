@@ -19,97 +19,105 @@
 #include <string.h>
 #include <stdlib.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doorways_sock.h"
 #include "client_clownix.h"
 #include "interface.h"
 #include "bank.h"
 #include "move.h"
+#include "lib_topo.h"
+
 
 
 /****************************************************************************/
 void process_all_diffs(t_topo_differences *diffs)
 {
-  t_topo_node_chain      *node  = diffs->add_nodes;
-  t_topo_sat_chain       *sat   = diffs->add_sats;
-  t_topo_lan_chain      *lan  = diffs->add_lans;
-  t_topo_edge_eth_chain  *edgei = diffs->add_edge_eth;
-  t_topo_edge_eth_chain  *edgeu = diffs->add_edge_sat;
-  while(node)
+  t_topo_kvm_chain   *add_kvm = diffs->add_kvm;
+  t_topo_kvm_chain   *del_kvm = diffs->del_kvm;
+  t_topo_c2c_chain   *add_c2c = diffs->add_c2c;
+  t_topo_c2c_chain   *del_c2c = diffs->del_c2c;
+  t_topo_snf_chain   *add_snf = diffs->add_snf;
+  t_topo_snf_chain   *del_snf = diffs->del_snf;
+  t_topo_sat_chain   *add_sat = diffs->add_sat;
+  t_topo_sat_chain   *del_sat = diffs->del_sat;
+  t_topo_lan_chain   *add_lan = diffs->add_lan;
+  t_topo_lan_chain   *del_lan = diffs->del_lan;
+  t_topo_edge_chain *add_edge = diffs->add_edge;
+  t_topo_edge_chain *del_edge = diffs->del_edge;
+
+  while(add_kvm)
     {
-    from_cloonix_switch_create_node(node->name, node->ip, node->kernel,
-                                    node->rootfs_used, 
-                                    node->rootfs_backing, 
-                                    node->install_cdrom, 
-                                    node->added_cdrom, 
-                                    node->added_disk, 
-                                    node->num_eth, 
-                                    node->vm_id, node->vm_config_flags);
-    node = node->next;
+    from_cloonix_switch_create_node(&(add_kvm->kvm));
+    add_kvm = add_kvm->next;
     }
 
-  while(sat)
+  while(add_c2c)
     {
-    from_cloonix_switch_create_sat(sat->name, sat->musat_type, 
-                                   &(sat->snf_info), &(sat->c2c_info));
-    sat = sat->next;
+    from_cloonix_switch_create_c2c(&(add_c2c->c2c)); 
+    add_c2c = add_c2c->next;
     }
 
-  while(lan)
+  while(add_snf)
     {
-    if (look_for_lan_with_id(lan->lan) == NULL)
+    from_cloonix_switch_create_snf(&(add_snf->snf));
+    add_snf = add_snf->next;
+    }
+
+  while(add_sat)
+    {
+    from_cloonix_switch_create_sat(&(add_sat->sat));
+    add_sat = add_sat->next;
+    }
+
+  while(add_lan)
+    {
+    if (look_for_lan_with_id(add_lan->lan) == NULL)
       {
-      from_cloonix_switch_create_lan(lan->lan);
+      from_cloonix_switch_create_lan(add_lan->lan);
       }
-    lan = lan->next;
+    add_lan = add_lan->next;
     }
 
-  while(edgei)
+  while(add_edge)
     {
-    from_cloonix_switch_create_eth_edge(edgei->name,edgei->num,edgei->lan);
-    edgei = edgei->next;
+    from_cloonix_switch_create_edge(add_edge->name, add_edge->num, add_edge->lan);
+    add_edge = add_edge->next;
     }
 
-  while(edgeu)
+  while(del_edge)
     {
-    from_cloonix_switch_create_sat_edge(edgeu->name, edgeu->lan, edgeu->num);
-    edgeu = edgeu->next;
+    from_cloonix_switch_delete_edge(del_edge->name, del_edge->num, del_edge->lan);
+    del_edge = del_edge->next;
     }
 
-
-  node  = diffs->del_nodes;
-  sat   = diffs->del_sats;
-  lan  = diffs->del_lans;
-  edgei = diffs->del_edge_eth;
-  edgeu = diffs->del_edge_sat;
-
-  while(edgei)
+  while(del_kvm)
     {
-    from_cloonix_switch_delete_eth_edge(edgei->name,edgei->num,edgei->lan);
-    edgei = edgei->next;
-    }
-  while(edgeu)
-    {
-    from_cloonix_switch_delete_sat_edge(edgeu->name, edgeu->lan, edgeu->num);
-    edgeu = edgeu->next;
+    from_cloonix_switch_delete_node(del_kvm->kvm.name);
+    del_kvm = del_kvm->next;
     }
 
-  while(node)
+  while(del_c2c)
     {
-    from_cloonix_switch_delete_node(node->name);
-    node = node->next;
-    }
-  while(sat)
-    {
-    from_cloonix_switch_delete_sat(sat->name);
-    sat = sat->next;
+    from_cloonix_switch_delete_sat(del_c2c->c2c.name);
+    del_c2c = del_c2c->next;
     }
 
-  while(lan)
+  while(del_snf)
     {
-    from_cloonix_switch_delete_lan(lan->lan);
-    lan = lan->next;
+    from_cloonix_switch_delete_sat(del_snf->snf.name);
+    del_snf = del_snf->next;
+    }
+
+  while(del_sat)
+    {
+    from_cloonix_switch_delete_sat(del_sat->sat.name);
+    del_sat = del_sat->next;
+    }
+
+  while(del_lan)
+    {
+    from_cloonix_switch_delete_lan(del_lan->lan);
+    del_lan = del_lan->next;
     }
 }
 /*--------------------------------------------------------------------------*/

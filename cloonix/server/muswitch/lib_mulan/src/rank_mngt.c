@@ -85,20 +85,20 @@ static int rank_get_free(void)
 
 /*****************************************************************************/
 static void rank_has_become_active(t_all_ctx *all_ctx, int llid, 
-                                   char *lan, char *sat, int num, 
-                                   uint32_t rank, char *resp)
+                                   char *lan, char *name, int num, 
+                                   int tidx, uint32_t rank, char *resp)
 {
   t_llid_rank *dr;
-  dr = llid_rank_peer_rank_set(llid, sat, num, rank);
+  dr = llid_rank_peer_rank_set(llid, name, num, tidx, rank);
   if (!dr)
-    KERR("%s %s", lan, sat);
+    KERR("%s %s", lan, name);
   else
     {
     g_rank_is_present[rank] = dr;
     adjust_max_rank();
     sprintf(resp, 
-           "mulan_req_start lan=%s sat=%s num=%d rank=%d",
-           lan, sat, num, rank);
+           "mulan_req_start lan=%s name=%s num=%d tidx=%d rank=%d",
+           lan, name, num, tidx, rank);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -120,12 +120,12 @@ void rank_has_become_inactive(int llid, char *name, uint32_t rank)
 void rank_dialog(t_all_ctx *all_ctx, int llid, char *line, char *resp)
 {
   char lan[MAX_NAME_LEN];
-  char sat[MAX_NAME_LEN];
+  char name[MAX_NAME_LEN];
   uint32_t rank;
-  int num;
+  int num, tidx;
   if (sscanf(line, 
-             "muend_req_rank lan=%s sat=%s num=%d",
-             lan, sat, &num) == 3)
+             "muend_req_rank lan=%s name=%s num=%d tidx=%d",
+             lan, name, &num, &tidx) == 4)
     {
     if (strcmp(lan, all_ctx->g_name))
       KOUT("%s %s", lan, all_ctx->g_name);
@@ -134,34 +134,34 @@ void rank_dialog(t_all_ctx *all_ctx, int llid, char *line, char *resp)
       {
       KERR("%s", line);
       snprintf(resp, MAX_RESP_LEN-1, 
-               "muend_resp_rank_alloc_ko lan=%s sat=%s num=%d",
-               lan, sat, num);
+      "muend_resp_rank_alloc_ko lan=%s name=%s num=%d tidx=%d",
+      lan, name, num, tidx);
       }
     else
       {
-      llid_rank_llid_create(llid, sat, rank);
+      llid_rank_llid_create(llid, name, num, rank);
       if (strlen(all_ctx->g_listen_traf_path))
         {
         snprintf(resp, MAX_RESP_LEN-1, 
-                 "muend_resp_rank_alloc_ok lan=%s sat=%s num=%d rank=%d traf=%s",
-                  lan, sat, num, rank, all_ctx->g_listen_traf_path);
+        "muend_resp_rank_alloc_ok lan=%s name=%s num=%d tidx=%d rank=%d traf=%s",
+        lan, name, num, tidx, rank, all_ctx->g_listen_traf_path);
         }
       else
         {
         KERR(" ");
         snprintf(resp, MAX_RESP_LEN-1, 
-               "muend_resp_rank_alloc_ko lan=%s sat=%s num=%d",
-               lan, sat, num);
+        "muend_resp_rank_alloc_ko lan=%s name=%s num=%d tidx=%d",
+        lan, name, num, tidx);
         }
       }
     }
   else if (sscanf(line, 
-                  "muend_ack_rank lan=%s sat=%s num=%d rank=%d",
-                  lan, sat, &num, &rank) == 4)
+                  "muend_ack_rank lan=%s name=%s num=%d tidx=%d rank=%d",
+                  lan, name, &num, &tidx, &rank) == 5)
     {
     if (strcmp(lan, all_ctx->g_name))
       KOUT("%s %s", lan, all_ctx->g_name);
-    rank_has_become_active(all_ctx, llid, lan, sat, num, rank, resp);
+    rank_has_become_active(all_ctx, llid, lan, name, num, tidx, rank, resp);
     }
   else
     KERR("%s", line);

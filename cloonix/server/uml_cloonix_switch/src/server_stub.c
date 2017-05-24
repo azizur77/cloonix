@@ -20,14 +20,13 @@
 #include <unistd.h>
 #include <string.h>
 #include "io_clownix.h"
-#include "lib_commons.h"
 #include "rpc_clownix.h"
 #include "doors_rpc.h"
 
 
 /*****************************************************************************/
 void doors_recv_c2c_clone_birth(int llid, int tid, char *net_name,
-                                char *name, int fd, int musat_type,
+                                char *name, int fd, int endp_type,
                                 char *bin_path, char *sock)
 {
   KOUT(" ");
@@ -115,7 +114,7 @@ void rpct_recv_hop_unsub(void *ptr, int llid, int tid)
 
 
 /*****************************************************************************/
-void recv_work_dir_resp(int llid, int tid, t_cloonix_config *conf)
+void recv_work_dir_resp(int llid, int tid, t_topo_clc *conf)
 {
   KOUT(" ");
 }
@@ -192,8 +191,7 @@ void recv_event_spy(int llid, int tid, char *name, char *intf, char *dir,
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_eventfull(int llid, int tid, int nb, t_eventfull_vm *vm, 
-                    int nb_tux, t_eventfull_sat *sat)
+void recv_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp)
 {
   KOUT(" ");
 }
@@ -207,7 +205,7 @@ void recv_event_print_sub(int llid, int tid, int on)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void rpct_recv_pid_req(void *ptr, int llid, int tid, int sec_offset, char *name)
+void rpct_recv_pid_req(void *ptr, int llid, int tid, char *name, int num)
 {
   KOUT(" ");
 }
@@ -221,24 +219,15 @@ void recv_hop_name_list_doors(int llid, int tid, int nb, t_hop_list *list)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_evt_stats_eth(int llid, int tid, char *network_name, 
-                        char *name, int eth,
-                        t_stats_counts *stats_counts, int status)
+void recv_evt_stats_endp(int llid, int tid, char *network, char *name, int num,
+                         t_stats_counts *stats_counts, int status)
 {
   KOUT(" ");
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void recv_evt_stats_sat(int llid, int tid, char *network_name, char *name,
-                        t_stats_counts *stats_counts, int status)
-{
-  KOUT(" ");
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void recv_evt_stats_sysinfo(int llid, int tid, char *network_name, char *name,
+void recv_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
                             t_stats_sysinfo *stats_sysinfo, 
                             char *df, int status)
 {

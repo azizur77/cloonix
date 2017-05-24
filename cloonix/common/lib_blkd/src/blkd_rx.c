@@ -327,21 +327,26 @@ static int pool_rx_newest_record_state(t_blkd_fifo_rx *pool,
 /****************************************************************************/
 static void trig_dist_flow_control(void *ptr, t_blkd_fifo_rx *pool, int llid)
 {
-  int rank, our_mutype = blkd_get_our_mutype(ptr);
+  int num, rank, our_mutype = blkd_get_our_mutype(ptr);
   char name[MAX_NAME_LEN];
   if ((our_mutype == mulan_type)     ||
-      (our_mutype == musat_type_eth) ||
-      (our_mutype == musat_type_tap) ||
-      (our_mutype == musat_type_snf) ||
-      (our_mutype == musat_type_c2c) ||
-      (our_mutype == musat_type_nat) ||
-      (our_mutype == musat_type_a2b))
+      (our_mutype == endp_type_kvm) ||
+      (our_mutype == endp_type_tap) ||
+      (our_mutype == endp_type_snf) ||
+      (our_mutype == endp_type_c2c) ||
+      (our_mutype == endp_type_nat) ||
+      (our_mutype == endp_type_a2b))
     {
-    rank = blkd_get_rank(ptr, llid, name);
-    pool->dist_flow_control_on = 1;
-    pool->dist_flow_control_count = 5;
-    pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
-    blkd_rx_dist_flow_control(ptr, name, rank, 1);
+    rank = blkd_get_rank(ptr, llid, name, &num);
+    if (num < 0)
+      KERR("%s %d", name, num);
+    else
+      {
+      pool->dist_flow_control_on = 1;
+      pool->dist_flow_control_count = 5;
+      pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
+      blkd_rx_dist_flow_control(ptr, name, num, rank, 1);
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
