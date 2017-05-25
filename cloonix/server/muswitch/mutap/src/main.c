@@ -88,6 +88,7 @@ int main (int argc, char *argv[])
       (tap_type != endp_type_raw) &&
       (tap_type != endp_type_wif))
     KOUT("%d", tap_type);
+  cloonix_set_pid(getpid());
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);
   strncpy(all_ctx->g_name, argv[2], MAX_NAME_LEN-1);

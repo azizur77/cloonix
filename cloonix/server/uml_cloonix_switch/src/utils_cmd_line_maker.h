@@ -58,7 +58,7 @@ char *utils_get_endp_bin_path(int endp_type);
 char *utils_get_muswitch_sock_dir(void);
 char *utils_get_muswitch_traf_dir(void);
 /*--------------------------------------------------------------------------*/
-char *utils_mulan_get_sock_path(char *name);
+char *utils_mulan_get_sock_path(char *lan);
 /*--------------------------------------------------------------------------*/
 char *utils_get_endp_sock_dir(void);
 char *utils_get_endp_path(char *name, int num);

@@ -1,6 +1,6 @@
 diff -Naur spice-gtk/configure tainted_spice/configure
 --- spice-gtk/configure	2017-05-07 09:44:46.000000000 +0200
-+++ tainted_spice/configure	2017-05-24 16:55:21.368423142 +0200
++++ tainted_spice/configure	2017-05-25 11:20:53.983674153 +0200
 @@ -19033,6 +19033,7 @@
  else
    enable_controller="yes"
@@ -19,8 +19,8 @@ diff -Naur spice-gtk/configure tainted_spice/configure
  VALA_REQUIRED=0.14
 diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 --- spice-gtk/src/cloonix.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/cloonix.c	2017-05-24 16:55:57.672555135 +0200
-@@ -0,0 +1,619 @@
++++ tainted_spice/src/cloonix.c	2017-05-25 11:21:13.059628867 +0200
+@@ -0,0 +1,612 @@
 +#include <unistd.h>
 +#include <stdlib.h>
 +#include <stdio.h>
@@ -69,13 +69,6 @@ diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 +
 +/*****************************************************************************/
 +unsigned int cloonix_get_msec(void)
-+{
-+  return 0;
-+}
-+/*---------------------------------------------------------------------------*/
-+
-+/*****************************************************************************/
-+int cloonix_get_pid(void)
 +{
 +  return 0;
 +}
@@ -642,7 +635,7 @@ diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 +
 diff -Naur spice-gtk/src/cloonix.h tainted_spice/src/cloonix.h
 --- spice-gtk/src/cloonix.h	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/cloonix.h	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/cloonix.h	2017-05-25 11:20:53.983674153 +0200
 @@ -0,0 +1,22 @@
 +
 +
@@ -668,7 +661,7 @@ diff -Naur spice-gtk/src/cloonix.h tainted_spice/src/cloonix.h
 +
 diff -Naur spice-gtk/src/hmac_cipher.c tainted_spice/src/hmac_cipher.c
 --- spice-gtk/src/hmac_cipher.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/hmac_cipher.c	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/hmac_cipher.c	2017-05-25 11:20:53.983674153 +0200
 @@ -0,0 +1,146 @@
 +/****************************************************************************/
 +/* Copyright (C) 2006-2014 Cloonix <clownix@clownix.net>  License RPL       */
@@ -818,7 +811,7 @@ diff -Naur spice-gtk/src/hmac_cipher.c tainted_spice/src/hmac_cipher.c
 +
 diff -Naur spice-gtk/src/hmac_cipher.h tainted_spice/src/hmac_cipher.h
 --- spice-gtk/src/hmac_cipher.h	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/hmac_cipher.h	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/hmac_cipher.h	2017-05-25 11:20:53.983674153 +0200
 @@ -0,0 +1,28 @@
 +/*****************************************************************************/
 +/*    Copyright (C)  2006-2012    Cloonix,    <clownix@clownix.net>          */
@@ -850,7 +843,7 @@ diff -Naur spice-gtk/src/hmac_cipher.h tainted_spice/src/hmac_cipher.h
 +
 diff -Naur spice-gtk/src/keycodemapdb/tools/keymap-gen tainted_spice/src/keycodemapdb/tools/keymap-gen
 --- spice-gtk/src/keycodemapdb/tools/keymap-gen	2017-05-07 09:44:32.000000000 +0200
-+++ tainted_spice/src/keycodemapdb/tools/keymap-gen	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/keycodemapdb/tools/keymap-gen	2017-05-25 11:20:53.983674153 +0200
 @@ -701,7 +701,6 @@
                              ",".join(DOC_GENERATORS.keys())))
      parser.add_argument("--varname", default=None,
@@ -861,7 +854,7 @@ diff -Naur spice-gtk/src/keycodemapdb/tools/keymap-gen tainted_spice/src/keycode
  
 diff -Naur spice-gtk/src/Makefile.am tainted_spice/src/Makefile.am
 --- spice-gtk/src/Makefile.am	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/src/Makefile.am	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/Makefile.am	2017-05-25 11:20:53.983674153 +0200
 @@ -225,6 +225,8 @@
  							\
  	spice-client.c					\
@@ -882,7 +875,7 @@ diff -Naur spice-gtk/src/Makefile.am tainted_spice/src/Makefile.am
  	spice-option.c					\
 diff -Naur spice-gtk/src/Makefile.in tainted_spice/src/Makefile.in
 --- spice-gtk/src/Makefile.in	2017-05-07 09:44:48.000000000 +0200
-+++ tainted_spice/src/Makefile.in	2017-05-24 16:55:21.412423301 +0200
++++ tainted_spice/src/Makefile.in	2017-05-25 11:20:53.983674153 +0200
 @@ -200,6 +200,7 @@
  	spice-audio.c spice-audio-priv.h spice-common.h spice-util.c \
  	spice-util-priv.h spice-option.h spice-option.c spice-client.c \
@@ -927,7 +920,7 @@ diff -Naur spice-gtk/src/Makefile.in tainted_spice/src/Makefile.in
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spice-glib-enums.Plo@am__quote@
 diff -Naur spice-gtk/src/spice-channel.c tainted_spice/src/spice-channel.c
 --- spice-gtk/src/spice-channel.c	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/src/spice-channel.c	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/src/spice-channel.c	2017-05-25 11:20:53.983674153 +0200
 @@ -47,6 +47,11 @@
  
  #include "gio-coroutine.h"
@@ -1003,7 +996,7 @@ diff -Naur spice-gtk/src/spice-channel.c tainted_spice/src/spice-channel.c
      if (c->conn == NULL) {
 diff -Naur spice-gtk/src/spice-common.h tainted_spice/src/spice-common.h
 --- spice-gtk/src/spice-common.h	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/src/spice-common.h	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/src/spice-common.h	2017-05-25 11:20:53.983674153 +0200
 @@ -33,4 +33,13 @@
  
  #include "spice-util.h"
@@ -1020,7 +1013,7 @@ diff -Naur spice-gtk/src/spice-common.h tainted_spice/src/spice-common.h
  #endif // SPICE_COMMON_H_
 diff -Naur spice-gtk/src/spice-session.c tainted_spice/src/spice-session.c
 --- spice-gtk/src/spice-session.c	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/src/spice-session.c	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/src/spice-session.c	2017-05-25 11:20:53.983674153 +0200
 @@ -35,6 +35,13 @@
  #include "channel-playback-priv.h"
  #include "spice-audio-priv.h"
@@ -1406,7 +1399,7 @@ diff -Naur spice-gtk/src/spice-session.c tainted_spice/src/spice-session.c
      g_return_val_if_fail(SPICE_IS_SESSION(session), NULL);
 diff -Naur spice-gtk/src/spice-session-priv.h tainted_spice/src/spice-session-priv.h
 --- spice-gtk/src/spice-session-priv.h	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/src/spice-session-priv.h	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/src/spice-session-priv.h	2017-05-25 11:20:53.983674153 +0200
 @@ -63,6 +63,8 @@
  void spice_session_get_pubkey(SpiceSession *session, guint8 **pubkey, guint *size);
  guint spice_session_get_verify(SpiceSession *session);
@@ -1418,7 +1411,7 @@ diff -Naur spice-gtk/src/spice-session-priv.h tainted_spice/src/spice-session-pr
  const gchar* spice_session_get_cert_subject(SpiceSession *session);
 diff -Naur spice-gtk/tools/spice-cmdline.c tainted_spice/tools/spice-cmdline.c
 --- spice-gtk/tools/spice-cmdline.c	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/tools/spice-cmdline.c	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/tools/spice-cmdline.c	2017-05-25 11:20:53.983674153 +0200
 @@ -27,9 +27,25 @@
  static char *tls_port;
  static char *password;
@@ -1459,7 +1452,7 @@ diff -Naur spice-gtk/tools/spice-cmdline.c tainted_spice/tools/spice-cmdline.c
      if (host)
 diff -Naur spice-gtk/tools/spicy.c tainted_spice/tools/spicy.c
 --- spice-gtk/tools/spicy.c	2017-05-07 09:44:24.000000000 +0200
-+++ tainted_spice/tools/spicy.c	2017-05-24 16:55:21.428423359 +0200
++++ tainted_spice/tools/spicy.c	2017-05-25 11:20:53.983674153 +0200
 @@ -1976,7 +1976,6 @@
      GOptionContext *context;
      spice_connection *conn;

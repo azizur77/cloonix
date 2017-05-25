@@ -374,6 +374,7 @@ int main (int argc, char *argv[])
 //  clownix_timeout_add(10000, fct_timeout_after_birth_self_destruct, NULL,
 //                      NULL, NULL);
   daemon(0,0);
+  cloonix_set_pid(getpid());
   clownix_timeout_add(1000, fct_timeout_after_birth_self_destruct, NULL,
                       NULL, NULL);
 

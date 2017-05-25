@@ -460,12 +460,13 @@ void rpct_recv_hop_msg(void *ptr, int llid, int tid, int flags_hop, char *txt)
 void rpct_recv_pid_resp(void *ptr, int llid, int tid, char *name, int num,
                         int toppid, int pid)
 {
+KERR("%s %d %d %d", name, num, toppid, pid);
   if (tid == type_hop_doors)
     doors_pid_resp(llid, name, pid);
   else if (tid == type_hop_mulan)
     mulan_pid_resp(llid, name, pid);
   else if (tid == type_hop_endp)
-    endp_mngt_pid_resp(llid, name, pid);
+    endp_mngt_pid_resp(llid, name, toppid, pid);
   else
     KERR("%d %s %d", tid, name, pid);
 }

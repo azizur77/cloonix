@@ -59,6 +59,7 @@ int main (int argc, char *argv[])
   if (argc != 2)
     KOUT(" ");
   name = basename(argv[1]);
+  cloonix_set_pid(getpid());
   all_ctx = msg_mngt_init(name, 0, IO_MAX_BUF_LEN);
   blkd_set_our_mutype((void *) all_ctx, mulan_type);
   strncpy(all_ctx->g_name, name, MAX_NAME_LEN-1);  

@@ -26,6 +26,7 @@ typedef struct t_endp
 {
   char name[MAX_NAME_LEN];
   int num;
+  int pid;
   int endp_type;
   t_topo_c2c c2c;
   t_topo_snf snf;
@@ -51,7 +52,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line);
 void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line);
 void endp_mngt_send_muswitch_quit(char *name, int num);
 void endp_mngt_err_cb (int llid);
-void endp_mngt_pid_resp(int llid, char *name, int pid);
+void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid);
 void endp_mngt_init(void);
 
 int fd_ready_doors_clone_has_arrived(char *name, int doors_fd);
@@ -74,5 +75,7 @@ void endp_mngt_c2c_peered(char *name, int num, int is_peered);
 void endp_mngt_add_attached_lan(int llid, char *name, int num,
                                 int tidx, char *lan);
 void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan);
+int endp_mngt_kvm_pid_clone(char *name, int num, int pid);
+
 /*--------------------------------------------------------------------------*/
 

@@ -483,7 +483,7 @@ static void launcher_death(void *data, int status, char *name)
 static int launch_qemu_vm(t_vm *vm)
 {
   char **argv;
-  int result = -1;
+  int i, pid, result = -1;
   argv = create_qemu_argv(vm);
   utils_send_creation_info(vm->kvm.name, argv);
 
@@ -491,9 +491,19 @@ static int launch_qemu_vm(t_vm *vm)
 // gdb ...
 // set follow-fork-mode child
 
-  pid_clone_launch(start_launch_args, launcher_death, NULL, 
-                   (void *)argv, (void *)argv, NULL, 
-                   vm->kvm.name, -1, 1);
+  pid = pid_clone_launch(start_launch_args, launcher_death, NULL, 
+                        (void *)argv, (void *)argv, NULL, 
+                        vm->kvm.name, -1, 1);
+  if (!pid)
+    KERR("%s", vm->kvm.name);
+  else
+    {
+    for (i=0; i<vm->kvm.nb_eth; i++)
+      {
+      if (endp_mngt_kvm_pid_clone(vm->kvm.name, i, pid))
+        KERR("%s %d", vm->kvm.name, i);
+      }
+    }
   result = 0;
 
   return result;
@@ -578,6 +588,11 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
       break;
     case auto_create_vm_launch:
       wake_up_eths->state = auto_create_vm_connect;
+      for (i=0; i<vm->kvm.nb_eth; i++)
+        {
+        if (endp_mngt_start(0, 0, vm->kvm.name, i, endp_type_kvm))
+          KERR("%s %d", vm->kvm.name, i);
+        }
       if (launch_qemu_vm(vm))
         clownix_timeout_add(4000, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
@@ -597,11 +612,6 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
       strncpy(vm_evt.name, name, MAX_NAME_LEN-1);
       vm_evt.evt = vm_evt_tmux_launch_ok;
       event_subscriber_send(topo_small_event, (void *) &vm_evt);
-      for (i=0; i<vm->kvm.nb_eth; i++)
-        {
-        if (endp_mngt_start(0, 0, vm->kvm.name, i, endp_type_kvm)) 
-          KERR("%s %d", vm->kvm.name, i);
-        }
       break;
     default:
       KOUT(" ");

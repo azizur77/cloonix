@@ -27,18 +27,16 @@ int cloonix_get_pid(void);
 
 #define KERR(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "%07u %d %s"           \
+    syslog(LOG_ERR | LOG_USER, "%07u %s"           \
     " line:%d " format "\n", cloonix_get_msec(),         \
-    cloonix_get_pid(),                                   \
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
      __LINE__, ## a);                                    \
     } while (0)
 
 #define KOUT(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "KILL %07u %d %s"      \
+    syslog(LOG_ERR | LOG_USER, "KILL %07u %s"      \
     " line:%d   " format "\n\n", cloonix_get_msec(),     \
-    cloonix_get_pid(),                                  \
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
      __LINE__, ## a);                                    \
     exit(-1);                                            \

@@ -616,11 +616,11 @@ void utils_init(void)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-char *utils_mulan_get_sock_path(char *name)
+char *utils_mulan_get_sock_path(char *lan)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path,MAX_PATH_LEN-1,"%s/%s",utils_get_muswitch_sock_dir(),name);
+  snprintf(path,MAX_PATH_LEN-1,"%s/%s",utils_get_muswitch_sock_dir(),lan);
   return path;
 }
 /*--------------------------------------------------------------------------*/

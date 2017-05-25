@@ -102,6 +102,7 @@ int main (int argc, char *argv[])
     KOUT(" ");
   if (c2c_type != endp_type_c2c)
     KOUT("%d", c2c_type);
+  cloonix_set_pid(getpid());
   all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN); 
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);
   strncpy(all_ctx->g_name, argv[2], MAX_NAME_LEN-1);

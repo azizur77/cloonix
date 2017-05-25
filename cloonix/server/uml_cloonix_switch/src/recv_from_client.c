@@ -324,7 +324,7 @@ static void local_add_lan(int llid, int tid, char *name, int num, char *lan)
     sprintf(info, "%s in %d ulan max", name, MAX_TRAF_ENDPOINT);
     send_status_ko(llid, tid, info);
     }
-  else if (machine_not_ready(name))
+  else if ((type == endp_type_kvm) && (machine_not_ready(name)))
     {
     snprintf(info, MAX_PATH_LEN-1, "machine %s not ready", name);
     send_status_ko(llid, tid, info);
@@ -399,7 +399,7 @@ static void timer_endp(void *data)
   else
     {
     te->count++;
-    if (te->count >= 2000)
+    if (te->count >= 1000)
       {
       sprintf(err, "bad endpoint start: %s %d %s", te->name, te->num, te->lan);
       send_status_ko(te->llid, te->tid, err);

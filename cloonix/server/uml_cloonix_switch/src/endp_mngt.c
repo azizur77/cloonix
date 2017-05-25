@@ -264,7 +264,7 @@ static int trace_alloc(t_musat *mu)
   int llid;
   char *sock = utils_get_endp_path(mu->name, mu->num);
   llid = string_client_unix(sock, uml_clownix_switch_error_cb, 
-                                  uml_clownix_switch_rx_cb, "musat");
+                                  uml_clownix_switch_rx_cb, "endp");
   if (llid)
     {
     if (hop_event_alloc(llid, type_hop_endp, mu->name, mu->num))
@@ -289,6 +289,9 @@ static int trace_alloc(t_musat *mu)
     else
     if (mu->endp_type == endp_type_wif)
       llid_trace_alloc(llid, mu->name, 0, 0, type_llid_trace_endp_wif);
+    else
+    if (mu->endp_type == endp_type_kvm)
+      llid_trace_alloc(llid, mu->name, 0, 0, type_llid_trace_endp_kvm);
     else
       KOUT("%d", mu->endp_type);
     }
@@ -527,20 +530,20 @@ static void musat_free(char *name, int num)
       {
       llid_trace_free(mu->llid, 0, __FUNCTION__);
       }
-    if (num == 0)
-    layout_del_sat(name);
-    stats_counters_death(name, num);
-    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    if ((num == 0) && (mu->endp_type != endp_type_kvm))
+      layout_del_sat(name);
     clownix_free(mu, __FUNCTION__);
     if (g_nb_musat <= 0)
       KOUT("%d", g_nb_musat);
     g_nb_musat -= 1;
+    stats_counters_death(name, num);
+    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void endp_mngt_pid_resp(int llid, char *name, int pid)
+void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid)
 {
   t_musat *musat = musat_find_with_llid(llid);
   if (musat)
@@ -549,20 +552,20 @@ void endp_mngt_pid_resp(int llid, char *name, int pid)
       KERR("%s %s", name, musat->name);
     if (musat->pid == 0)
       {
-      if (musat->clone_start_pid != pid)
+      if (musat->clone_start_pid != toppid)
         {
-        KERR("WRONG PID %s %d %d", name, pid, musat->clone_start_pid);
+        KERR("WRONG PID %s %d %d", name, toppid, musat->clone_start_pid);
         if (musat->clone_start_pid == 0)
           {
           KERR("MODIFYING START PID %s %d", name, pid);
           musat->clone_start_pid = pid;
           }
         }
-      musat->pid = pid;
       if (musat->endp_type == endp_type_snf)
-        {
         rpct_send_cli_req(NULL, llid, 0, 0, 0, "-get_conf");
-        }
+KERR("%s %d %d", name, toppid, pid);
+      musat->pid = pid;
+      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
       }
     else
       {
@@ -648,6 +651,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
              (!strcmp(line, "cloonix_resp_snf_ok"))  ||
              (!strcmp(line, "cloonix_resp_c2c_ok"))  ||
              (!strcmp(line, "cloonix_resp_nat_ok"))  ||
+             (!strcmp(line, "cloonix_resp_kvm_ok"))  ||
              (!strcmp(line, "cloonix_resp_a2b_ok")))
       {
       mu->opensat = 1;
@@ -658,11 +662,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
       }
     else if ((!strcmp(line, "cloonix_resp_tap_ko"))  ||
              (!strcmp(line, "cloonix_resp_wif_ko"))  ||
-             (!strcmp(line, "cloonix_resp_raw_ko"))  ||
-             (!strcmp(line, "cloonix_resp_snf_ko"))  ||
-             (!strcmp(line, "cloonix_resp_c2c_ko"))  ||
-             (!strcmp(line, "cloonix_resp_nat_ko"))  ||
-             (!strcmp(line, "cloonix_resp_a2b_ko")))
+             (!strcmp(line, "cloonix_resp_raw_ko")))
       {
       mu->opensat = 1;
       status_reply_if_possible(0, mu, line);
@@ -739,6 +739,8 @@ static void send_type_req(t_musat *cur)
     try_send_musat(cur, "cloonix_req_a2b");
   else if (cur->endp_type == endp_type_nat)
     try_send_musat(cur, "cloonix_req_nat");
+//  else if (cur->endp_type == endp_type_kvm)
+//    try_send_musat(cur, "cloonix_req_kvm");
   else
     KERR("%d", cur->endp_type);
 }
@@ -1002,19 +1004,24 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
     if (!mu)
       KOUT(" ");
 
-    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
     if ((num == 0) && (mu->endp_type != endp_type_kvm))
       layout_add_sat(name, llid);
 
     my_mkdir(utils_get_endp_sock_dir());
-    create_two_endp_arg(name, num, endp_type, &mua1, &mua2);
     if (mu->endp_type == endp_type_c2c)
       {
+      create_two_endp_arg(name, num, endp_type, &mua1, &mua2);
       clownix_free(mua1, __FUNCTION__);
       clownix_timeout_add(10,fd_ready_doors_clone,(void *)mua2,NULL,NULL);
       }
-    else
+    else if ((mu->endp_type == endp_type_snf) ||
+             (mu->endp_type == endp_type_tap) ||
+             (mu->endp_type == endp_type_wif) ||
+             (mu->endp_type == endp_type_raw) ||
+             (mu->endp_type == endp_type_a2b) ||
+             (mu->endp_type == endp_type_nat))
       {
+      create_two_endp_arg(name, num, endp_type, &mua1, &mua2);
       argv = musat_birth_argv(mua2);
       utils_send_creation_info("musat", argv);
       mu->clone_start_pid = pid_clone_launch(musat_birth, musat_death, 
@@ -1266,6 +1273,7 @@ static t_endp *fill_endp(t_musat *mu)
   memset(endp, 0, sizeof(t_endp));
   strcpy(endp->name, mu->name);
   endp->num = mu->num;
+  endp->pid = mu->pid;
   endp->endp_type = mu->endp_type;
   memcpy(&(endp->c2c), &(mu->c2c), sizeof(t_topo_c2c));
   memcpy(&(endp->snf), &(mu->snf), sizeof(t_topo_snf));
@@ -1280,7 +1288,9 @@ static t_endp *fill_endp(t_musat *mu)
 t_endp *endp_mngt_get_first(int *nb_endp)
 {
   t_musat *mu = g_head_musat;
-  t_endp *result = fill_endp(mu);
+  t_endp *result = NULL;
+  if (mu)
+    result = fill_endp(mu);
   *nb_endp = g_nb_musat;
   return result;
 }
@@ -1290,7 +1300,9 @@ t_endp *endp_mngt_get_first(int *nb_endp)
 t_endp *endp_mngt_get_next(t_endp *endp)
 {
   t_musat *mu = (t_musat *) endp->next;
-  t_endp *result = fill_endp(mu);
+  t_endp *result = NULL;
+  if (mu)
+    result = fill_endp(mu);
   return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -1337,6 +1349,29 @@ int endp_mngt_get_nb_all(void)
 {
   return g_nb_musat;
 }
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
+int endp_mngt_kvm_pid_clone(char *name, int num, int pid)
+{
+  int result = -1;
+  t_musat *mu = musat_find_with_name(name, num);
+  if (!mu)
+    KERR("%s %d", name, num);
+  else if (mu->endp_type != endp_type_kvm)
+    KERR("%s %d %d", name, num, mu->endp_type);
+  else
+    {
+    mu->musat_stop_done = 1;
+    mu->clone_start_pid = pid;
+    result = 0;
+KERR("%s %d %d", name, num, mu->endp_type);
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+
 
 /****************************************************************************/
 void endp_mngt_init(void)

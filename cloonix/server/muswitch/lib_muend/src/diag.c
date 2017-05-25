@@ -85,7 +85,7 @@ static void resp_send_mueth_con_ok(t_all_ctx *all_ctx, char *lan,
 {
   char resp[MAX_PATH_LEN];
   char slan[MAX_NAME_LEN];
-  int rank, llid, cidx, is_blkd, sum, stidx;
+  int rank, llid, cidx, is_blkd, snum, stidx;
   t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   llid = traf->con_llid;
   if (llid)
@@ -181,7 +181,7 @@ static int lan_diag(t_all_ctx *all_ctx, char *line,
     else
       {
       traf = &(all_ctx->g_traf_endp[*tidx]);
-      blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan, 0);
+      blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan, 0, 0);
       memset(opening, 0, MAX_PATH_LEN);
       snprintf(opening, MAX_PATH_LEN-1,"TRAFFIC_OPENING: name=%s num=%d tidx=%d",
                name, *num, *tidx);
@@ -480,6 +480,11 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
   else if (!strcmp(line, "cloonix_req_nat"))
     {
     snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_nat_ok");
+    }
+  else if (!strcmp(line, "cloonix_req_kvm"))
+    {
+    snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_kvm_ok");
+KERR(" ");
     }
   else if (lan_diag(all_ctx, line, &num, &tidx, resp_lan))
     KERR("%s", line);

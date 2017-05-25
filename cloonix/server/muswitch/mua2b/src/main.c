@@ -193,6 +193,7 @@ int main (int argc, char *argv[])
   if (a2b_type != endp_type_a2b)
     KOUT("%d", a2b_type);
   
+  cloonix_set_pid(getpid());
   all_ctx = msg_mngt_init((char *) argv[2], num, IO_MAX_BUF_LEN);
   blkd_set_our_mutype((void *) all_ctx, a2b_type);
   clownix_real_timer_init(all_ctx);

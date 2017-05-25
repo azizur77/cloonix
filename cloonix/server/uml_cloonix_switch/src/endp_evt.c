@@ -568,7 +568,6 @@ void endp_birth(char *name, int num, int endp_type)
     {
     endp_alloc(name, num);
     }
-  event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
 }
 /*--------------------------------------------------------------------------*/
 

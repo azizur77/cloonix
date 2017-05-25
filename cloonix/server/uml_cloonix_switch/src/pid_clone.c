@@ -558,7 +558,6 @@ static int forked_fct(void *ptr)
         }
       }
     }
-  cloonix_set_pid(getpid());
   ctx->fct(ctx->param_data_start);
 
 #endif

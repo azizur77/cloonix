@@ -699,7 +699,7 @@ static t_topo_info *alloc_all_fields(int nb_vm)
 t_topo_info *cfg_produce_topo_info(void)
 {
   int i, nb_vm, nb_endp;
-  int i_c2c=0, i_snf=0, i_sat=0; 
+  int i_c2c=0, i_snf=0, i_sat=0, i_endp=0; 
   t_vm  *vm  = cfg_get_first_vm(&nb_vm);
   t_endp *next, *cur;
   t_topo_info *topo = alloc_all_fields(nb_vm);
@@ -723,8 +723,8 @@ t_topo_info *cfg_produce_topo_info(void)
   for (i=0; i<nb_endp; i++)
     {
     if (!cur)
-      KOUT(" ");
-    if (cur->num == 0)
+      KOUT("%d %d", nb_endp, i);
+    if ((cur->num == 0) && (cur->pid != 0))
       {
       switch (cur->endp_type)
         {
@@ -767,7 +767,11 @@ t_topo_info *cfg_produce_topo_info(void)
           KOUT("%d", cur->endp_type);
         }
       }
-    fill_topo_endp(&(topo->endp[i]), cur);
+    if (cur->pid != 0)
+      {
+      fill_topo_endp(&(topo->endp[i_endp]), cur);
+      i_endp += 1; 
+      }
     next = endp_mngt_get_next(cur);
     clownix_free(cur, __FUNCTION__);
     cur = next;
@@ -776,6 +780,8 @@ t_topo_info *cfg_produce_topo_info(void)
     KOUT(" ");
   topo->nb_c2c = i_c2c;
   topo->nb_snf = i_snf;
+  topo->nb_sat = i_sat;
+  topo->nb_endp = i_endp;
   return topo;
 }
 /*---------------------------------------------------------------------------*/
