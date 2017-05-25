@@ -725,6 +725,8 @@ static void hop_callback_end(int nb, t_hop_list *list)
     flags_hop = 2;
   else if (!strncmp(g_hop_list[0].name, "hop_evt", strlen("hop_evt")))
     flags_hop = 1;
+  else if (!strncmp(g_hop_list[0].name, "hop_all", strlen("hop_all")))
+    flags_hop = 0xFFFF;
   else
     result = -1;
   if (result == 0)
@@ -740,6 +742,7 @@ static void hop_callback_end(int nb, t_hop_list *list)
     printf("\t\thop_app\n");
     printf("\t\thop_diag\n");
     printf("\t\thop_evt\n");
+    printf("\t\thop_all\n");
     printf("\n\n");
     exit(0);
     }

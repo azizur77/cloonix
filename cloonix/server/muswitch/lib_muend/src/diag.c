@@ -484,7 +484,6 @@ void rpct_recv_diag_msg(void *ptr, int llid, int tid, char *line)
   else if (!strcmp(line, "cloonix_req_kvm"))
     {
     snprintf(resp_cloonix, MAX_PATH_LEN-1, "cloonix_resp_kvm_ok");
-KERR(" ");
     }
   else if (lan_diag(all_ctx, line, &num, &tidx, resp_lan))
     KERR("%s", line);

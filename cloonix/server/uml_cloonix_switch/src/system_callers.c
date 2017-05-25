@@ -247,8 +247,6 @@ int mk_machine_dirs(char *name, int vm_id)
   char path[MAX_PATH_LEN];
   sprintf(path,"%s", cfg_get_work_vm(vm_id));
   my_mkdir(path);
-  sprintf(path,"%s/%s", cfg_get_work_vm(vm_id), DIR_DATA);
-  my_mkdir(path);
   sprintf(path,"%s/%s", cfg_get_work_vm(vm_id), DIR_CONF);
   my_mkdir(path);
   my_mkdir(utils_dir_conf_tmp(vm_id));
@@ -434,24 +432,9 @@ int rm_machine_dirs(int vm_id, char *err)
           result = -1;
           }
         }
-      else if (!strcmp(DIR_DATA, ent->d_name))
-        {
-        sprintf(pth,"%s/%s", cfg_get_work_vm(vm_id), DIR_DATA);
-        result = unlink_sub_dir_files(pth, err);
-        }
       else if (!strcmp(DIR_CLOONIX_DISKS, ent->d_name))
         {
         sprintf(pth,"%s", utils_get_disks_path_name(vm_id));
-        result = unlink_sub_dir_files(pth, err);
-        }
-      else if (!strcmp(DIR_SIG, ent->d_name))
-        {
-        sprintf(pth,"%s/%s", cfg_get_work_vm(vm_id), DIR_SIG);
-        result = unlink_sub_dir_files(pth, err);
-        }
-      else if (!strcmp(DIR_SUN, ent->d_name))
-        {
-        sprintf(pth,"%s/%s", cfg_get_work_vm(vm_id), DIR_SUN);
         result = unlink_sub_dir_files(pth, err);
         }
       else if (!strcmp(DIR_UMID, ent->d_name))

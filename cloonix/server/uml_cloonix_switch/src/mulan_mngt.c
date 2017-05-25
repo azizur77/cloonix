@@ -287,7 +287,7 @@ static t_mulan *mulan_alloc(char *lan, char *name, int num)
     memset(mulan, 0, sizeof(t_mulan));
     strncpy(mulan->lan, lan, MAX_NAME_LEN-1);
     strncpy(mulan->sock, utils_mulan_get_sock_path(lan), MAX_PATH_LEN-1);
-    strncpy(mulan->traf, get_traf_path(name), MAX_PATH_LEN-1);
+    strncpy(mulan->traf, get_traf_path(lan), MAX_PATH_LEN-1);
     strncpy(mulan->name, name, MAX_NAME_LEN-1);
     mulan->num = num;
     if (g_head_mulan)

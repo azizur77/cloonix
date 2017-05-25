@@ -46,9 +46,6 @@ typedef struct t_pid_info
 
 #define CDROM_CONFIG_ISO "cdrom_config.iso"
 #define DIR_CONF "config"
-#define DIR_DATA "data"
-#define DIR_SIG  "sig"
-#define DIR_SUN  "sun"
 #define FILE_COW "cow"
 #define DIR_UMID "umid"
 #define CLOONIX_FILE_NAME "name"

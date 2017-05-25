@@ -437,6 +437,7 @@ void endp_add_lan(int llid, int tid, char *name, int num,
            (endp_type != endp_type_nat) &&
            (endp_type != endp_type_a2b) &&
            (endp_type != endp_type_raw) &&
+           (endp_type != endp_type_kvm) &&
            (endp_type != endp_type_wif))
     KOUT("%d", endp_type);
   else if (!endp_mngt_connection_state_is_restfull(name, num))
@@ -492,10 +493,10 @@ int endp_del_lan(char *name, int num, int tidx, char *lan)
     else
       {
       endp_mngt_lan_disconnect(name, num, tidx, lan);
-      init_waiting_lan(name, num, tidx, NULL, 0, 0);
-      memset(atlan->attached_lan, 0, MAX_NAME_LEN);
       mulan_test_stop(lan);
       endp_mngt_del_attached_lan(name, num, tidx, lan); 
+      init_waiting_lan(name, num, tidx, NULL, 0, 0);
+      memset(atlan->attached_lan, 0, MAX_NAME_LEN);
       result = 0;
       }
     }

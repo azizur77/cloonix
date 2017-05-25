@@ -325,9 +325,6 @@ void utils_chk_my_dirs(t_vm *vm)
   sprintf(path, "%s", cfg_get_work_vm(vm_id)); 
   if (!file_exists(path, F_OK))
     KOUT(" ");
-  sprintf(path, "%s/%s", cfg_get_work_vm(vm_id), DIR_DATA); 
-  if (!file_exists(path, F_OK))
-     KOUT(" ");
   if (!file_exists(utils_dir_conf_tmp(vm_id), F_OK))
     KOUT(" ");
   sprintf(path,"%s/%s", cfg_get_work_vm(vm_id),  DIR_UMID);

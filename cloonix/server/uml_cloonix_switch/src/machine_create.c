@@ -279,9 +279,6 @@ static int missing_dir(char *name, int vm_id)
   snprintf(path, MAX_PATH_LEN-1, "%s", cfg_get_work_vm(vm_id));
   if (kerr_upon_missing_dir(name, path))
     result = 1;
-  snprintf(path, MAX_PATH_LEN-1, "%s/%s", cfg_get_work_vm(vm_id), DIR_DATA);
-  if (kerr_upon_missing_dir(name, path))
-    result = 1;
   snprintf(path, MAX_PATH_LEN-1, "%s/%s", cfg_get_work_vm(vm_id), DIR_CONF);
   if (kerr_upon_missing_dir(name, path))
     result = 1;
