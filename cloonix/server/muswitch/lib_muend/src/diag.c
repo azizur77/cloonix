@@ -84,8 +84,8 @@ static void resp_send_mueth_con_ok(t_all_ctx *all_ctx, char *lan,
                                    int num, int tidx)
 {
   char resp[MAX_PATH_LEN];
-  char savedlan[MAX_NAME_LEN];
-  int rank, llid, cidx, is_blkd, savednum;
+  char slan[MAX_NAME_LEN];
+  int rank, llid, cidx, is_blkd, sum, stidx;
   t_traf_endp *traf = &(all_ctx->g_traf_endp[tidx]);
   llid = traf->con_llid;
   if (llid)
@@ -93,11 +93,11 @@ static void resp_send_mueth_con_ok(t_all_ctx *all_ctx, char *lan,
     cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
     if (cidx)
       {
-      rank = blkd_get_rank((void *) all_ctx, traf->llid_traf, savedlan, &savednum);
-      if (strcmp(savedlan, lan))
-        KERR("%s %s", lan, savedlan);
-      if (num != savednum)
-        KERR("%s %d %d", lan, num, savednum);
+      rank = blkd_get_rank((void *)all_ctx,traf->llid_traf,slan,&snum,&stidx);
+      if (strcmp(slan, lan))
+        KERR("%s %s", lan, slan);
+      if ((num != snum) || (tidx != stidx))
+        KERR("%s %d %d %d %d", lan, num, snum, tidx, stidx);
       snprintf(resp, MAX_PATH_LEN-1, 
                "cloonix_resp_connect_ok lan=%s name=%s num=%d tidx=%d rank=%d",     
                lan, all_ctx->g_name, num, tidx, rank);
@@ -183,7 +183,8 @@ static int lan_diag(t_all_ctx *all_ctx, char *line,
       traf = &(all_ctx->g_traf_endp[*tidx]);
       blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan, 0);
       memset(opening, 0, MAX_PATH_LEN);
-      snprintf(opening, MAX_PATH_LEN-1,"OPENING: name=%s num=%d",name,*num);
+      snprintf(opening, MAX_PATH_LEN-1,"TRAFFIC_OPENING: name=%s num=%d tidx=%d",
+               name, *num, *tidx);
       blkd = blkd_create_tx_full_copy(strlen(opening) + 1, opening, 0, 0, 0);
       blkd_put_tx((void *) all_ctx, 1, &(traf->llid_traf), blkd);
       snprintf(resp_lan, MAX_RESP_LEN-1, 

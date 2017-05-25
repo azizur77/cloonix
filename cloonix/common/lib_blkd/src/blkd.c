@@ -152,6 +152,7 @@ static t_llid_blkd *alloc_llid_blkd(void *ptr, int llid, int fd,
     add_to_llid_list(llid, llid_list, llid_list_max);
     strncpy(result->report_item.rank_name, "undefined", MAX_NAME_LEN);
     result->report_item.rank_num = -1;
+    result->report_item.rank_tidx = -1;
     result->report_item.pid = ctx->g_pid;
     result->report_item.llid = result->llid;
     result->report_item.fd = result->fd;
@@ -874,7 +875,8 @@ int blkd_get_llid_with_rank(void *ptr, int rank)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void blkd_set_rank(void *ptr, int llid, int rank, char *name, int num)
+void blkd_set_rank(void *ptr, int llid, int rank, 
+                   char *name, int num, int tidx)
 {
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
   if (!cur)
@@ -884,23 +886,28 @@ void blkd_set_rank(void *ptr, int llid, int rank, char *name, int num)
     memset(cur->report_item.rank_name, 0, MAX_NAME_LEN);
     strncpy(cur->report_item.rank_name, name, MAX_NAME_LEN-1);
     cur->report_item.rank_num = num;
+    cur->report_item.rank_tidx = tidx;
     cur->report_item.rank = rank;
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int blkd_get_rank(void *ptr, int llid, char *name, int *num)
+int blkd_get_rank(void *ptr, int llid, char *name, int *num, int *tidx)
 {
   int result = 0;
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
   if (!cur)
     KERR(" ");
-  else
+  else if ((cur->report_item.rank_num == -1) || 
+           (cur->report_item.rank_tidx == -1))
+    KERR(" ");
+  else 
     {
     memset(name, 0, MAX_NAME_LEN);
     strncpy(name, cur->report_item.rank_name, MAX_NAME_LEN-1);
     *num = cur->report_item.rank_num;
+    *tidx = cur->report_item.rank_tidx;
     result = cur->report_item.rank;
     }
   return result;
@@ -951,7 +958,7 @@ void blkd_drop_rx_counter_increment(void *ptr, int llid, int val)
 void blkd_heartbeat(void *ptr)
 {
   t_llid_blkd *cur;
-  int num, rank, llid, i, *llid_list = get_llid_blkd_list(ptr);
+  int tidx, num, rank, llid, i, *llid_list = get_llid_blkd_list(ptr);
   int llid_list_max = get_llid_blkd_list_max(ptr);
   char name[MAX_NAME_LEN];
   for (i=0; i < llid_list_max; i++)
@@ -967,9 +974,14 @@ void blkd_heartbeat(void *ptr)
           cur->fifo_rx.dist_flow_control_count -= 1;
           if (cur->fifo_rx.dist_flow_control_count == 0) 
             {
-            rank = blkd_get_rank(ptr, llid, name, &num);
-            cur->fifo_rx.dist_flow_control_on = 0;
-            blkd_rx_dist_flow_control(ptr, name, num, rank, 0);
+            rank = blkd_get_rank(ptr, llid, name, &num, &tidx);
+            if ((rank == 0) || (num == -1))
+              KERR("%d %d", rank, num);
+            else
+              {
+              cur->fifo_rx.dist_flow_control_on = 0;
+              blkd_rx_dist_flow_control(ptr, name, num, tidx, rank, 0);
+              }
             }
           }
 
@@ -1017,11 +1029,11 @@ void blkd_tx_local_flow_control(void *ptr, int llid, int stop)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void blkd_rx_dist_flow_control(void *ptr, char *name, int num, 
+void blkd_rx_dist_flow_control(void *ptr, char *name, int num, int tidx, 
                                int rank, int stop)
 {
   t_blkd_ctx *ctx = get_blkd_ctx(ptr);
-  ctx->dist_flow_ctrl(ptr, ctx->g_cloonix_llid, name, num, rank, stop);
+  ctx->dist_flow_ctrl(ptr, ctx->g_cloonix_llid, name, num, tidx, rank, stop);
 }
 /*---------------------------------------------------------------------------*/
 

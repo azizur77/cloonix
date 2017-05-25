@@ -576,10 +576,10 @@ void endp_mngt_pid_resp(int llid, char *name, int pid)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int llid_flow_to_restrict(char *name, int num)
+static int llid_flow_to_restrict(char *name, int num, int tidx)
 {
   int llid = mulan_can_be_found_with_name(name);
-  KERR("TO RESTRICT: %s %d", name, num);
+  KERR("TO RESTRICT: name:%s num:%d tidx:%d llid:%d", name, num, tidx, llid);
   return llid;
 }
 /*--------------------------------------------------------------------------*/
@@ -594,10 +594,10 @@ void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line)
   if (mu)
     {
     if (sscanf(line, 
-           "cloonix_evt_peer_flow_control name=%s num=%d rank=%d stop=%d",
-                     name, &num, &rank, &stop) == 4)
+        "cloonix_evt_peer_flow_control name=%s num=%d tidx=%d rank=%d stop=%d",
+         name, &num, &tidx, &rank, &stop) == 5)
       {
-      peer_llid = llid_flow_to_restrict(name, num);
+      peer_llid = llid_flow_to_restrict(name, num, tidx);
       if (peer_llid)
         murpc_dispatch_send_tx_flow_control(peer_llid, rank, stop);
       else

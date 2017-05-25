@@ -841,6 +841,7 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *iitem)
     random_choice_str(item.sock, MAX_PATH_LEN);
     random_choice_str(item.rank_name, MAX_NAME_LEN);
     item.rank_num   = rand();
+    item.rank_tidx   = rand();
     item.rank   = rand();
     item.pid   = rand();
     item.llid   = rand();
@@ -1668,6 +1669,7 @@ void recv_blkd_reports(int llid, int itid, t_blkd_reports *iblkd)
       random_choice_str(it->sock, MAX_PATH_LEN);
       random_choice_str(it->rank_name, MAX_NAME_LEN);
       it->rank_num = rand();
+      it->rank_tidx = rand();
       it->rank = rand();
       it->pid = rand();
       it->llid = rand();

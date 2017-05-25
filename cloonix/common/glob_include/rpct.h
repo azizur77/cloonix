@@ -73,7 +73,7 @@ typedef struct t_qstats
 
 #define BLKD_ITEM      "<blkd_item>\n"\
                        "  sock:%s \n"\
-                       "  rank_name:%s rank_num:%d \n"\
+                       "  rank_name:%s rank_num:%d rank_tidx:%d \n"\
                        "  rank:%d \n"\
                        "  pid:%d \n"\
                        "  llid:%d \n"\
@@ -212,7 +212,7 @@ void rpct_recv_report(void *ptr, int llid, t_blkd_item *item);
 void rpct_clean_all(void *ptr);
 void rpct_redirect_string_tx(void *ptr, t_rpct_tx rpc_tx);
 void rpct_send_peer_flow_control(void *ptr, int llid,
-                                 char *name, int num,
+                                 char *name, int num, int tidx,
                                  int rank, int stop);
 void rpct_init(void *ptr, t_rpct_tx rpc_tx);
 /****************************************************************************/

@@ -409,17 +409,17 @@ void mulan_pid_resp(int llid, char *lan, int pid)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int llid_flow_to_restrict(char *name, int num)
+static int llid_flow_to_restrict(char *name, int num, int tidx)
 {
   char *ptr;
   int eth, type;
   int llid = endp_mngt_can_be_found_with_name(name, num, &type);
   char vm_name[MAX_NAME_LEN];
   if (llid)
-KERR("%s %d %d", name, num, llid);
+KERR("%s num:%d tidx:%d llid:%d", name, num, tidx, llid);
 else
     {
-KERR("%s %d %d", name, num, llid);
+KERR("%s num:%d tidx:%d llid:%d", name, num, tidx, llid);
     memset(vm_name, 0, MAX_NAME_LEN);
     strncpy(vm_name, name, MAX_NAME_LEN-1);
     ptr = strrchr(vm_name, '_');
@@ -429,7 +429,7 @@ KERR("%s %d %d", name, num, llid);
         {
         *ptr = 0;
         llid = endp_mngt_can_be_found_with_name(vm_name, eth, &type);
-KERR("%s %d %d", name, num, llid);
+KERR("%s num:%d tidx:%d llid:%d eth:%d", name, num, tidx, llid, eth);
         }
       }
     }
@@ -454,16 +454,16 @@ KERR("%s %d %d", name, num, llid);
 /*****************************************************************************/
 void mulan_rpct_recv_evt_msg(int llid, int tid, char *line)
 {
-  int num, rank, stop;
+  int num, tidx, rank, stop;
   char name[MAX_NAME_LEN];
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
     if (sscanf(line, 
-        "cloonix_evt_peer_flow_control name=%s num=%d rank=%d stop=%d",
-        name, &num, &rank, &stop) == 4)
+        "cloonix_evt_peer_flow_control name=%s num=%d tidx=%d rank=%d stop=%d",
+        name, &num, &tidx, &rank, &stop) == 5)
       {
-      llid = llid_flow_to_restrict(name, num);
+      llid = llid_flow_to_restrict(name, num, tidx);
       if (llid)
         murpc_dispatch_send_tx_flow_control(llid, rank, stop);
       }

@@ -209,7 +209,7 @@ void blkd_fd_event_purge_tx(void *ptr, t_blkd_fifo_tx *pool)
 /****************************************************************************/
 static void trig_dist_flow_control(void *ptr)
 {
-  int num, llid, rank, our_mutype = blkd_get_our_mutype(ptr);
+  int num, tidx, llid, rank, our_mutype = blkd_get_our_mutype(ptr);
   char name[MAX_NAME_LEN];
   t_blkd_fifo_rx *pool;
   if (our_mutype == mulan_type)
@@ -217,15 +217,15 @@ static void trig_dist_flow_control(void *ptr)
     llid = blkd_get_max_rx_flow_llid(ptr, &pool);
     if (llid && pool && (pool->dist_flow_control_on == 0))
       { 
-      rank = blkd_get_rank(ptr, llid, name, &num);
-      if (num < 0)
-        KERR("%s %d", name, num);
+      rank = blkd_get_rank(ptr, llid, name, &num, &tidx);
+      if ((rank == 0) || (num < 0))
+        KERR("%d %d", rank, num);
       else
         {
         pool->dist_flow_control_on = 1;
         pool->dist_flow_control_count = 5;
         pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
-        blkd_rx_dist_flow_control(ptr, name, num, rank, 1);
+        blkd_rx_dist_flow_control(ptr, name, num, tidx, rank, 1);
         }
       }
     }

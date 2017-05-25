@@ -120,7 +120,8 @@ void rpct_send_report(void *ptr, int llid, t_blkd_item *item)
     KOUT(" ");
   if (strlen(item->rank_name) >= MAX_NAME_LEN)
     KOUT("%s", item->rank_name);
-  len = sprintf(buf, BLKD_ITEM, item->sock, item->rank_name, item->rank_num, 
+  len = sprintf(buf, BLKD_ITEM, item->sock, item->rank_name,
+                                item->rank_num, item->rank_tidx, 
                                 item->rank, item->pid, item->llid, 
                                 item->fd, item->sel_tx,
                                 item->sel_rx, item->fifo_tx,
@@ -312,6 +313,7 @@ static void dispatcher(void *ptr, int llid, int bnd_evt, char *msg)
     if (sscanf(msg, BLKD_ITEM, item.sock, 
                                item.rank_name,
                                &(item.rank_num),
+                               &(item.rank_tidx),
                                &(item.rank),
                                &(item.pid),
                                &(item.llid),
@@ -330,7 +332,7 @@ static void dispatcher(void *ptr, int llid, int bnd_evt, char *msg)
                                &(item.dist_flow_ctrl_rx),
                                &(item.drop_tx),
                                &(item.drop_rx))
-                               != 21)
+                               != 22)
       KOUT("%s", msg);
       rpct_recv_report(ptr, llid, &item);
       break;
@@ -534,12 +536,13 @@ void rpct_redirect_string_tx(void *ptr, t_rpct_tx rpc_tx)
 
 /*****************************************************************************/
 void rpct_send_peer_flow_control(void *ptr, int llid, 
-                                 char *name, int num, int rank, int stop)
+                                 char *name, int num, int tidx, 
+                                 int rank, int stop)
 {
   char evt[MAX_PATH_LEN];
   snprintf(evt, MAX_PATH_LEN-1,
-           "cloonix_evt_peer_flow_control name=%s num=%d rank=%d stop=%d",
-           name, num, rank, stop);
+  "cloonix_evt_peer_flow_control name=%s num=%d tidx=%d rank=%d stop=%d",
+  name, num, tidx, rank, stop);
   rpct_send_evt_msg(ptr, llid, 0, evt);
 }
 /*---------------------------------------------------------------------------*/

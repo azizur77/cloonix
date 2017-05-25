@@ -327,7 +327,7 @@ static int pool_rx_newest_record_state(t_blkd_fifo_rx *pool,
 /****************************************************************************/
 static void trig_dist_flow_control(void *ptr, t_blkd_fifo_rx *pool, int llid)
 {
-  int num, rank, our_mutype = blkd_get_our_mutype(ptr);
+  int num, tidx, rank, our_mutype = blkd_get_our_mutype(ptr);
   char name[MAX_NAME_LEN];
   if ((our_mutype == mulan_type)     ||
       (our_mutype == endp_type_kvm) ||
@@ -337,15 +337,15 @@ static void trig_dist_flow_control(void *ptr, t_blkd_fifo_rx *pool, int llid)
       (our_mutype == endp_type_nat) ||
       (our_mutype == endp_type_a2b))
     {
-    rank = blkd_get_rank(ptr, llid, name, &num);
-    if (num < 0)
-      KERR("%s %d", name, num);
+    rank = blkd_get_rank(ptr, llid, name, &num, &tidx);
+    if ((rank == 0) || (num == -1))
+      KERR("%d %d", rank, num);
     else
       {
       pool->dist_flow_control_on = 1;
       pool->dist_flow_control_count = 5;
       pool->slot_dist_flow_ctrl[pool->current_slot] += 1;
-      blkd_rx_dist_flow_control(ptr, name, num, rank, 1);
+      blkd_rx_dist_flow_control(ptr, name, num, tidx, rank, 1);
       }
     }
 }

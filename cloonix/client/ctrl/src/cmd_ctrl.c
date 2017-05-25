@@ -649,17 +649,17 @@ static void blkd_item_print(t_blkd_item *it)
   char bd_rx[MAX_NAME_LEN];
   get_proper_bandwidth(it->bandwidth_tx, bd_tx);
   get_proper_bandwidth(it->bandwidth_rx, bd_rx);
-  printf("llid:%d sock:%s name:%s num:%d rank:%d pid:%d\n", 
-                                  it->llid, it->sock, it->rank_name, 
-                                  it->rank_num, it->rank, it->pid);
-  printf("llid:%d TX r:%d s:%d a:%d f:%d q:%d d:%lld b:%s\n",
+  printf("llid:%d sock:%s name:%s num:%d rank:%d tidx:%d pid:%d\n", 
+          it->llid, it->sock, it->rank_name, it->rank_num, it->rank_tidx, 
+          it->rank, it->pid);
+  printf("llid:%d TX flow_ctl:%d stop:%d select:%d fifo:%d queue:%d drop:%lld bw:%s\n",
                                                it->llid, 
                                                it->dist_flow_ctrl_tx,
                                                it->stop_tx,
                                                it->sel_tx, it->fifo_tx, 
                                                it->queue_tx, 
                                                it->drop_tx, bd_tx);
-  printf("llid:%d RX r:%d s:%d a:%d f:%d q:%d d:%lld b:%s\n", 
+  printf("llid:%d RX flow_ctl:%d stop:%d select:%d fifo:%d queue:%d drop:%lld bw:%s\n",
                                                it->llid, 
                                                it->dist_flow_ctrl_rx,
                                                it->stop_rx,

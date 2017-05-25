@@ -1282,7 +1282,8 @@ void send_blkd_reports(int llid, int tid, t_blkd_reports *blkd)
     if (strlen(it->rank_name) >= MAX_NAME_LEN)
       KOUT("%s %d", it->rank_name, (int)strlen(it->rank_name));
 
-    len += sprintf(sndbuf+len, BLKD_ITEM, it->sock, it->rank_name, it->rank_num,
+    len += sprintf(sndbuf+len, BLKD_ITEM, it->sock, it->rank_name, 
+                                          it->rank_num, it->rank_tidx,
                                           it->rank, it->pid, it->llid, it->fd,
                                           it->sel_tx, it->sel_rx,
                                           it->fifo_tx, it->fifo_rx,
@@ -1726,6 +1727,7 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
     if (sscanf(ptr, BLKD_ITEM,      it->sock, 
                                     it->rank_name, 
                                     &(it->rank_num),
+                                    &(it->rank_tidx),
                                     &(it->rank),
                                     &(it->pid),
                                     &(it->llid),
@@ -1744,7 +1746,7 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
                                     &(it->dist_flow_ctrl_rx),
                                     &(it->drop_tx),
                                     &(it->drop_rx))
-                                    != 21)
+                                    != 22)
       KOUT("%s", msg);
     ptr = strstr(ptr, "</blkd_item>");
     if (!ptr)

@@ -99,15 +99,15 @@ static void rx_init_traf_cb (void *ptr, int llid)
   t_blkd *bd = blkd_get_rx(ptr, llid);
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
   char name[MAX_PATH_LEN];
-  int num;
+  int num, tidx;
   if (!bd)
     KERR(" ");
   else
     {
-    if (sscanf(bd->payload_blkd, "OPENING: name=%s num=%d", 
-                                  name, &num) == 2)
+    if (sscanf(bd->payload_blkd, "TRAFFIC_OPENING: name=%s num=%d tidx=%d",
+                                  name, &num, &tidx) == 3)
       {
-      if (!llid_rank_traf_connect(all_ctx, llid, name, num))
+      if (!llid_rank_traf_connect(all_ctx, llid, name, num, tidx))
         blkd_server_set_callbacks((void *) all_ctx, llid, rx_traf_cb,
                                                           err_traf_cb);
       }

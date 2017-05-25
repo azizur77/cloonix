@@ -139,7 +139,7 @@ void rank_dialog(t_all_ctx *all_ctx, int llid, char *line, char *resp)
       }
     else
       {
-      llid_rank_llid_create(llid, name, num, rank);
+      llid_rank_llid_create(llid, name, num, tidx, rank);
       if (strlen(all_ctx->g_listen_traf_path))
         {
         snprintf(resp, MAX_RESP_LEN-1, 

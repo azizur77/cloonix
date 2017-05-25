@@ -17,7 +17,7 @@
 /*****************************************************************************/
 typedef void (*t_fd_local_flow_ctrl)(void *ptr, int llid, int stop);
 typedef void (*t_fd_dist_flow_ctrl)(void *ptr, int llid, char *name, int num, 
-                                    int rank, int stop);
+                                    int tidx, int rank, int stop);
 typedef void (*t_fd_error)(void *ptr, int llid, int err, int from);
 typedef int  (*t_fd_event)(void *ptr, int llid, int fd);
 typedef void (*t_fd_connect)(void *ptr, int llid, int llid_new);
@@ -36,6 +36,7 @@ typedef struct t_blkd_item
   char sock[MAX_PATH_LEN];
   char rank_name[MAX_NAME_LEN];
   int  rank_num;
+  int  rank_tidx;
   int rank;
   int pid;
   int llid;
@@ -135,8 +136,10 @@ int get_llid_blkd_list_max(void *ptr);
 void blkd_set_cloonix_llid(void *ptr, int llid);
 int blkd_get_cloonix_llid(void *ptr);
 /*---------------------------------------------------------------------------*/
-void blkd_set_rank(void *ptr, int llid, int rank, char *name, int num);
-int blkd_get_rank(void *ptr, int llid, char *name, int *num);
+void blkd_set_rank(void *ptr, int llid, int rank, 
+                   char *name, int num, int tidx);
+int blkd_get_rank(void *ptr, int llid, 
+                  char *name, int *num, int *tidx);
 int blkd_get_llid_with_rank(void *ptr, int rank);
 /*---------------------------------------------------------------------------*/
 void blkd_stop_tx_counter_increment(void *ptr, int llid);
@@ -148,7 +151,8 @@ void blkd_drop_rx_counter_increment(void *ptr, int llid, int val);
 void blkd_tx_local_flow_control(void *ptr, int llid, int stop);
 void blkd_rx_local_flow_control(void *ptr, int llid, int stop);
 /*---------------------------------------------------------------------------*/
-void blkd_rx_dist_flow_control(void *ptr, char *name, int num, int rank, int stop);
+void blkd_rx_dist_flow_control(void *ptr, char *name, int num, int tidx,
+                               int rank, int stop);
 /*---------------------------------------------------------------------------*/
 void blkd_init(void *ptr, t_fd_local_flow_ctrl lfc_tx,  
                           t_fd_local_flow_ctrl lfc_rx,  
