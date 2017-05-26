@@ -24,7 +24,7 @@ void request_trace_item(int is_tg, char *name, int num);
 /*--------------------------------------------------------------------------*/
 void event_must_refresh_request_for_plot(void);
 /*--------------------------------------------------------------------------*/
-void main_timer_every_200ms_work(void);
+void eventfull_periodic_work(void);
 /*--------------------------------------------------------------------------*/
 void eventfull_has_arrived(void);
 /*--------------------------------------------------------------------------*/

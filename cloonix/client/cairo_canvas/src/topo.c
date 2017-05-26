@@ -691,8 +691,6 @@ static void on_item_paint_nat(CrItem *item, cairo_t *c)
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_stroke(c);
-  if ((bitem->pbi.blink_rx) || (bitem->pbi.blink_tx))
-    event_full_timeout_blink_off();
 }
 /*--------------------------------------------------------------------------*/
 
@@ -740,9 +738,6 @@ static void on_item_paint_eth(CrItem *item, cairo_t *c)
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_stroke(c);
-
-  if ((bitem->pbi.blink_rx) || (bitem->pbi.blink_tx))
-    event_full_timeout_blink_off();
 }
 /*--------------------------------------------------------------------------*/
 
@@ -878,8 +873,6 @@ static void on_item_paint_sat(CrItem *item, cairo_t *c)
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_stroke(c);
-  if ((bitem->pbi.blink_rx) || (bitem->pbi.blink_tx))
-    event_full_timeout_blink_off();
 }
 /*--------------------------------------------------------------------------*/
 
@@ -915,8 +908,6 @@ static void on_item_paint_a2b(CrItem *item, cairo_t *c)
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_stroke(c);
-  if ((bitem->pbi.blink_rx) || (bitem->pbi.blink_tx))
-    event_full_timeout_blink_off();
 }
 /*--------------------------------------------------------------------------*/
 
@@ -966,8 +957,6 @@ static void on_item_paint_c2c(CrItem *item, cairo_t *c)
     cairo_set_source_rgba (c, black.r, black.g, black.b, 1.0);
   cairo_set_line_width(c, bitem->pbi.line_width);
   cairo_stroke(c);
-  if ((bitem->pbi.blink_rx) || (bitem->pbi.blink_tx))
-    event_full_timeout_blink_off();
 }
 /*--------------------------------------------------------------------------*/
 

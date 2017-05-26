@@ -1390,7 +1390,23 @@ int endp_mngt_kvm_pid_clone(char *name, int num, int pid)
 }
 /*---------------------------------------------------------------------------*/
 
+/****************************************************************************/
+void endp_mngt_erase_eventfull_stats(void)
+{
+  int i;
+  t_priv_endp *cur = g_head_muendp;
+  while(cur)
+    {
+    for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+      {
+      cur->lan_attached[i].eventfull_rx_p = 0;
+      cur->lan_attached[i].eventfull_tx_p = 0;
+      }
 
+    cur = cur->next;
+    }
+}
+/*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
 void endp_mngt_init(void)

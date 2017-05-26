@@ -195,7 +195,6 @@ static int add_all_tidx_rx(t_lan_attached *lan_attached)
   for (i=0; i<MAX_TRAF_ENDPOINT; i++)
     {
     result += lan_attached[i].eventfull_rx_p;
-    lan_attached[i].eventfull_rx_p = 0;
     }
   return result;
 }
@@ -208,7 +207,6 @@ static int add_all_tidx_tx(t_lan_attached *lan_attached)
   for (i=0; i<MAX_TRAF_ENDPOINT; i++)
     {
     result += lan_attached[i].eventfull_tx_p;
-    lan_attached[i].eventfull_tx_p = 0;
     }
   return result;
 }
@@ -297,7 +295,8 @@ static void timeout_collect_eventfull(void *data)
       event_print ("EVENTFULL ERROR!!!!!!");
     cur = cur->next;
     }
-  clownix_timeout_add(20, timeout_collect_eventfull, NULL, NULL, NULL);
+  endp_mngt_erase_eventfull_stats();
+  clownix_timeout_add(10, timeout_collect_eventfull, NULL, NULL, NULL);
   clownix_free(eventfull_endp, __FUNCTION__); 
 }
 /*---------------------------------------------------------------------------*/

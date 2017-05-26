@@ -155,7 +155,7 @@ static void timeout_eventfull(void *data)
   if (!eventfull)
     KOUT(" ");
   eventfull_has_arrived();
-  eventfull_200_ms_packets_data(eventfull);
+  eventfull_packets_data(eventfull);
   clownix_free(eventfull->endp, __FUNCTION__);
   clownix_free(eventfull, __FUNCTION__);
 }
@@ -174,7 +174,10 @@ static void eventfull_cb(int nb_endp, t_eventfull_endp *endp)
   eventfull->endp = (t_eventfull_endp *) clownix_malloc(len, 13);
   eventfull->nb_endp  = nb_endp;
   memcpy(eventfull->endp,  endp,  nb_endp  * sizeof(t_eventfull_endp));
-  clownix_timeout_add(1, timeout_eventfull, (void *) eventfull, NULL, NULL);
+
+//  clownix_timeout_add(1, timeout_eventfull, (void *) eventfull, NULL, NULL);
+  timeout_eventfull((void *) eventfull);
+
 }
 /*--------------------------------------------------------------------------*/
 

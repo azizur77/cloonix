@@ -147,8 +147,8 @@ void ping_enqueue_evt(char *name, int evt)
 
 
 /*****************************************************************************/
-static void print_all_mallocs(void)
-{
+//static void print_all_mallocs(void)
+//{
 //  int i;
 //  unsigned long *mallocs;
 //  printf("MALLOCS: ");
@@ -157,11 +157,11 @@ static void print_all_mallocs(void)
 //    printf("%d:%02lu ", i, mallocs[i]);
 //  printf("\n%d\n", get_nb_running_pids());
 //  printf("\n%d, %d\n", get_nb_total_items(), get_max_edge_nb_per_item());
-}
+//}
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void main_timer_every_200ms_work(void)
+void eventfull_periodic_work(void)
 {
   static int count = 0;
   count++;
@@ -171,9 +171,6 @@ void main_timer_every_200ms_work(void)
     {
     count = 0;
     nb_sec_without_stats++;
-//    if (nb_sec_without_stats > 3)
-//      set_buttons_colors_red();
-    print_all_mallocs();
     }
   topo_repaint_request();
 }

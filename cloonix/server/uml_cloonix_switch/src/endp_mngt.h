@@ -76,6 +76,7 @@ void endp_mngt_add_attached_lan(int llid, char *name, int num,
                                 int tidx, char *lan);
 void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan);
 int endp_mngt_kvm_pid_clone(char *name, int num, int pid);
+void endp_mngt_erase_eventfull_stats(void);
 
 /*--------------------------------------------------------------------------*/
 

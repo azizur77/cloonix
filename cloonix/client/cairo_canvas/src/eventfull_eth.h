@@ -23,7 +23,7 @@ typedef struct t_eventfull
 /*---------------------------------------------------------------------------*/
 void event_full_timeout_blink_off(void);
 /*---------------------------------------------------------------------------*/
-void eventfull_200_ms_packets_data(t_eventfull *eventfull);
+void eventfull_packets_data(t_eventfull *eventfull);
 /*---------------------------------------------------------------------------*/
 void eventfull_node_create(char *name);
 /*---------------------------------------------------------------------------*/
