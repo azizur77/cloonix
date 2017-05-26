@@ -59,18 +59,18 @@ typedef struct t_time_delay
 
 
 /****************************************************************************/
-typedef struct t_muswitch_connect
+typedef struct t_lan_connect
 {
   char name[MAX_NAME_LEN];
   int num;
   int tidx;
   char lan[MAX_NAME_LEN];
-  char muswitch_sock[MAX_PATH_LEN];
-} t_muswitch_connect;
+  char lan_sock[MAX_PATH_LEN];
+} t_lan_connect;
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-typedef struct t_musat
+typedef struct t_priv_endp
 {
   char name[MAX_NAME_LEN];
   int num;
@@ -89,13 +89,13 @@ typedef struct t_musat
   int unanswered_pid_req;
   int doors_fd_ready;
   int doors_fd_value;
-  int musat_stop_done;
+  int muendp_stop_done;
   t_topo_c2c c2c;
   t_topo_snf snf;
   t_lan_attached lan_attached[MAX_TRAF_ENDPOINT];
-  struct t_musat *prev;
-  struct t_musat *next;
-} t_musat;
+  struct t_priv_endp *prev;
+  struct t_priv_endp *next;
+} t_priv_endp;
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
@@ -113,12 +113,12 @@ typedef struct t_argendp
 /*--------------------------------------------------------------------------*/
 
 
-static t_musat *g_head_musat;
-static int g_nb_musat;
+static t_priv_endp *g_head_muendp;
+static int g_nb_muendp;
 
 
 /****************************************************************************/
-static int try_send_musat(t_musat *mu, char *msg)
+static int try_send_endp(t_priv_endp *mu, char *msg)
 {
   int result = -1;
   if (mu->llid)
@@ -137,7 +137,7 @@ static int try_send_musat(t_musat *mu, char *msg)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int try_send_app_musat(t_musat *mu, char *msg)
+static int try_send_app_muendp(t_priv_endp *mu, char *msg)
 {
   int result = -1;
   if (mu->llid)
@@ -156,7 +156,7 @@ static int try_send_app_musat(t_musat *mu, char *msg)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void init_mac_in_munat(t_musat *cur, 
+static void init_mac_in_munat(t_priv_endp *cur, 
                               char *name, int vm_id, 
                               int nb_eth, t_eth_params *eth)
 {
@@ -172,7 +172,7 @@ static void init_mac_in_munat(t_musat *cur,
              "mac=%02X:%02X:%02X:%02X:%02X:%02X",
              name, vm_id, i, mc[0]&0xFF, mc[1]&0xFF, mc[2]&0xFF,
              mc[3]&0xFF, mc[4]&0xFF, mc[5]&0xFF);
-    try_send_app_musat(cur, msg);
+    try_send_app_muendp(cur, msg);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -181,7 +181,7 @@ static void init_mac_in_munat(t_musat *cur,
 void endp_mngt_add_mac_eth_vm(char *name, int vm_id, 
                               int nb_eth, t_eth_params *eth)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   while(cur)
     {
     if (cur->endp_type == endp_type_nat)
@@ -194,7 +194,7 @@ void endp_mngt_add_mac_eth_vm(char *name, int vm_id,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void endp_mngt_add_all_vm(t_musat *cur)
+void endp_mngt_add_all_vm(t_priv_endp *cur)
 {
   char *name;
   int nb, vm_id, nb_eth;
@@ -216,7 +216,7 @@ void endp_mngt_add_all_vm(t_musat *cur)
 void endp_mngt_del_mac_eth_vm(char *name, int vm_id, 
                               int nb_eth, t_eth_params *eth)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   int i;
   char msg[MAX_PATH_LEN];
   char *mc;
@@ -233,7 +233,7 @@ void endp_mngt_del_mac_eth_vm(char *name, int vm_id,
                  "mac=%02X:%02X:%02X:%02X:%02X:%02X", 
                  name, vm_id, i, mc[0]&0xFF, mc[1]&0xFF, mc[2]&0xFF,
                  mc[3]&0xFF, mc[4]&0xFF, mc[5]&0xFF);  
-        try_send_app_musat(cur, msg);
+        try_send_app_muendp(cur, msg);
         }
       }
     cur = cur->next;
@@ -242,25 +242,25 @@ void endp_mngt_del_mac_eth_vm(char *name, int vm_id,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void status_reply_if_possible(int is_ok, t_musat *musat, char *txt)
+static void status_reply_if_possible(int is_ok, t_priv_endp *muendp, char *txt)
 {
   char info[MAX_PATH_LEN];
   memset(info, 0, MAX_PATH_LEN);
-  if ((musat->cli_llid) && msg_exist_channel(musat->cli_llid))
+  if ((muendp->cli_llid) && msg_exist_channel(muendp->cli_llid))
     {
-    snprintf(info, MAX_PATH_LEN-1, "%s %s", musat->name, txt);  
+    snprintf(info, MAX_PATH_LEN-1, "%s %s", muendp->name, txt);  
     if (is_ok)
-      send_status_ok(musat->cli_llid, musat->cli_tid, info);
+      send_status_ok(muendp->cli_llid, muendp->cli_tid, info);
     else
-      send_status_ko(musat->cli_llid, musat->cli_tid, info);
-    musat->cli_llid = 0;
-    musat->cli_tid = 0;
+      send_status_ko(muendp->cli_llid, muendp->cli_tid, info);
+    muendp->cli_llid = 0;
+    muendp->cli_tid = 0;
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int trace_alloc(t_musat *mu)
+static int trace_alloc(t_priv_endp *mu)
 {
   int llid;
   char *sock = utils_get_endp_path(mu->name, mu->num);
@@ -303,12 +303,12 @@ static int trace_alloc(t_musat *mu)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_musat *musat_find_with_name(char *name, int num)
+static t_priv_endp *muendp_find_with_name(char *name, int num)
 {
-  t_musat *cur = NULL;
+  t_priv_endp *cur = NULL;
   if (name[0])
     { 
-    cur = g_head_musat;
+    cur = g_head_muendp;
     while(cur)
       {
       if ((!strcmp(cur->name, name)) && (cur->num == num))
@@ -321,9 +321,9 @@ static t_musat *musat_find_with_name(char *name, int num)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_musat *musat_find_with_llid(int llid)
+static t_priv_endp *muendp_find_with_llid(int llid)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   if ((llid <1) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%d", llid);
   while(cur && (cur->llid != llid))
@@ -336,7 +336,7 @@ static t_musat *musat_find_with_llid(int llid)
 int endp_mngt_can_be_found_with_llid(int llid, char *name, int *num,
                                      int *endp_type)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   memset(name, 0, MAX_NAME_LEN);
   if ((llid <1) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%d", llid);
@@ -358,7 +358,7 @@ int endp_mngt_can_be_found_with_llid(int llid, char *name, int *num,
 int endp_mngt_can_be_found_with_name(char *name, int num, int *endp_type)
 {
   int result = 0;
-  t_musat *cur = musat_find_with_name(name, num);
+  t_priv_endp *cur = muendp_find_with_name(name, num);
   if (cur)
     {
     if (msg_exist_channel(cur->llid))
@@ -372,21 +372,21 @@ int endp_mngt_can_be_found_with_name(char *name, int num, int *endp_type)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_musat *musat_alloc(char *name, int num, int llid, int tid, int endp_type)
+static t_priv_endp *muendp_alloc(char *name, int num, int llid, int tid, int endp_type)
 {
-  t_musat *mu;
-  mu = (t_musat *) clownix_malloc(sizeof(t_musat), 4);
-  memset(mu, 0, sizeof(t_musat));
+  t_priv_endp *mu;
+  mu = (t_priv_endp *) clownix_malloc(sizeof(t_priv_endp), 4);
+  memset(mu, 0, sizeof(t_priv_endp));
   strncpy(mu->name, name, MAX_NAME_LEN-1);
   mu->num = num;
   mu->cli_llid = llid;
   mu->cli_tid = tid;
   mu->endp_type = endp_type;
-  if (g_head_musat)
-    g_head_musat->prev = mu;
-  mu->next = g_head_musat;
-  g_head_musat = mu; 
-  g_nb_musat += 1;
+  if (g_head_muendp)
+    g_head_muendp->prev = mu;
+  mu->next = g_head_muendp;
+  g_head_muendp = mu; 
+  g_nb_muendp += 1;
   return mu;
 }
 /*--------------------------------------------------------------------------*/
@@ -395,13 +395,16 @@ static t_musat *musat_alloc(char *name, int num, int llid, int tid, int endp_typ
 static t_topo_snf *get_snf(char *name, int num)
 {
   t_topo_snf *result = NULL;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d", name, num);
-  else if (mu->endp_type != endp_type_snf)
-    KERR("%s %d %d", name, num, mu->endp_type);
   else
-    result = &(mu->snf);
+    {
+    if (mu->endp_type != endp_type_snf)
+      KERR("%s %d %d", name, num, mu->endp_type);
+    else
+      result = &(mu->snf);
+    }
   return result;
 }
 /*--------------------------------------------------------------------------*/
@@ -437,19 +440,22 @@ void endp_mngt_snf_set_recpath(char *name, int num, char *recpath)
 void endp_mngt_c2c_info(char *name, int num, int local_is_master, 
                        char *master, char *slave, int ip, int port)
 {
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d", name, num);
-  else if (mu->endp_type != endp_type_c2c)
-    KERR("%s %d %d", name, num, mu->endp_type);
   else
     {
-    strncpy(mu->c2c.name, name, MAX_NAME_LEN-1);
-    strncpy(mu->c2c.master_cloonix, master, MAX_NAME_LEN-1);
-    strncpy(mu->c2c.slave_cloonix, slave, MAX_NAME_LEN-1);
-    mu->c2c.local_is_master = local_is_master;
-    mu->c2c.ip_slave = ip;
-    mu->c2c.port_slave = port;
+    if (mu->endp_type != endp_type_c2c)
+      KERR("%s %d %d", name, num, mu->endp_type);
+    else
+      {
+      strncpy(mu->c2c.name, name, MAX_NAME_LEN-1);
+      strncpy(mu->c2c.master_cloonix, master, MAX_NAME_LEN-1);
+      strncpy(mu->c2c.slave_cloonix, slave, MAX_NAME_LEN-1);
+      mu->c2c.local_is_master = local_is_master;
+      mu->c2c.ip_slave = ip;
+      mu->c2c.port_slave = port;
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -457,13 +463,16 @@ void endp_mngt_c2c_info(char *name, int num, int local_is_master,
 /****************************************************************************/
 void endp_mngt_c2c_peered(char *name, int num, int is_peered)
 {
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d", name, num);
-  else if (mu->endp_type != endp_type_c2c)
-    KERR("%s %d %d", name, num, mu->endp_type);
   else
-    mu->c2c.is_peered = is_peered;
+    {
+    if (mu->endp_type != endp_type_c2c)
+      KERR("%s %d %d", name, num, mu->endp_type);
+    else
+      mu->c2c.is_peered = is_peered;
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -472,18 +481,21 @@ void endp_mngt_add_attached_lan(int llid, char *name, int num,
                                 int tidx, char *lan)
 {
   int lan_num;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d %s", name, num, lan);
-  else  if (mu->lan_attached[tidx].lan_num != 0)
-    KERR("%s %d %s %d", name, num, lan, mu->lan_attached[tidx].lan_num);
-  else
+  else  
     {
-    lan_num = lan_add_name(lan, llid);
-    if ((lan_num <= 0) || (lan_num >= MAX_LAN))
-      KOUT("%d", lan_num);
-    mu->lan_attached[tidx].lan_num = lan_num;
-    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    if (mu->lan_attached[tidx].lan_num != 0)
+      KERR("%s %d %s %d", name, num, lan, mu->lan_attached[tidx].lan_num);
+    else
+      {
+      lan_num = lan_add_name(lan, llid);
+      if ((lan_num <= 0) || (lan_num >= MAX_LAN))
+        KOUT("%d", lan_num);
+      mu->lan_attached[tidx].lan_num = lan_num;
+      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -492,32 +504,42 @@ void endp_mngt_add_attached_lan(int llid, char *name, int num,
 void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan)
 {
   int lan_num;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d %s", name, num, lan);
-  else  if (mu->lan_attached[tidx].lan_num == 0)
-    KERR("%s %d %s", name, num, lan);
-  else
+  else  
     {
-    lan_num = lan_del_name(lan);
-    if (mu->lan_attached[tidx].lan_num != lan_num)
-      KERR("%s %d %s %d %d", name, num, lan, lan_num,
-                          mu->lan_attached[tidx].lan_num);
+    if (mu->lan_attached[tidx].lan_num == 0)
+      KERR("%s %d %s", name, num, lan);
     else
       {
-      memset(&(mu->lan_attached[tidx]), 0, sizeof(t_lan_attached));
-      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+      lan_num = lan_del_name(lan);
+      if (mu->lan_attached[tidx].lan_num != lan_num)
+        KERR("%s %d %s %d %d", name, num, lan, lan_num,
+                            mu->lan_attached[tidx].lan_num);
+      else
+        {
+        memset(&(mu->lan_attached[tidx]), 0, sizeof(t_lan_attached));
+        event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+        }
       }
     }
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void musat_free(char *name, int num)
+static void muendp_free(char *name, int num)
 {
-  t_musat *mu = musat_find_with_name(name, num);
+  int i, lan_num;
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (mu)
     {
+    for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+      {
+      lan_num = mu->lan_attached[i].lan_num;
+      if (lan_num)
+        KOUT("%s", lan_get_with_num(lan_num));
+      }
     status_reply_if_possible(0, mu, "ERROR"); 
     if (mu->endp_type == endp_type_c2c)
       c2c_free_ctx(name);
@@ -525,18 +547,20 @@ static void musat_free(char *name, int num)
       mu->prev->next = mu->next;
     if (mu->next)
       mu->next->prev = mu->prev;
-    if (mu == g_head_musat)
-      g_head_musat = mu->next;
+    if (mu == g_head_muendp)
+      g_head_muendp = mu->next;
     if (mu->llid)
       {
       llid_trace_free(mu->llid, 0, __FUNCTION__);
       }
     if ((num == 0) && (mu->endp_type != endp_type_kvm))
       layout_del_sat(name);
+    if (mu->pid)
+      kill(mu->pid, SIGKILL);
     clownix_free(mu, __FUNCTION__);
-    if (g_nb_musat <= 0)
-      KOUT("%d", g_nb_musat);
-    g_nb_musat -= 1;
+    if (g_nb_muendp <= 0)
+      KOUT("%d", g_nb_muendp);
+    g_nb_muendp -= 1;
     stats_counters_death(name, num);
     event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
     }
@@ -546,22 +570,22 @@ static void musat_free(char *name, int num)
 /****************************************************************************/
 void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid)
 {
-  t_musat *musat = musat_find_with_llid(llid);
-  if (musat)
+  t_priv_endp *muendp = muendp_find_with_llid(llid);
+  if (muendp)
     {
-    if (strcmp(name, musat->name))
-      KERR("%s %s", name, musat->name);
-    if (musat->pid == 0)
+    muendp->unanswered_pid_req = 0;
+    if (strcmp(name, muendp->name))
+      KERR("%s %s", name, muendp->name);
+    if (muendp->pid == 0)
       {
-      if (musat->endp_type == endp_type_snf)
+      if (muendp->endp_type == endp_type_snf)
         rpct_send_cli_req(NULL, llid, 0, 0, 0, "-get_conf");
-      musat->pid = pid;
-      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+      muendp->pid = pid;
       }
     else
       {
-      if (musat->pid != pid)
-        KERR("%s %d %d", name, pid, musat->pid);
+      if (muendp->pid != pid)
+        KERR("%s %d %d", name, pid, muendp->pid);
       }
     }
   else
@@ -583,7 +607,7 @@ void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line)
 {
   int num, tidx, peer_llid, pkts, bytes, rank, stop;
   unsigned int ms;
-  t_musat *mu = musat_find_with_llid(llid);
+  t_priv_endp *mu = muendp_find_with_llid(llid);
   char name[MAX_NAME_LEN];
   if (mu)
     {
@@ -618,7 +642,7 @@ void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line)
 /*****************************************************************************/
 void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
 {
-  t_musat *mu = musat_find_with_llid(llid);
+  t_priv_endp *mu = muendp_find_with_llid(llid);
   char name[MAX_NAME_LEN];
   char lan[MAX_NAME_LEN];
   int num, tidx, rank;
@@ -634,7 +658,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
       "\"sudo chmod u+s /usr/local/bin/cloonix"
       "/server/muswitch/mutap/cloonix_mutap\"");
 
-      endp_mngt_send_muswitch_quit(mu->name, mu->num);
+      endp_mngt_send_quit(mu->name, mu->num);
       }
     else if ((!strcmp(line, "cloonix_resp_tap_ok"))  ||
              (!strcmp(line, "cloonix_resp_wif_ok"))  ||
@@ -646,7 +670,8 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
              (!strcmp(line, "cloonix_resp_a2b_ok")))
       {
       mu->open_endp = 1;
-      endp_birth(mu->name, 0, mu->endp_type);
+      endp_evt_birth(mu->name, mu->num, mu->endp_type);
+      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
       status_reply_if_possible(1, mu, "OK"); 
       }
     else if ((!strcmp(line, "cloonix_resp_tap_ko"))  ||
@@ -655,7 +680,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
       {
       mu->open_endp = 1;
       status_reply_if_possible(0, mu, line);
-      endp_mngt_send_muswitch_quit(mu->name, mu->num);
+      endp_mngt_send_quit(mu->name, mu->num);
       }
     else if (sscanf(line, 
              "cloonix_resp_connect_ok lan=%s name=%s num=%d tidx=%d rank=%d",
@@ -665,7 +690,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
         KERR("%s %s", name, mu->name);
       if (strcmp(mu->waiting_resp_txt, "unix_sock"))
         KERR("%s %d %d %s", mu->name, tid, mu->pid, line);
-      endp_connect_OK(name, num, lan, tidx, rank);
+      endp_evt_connect_OK(name, num, lan, tidx, rank);
       }
     else if  (sscanf(line,
               "cloonix_resp_disconnect_ok lan=%s name=%s num=%d tidx=%d",
@@ -684,7 +709,7 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
         KERR("%s %s", name, mu->name);
       if (strcmp(mu->waiting_resp_txt, "unix_sock"))
         KERR("%s %d %d %s", mu->name, tid, mu->pid, line);
-      endp_connect_KO(name, num, lan, tidx);
+      endp_evt_connect_KO(name, num, lan, tidx);
       }
     else
       KERR("%s %s", mu->name, line);
@@ -692,44 +717,44 @@ void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line)
     memset(mu->waiting_resp_txt, 0, MAX_NAME_LEN);
     }
   else
-    KOUT("%s", line);
+    KERR("%s", line);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 void endp_mngt_err_cb (int llid)
 {
-  t_musat *mu = musat_find_with_llid(llid);
+  t_priv_endp *mu = muendp_find_with_llid(llid);
   if (mu)
     {
     status_reply_if_possible(0, mu, "llid_err");
-    endp_quick_death(mu->name, mu->num);
-    musat_free(mu->name, mu->num);
+    endp_evt_quick_death(mu->name, mu->num);
+    muendp_free(mu->name, mu->num);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void send_type_req(t_musat *cur)
+static void send_type_req(t_priv_endp *cur)
 {
   char msg_info[MAX_PATH_LEN];
   memset(msg_info, 0, MAX_PATH_LEN);
   if (cur->endp_type == endp_type_tap)
-    try_send_musat(cur, "cloonix_req_tap");
+    try_send_endp(cur, "cloonix_req_tap");
   else if (cur->endp_type == endp_type_wif)
-    try_send_musat(cur, "cloonix_req_wif");
+    try_send_endp(cur, "cloonix_req_wif");
   else if (cur->endp_type == endp_type_raw)
-    try_send_musat(cur, "cloonix_req_raw");
+    try_send_endp(cur, "cloonix_req_raw");
   else if (cur->endp_type == endp_type_snf)
-    try_send_musat(cur, "cloonix_req_snf");
+    try_send_endp(cur, "cloonix_req_snf");
   else if (cur->endp_type == endp_type_c2c)
-    try_send_musat(cur, "cloonix_req_c2c");
+    try_send_endp(cur, "cloonix_req_c2c");
   else if (cur->endp_type == endp_type_a2b)
-    try_send_musat(cur, "cloonix_req_a2b");
+    try_send_endp(cur, "cloonix_req_a2b");
   else if (cur->endp_type == endp_type_nat)
-    try_send_musat(cur, "cloonix_req_nat");
+    try_send_endp(cur, "cloonix_req_nat");
   else if (cur->endp_type == endp_type_kvm)
-    try_send_musat(cur, "cloonix_req_kvm");
+    try_send_endp(cur, "cloonix_req_kvm");
   else
     KERR("%d", cur->endp_type);
 }
@@ -738,7 +763,7 @@ static void send_type_req(t_musat *cur)
 /****************************************************************************/
 static void timer_endp_beat(void *data)
 {
-  t_musat *next, *cur = g_head_musat;
+  t_priv_endp *next, *cur = g_head_muendp;
   while(cur)
     {
     next = cur->next;
@@ -752,7 +777,7 @@ static void timer_endp_beat(void *data)
                ((cur->endp_type == endp_type_tap) ||
                 (cur->endp_type == endp_type_raw) ||
                 (cur->endp_type == endp_type_wif)))
-        try_send_musat(cur, "cloonix_req_suidroot");
+        try_send_endp(cur, "cloonix_req_suidroot");
       else if (cur->open_endp == 0)
         send_type_req(cur);
       else
@@ -764,15 +789,15 @@ static void timer_endp_beat(void *data)
           cur->init_munat_mac = 1;
           }
         cur->periodic_count += 1;
-        if (cur->periodic_count >= 10)
+        if (cur->periodic_count >= 5)
           {
           rpct_send_pid_req(NULL, cur->llid, type_hop_endp, cur->name, cur->num);
           cur->periodic_count = 1;
           cur->unanswered_pid_req += 1;
-          if (cur->unanswered_pid_req > 5)
+          if (cur->unanswered_pid_req > 2)
             {
             KERR("ENDP %s %d NOT RESPONDING KILLING IT", cur->name, cur->num);
-            endp_mngt_send_muswitch_quit(cur->name, cur->num);
+            endp_mngt_send_quit(cur->name, cur->num);
             }
           }
         }
@@ -784,16 +809,16 @@ static void timer_endp_beat(void *data)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void musat_watchdog(void *data)
+static void muendp_watchdog(void *data)
 {
   t_argendp *mua = (t_argendp *) data;
-  t_musat *musat = musat_find_with_name(mua->name, mua->num);
-  if (musat && ((!musat->llid) || (!musat->pid)))
+  t_priv_endp *muendp = muendp_find_with_name(mua->name, mua->num);
+  if (muendp && ((!muendp->llid) || (!muendp->pid)))
     {
-    status_reply_if_possible(0, musat, "timeout");
-    KERR("%s", musat->name);
-    endp_quick_death(musat->name, musat->num);
-    musat_free(musat->name, musat->num);
+    status_reply_if_possible(0, muendp, "timeout");
+    KERR("%s", muendp->name);
+    endp_evt_quick_death(muendp->name, muendp->num);
+    muendp_free(muendp->name, muendp->num);
     }
   clownix_free(mua, __FUNCTION__);
 }
@@ -802,37 +827,37 @@ static void musat_watchdog(void *data)
 /*****************************************************************************/
 void doors_recv_c2c_clone_death(int llid, int tid, char *name)
 {
-  t_musat *musat = musat_find_with_name(name, 0);
-  event_print("End doors musat %s", name);
-  if (musat)
+  t_priv_endp *muendp = muendp_find_with_name(name, 0);
+  event_print("End doors muendp %s", name);
+  if (muendp)
     {
-    status_reply_if_possible(0, musat, "death");
-    endp_quick_death(musat->name, musat->num);
-    musat_free(musat->name, musat->num);
+    status_reply_if_possible(0, muendp, "death");
+    endp_evt_quick_death(muendp->name, muendp->num);
+    muendp_free(muendp->name, muendp->num);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void musat_death(void *data, int status, char *name)
+static void muendp_death(void *data, int status, char *name)
 {
   t_argendp *mua = (t_argendp *) data;
-  t_musat *musat = musat_find_with_name(mua->name, mua->num);
+  t_priv_endp *muendp = muendp_find_with_name(mua->name, mua->num);
   if (strcmp(name, mua->name))
     KOUT("%s %s", name, mua->name);
-  if (musat)
+  if (muendp)
     {
-    event_print("End musat %s %d", name, musat->num);
-    status_reply_if_possible(0, musat, "death");
-    endp_quick_death(musat->name, musat->num);
-    musat_free(musat->name, musat->num);
+    event_print("End muendp %s %d", name, muendp->num);
+    status_reply_if_possible(0, muendp, "death");
+    endp_evt_quick_death(muendp->name, muendp->num);
+    muendp_free(muendp->name, muendp->num);
     }
   clownix_free(mua, __FUNCTION__);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static char **musat_birth_argv(t_argendp *mu)
+static char **muendp_birth_argv(t_argendp *mu)
 {
   static char endp_type[MAX_NAME_LEN];
   static char net_name[MAX_NAME_LEN];
@@ -855,10 +880,10 @@ static char **musat_birth_argv(t_argendp *mu)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int musat_birth(void *data)
+static int muendp_birth(void *data)
 {
   t_argendp *mu = (t_argendp *) data;
-  char **argv = musat_birth_argv(mu);
+  char **argv = muendp_birth_argv(mu);
 
 //VIP
 //sleep(1000000);
@@ -899,7 +924,7 @@ static void create_two_endp_arg(char *name, int num, int endp_type,
 int endp_mngt_connection_state_is_restfull(char *name, int num)
 {
   int result = 0;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if ((mu) && (mu->waiting_resp == 0))
     result = 1;
   else if (mu)
@@ -913,7 +938,7 @@ int endp_mngt_connection_state_is_restfull(char *name, int num)
 /****************************************************************************/
 void doors_recv_c2c_clone_birth_pid(int llid, int tid, char *name, int pid)
 {
-  t_musat *mu = musat_find_with_name(name, 0);
+  t_priv_endp *mu = muendp_find_with_name(name, 0);
   if (!mu)
     KERR("%s %d", name, pid);
   else
@@ -931,7 +956,7 @@ void doors_recv_c2c_clone_birth_pid(int llid, int tid, char *name, int pid)
 int fd_ready_doors_clone_has_arrived(char *name, int doors_fd)
 {
   int result = -1;
-  t_musat *mu = musat_find_with_name(name, 0);
+  t_priv_endp *mu = muendp_find_with_name(name, 0);
   if (mu)
     {
     if (mu->endp_type != endp_type_c2c)
@@ -953,7 +978,7 @@ int fd_ready_doors_clone_has_arrived(char *name, int doors_fd)
 static void fd_ready_doors_clone(void *data)
 {
   t_argendp  *mua2 = (t_argendp  *) data;
-  t_musat *mu = musat_find_with_name(mua2->name, 0);
+  t_priv_endp *mu = muendp_find_with_name(mua2->name, 0);
   if (mu)
     {
     if (mu->endp_type != endp_type_c2c)
@@ -984,8 +1009,8 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
 {
   int result = -1;
   char *sock = utils_get_endp_path(name, num);
-  t_musat *mu = musat_find_with_name(name, num);
-  t_musat *mu0;
+  t_priv_endp *mu = muendp_find_with_name(name, num);
+  t_priv_endp *mu0;
   t_argendp  *mua1, *mua2;
   char **argv;
   if (mu == NULL)
@@ -993,7 +1018,7 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
     result = 0;
     if (file_exists(sock, F_OK))
       unlink(sock);
-    mu = musat_alloc(name, num, llid, tid, endp_type);
+    mu = muendp_alloc(name, num, llid, tid, endp_type);
     if (!mu)
       KOUT(" ");
 
@@ -1016,19 +1041,19 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
                (mu->endp_type == endp_type_nat)))
       {
       create_two_endp_arg(name, num, endp_type, &mua1, &mua2);
-      argv = musat_birth_argv(mua2);
-      utils_send_creation_info("musat", argv);
-      mu->clone_start_pid = pid_clone_launch(musat_birth, musat_death, 
+      argv = muendp_birth_argv(mua2);
+      utils_send_creation_info("muendp", argv);
+      mu->clone_start_pid = pid_clone_launch(muendp_birth, muendp_death, 
                                              NULL, mua2, mua2, NULL, 
                                              name, -1, 1);
       if (!mu->clone_start_pid)
         KERR(" ");
-      clownix_timeout_add(1000, musat_watchdog, (void *) mua1, NULL, NULL);
+      clownix_timeout_add(500, muendp_watchdog, (void *) mua1, NULL, NULL);
       }
     else if ((num == 1) && (mu->endp_type == endp_type_a2b))
       {
       KERR("%s %d", name, num);
-      mu0 = musat_find_with_name(name, 0);
+      mu0 = muendp_find_with_name(name, 0);
       if (!mu0) 
         KERR("%s %d", name, num);
       else
@@ -1041,14 +1066,14 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void timer_muswitch_connect(void *data)
+static void timer_lan_connect(void *data)
 {
   char cmd[MAX_PATH_LEN];
-  t_muswitch_connect *mc = ( t_muswitch_connect *) data;
-  t_musat *mu;
+  t_lan_connect *mc = ( t_lan_connect *) data;
+  t_priv_endp *mu;
   if (!mc)
     KOUT(" ");
-  mu = musat_find_with_name(mc->name, mc->num);
+  mu = muendp_find_with_name(mc->name, mc->num);
   if (!mu)
     KERR("%s %s", mc->name, mc->lan);
   else
@@ -1056,12 +1081,12 @@ static void timer_muswitch_connect(void *data)
     memset(cmd, 0, MAX_PATH_LEN);
     snprintf(cmd, MAX_PATH_LEN-1, 
              "cloonix_req_connect sock=%s lan=%s name=%s num=%d tidx=%d",
-             mc->muswitch_sock, mc->lan, mc->name, mc->num, mc->tidx);
-    if (try_send_musat(mu, cmd))
+             mc->lan_sock, mc->lan, mc->name, mc->num, mc->tidx);
+    if (try_send_endp(mu, cmd))
       {
       mu->waiting_resp = 0;
       memset(mu->waiting_resp_txt, 0, MAX_NAME_LEN);
-      KERR("%s %s %s",mc->name, mc->lan, mc->muswitch_sock);
+      KERR("%s %s %s",mc->name, mc->lan, mc->lan_sock);
       }
     }
   clownix_free(data, __FUNCTION__);
@@ -1072,30 +1097,25 @@ static void timer_muswitch_connect(void *data)
 int endp_mngt_lan_connect(int delay, char *name, int num, int tidx, char *lan)
 {
   int result = -1;
-  t_muswitch_connect *mc;
-  t_musat *mu = musat_find_with_name(name, num);
-  char *muswitch_sock = utils_mulan_get_sock_path(lan);
-
-  if (tidx < MAX_TRAF_ENDPOINT)
-    num = 0;
-  else
-    num = 1;
-  if (mu && (lan[0]) && (muswitch_sock[0]) && (mu->waiting_resp == 0))
+  t_lan_connect *mc;
+  t_priv_endp *mu = muendp_find_with_name(name, num);
+  char *lan_sock = utils_mulan_get_sock_path(lan);
+  if (mu && (lan[0]) && (lan_sock[0]) && (mu->waiting_resp == 0))
     {
     result = 0;
-    mc=(t_muswitch_connect *)clownix_malloc(sizeof(t_muswitch_connect), 5); 
-    memset(mc, 0, sizeof(t_muswitch_connect));
+    mc=(t_lan_connect *)clownix_malloc(sizeof(t_lan_connect), 5); 
+    memset(mc, 0, sizeof(t_lan_connect));
     strncpy(mc->name, name, MAX_NAME_LEN-1);
     mc->num = num;
     mc->tidx = tidx;
     strncpy(mc->lan, lan, MAX_NAME_LEN-1);
-    strncpy(mc->muswitch_sock, muswitch_sock, MAX_PATH_LEN-1);
+    strncpy(mc->lan_sock, lan_sock, MAX_PATH_LEN-1);
     mu->waiting_resp = 1;
     strcpy(mu->waiting_resp_txt, "unix_sock");
-    clownix_timeout_add(delay,timer_muswitch_connect,(void *)mc,NULL,NULL);
+    clownix_timeout_add(delay,timer_lan_connect,(void *)mc,NULL,NULL);
     }
   else
-    KERR("%s %s %s %d %s", name, lan, muswitch_sock, 
+    KERR("%s %s %s %d %s", name, lan, lan_sock, 
                            mu->waiting_resp, mu->waiting_resp_txt);
   return result;
 }
@@ -1106,19 +1126,15 @@ int endp_mngt_lan_disconnect(char *name, int num, int tidx, char *lan)
 {
   int result = -1;
   char cmd[MAX_PATH_LEN];
-  t_musat *mu = musat_find_with_name(name, num);
-  char *muswitch_sock = utils_mulan_get_sock_path(lan);
-  if (tidx < MAX_TRAF_ENDPOINT)
-    num = 0;
-  else
-    num = 1;
-  if (mu && (lan[0]) && (muswitch_sock[0]) && (mu->waiting_resp == 0))
+  t_priv_endp *mu = muendp_find_with_name(name, num);
+  char *lan_sock = utils_mulan_get_sock_path(lan);
+  if (mu && (lan[0]) && (lan_sock[0]) && (mu->waiting_resp == 0))
     {
     memset(cmd, 0, MAX_PATH_LEN);
     snprintf(cmd, MAX_PATH_LEN-1, 
              "cloonix_req_disconnect lan=%s name=%s num=%d tidx=%d",
              lan, name, num, tidx);
-    result = try_send_musat(mu, cmd);
+    result = try_send_endp(mu, cmd);
     if (!result)
       {
       mu->waiting_resp = 1;
@@ -1133,15 +1149,16 @@ int endp_mngt_lan_disconnect(char *name, int num, int tidx, char *lan)
 static void timer_endp_free(void *data)
 {
   t_time_delay *td = (t_time_delay *) data;
-  musat_free(td->name, td->num);
+  endp_evt_quick_death(td->name, td->num);
+  muendp_free(td->name, td->num);
   clownix_free(data, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void endp_mngt_send_muswitch_quit(char *name, int num)
+void endp_mngt_send_quit(char *name, int num)
 {
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   t_time_delay *td;
   if (mu)
     {
@@ -1149,7 +1166,7 @@ void endp_mngt_send_muswitch_quit(char *name, int num)
     memset(td, 0, sizeof(t_time_delay));
     strncpy(td->name, name, MAX_NAME_LEN-1);
     td->num = num;
-    try_send_musat(mu, "cloonix_req_quit");
+    try_send_endp(mu, "cloonix_req_quit");
     mu->waiting_resp = 1;
     strcpy(mu->waiting_resp_txt, "quit");
     clownix_timeout_add(50, timer_endp_free, (void *)td, NULL, NULL);
@@ -1161,9 +1178,9 @@ void endp_mngt_send_muswitch_quit(char *name, int num)
 int endp_mngt_exists(char *name, int num, int *endp_type)
 {
   int result = 0;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   *endp_type = 0;
-  if (mu != NULL)
+  if (mu)
     {
     *endp_type = mu->endp_type;
     result = 1;
@@ -1176,15 +1193,13 @@ int endp_mngt_exists(char *name, int num, int *endp_type)
 int endp_mngt_stop(char *name, int num)
 {
   int result = -1;
-  t_musat *mu = musat_find_with_name(name, num);
-  if ((mu) && (!mu->musat_stop_done))
+  t_priv_endp *mu = muendp_find_with_name(name, num);
+  if ((mu) && (!mu->muendp_stop_done))
     {
-    mu->musat_stop_done = 1;
+    mu->muendp_stop_done = 1;
     result = 0;
-    if (endp_death(name, num))
-      {
-      musat_free(name, num);
-      }
+    if (endp_evt_death(name, num))
+      muendp_free(name, num);
     }
   return result;
 }
@@ -1193,7 +1208,7 @@ int endp_mngt_stop(char *name, int num)
 /****************************************************************************/
 void endp_mngt_stop_all(void)
 {
-  t_musat *next, *cur = g_head_musat;
+  t_priv_endp *next, *cur = g_head_muendp;
   while(cur)
     {
     next = cur->next;
@@ -1206,7 +1221,7 @@ void endp_mngt_stop_all(void)
 /*****************************************************************************/
 int endp_mngt_get_all_llid(int **llid_tab)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   int i, result = 0;
   *llid_tab = NULL;
   while(cur)
@@ -1219,7 +1234,7 @@ int endp_mngt_get_all_llid(int **llid_tab)
     {
     *llid_tab = (int *)clownix_malloc(result * sizeof(int), 5);
     memset((*llid_tab), 0, result * sizeof(int));
-    cur = g_head_musat;
+    cur = g_head_muendp;
     i = 0;
     while(cur)
       {
@@ -1236,7 +1251,7 @@ int endp_mngt_get_all_llid(int **llid_tab)
 int endp_mngt_get_all_pid(t_lst_pid **lst_pid)
 {
   t_lst_pid *glob_lst = NULL;
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   int i, result = 0;
   event_print("%s", __FUNCTION__);
   while(cur)
@@ -1249,7 +1264,7 @@ int endp_mngt_get_all_pid(t_lst_pid **lst_pid)
     {
     glob_lst = (t_lst_pid *)clownix_malloc(result*sizeof(t_lst_pid),5);
     memset(glob_lst, 0, result*sizeof(t_lst_pid));
-    cur = g_head_musat;
+    cur = g_head_muendp;
     i = 0;
     while(cur)
       {
@@ -1270,7 +1285,7 @@ int endp_mngt_get_all_pid(t_lst_pid **lst_pid)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_endp *fill_endp(t_musat *mu)
+static t_endp *fill_endp(t_priv_endp *mu)
 {
   t_endp *endp = (t_endp *) clownix_malloc(sizeof(t_endp), 11);
   memset(endp, 0, sizeof(t_endp));
@@ -1290,11 +1305,11 @@ static t_endp *fill_endp(t_musat *mu)
 /****************************************************************************/
 t_endp *endp_mngt_get_first(int *nb_endp)
 {
-  t_musat *mu = g_head_musat;
+  t_priv_endp *mu = g_head_muendp;
   t_endp *result = NULL;
   if (mu)
     result = fill_endp(mu);
-  *nb_endp = g_nb_musat;
+  *nb_endp = g_nb_muendp;
   return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -1302,7 +1317,7 @@ t_endp *endp_mngt_get_first(int *nb_endp)
 /****************************************************************************/
 t_endp *endp_mngt_get_next(t_endp *endp)
 {
-  t_musat *mu = (t_musat *) endp->next;
+  t_priv_endp *mu = (t_priv_endp *) endp->next;
   t_endp *result = NULL;
   if (mu)
     result = fill_endp(mu);
@@ -1313,7 +1328,7 @@ t_endp *endp_mngt_get_next(t_endp *endp)
 /****************************************************************************/
 int endp_mngt_get_nb(int type)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   int result = 0;
   while(cur)
     {
@@ -1328,7 +1343,7 @@ int endp_mngt_get_nb(int type)
 /****************************************************************************/
 int endp_mngt_get_nb_sat(void)
 {
-  t_musat *cur = g_head_musat;
+  t_priv_endp *cur = g_head_muendp;
   int result = 0;
   while(cur)
     {
@@ -1350,7 +1365,7 @@ int endp_mngt_get_nb_sat(void)
 /****************************************************************************/
 int endp_mngt_get_nb_all(void)
 {
-  return g_nb_musat;
+  return g_nb_muendp;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1358,16 +1373,18 @@ int endp_mngt_get_nb_all(void)
 int endp_mngt_kvm_pid_clone(char *name, int num, int pid)
 {
   int result = -1;
-  t_musat *mu = musat_find_with_name(name, num);
+  t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d", name, num);
-  else if (mu->endp_type != endp_type_kvm)
-    KERR("%s %d %d", name, num, mu->endp_type);
-  else
+  else 
     {
-    mu->musat_stop_done = 1;
-    mu->clone_start_pid = pid;
-    result = 0;
+    if (mu->endp_type != endp_type_kvm)
+      KERR("%s %d %d", name, num, mu->endp_type);
+    else
+      {
+      mu->clone_start_pid = pid;
+      result = 0;
+      }
     }
   return result;
 }
@@ -1378,9 +1395,9 @@ int endp_mngt_kvm_pid_clone(char *name, int num, int pid)
 /****************************************************************************/
 void endp_mngt_init(void)
 {
-  g_head_musat = NULL;
-  g_nb_musat = 0;
-  endp_init();
+  g_head_muendp = NULL;
+  g_nb_muendp = 0;
+  endp_evt_init();
   clownix_timeout_add(50, timer_endp_beat, NULL, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/

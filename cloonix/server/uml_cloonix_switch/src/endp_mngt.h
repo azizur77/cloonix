@@ -50,7 +50,7 @@ int endp_mngt_can_be_found_with_llid(int llid, char *name,
                                      int *num, int *endp_type);
 void endp_mngt_rpct_recv_diag_msg(int llid, int tid, char *line);
 void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line);
-void endp_mngt_send_muswitch_quit(char *name, int num);
+void endp_mngt_send_quit(char *name, int num);
 void endp_mngt_err_cb (int llid);
 void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid);
 void endp_mngt_init(void);

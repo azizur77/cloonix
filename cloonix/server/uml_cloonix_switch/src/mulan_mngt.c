@@ -75,6 +75,7 @@ typedef struct t_mulan
   char name[MAX_NAME_LEN];
   int  num;
   int periodic_count;
+  int unanswered_pid_req;
   struct t_mulan *prev;
   struct t_mulan *next;
 } t_mulan;
@@ -187,7 +188,7 @@ static void trigger_zombie_kill(char *lan, int llid, int pid_to_kill)
     }
   else
     {
-    endp_mulan_death(lan);
+    endp_evt_mulan_death(lan);
     try_rpct_send_diag_msg(llid, pid_to_kill, "cloonix_req_quit");
     zk = (t_zombie_kill *) clownix_malloc(sizeof(t_zombie_kill), 4);
     memset(zk, 0,  sizeof(t_zombie_kill));
@@ -381,6 +382,7 @@ void mulan_pid_resp(int llid, char *lan, int pid)
   t_mulan *mulan = mulan_find_with_llid(llid);
   if (mulan)
     {
+    mulan->unanswered_pid_req = 0;
     if (strcmp(lan, mulan->lan))
       KERR("%s %s", lan, mulan->lan);
     if (mulan->pid == 0)
@@ -492,7 +494,7 @@ void mulan_rpct_recv_diag_msg(int llid, int tid, char *line)
         if (!strcmp(tmpbuf, mulan->traf))
           {
           mulan->traffic_lan_link_state = traffic_lan_link_done; 
-          endp_mulan_birth(lan);
+          endp_evt_mulan_birth(lan);
           }
         else
           KERR("%s %s %s", lan, mulan->traf, tmpbuf);
@@ -545,7 +547,7 @@ static void mulan_death(void *data, int status, char *lan)
     {
     if (mulan->llid)
       llid_trace_free(mulan->llid, 0, __FUNCTION__);
-    endp_mulan_death(mulan->lan);
+    endp_evt_mulan_death(mulan->lan);
     unlink(mulan->sock);
     unlink(mulan->traf);
     if (mulan->prev)
@@ -658,7 +660,7 @@ void mulan_test_stop(char *lan)
   t_mulan *mulan = mulan_find_with_name(lan);
   if (mulan)
     {
-    if (!endp_lan_is_in_use(lan))
+    if (!endp_evt_lan_is_in_use(lan))
       mulan_request_quit(mulan);
     }
 }
@@ -671,9 +673,7 @@ static void timer_mulan_beat(void *data)
   char cmd[MAX_PATH_LEN];
   while(cur)
     {
-    if (cur->periodic_count == 0)
-      cur->periodic_count += 1;
-    else if (cur->llid == 0)
+    if (cur->llid == 0)
       trace_alloc(cur);
     else if (cur->pid == 0) 
       rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
@@ -689,10 +689,16 @@ static void timer_mulan_beat(void *data)
     if (cur->pid) 
       {
       cur->periodic_count += 1;
-      if (cur->periodic_count >= 10)
+      if (cur->periodic_count >= 5)
         {
         rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
         cur->periodic_count = 1;
+        cur->unanswered_pid_req += 1;
+        if (cur->unanswered_pid_req > 3)
+          {
+          KERR("LAN %s NOT RESPONDING KILLING IT", cur->lan);
+          mulan_request_quit(cur);
+          }
         }
       }
     cur = cur->next;

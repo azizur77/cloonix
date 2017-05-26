@@ -97,7 +97,7 @@ static t_evendp *endp_find(char *name, int num)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int endp_exists(char *name, int num)
+int endp_evt_exists(char *name, int num)
 {
   int result = 0;
   if (endp_find(name, num))
@@ -252,7 +252,7 @@ static void endp_free(char *name, int num)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int endp_lan_full(char *name, int num, int *tidx)
+int endp_evt_lan_full(char *name, int num, int *tidx)
 {
   int i, result = 1;
   t_evendp *evendp = endp_find(name, num);
@@ -276,7 +276,7 @@ int endp_lan_full(char *name, int num, int *tidx)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int endp_lan_find(char *name, int num, char *lan, int *tidx)
+int endp_evt_lan_find(char *name, int num, char *lan, int *tidx)
 {
   int i, result = 0;
   t_evendp *evendp = endp_find(name, num);
@@ -407,7 +407,7 @@ static void do_add_lan(int llid, int tid, char *name, int num, int tidx,
 
 
 /*****************************************************************************/
-void endp_add_lan(int llid, int tid, char *name, int num, 
+void endp_evt_add_lan(int llid, int tid, char *name, int num, 
                             char *lan, int tidx)
 {
   t_evendp *evendp = endp_find(name, num);
@@ -461,7 +461,7 @@ void endp_add_lan(int llid, int tid, char *name, int num,
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int endp_lan_is_in_use(char *lan)
+int endp_evt_lan_is_in_use(char *lan)
 {
   int tidx, result = 0;
   if ((!lan) || (!lan[0]))
@@ -474,7 +474,7 @@ int endp_lan_is_in_use(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int endp_del_lan(char *name, int num, int tidx, char *lan)
+int endp_evt_del_lan(char *name, int num, int tidx, char *lan)
 {
   t_evendp *evendp = endp_find(name, num);
   t_attached *atlan = endp_atlan_find(name, num, tidx);
@@ -505,7 +505,7 @@ int endp_del_lan(char *name, int num, int tidx, char *lan)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_connect_OK(char *name, int num, char *lan, int tidx, int rank)
+void endp_evt_connect_OK(char *name, int num, char *lan, int tidx, int rank)
 {
   t_evendp *evendp = endp_find(name, num);
   t_attached *atlan = endp_atlan_find(name, num, tidx);
@@ -535,7 +535,7 @@ void endp_connect_OK(char *name, int num, char *lan, int tidx, int rank)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_connect_KO(char *name, int num, char *lan, int tidx)
+void endp_evt_connect_KO(char *name, int num, char *lan, int tidx)
 {
   t_evendp *evendp = endp_find(name, num);
   t_attached *atlan = endp_atlan_find(name, num, tidx);
@@ -560,7 +560,7 @@ void endp_connect_KO(char *name, int num, char *lan, int tidx)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_birth(char *name, int num, int endp_type)
+void endp_evt_birth(char *name, int num, int endp_type)
 {
   t_evendp *evendp = endp_find(name, num);
   if (evendp)
@@ -573,7 +573,7 @@ void endp_birth(char *name, int num, int endp_type)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_quick_death(char *name, int num)
+void endp_evt_quick_death(char *name, int num)
 {
   int i;
   t_attached *atlan;
@@ -584,7 +584,7 @@ void endp_quick_death(char *name, int num)
       {
       if (strlen(atlan->attached_lan))
         {
-        endp_del_lan(name, num, i, atlan->attached_lan);
+        endp_evt_del_lan(name, num, i, atlan->attached_lan);
         }
       }
     }
@@ -597,16 +597,17 @@ static void timer_endp_death(void *data)
 {
   t_time_delay *td = (t_time_delay *) data;
   t_evendp *evendp = endp_find(td->name, td->num);
+  endp_mngt_send_quit(td->name, td->num);
   if (evendp)
     {
-    endp_quick_death(td->name, td->num);
+    endp_evt_quick_death(td->name, td->num);
     }
   clownix_free(data, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int endp_death(char *name, int num)
+int endp_evt_death(char *name, int num)
 {
   t_evendp *evendp = endp_find(name, num);
   t_attached *atlan;
@@ -660,7 +661,7 @@ static void death_mulan(char *lan)
   while (cur)
     {
     next = endp_find_next_with_attached_lan(cur, lan, &ntidx);
-    endp_del_lan(cur->name, cur->num, tidx, lan);
+    endp_evt_del_lan(cur->name, cur->num, tidx, lan);
     tidx = ntidx;
     cur = next;
     }
@@ -668,7 +669,7 @@ static void death_mulan(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_mulan_death(char *lan)
+void endp_evt_mulan_death(char *lan)
 {
   if ((!lan) || (lan[0] == 0))
     KOUT(" ");
@@ -677,7 +678,7 @@ void endp_mulan_death(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_mulan_birth(char *lan)
+void endp_evt_mulan_birth(char *lan)
 {
   int tidx;
   t_evendp *cur;
@@ -694,7 +695,7 @@ void endp_mulan_birth(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void endp_init(void)
+void endp_evt_init(void)
 {
   g_head_endp = NULL;
 }

@@ -233,8 +233,13 @@ static void monitoring_doorways(void *data)
     g_nb_pid_resp_warning++;
   else
     g_nb_pid_resp_warning = 0;
-  if (g_nb_pid_resp_warning > 2) 
+  if (g_nb_pid_resp_warning > 4) 
+    {
     event_print("DOORWAY CONTACT LOSS");
+    KERR("TRY KILLING DOORWAYS");
+    if (!kill(old_nb_pid_resp, SIGKILL));
+      KERR("NO SUCCESS KILLING DOORWAYS");
+    }
   g_abs_beat_timer = 0;
   g_ref_timer = 0;
   clownix_timeout_add(500, monitoring_doorways, NULL, 

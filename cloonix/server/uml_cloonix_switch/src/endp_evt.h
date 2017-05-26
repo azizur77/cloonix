@@ -15,18 +15,18 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-int  endp_exists(char *name, int num);
-int  endp_lan_full(char *name, int num, int *tidx);
-int  endp_lan_find(char *name, int num, char *lan, int *tidx);
-int  endp_lan_is_in_use(char *lan);
-void endp_add_lan(int llid, int tid, char *name, int num,
-                  char *lan, int tidx);
-int  endp_del_lan(char *name, int num, int tidx, char *lan);
-void endp_mulan_birth(char *lan);
-void endp_mulan_death(char *lan);
-void endp_connect_OK(char *name, int num, char *lan, int tidx, int rank);
-void endp_connect_KO(char *name, int num, char *lan, int tidx);
-void endp_birth(char *name, int num, int endp_type);
-int  endp_death(char *name, int num);
-void endp_quick_death(char *name, int num);
-void endp_init(void);
+int  endp_evt_exists(char *name, int num);
+int  endp_evt_lan_full(char *name, int num, int *tidx);
+int  endp_evt_lan_find(char *name, int num, char *lan, int *tidx);
+int  endp_evt_lan_is_in_use(char *lan);
+void endp_evt_add_lan(int llid, int tid, char *name, int num,
+                      char *lan, int tidx);
+int  endp_evt_del_lan(char *name, int num, int tidx, char *lan);
+void endp_evt_mulan_birth(char *lan);
+void endp_evt_mulan_death(char *lan);
+void endp_evt_connect_OK(char *name, int num, char *lan, int tidx, int rank);
+void endp_evt_connect_KO(char *name, int num, char *lan, int tidx);
+void endp_evt_birth(char *name, int num, int endp_type);
+int  endp_evt_death(char *name, int num);
+void endp_evt_quick_death(char *name, int num);
+void endp_evt_init(void);

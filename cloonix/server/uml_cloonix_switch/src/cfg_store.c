@@ -584,7 +584,7 @@ char *cfg_get_version(void)
 /*****************************************************************************/
 static void topo_vlg(t_lan_group *vlg, t_lan_attached *lan_att)
 {
-  int i, len;
+  int i, j=0, len;
   char *ascii_lan;
 
   vlg->nb_lan = 0;
@@ -598,12 +598,16 @@ static void topo_vlg(t_lan_group *vlg, t_lan_attached *lan_att)
   vlg->lan = (t_lan_group_item *) clownix_malloc(len, 29);
   memset(vlg->lan, 0, len);
 
-  for (i=0; i<vlg->nb_lan; i++)
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
     {
-    ascii_lan = lan_get_with_num(lan_att[i].lan_num);
-    if (!ascii_lan)
-      KOUT(" ");
-    strncpy(vlg->lan[i].lan, ascii_lan, MAX_NAME_LEN-1);
+    if (lan_att[i].lan_num)
+      {
+      ascii_lan = lan_get_with_num(lan_att[i].lan_num);
+      if (!ascii_lan)
+        KOUT("%d", lan_att[i].lan_num);
+      strncpy(vlg->lan[j].lan, ascii_lan, MAX_NAME_LEN-1);
+      j += 1;
+      }
     }
 }
 /*---------------------------------------------------------------------------*/

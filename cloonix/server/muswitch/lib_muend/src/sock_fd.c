@@ -187,7 +187,7 @@ void sock_fd_tx(t_all_ctx *all_ctx, t_blkd *blkd)
       }
     else
       {
-      blkd_put_tx((void *) all_ctx, 1, llid, blkd);
+      blkd_put_tx((void *) all_ctx, j, llid, blkd);
       }
     }
   else

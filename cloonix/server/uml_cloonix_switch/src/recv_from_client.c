@@ -314,12 +314,12 @@ static void local_add_lan(int llid, int tid, char *name, int num, char *lan)
     sprintf(info, "endp %s %d not found", name, num);
     send_status_ko(llid, tid, info);
     }
-  else if (endp_lan_find(name, num, lan, &tidx))
+  else if (endp_evt_lan_find(name, num, lan, &tidx))
     {
     sprintf(info, "%s %d already has %s ulan", name, num, lan);
     send_status_ko(llid, tid, info);
     }
-  else if (endp_lan_full(name, num, &tidx))
+  else if (endp_evt_lan_full(name, num, &tidx))
     {
     sprintf(info, "%s in %d ulan max", name, MAX_TRAF_ENDPOINT);
     send_status_ko(llid, tid, info);
@@ -332,7 +332,7 @@ static void local_add_lan(int llid, int tid, char *name, int num, char *lan)
   else
     {
     event_print("Adding lan %s in %s %d", lan, name, num);
-    endp_add_lan(llid, tid, name, num, lan, tidx);
+    endp_evt_add_lan(llid, tid, name, num, lan, tidx);
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -391,7 +391,7 @@ static void timer_endp(void *data)
 {
   t_timer_endp *te = (t_timer_endp *) data;
   char err[MAX_PATH_LEN];
-  if (endp_exists(te->name, te->num))
+  if (endp_evt_exists(te->name, te->num))
     {
     local_add_lan(te->llid, te->tid, te->name, te->num, te->lan);
     timer_free(te);
@@ -399,7 +399,7 @@ static void timer_endp(void *data)
   else
     {
     te->count++;
-    if (te->count >= 1000)
+    if (te->count >= 100)
       {
       sprintf(err, "bad endpoint start: %s %d %s", te->name, te->num, te->lan);
       send_status_ko(te->llid, te->tid, err);
@@ -445,7 +445,7 @@ static void add_lan_endp(int llid, int tid, char *name, int num, char *lan)
     }
   else
     {
-    if (!endp_exists(name, num)) 
+    if (!endp_evt_exists(name, num)) 
       timer_endp_init(llid, tid, name, num, lan);
     else
       local_add_lan(llid, tid, name, num, lan);
@@ -515,12 +515,12 @@ void recv_del_lan_endp(int llid, int tid, char *name, int num, char *lan)
     sprintf(info, "lan %s does not exist", lan);
     send_status_ko(llid, tid, info);
     }
-  else if (!endp_lan_find(name, num, lan, &tidx))
+  else if (!endp_evt_lan_find(name, num, lan, &tidx))
     {
     sprintf(info, "lan %s not found in %s", lan, name);
     send_status_ko(llid, tid, info);
     }
-  else if (endp_del_lan(name, num, tidx, lan))
+  else if (endp_evt_del_lan(name, num, tidx, lan))
     {
     sprintf(info, "Abnormal: lan %s not found in %s %d", lan, name, num);
     send_status_ko(llid, tid, info);
