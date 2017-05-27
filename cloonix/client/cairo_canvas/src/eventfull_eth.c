@@ -32,9 +32,7 @@ typedef struct t_sat_blinks
   char name[MAX_NAME_LEN];
   int to_be_deleted;
   int blink_rx;
-  int blink_last_rx;
   int blink_tx;
-  int blink_last_tx;
   struct t_sat_blinks *hash_prev;
   struct t_sat_blinks *hash_next;
   struct t_sat_blinks *glob_prev;
@@ -46,9 +44,7 @@ typedef struct t_eth_blinks
 {
   t_bank_item *bitem_eth;  
   int blink_rx;
-  int blink_last_rx;
   int blink_tx;
-  int blink_last_tx;
 } t_eth_blinks;
 
 typedef struct t_node_blinks
@@ -124,20 +120,18 @@ static void transfert_blink_on_eth_bitem(t_eth_blinks *cur)
 { 
   if (cur->bitem_eth)
     {
-    if ((cur->blink_rx) || (cur->blink_last_rx))
+    if (cur->blink_rx)
       {
       cur->bitem_eth->pbi.blink_rx = 1;
       cur->blink_rx = 0;
-      cur->blink_last_rx = cur->blink_rx;
       }
     else
       cur->bitem_eth->pbi.blink_rx = 0;
 
-    if ((cur->blink_tx) || (cur->blink_last_tx))
+    if (cur->blink_tx)
       {
       cur->bitem_eth->pbi.blink_tx = 1;
       cur->blink_tx = 0;
-      cur->blink_last_tx = cur->blink_tx;
       }
     else
       cur->bitem_eth->pbi.blink_tx = 0;
@@ -167,18 +161,20 @@ static void blink_on_node(void)
 /*****************************************************************************/
 static void transfert_blink_on_sat_bitem(t_sat_blinks *cur)
 { 
-  if ((cur->blink_rx) || (cur->blink_last_rx))
+  if (cur->blink_rx)
     {
     cur->bitem_sat->pbi.blink_rx = 1;
-    cur->blink_last_rx = cur->blink_rx;
     cur->blink_rx = 0;
     }
-  if ((cur->blink_tx) || (cur->blink_last_tx))
+  else
+    cur->bitem_sat->pbi.blink_rx = 0;
+  if (cur->blink_tx)
     {
     cur->bitem_sat->pbi.blink_tx = 1;
-    cur->blink_last_tx = cur->blink_tx;
     cur->blink_tx = 0;
     }
+  else
+    cur->bitem_sat->pbi.blink_tx = 0;
 }
 /*---------------------------------------------------------------------------*/
 
