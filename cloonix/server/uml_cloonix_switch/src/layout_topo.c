@@ -56,6 +56,7 @@ static int g_a2b_x_coord[MAX_POLAR_COORD];
 static int g_a2b_y_coord[MAX_POLAR_COORD];
 
 static int g_authorized_to_move;
+static int g_forbiden_to_move_by_cli;
 static int g_width, g_height, g_cx, g_cy, g_cw, g_ch;
 
 
@@ -82,7 +83,8 @@ void get_layout_main_params(int *go, int *width, int *height,
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int authorized_to_modify_data_bank_layout(int llid, int tid)
+static int authorized_to_modify_data_bank_layout(int llid, int tid,
+                                                 int is_on_off)
 {
   int result = 1;
   int beat_count = llid_get_count_beat(llid);
@@ -90,7 +92,12 @@ static int authorized_to_modify_data_bank_layout(int llid, int tid)
     {
     if (tid == 8888)
       {
-      if (beat_count < 3)
+      if ((!is_on_off) && (!g_authorized_to_move) &&
+          (g_forbiden_to_move_by_cli))
+        {
+        result = 0;
+        }
+      else if (beat_count < 3)
         {
         result = 0;
         }
@@ -514,7 +521,7 @@ void recv_layout_lan(int llid, int tid, t_layout_lan *layout)
 {
   t_layout_sub *cur = g_head_layout_sub;
   t_layout_lan_xml *xml;
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 0))
     {
     while(cur)
       {
@@ -543,7 +550,7 @@ void recv_layout_sat(int llid, int tid, t_layout_sat *layout)
     KERR("%s", layout->name);
   else
     {
-    if (authorized_to_modify_data_bank_layout(llid, tid))
+    if (authorized_to_modify_data_bank_layout(llid, tid, 0))
       {
       while(cur)
         {
@@ -576,7 +583,7 @@ void recv_layout_node(int llid, int tid, t_layout_node *layout)
     KERR("%s", layout->name);
   else
     {
-    if (authorized_to_modify_data_bank_layout(llid, tid))
+    if (authorized_to_modify_data_bank_layout(llid, tid, 0))
       {
       while(cur)
         {
@@ -782,8 +789,8 @@ static void layout_modif_lan(int llid, int tid,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void layout_modif_sat(int llid, int tid,
-                             char *name, int type, int val1, int val2)
+static void layout_modif_sat(int llid, int tid, char *name, int kind,
+                             int val1, int val2)
 {
   char info[MAX_PRINT_LEN];
   t_layout_sat layout;
@@ -796,12 +803,6 @@ static void layout_modif_sat(int llid, int tid,
     sprintf(info, "KO %s not found", name);
     send_status_ko(llid, tid, info);
     }
-  else if (mutype != type)
-    {
-    KERR("%s %d %d", name, mutype, type);
-    sprintf(info, "KO %s not found", name);
-    send_status_ko(llid, tid, info);
-    }
   else
     {
     if (!cur)
@@ -811,7 +812,7 @@ static void layout_modif_sat(int llid, int tid,
       memset(&layout, 0, sizeof(t_layout_sat));
       memcpy(&layout, &(cur->sat), sizeof(t_layout_sat));
       }
-    switch (type)
+    switch (kind)
       {
       case 0:
         layout.hidden_on_graph = val1;
@@ -829,7 +830,7 @@ static void layout_modif_sat(int llid, int tid,
         layout.y = real_val2;
         break;
       default:
-        KOUT("%d", type);
+        KOUT("%d", kind);
       }
     recv_layout_sat(0, 0, &layout);
     sprintf(info, "OK %s %d", name, val1);
@@ -842,7 +843,7 @@ static void layout_modif_sat(int llid, int tid,
 void recv_layout_modif(int llid, int tid, int modif_type, char *name, 
                        int num, int val1, int val2)
 {
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 0))
     {
     switch (modif_type)
       {
@@ -892,10 +893,17 @@ void recv_layout_modif(int llid, int tid, int modif_type, char *name,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void timer_forbiden_to_move_by_cli(void *data)
+{
+  g_forbiden_to_move_by_cli = 0;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void recv_layout_move_on_off(int llid, int tid, int on)
 {
   t_layout_sub *cur = g_head_layout_sub;
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 1))
     {
     if (on)
       {
@@ -905,6 +913,8 @@ void recv_layout_move_on_off(int llid, int tid, int on)
     else
       {
       g_authorized_to_move = 0;
+      clownix_timeout_add(500, timer_forbiden_to_move_by_cli, NULL, NULL, NULL);
+      g_forbiden_to_move_by_cli = 1;
       send_status_ok(llid, tid, "manual_move");
       }
     while(cur)
@@ -926,7 +936,7 @@ void recv_layout_move_on_off(int llid, int tid, int on)
 void recv_layout_width_height(int llid, int tid, int width, int height)
 {
   t_layout_sub *cur = g_head_layout_sub;
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 0))
     {
     send_status_ok(llid, tid, "width_height");
     g_width = width;
@@ -957,7 +967,7 @@ void recv_layout_width_height(int llid, int tid, int width, int height)
 void recv_layout_center_scale(int llid, int tid, int x, int y, int w, int h)
 {
   t_layout_sub *cur = g_head_layout_sub;
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 0))
     {
     send_status_ok(llid, tid, "center_scale");
     g_cx = x;
@@ -987,7 +997,7 @@ void recv_layout_center_scale(int llid, int tid, int x, int y, int w, int h)
 void recv_layout_zoom(int llid, int tid, int zoom)
 {
   t_layout_sub *cur = g_head_layout_sub;
-  if (authorized_to_modify_data_bank_layout(llid, tid))
+  if (authorized_to_modify_data_bank_layout(llid, tid, 0))
     {
     send_status_ok(llid, tid, "zoom");
     while(cur)
@@ -1181,6 +1191,7 @@ void layout_topo_init(void)
   memset(&g_layout_xml, 0, sizeof(t_layout_xml));
   g_head_layout_sub = NULL;
   g_authorized_to_move = 1;
+  g_forbiden_to_move_by_cli = 0;
   for (i=0; i<MAX_POLAR_COORD; i++)
     {
     idx = (double) (2*i);
