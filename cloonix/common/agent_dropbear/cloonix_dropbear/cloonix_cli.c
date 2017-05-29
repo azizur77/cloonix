@@ -645,24 +645,24 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
           if (sscanf(buf,"KO_ping_to_agent DBSSH_CLI_DOORS_RESP name=%s",
               g_cloonix_name)== 1)
             {
-            printf("NOT REACHABLE: %s\n", g_cloonix_name);
+            fprintf(stderr, "NOT REACHABLE: %s\n", g_cloonix_name);
             wrapper_exit(1, (char *)__FILE__, __LINE__);
             }
           else if (sscanf(buf,"KO_name_not_found DBSSH_CLI_DOORS_RESP name=%s",
               g_cloonix_name)== 1)
             {
-            printf("NOT FOUND: %s\n", g_cloonix_name);
+            fprintf(stderr, "NOT FOUND: %s\n", g_cloonix_name);
             wrapper_exit(1, (char *)__FILE__, __LINE__);
             }
           else if (sscanf(buf,"KO_bad_connection DBSSH_CLI_DOORS_RESP name=%s",
               g_cloonix_name)== 1)
             {
-            printf("BAD CONNECT: %s\n", g_cloonix_name);
+            fprintf(stderr, "BAD CONNECT: %s\n", g_cloonix_name);
             wrapper_exit(1, (char *)__FILE__, __LINE__);
             }
           else
             {
-            printf("ERROR: %s %s\n",  buf, g_cloonix_name);
+            fprintf(stderr, "ERROR: %s %s\n",  buf, g_cloonix_name);
             wrapper_exit(1, (char *)__FILE__, __LINE__);
             }
           }
