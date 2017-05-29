@@ -1191,8 +1191,8 @@ static void local_add_sat(int llid, int tid, char *name, int type,
   char recpath[MAX_PATH_LEN];
   int capture_on=0;
   int abort_upon_err = 0;
-  snprintf(recpath, MAX_PATH_LEN-1, "/tmp/cloonix_%s.pcap", name);
-
+  snprintf(recpath, MAX_PATH_LEN-1, "/tmp/cloonix_%s_%s.pcap",
+           cfg_get_cloonix_name(), name);
   if (endp_mngt_start(llid, tid, name, 0, type))
     {
     snprintf( info, MAX_PATH_LEN-1, "Bad start of %s", name);
