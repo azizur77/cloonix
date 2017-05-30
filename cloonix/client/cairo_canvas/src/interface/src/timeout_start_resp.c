@@ -144,7 +144,8 @@ void from_cloonix_switch_delete_edge(char *name, int num, char *lan)
 {
   t_edge_resp *pa;
   t_bank_item *intf = look_for_eth_with_id(name, num);
-  if (intf)
+  t_bank_item *sat = look_for_sat_with_id(name);
+  if ((intf) || (sat))
     {
     pa = (t_edge_resp *) clownix_malloc(sizeof(t_edge_resp), 12);
     memset(pa, 0, sizeof(t_edge_resp));

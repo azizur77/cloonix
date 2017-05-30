@@ -321,7 +321,8 @@ static void local_add_lan(int llid, int tid, char *name, int num, char *lan)
     }
   else if (endp_evt_lan_full(name, num, &tidx))
     {
-    sprintf(info, "%s in %d ulan max", name, MAX_TRAF_ENDPOINT);
+    sprintf(info, "%s in %d ulan max increase MAX_TRAF_ENDPOINT and recompile",
+            name, MAX_TRAF_ENDPOINT);
     send_status_ko(llid, tid, info);
     }
   else if ((type == endp_type_kvm) && (machine_not_ready(name)))

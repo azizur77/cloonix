@@ -181,7 +181,7 @@ static int lan_diag(t_all_ctx *all_ctx, char *line,
     else
       {
       traf = &(all_ctx->g_traf_endp[*tidx]);
-      blkd_set_rank((void *) all_ctx, traf->llid_traf, (int)rank, lan, 0, 0);
+      blkd_set_rank((void *)all_ctx,traf->llid_traf,(int)rank,lan,*num,*tidx);
       memset(opening, 0, MAX_PATH_LEN);
       snprintf(opening, MAX_PATH_LEN-1,"TRAFFIC_OPENING: name=%s num=%d tidx=%d",
                name, *num, *tidx);

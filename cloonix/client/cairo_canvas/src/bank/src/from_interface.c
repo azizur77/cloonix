@@ -122,31 +122,41 @@ void bank_lan_create(char *lan,  double x, double y, int hidden_on_graph)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void finish_delete_edge(t_bank_item *intf, t_bank_item *lan)
-{
-  t_bank_item *edge_item;
-  if (intf && lan)
-    {
-    edge_item = edge_does_exist(intf, lan);
-    if (edge_item)
-      {
-      if (edge_item->att_eth != intf)
-        KOUT(" ");
-      if (edge_item->att_lan != lan)
-        KOUT(" ");
-      delete_bitem(edge_item);
-      }
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 void bank_edge_delete(char *name, int num, char *lan)
 {
+  t_bank_item *edge_item;
   t_bank_item *intf, *blan;
+  t_bank_item *sat;
   intf = look_for_eth_with_id(name, num);
+  sat = look_for_sat_with_id(name);
   blan  = look_for_lan_with_id(lan);
-  finish_delete_edge(intf, blan);
+  if (blan)
+    {
+    if (intf)
+      {
+      if (sat)
+        KOUT(" ");
+      edge_item = edge_does_exist(intf, blan);
+      if (edge_item)
+        {
+        if (edge_item->att_eth != intf)
+          KOUT(" ");
+        if (edge_item->att_lan != blan)
+          KOUT(" ");
+        delete_bitem(edge_item);
+        }
+      }
+    else if (sat)
+      {
+      edge_item = edge_does_exist(sat, blan);
+      if (edge_item)
+        {
+        if (edge_item->att_lan != blan)
+          KOUT(" ");
+        delete_bitem(edge_item);
+        }
+      }
+    }
 }
 /*--------------------------------------------------------------------------*/
 
