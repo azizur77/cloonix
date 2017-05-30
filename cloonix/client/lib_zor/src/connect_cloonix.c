@@ -511,10 +511,7 @@ void recv_evt_stats_endp(int llid, int tid, char *network,
       }
     else if (kvm)
       {
-      if (sat->type == endp_type_kvm) 
-        g_stats_endp_cb(network, name, num, stats_counts);
-      else
-        KERR("%d", sat->type);
+      g_stats_endp_cb(network, name, num, stats_counts);
       }
     }
 }
