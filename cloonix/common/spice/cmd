@@ -23,6 +23,7 @@ sed -i s"%prefix}/share%prefix}%" ${PKG_CONFIG_PATH}/spice-protocol.pc
 cd ${TARGET}
 tar xvf ${HERE}/spice_usb/usbredir.tar.gz
 cd usbredir
+patch -p1 < ${HERE}/spice_usb/usbredir.patch
 
 ./configure --prefix=${TARGET} --libdir=${TARGET}
 

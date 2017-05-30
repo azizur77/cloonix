@@ -1,0 +1,12 @@
+diff -Naur usbredir/usbredirparser/usbredirparser.c new_usbredir/usbredirparser/usbredirparser.c
+--- usbredir/usbredirparser/usbredirparser.c	2017-05-07 09:43:45.000000000 +0200
++++ new_usbredir/usbredirparser/usbredirparser.c	2017-05-30 23:24:14.466600082 +0200
+@@ -257,7 +257,7 @@
+     struct usbredirparser_priv *parser =
+         (struct usbredirparser_priv *)parser_pub;
+     uint32_t *peer_caps = (uint32_t *)data;
+-    char buf[64];
++    char buf[300];
+     int i;
+ 
+     if (parser->have_peer_caps) {
