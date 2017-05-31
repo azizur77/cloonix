@@ -245,7 +245,6 @@ static void sigchld_handler(int UNUSED(unused)) {
 /* catch ctrl-c or sigterm */
 static void sigintterm_handler(int UNUSED(unused)) {
 
-  KERR(" ");
   exitflag = 1;
 }
 

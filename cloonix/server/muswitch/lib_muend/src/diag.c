@@ -141,7 +141,6 @@ static int lan_diag(t_all_ctx *all_ctx, char *line,
     if (strcmp(all_ctx->g_name, name))
       KOUT("%s %s", all_ctx->g_name, name);
     sock_fd_finish(all_ctx, *tidx);
-    KERR("%s", line);
     }
   else if (sscanf(line, 
            "muend_resp_handshake_ok lan=%s name=%s num=%d tidx=%d",

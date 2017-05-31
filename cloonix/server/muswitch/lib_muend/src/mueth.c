@@ -175,7 +175,6 @@ void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name,
                              char *name, int num, char *serv_path,
                              t_get_blkd_from_elem get_blkd_from_elem)
 {
-KERR("%s %s %d %s", net_name, name, num, serv_path);
   blkd_set_our_mutype((void *) all_ctx, endp_type_kvm);
   all_ctx->get_blkd_from_elem = get_blkd_from_elem;
   strncpy(all_ctx->g_net_name, net_name, MAX_NAME_LEN-1);

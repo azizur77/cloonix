@@ -289,7 +289,7 @@ static void timeout_blkd_heartbeat(t_all_ctx *all_ctx, void *data)
 /*****************************************************************************/
 void sock_fd_local_flow_control(t_all_ctx *all_ctx, int stop)
 {
-  KERR("TODO FLOW CONTROL");
+  //KERR("TODO FLOW CONTROL");
 }
 /*---------------------------------------------------------------------------*/
 
