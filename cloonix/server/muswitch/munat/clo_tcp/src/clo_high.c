@@ -94,7 +94,7 @@ static int timed_send_ack(t_clo *clo)
     time_tcpid = (t_tcp_id *) malloc(sizeof(t_tcp_id));
     memcpy(time_tcpid, &(clo->tcpid), sizeof(t_tcp_id));
     clo->send_ack_active = 1;
-    clownix_real_timeout_add(1, send_ack_cb, (void *) time_tcpid, NULL);
+    clownix_real_timer_add(0, 1, send_ack_cb, (void *) time_tcpid, NULL);
     }
   return result;
 }

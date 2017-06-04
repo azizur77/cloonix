@@ -26,6 +26,8 @@
 #include "blkd.h"
 #include "sock_unix.h"
 
+#define MEMORY_BARRIER()  asm volatile ("": : :"memory")
+
 /*****************************************************************************/
 static void pool_tx_init(t_blkd_fifo_tx *pool)
 {
@@ -46,7 +48,10 @@ static void pool_tx_init(t_blkd_fifo_tx *pool)
 /*****************************************************************************/
 static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
 {
-  int idx;
+  uint32_t put, new_put;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if(pool->put == pool->get)
     KOUT(" ");
   if (pool->rec[pool->put].blkd)
@@ -56,8 +61,13 @@ static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
   pool->tx_queued_bytes += blkd->header_blkd_len + blkd->payload_len;
   pool->rec[pool->put].len_to_do = 0;
   pool->rec[pool->put].len_done = 0;
-  idx = pool->put;
-  pool->put = (pool->put + 1) & MASK_TX_BLKD_POOL;
+
+  put = pool->put;
+  new_put = (pool->put + 1) & MASK_TX_BLKD_POOL;
+  MEMORY_BARRIER();
+  if (__sync_val_compare_and_swap(&(pool->put), put, new_put) != put)
+    KOUT(" ");
+
   pool->qty += 1;
   if (pool->qty > pool->slot_qty[pool->current_slot])
     pool->slot_qty[pool->current_slot] = pool->qty;
@@ -65,7 +75,10 @@ static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
     pool->slot_queue[pool->current_slot] = pool->tx_queued_bytes;
   if (pool->qty > pool->max_qty)
     pool->max_qty = pool->qty;
-  return (&(pool->rec[idx]));
+
+  __sync_lock_release(&(pool->circ_lock));
+
+  return (&(pool->rec[put]));
 }
 /*---------------------------------------------------------------------------*/
 
@@ -73,14 +86,20 @@ static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
 static t_blkd_record *pool_tx_get(t_blkd_fifo_tx *pool)
 {
   t_blkd_record *rec = NULL;
-  int idx;
+  int get;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if (pool->qty > 0)
     {
-    idx = (pool->get + 1) & MASK_TX_BLKD_POOL;
-    if (!pool->rec[idx].blkd)
+    get = (pool->get + 1) & MASK_TX_BLKD_POOL;
+    if (!pool->rec[get].blkd)
       KOUT(" ");
-    rec = &(pool->rec[idx]);
+    rec = &(pool->rec[get]);
     }
+
+  __sync_lock_release(&(pool->circ_lock));
+
   return rec;
 }
 /*--------------------------------------------------------------------------*/
@@ -89,9 +108,19 @@ static t_blkd_record *pool_tx_get(t_blkd_fifo_tx *pool)
 static t_blkd *pool_tx_free(t_blkd_fifo_tx *pool)
 {
   t_blkd *blkd = NULL;
+  uint32_t get, new_get;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if (pool->qty > 0)
     {
-    pool->get = (pool->get + 1) & MASK_TX_BLKD_POOL;
+
+    get = pool->get; 
+    new_get = (pool->get + 1) & MASK_TX_BLKD_POOL;
+    MEMORY_BARRIER();
+    if (__sync_val_compare_and_swap(&(pool->get), get, new_get) != get)
+      KOUT(" ");
+
     blkd = pool->rec[pool->get].blkd;
     if (!blkd)
       KOUT(" ");
@@ -100,11 +129,16 @@ static t_blkd *pool_tx_free(t_blkd_fifo_tx *pool)
     pool->rec[pool->get].len_to_do = 0;
     pool->rec[pool->get].len_done = 0;
     pool->qty -= 1;
-    blkd->countref -= 1;
+    __sync_fetch_and_sub(&(blkd->count_reference), 1);
     }
+
+  __sync_lock_release(&(pool->circ_lock));
+
   return blkd;
 }
 /*--------------------------------------------------------------------------*/
+
+
 
 /*****************************************************************************/
 static int try_sending(int fd, t_blkd_record *rec, int *get_out)
@@ -123,7 +157,7 @@ static int try_sending(int fd, t_blkd_record *rec, int *get_out)
     else
       {
       len_to_tx = rec->len_to_do - rec->len_done;
-      ptr_to_tx = rec->blkd->payload_blkd + rec->len_done - rec->blkd->header_blkd_len;
+      ptr_to_tx=rec->blkd->payload_blkd+rec->len_done-rec->blkd->header_blkd_len;
       len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
       }
     }
@@ -167,7 +201,7 @@ int blkd_fd_event_tx(void *ptr, int fd, t_blkd_fifo_tx *pool)
       if (rec->len_done == rec->len_to_do)
         {
         blkd = pool_tx_free(pool);
-        if (blkd->countref == 0)
+        if (blkd->count_reference == 0)
           {
           blkd_free(ptr, blkd);
           }
@@ -196,7 +230,7 @@ void blkd_fd_event_purge_tx(void *ptr, t_blkd_fifo_tx *pool)
     while(rec->blkd != NULL)
       {
       blkd = pool_tx_free(pool);
-      if (blkd->countref == 0)
+      if (blkd->count_reference == 0)
         blkd_free(ptr, blkd);
       } 
     rec = pool_tx_get(pool);
@@ -249,7 +283,7 @@ int blkd_tx_fifo_alloc(void *ptr, t_blkd_fifo_tx *pool, t_blkd *blkd)
     }
   else
     {
-    blkd->countref += 1;
+    __sync_fetch_and_add(&(blkd->count_reference), 1);
     rec = pool_tx_alloc(pool, blkd);
     blkd_header_tx_setup(rec);
     result = 0;

@@ -418,9 +418,9 @@ void blkd_put_tx(void *ptr, int nb, int *llid, t_blkd *blkd)
     KOUT("%d %d", (int) PAYLOAD_BLKD_SIZE, blkd->payload_len); 
   if (blkd->payload_len <=0)
     KOUT("%d", blkd->payload_len); 
-  if (blkd->countref != 0)
+  if (blkd->count_reference != 0)
     KERR("ABNORMAL");
-  blkd->countref += 1; 
+  __sync_fetch_and_add(&(blkd->count_reference), 1);
   for (i=0; i<nb; i++)
     {
     cur = find_llid_blk(ptr, llid[i]);
@@ -432,8 +432,8 @@ void blkd_put_tx(void *ptr, int nb, int *llid, t_blkd *blkd)
         }
       }
     } 
-  blkd->countref -= 1; 
-  if (blkd->countref == 0)
+  __sync_fetch_and_sub(&(blkd->count_reference), 1);
+  if (blkd->count_reference == 0)
     {
     blkd_free(ptr, blkd);
     }
@@ -716,7 +716,7 @@ void blkd_header_tx_setup(t_blkd_record *rec)
     usec = rec->blkd->usec;
     head = rec->blkd->header_blkd;
     if (rec->blkd->qemu_group_rank)
-      len = rec->blkd->group->qemu_total_payload_len + rec->blkd->header_blkd_len;
+      len=rec->blkd->group->qemu_total_payload_len+rec->blkd->header_blkd_len;
     else
       len = rec->blkd->payload_len + rec->blkd->header_blkd_len;
     head[0]  = 0xCA;

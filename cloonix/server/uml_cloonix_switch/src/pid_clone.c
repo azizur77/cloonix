@@ -453,16 +453,6 @@ static int *pid_find_all_pids_with_name(char *vm_name, int *len)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void vm_destruction_clean(char *vm_name)
-{
-  int i, nb_pid;
-  int *pid_tab = pid_find_all_pids_with_name(vm_name, &nb_pid);
-  for (i=0; i<nb_pid; i++)
-    pid_clone_check_and_kill(pid_tab[i]);
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 void pid_clone_kill_single(int pid)
 {
   int ident = pid_find_ident(pid);

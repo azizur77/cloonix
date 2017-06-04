@@ -73,7 +73,6 @@ typedef struct t_mulan
   int pid;
   int traffic_lan_link_state;
   char name[MAX_NAME_LEN];
-  int  num;
   int periodic_count;
   int unanswered_pid_req;
   struct t_mulan *prev;
@@ -277,7 +276,7 @@ static char *get_traf_path(char *lan)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static t_mulan *mulan_alloc(char *lan, char *name, int num)
+static t_mulan *mulan_alloc(char *lan, char *name)
 {
   t_mulan *mulan = NULL;
   if (lan[0] == 0)
@@ -290,7 +289,6 @@ static t_mulan *mulan_alloc(char *lan, char *name, int num)
     strncpy(mulan->sock, utils_mulan_get_sock_path(lan), MAX_PATH_LEN-1);
     strncpy(mulan->traf, get_traf_path(lan), MAX_PATH_LEN-1);
     strncpy(mulan->name, name, MAX_NAME_LEN-1);
-    mulan->num = num;
     if (g_head_mulan)
       g_head_mulan->prev = mulan;
     mulan->next = g_head_mulan;
@@ -413,42 +411,13 @@ void mulan_pid_resp(int llid, char *lan, int pid)
 /*****************************************************************************/
 static int llid_flow_to_restrict(char *name, int num, int tidx)
 {
-  char *ptr;
-  int eth, type;
-  int llid = endp_mngt_can_be_found_with_name(name, num, &type);
-  char vm_name[MAX_NAME_LEN];
+  int type, llid = endp_mngt_can_be_found_with_name(name, num, &type);
   if (llid)
-KERR("%s num:%d tidx:%d llid:%d", name, num, tidx, llid);
+KERR("FLOW TO RESTRICT: %s num:%d tidx:%d", name, num, tidx);
 else
-    {
-KERR("%s num:%d tidx:%d llid:%d", name, num, tidx, llid);
-    memset(vm_name, 0, MAX_NAME_LEN);
-    strncpy(vm_name, name, MAX_NAME_LEN-1);
-    ptr = strrchr(vm_name, '_');
-    if (ptr)
-      {
-      if (sscanf(ptr, "_%d", &eth) == 1)
-        {
-        *ptr = 0;
-        llid = endp_mngt_can_be_found_with_name(vm_name, eth, &type);
-KERR("%s num:%d tidx:%d llid:%d eth:%d", name, num, tidx, llid, eth);
-        }
-      }
-    }
+KERR("FLOW TO RESTRICT NOT FOUND!!! %s num:%d tidx:%d", name, num, tidx);
   llid = 0;
 //TODO
-/*
-  if (!llid)
-    KERR("%s", name);
-  else
-    {
-    if (endp_type == endp_type_c2c)
-      {
-      llid = 0;
-      KERR("%s", name);
-      }
-    }
-*/
   return llid;
 }
 /*--------------------------------------------------------------------------*/
@@ -610,7 +579,7 @@ static void timer_mulan_watchdog(void *data)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int mulan_start(char *lan, char *name, int num)
+int mulan_start(char *lan, char *name)
 {
   int pid;
   char **argv;
@@ -628,7 +597,7 @@ int mulan_start(char *lan, char *name, int num)
       unlink(utils_mulan_get_sock_path(lan));
     if (file_exists(get_traf_path(lan), F_OK))
       unlink(get_traf_path(lan));
-    mulan = mulan_alloc(lan, name, num);
+    mulan = mulan_alloc(lan, name);
     if (!mulan)
       KOUT("Exists %s", lan);
     mu1 = (t_mulan_arg *) clownix_malloc(sizeof(t_mulan_arg), 4);
@@ -676,7 +645,7 @@ static void timer_mulan_beat(void *data)
     if (cur->llid == 0)
       trace_alloc(cur);
     else if (cur->pid == 0) 
-      rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
+      rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, 0);
     else if (cur->traffic_lan_link_state == traffic_lan_link_idle)
       {
       memset(cmd, 0, MAX_PATH_LEN);
@@ -691,7 +660,7 @@ static void timer_mulan_beat(void *data)
       cur->periodic_count += 1;
       if (cur->periodic_count >= 5)
         {
-        rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, cur->num);
+        rpct_send_pid_req(NULL, cur->llid, type_hop_mulan, cur->lan, 0);
         cur->periodic_count = 1;
         cur->unanswered_pid_req += 1;
         if (cur->unanswered_pid_req > 3)

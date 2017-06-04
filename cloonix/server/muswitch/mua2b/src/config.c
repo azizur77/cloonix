@@ -142,12 +142,12 @@ void config_init(void)
 {
   memset(&g_sideA, 0, sizeof(t_connect_side));
   memset(&g_sideB, 0, sizeof(t_connect_side));
-  g_sideA.qstats.conf_qsize = 8192;
-  g_sideB.qstats.conf_qsize = 8192;
-  g_sideA.qstats.conf_bsize = 8192;
-  g_sideB.qstats.conf_bsize = 8192;
-  g_sideA.qstats.conf_brate = 8192;
-  g_sideB.qstats.conf_brate = 8192;
+  g_sideA.qstats.conf_qsize = 1000000;
+  g_sideB.qstats.conf_qsize = 1000000;
+  g_sideA.qstats.conf_bsize = 1000000;
+  g_sideB.qstats.conf_bsize = 1000000;
+  g_sideA.qstats.conf_brate = 10000000;
+  g_sideB.qstats.conf_brate = 10000000;
 
 }
 /*---------------------------------------------------------------------------*/

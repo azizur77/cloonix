@@ -26,7 +26,6 @@ void pid_clone_init(void);
 int get_nb_running_pids(void);
 char *pid_get_clone_internal_com(void);
 
-void vm_destruction_clean(char *vm_name);
 void pid_clone_kill_all(void);
 void pid_clone_kill_single(int pid);
 

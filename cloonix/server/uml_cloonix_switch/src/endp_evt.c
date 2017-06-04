@@ -374,7 +374,7 @@ static void do_add_lan(int llid, int tid, char *name, int num, int tidx,
 {
   if (!(mulan_exists(lan)))
     {
-    if (mulan_start(lan, name, num))
+    if (mulan_start(lan, name))
       {
       send_status_ko(llid, tid, "bad mulan start");
       }

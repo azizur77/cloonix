@@ -44,7 +44,7 @@ void topo_bitem_show(t_bank_item *bitem);
 
 static t_bank_item *currently_in_item_surface;
 
-static void attached_endpoint_associations_delete(t_bank_item *bitem);
+static void attached_obj_associations_delete(t_bank_item *bitem);
 
 /****************************************************************************/
 int is_a_snf(t_bank_item *bitem)
@@ -229,9 +229,9 @@ static t_bank_item *centralized_item_creation(int bank_type, char *name,
   bitem->pbi.dist = dist;
   get_object_mass(bitem);
   if (bitem->bank_type == bank_type_node) 
-    eventfull_node_create(name);
+    eventfull_obj_create(name);
   else if (bitem->bank_type == bank_type_sat)
-    eventfull_sat_create(name);
+    eventfull_obj_create(name);
   return (bitem);
 }
 /*--------------------------------------------------------------------------*/
@@ -243,9 +243,9 @@ static void centralized_item_deletion(t_bank_item *bitem, int eorig)
   if (bitem == currently_in_item_surface)
     leave_item_surface(currently_in_item_surface);
   if (bitem->bank_type == bank_type_node) 
-    eventfull_node_delete(bitem->name);
+    eventfull_obj_delete(bitem->name);
   else if (bitem->bank_type == bank_type_sat)
-    eventfull_sat_delete(bitem->name);
+    eventfull_obj_delete(bitem->name);
   topo_remove_cr_item(bitem);
   bank_del_item(bitem, eorig);
 }
@@ -343,35 +343,24 @@ static void attached_edge_update_list(t_bank_item *bitem)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void attached_endpoint_associations_delete(t_bank_item *bitem)
+static void attached_obj_associations_delete(t_bank_item *bitem)
 {
+  t_list_bank_item *next_eth, *eth = bitem->head_eth_list;
   t_list_bank_item *next, *cur = bitem->head_edge_list;
-  if (test_edge_endpoint(bitem))
-    KOUT(" ");
   selectioned_item_delete(bitem);
+  while (eth)
+    {
+    next_eth = eth->next;
+    attached_obj_associations_delete(eth->bitem);
+    clownix_free(eth, __FUNCTION__);
+    eth = next_eth;
+    }
   while (cur)
     {
     next = cur->next;
     attached_edge_associations_delete(cur->bitem, eorig_modif);
     cur = next;
     }
-  centralized_item_deletion(bitem, eorig_noedge);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static void attached_node_associations_delete(t_bank_item *bitem)
-{
-  t_list_bank_item *next_eth, *eth = bitem->head_eth_list;
-  selectioned_item_delete(bitem);
-  while (eth)
-    {
-    next_eth = eth->next;
-    attached_endpoint_associations_delete(eth->bitem);
-    clownix_free(eth, __FUNCTION__);
-    eth = next_eth;
-    }
-  vm_destruction_clean(bitem->name);
   centralized_item_deletion(bitem, eorig_noedge);
 }
 /*--------------------------------------------------------------------------*/
@@ -388,13 +377,10 @@ static void attached_associations_delete(t_bank_item *bitem)
       break;
 
     case bank_type_node:
-      attached_node_associations_delete(bitem);
-      break;
-
+    case bank_type_sat:
     case bank_type_eth:
     case bank_type_lan:
-    case bank_type_sat:
-      attached_endpoint_associations_delete(bitem);
+      attached_obj_associations_delete(bitem);
       break;
 
     default:
@@ -704,7 +690,7 @@ int add_new_sat(char *name, int mutype,
     {
     bitem = centralized_item_creation(bank_type, name, NULL, 0,
                                       NULL, NULL, NULL,
-                                      x, y, hidden_on_graph, 0,
+                                      x, y, hidden_on_graph, mutype,
                                       0, 0, 0, 0, 0,
                                       eorig_noedge);
 
@@ -715,7 +701,6 @@ int add_new_sat(char *name, int mutype,
       memcpy(&(bitem->pbi.pbi_sat->topo_snf), snf, sizeof(t_topo_snf));
     if (c2c)
       memcpy(&(bitem->pbi.pbi_sat->topo_c2c), c2c, sizeof(t_topo_c2c));
-    bitem->pbi.mutype = mutype;
     topo_add_cr_item_to_canvas(bitem, NULL);
     write_item_name(bitem);
     topo_get_absolute_coords(bitem);

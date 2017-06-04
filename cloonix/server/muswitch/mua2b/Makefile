@@ -13,6 +13,8 @@ VPATH=src
 
 SRC = main.c \
       config.c \
+      circ_slot.c \
+      wake_tx.c \
       sched.c
 
 WARNINGS=-Wall -Wstrict-prototypes -Wdeclaration-after-statement
@@ -28,7 +30,7 @@ LIBS = -L${BLKD} -lblkd \
        -L${IOC} -lioc \
        -L${RPCT} -lrpct \
        -L${LIB_MUEND} -lmuend \
-       -lrt
+       -lrt -lpthread
 
 
 CFLAGS+= -g $(WARNINGS) $(INCLUDES)

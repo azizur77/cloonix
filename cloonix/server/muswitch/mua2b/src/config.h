@@ -38,13 +38,6 @@ typedef struct t_connect_side
   int llid;
   int tockens_1000;
   t_qstats qstats;
-  int samply_enqueue[MAX_SAMPLES];
-  int samply_dequeue[MAX_SAMPLES];
-  int samply_stored[MAX_SAMPLES];
-  int samply_dropped[MAX_SAMPLES];
-  int samply_msec[MAX_SAMPLES];
-  int samply_current;
-  int samply_last_sent;
 } t_connect_side;
 /*---------------------------------------------------------------------------*/
 t_connect_side *get_sideA(void);

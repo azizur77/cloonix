@@ -172,6 +172,8 @@ static int lan_diag(t_all_ctx *all_ctx, char *line,
     {
     if (strcmp(all_ctx->g_name, name))
       KOUT("%s %s", all_ctx->g_name, name);
+    if (all_ctx->g_num != *num)
+      KOUT("%s %d %d", name, all_ctx->g_num, *num);
     if (sock_fd_open(all_ctx, lan, *tidx, sock))
       {
       sock_fd_finish(all_ctx, *tidx);

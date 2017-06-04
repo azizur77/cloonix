@@ -258,7 +258,7 @@ int main (int argc, char *argv[])
   strncpy(all_ctx->g_name, argv[2], MAX_NAME_LEN-1);
   strncpy(all_ctx->g_path, argv[3], MAX_PATH_LEN-1);
   sock_fd_init(all_ctx);
-  clownix_real_timer_init(all_ctx);
+  clownix_real_timer_init(0, all_ctx);
   clo_init(all_ctx, llid_clo_low_output,
            llid_clo_data_rx_possible, llid_clo_data_rx, 
            llid_clo_high_syn_rx, llid_clo_high_synack_rx, 

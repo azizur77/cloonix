@@ -25,12 +25,9 @@ void event_full_timeout_blink_off(void);
 /*---------------------------------------------------------------------------*/
 void eventfull_packets_data(t_eventfull *eventfull);
 /*---------------------------------------------------------------------------*/
-void eventfull_node_create(char *name);
+void eventfull_obj_create(char *name);
 /*---------------------------------------------------------------------------*/
-void eventfull_node_delete(char *name);
-/*---------------------------------------------------------------------------*/
-void eventfull_sat_create(char *name);
-void eventfull_sat_delete(char *name);
+void eventfull_obj_delete(char *name);
 /*---------------------------------------------------------------------------*/
 void eventfull_init(void);
 /*---------------------------------------------------------------------------*/

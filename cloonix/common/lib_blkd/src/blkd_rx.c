@@ -28,6 +28,8 @@
 #include "blkd.h"
 #include "sock_unix.h"
 
+#define MEMORY_BARRIER()  asm volatile ("": : :"memory")
+
 enum {
   blkd_no_state = 0,
   blkd_read_head,
@@ -100,6 +102,10 @@ static void pool_rx_init(t_blkd_fifo_rx *pool)
 /****************************************************************************/
 static void pool_rx_alloc(t_blkd_fifo_rx *pool, t_blkd *blkd)
 {
+  uint32_t put, new_put;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if(pool->put == pool->get)
     KOUT(" ");
   if (pool->rec[pool->put].blkd)
@@ -107,10 +113,19 @@ static void pool_rx_alloc(t_blkd_fifo_rx *pool, t_blkd *blkd)
   pool->rec[pool->put].len_to_do = 0;
   pool->rec[pool->put].len_done = 0;
   pool->rec[pool->put].blkd = blkd;
-  pool->put = (pool->put + 1) & MASK_RX_BLKD_POOL;
+
+  put = pool->put;
+  new_put = (pool->put + 1) & MASK_RX_BLKD_POOL;
+  MEMORY_BARRIER();
+  if (__sync_val_compare_and_swap(&(pool->put), put, new_put) != put)
+    KOUT(" ");
+
   pool->qty += 1;
   if (pool->qty > pool->max_qty)
     pool->max_qty = pool->qty;
+
+  __sync_lock_release(&(pool->circ_lock));
+
 }
 /*--------------------------------------------------------------------------*/
 
@@ -119,6 +134,9 @@ static t_blkd_record *pool_rx_get_newest_rec(t_blkd_fifo_rx *pool)
 {
   t_blkd_record *rec = NULL;
   int idx;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if (pool->qty > 0)
     {
     idx = (pool->put - 1) & MASK_RX_BLKD_POOL;
@@ -126,6 +144,9 @@ static t_blkd_record *pool_rx_get_newest_rec(t_blkd_fifo_rx *pool)
       KOUT(" ");
     rec = &(pool->rec[idx]);
     }
+
+  __sync_lock_release(&(pool->circ_lock));
+
   return rec;
 }
 /*--------------------------------------------------------------------------*/
@@ -134,9 +155,19 @@ static t_blkd_record *pool_rx_get_newest_rec(t_blkd_fifo_rx *pool)
 static t_blkd *pool_rx_get(t_blkd_fifo_rx *pool)
 {
   t_blkd *blkd = NULL;
+  uint32_t get, new_get;
+
+  while (__sync_lock_test_and_set(&(pool->circ_lock), 1));
+
   if (pool->qty > 0)
     {
-    pool->get = (pool->get + 1) & MASK_RX_BLKD_POOL;
+
+    get = pool->get;
+    new_get = (pool->get + 1) & MASK_RX_BLKD_POOL;
+    MEMORY_BARRIER();
+    if (__sync_val_compare_and_swap(&(pool->get), get, new_get) != get)
+      KOUT(" ");
+      
     blkd = pool->rec[pool->get].blkd;
     if (!blkd)
       KOUT(" ");
@@ -146,6 +177,9 @@ static t_blkd *pool_rx_get(t_blkd_fifo_rx *pool)
     pool->rec[pool->get].blkd = NULL;
     pool->qty -= 1;
     }
+
+  __sync_lock_release(&(pool->circ_lock));
+
   return blkd;
 }
 /*--------------------------------------------------------------------------*/

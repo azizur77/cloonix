@@ -31,10 +31,15 @@
 #include <linux/if_tun.h>
 #include <netinet/in.h>
 
+
 #include "ioc.h"
 #include "sock_fd.h"
 #include "config.h"
 #include "sched.h"
+#include "wake_tx.h"
+#include <pthread.h>
+
+static pthread_t g_thread;
 
 
 /*****************************************************************************/
@@ -161,14 +166,41 @@ int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 {
   if (bd)
     {
-    if (tidx == 0) 
+    if (all_ctx->g_num == 0)
+      {
       sched_tx_pkt(1, bd);
-    else if (tidx == MAX_TRAF_ENDPOINT)
+      wake_tx_send(all_ctx, 1);
+      }
+    else if (all_ctx->g_num == 1)
+      {
       sched_tx_pkt(0, bd);
+      wake_tx_send(all_ctx, 0);
+      }
     else
-      KOUT(" ");
+      KOUT("%d", all_ctx->g_num);
     }
   return 0;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void *thread_b_access(void *iargv)
+{
+  char **argv = (char **) iargv;
+  t_all_ctx *all_ctx;
+  cloonix_set_pid(getpid());
+  all_ctx = msg_mngt_init((char *) argv[1], 1, IO_MAX_BUF_LEN);
+  blkd_set_our_mutype((void *) all_ctx, endp_type_a2b);
+  clownix_real_timer_init(1, all_ctx);
+  strncpy(all_ctx->g_net_name, argv[0], MAX_NAME_LEN-1);
+  strncpy(all_ctx->g_name, argv[1], MAX_NAME_LEN-1);
+  strncpy(all_ctx->g_path, argv[2], MAX_PATH_LEN-1);
+  sock_fd_init(all_ctx);
+  config_init();
+  sched_init(1, all_ctx);
+  wake_tx_watch_fd(all_ctx, 1);
+  msg_mngt_loop(all_ctx);
+  return NULL;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -176,33 +208,48 @@ int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
 int main (int argc, char *argv[])
 {
   t_all_ctx *all_ctx;
-  int a2b_type, num;
+  int a2b_type, len;
   char *endptr;
-  if (argc != 6)
-    KOUT(" ");
-  
-  num = strtoul(argv[3], &endptr, 10);
-  if ((endptr == NULL)||(endptr[0] != 0))
-    KOUT(" ");
-  if ((num != 0) && (num != 1))
-    KOUT("%d", num);
+  char net[MAX_NAME_LEN];
+  char name[MAX_NAME_LEN];
+  char path[MAX_PATH_LEN];
+  char *b_argv[3] = {net, name, path};
 
-  a2b_type = strtoul(argv[5], &endptr, 10);
+  if (argc != 5)
+    KOUT("%d", argc);
+  
+  a2b_type = strtoul(argv[4], &endptr, 10);
   if ((endptr == NULL)||(endptr[0] != 0))
     KOUT(" ");
   if (a2b_type != endp_type_a2b)
     KOUT("%d", a2b_type);
-  
+
+  wake_tx_init();
+
+  strncpy(net,  argv[1], MAX_NAME_LEN-1);
+  strncpy(name, argv[2], MAX_NAME_LEN-1);
+  strncpy(path, argv[3], MAX_PATH_LEN-1);
+  len = strlen(path);
+  if (len <= 1)
+    KOUT("%s", path);
+  if (path[len-1] != '0')
+    KOUT("%s", path);
+  path[len-1] = '1';
+  if (pthread_create(&g_thread, NULL, thread_b_access, (void *)b_argv) != 0)
+    KOUT(" ");
+
   cloonix_set_pid(getpid());
-  all_ctx = msg_mngt_init((char *) argv[2], num, IO_MAX_BUF_LEN);
+  all_ctx = msg_mngt_init((char *) argv[2], 0, IO_MAX_BUF_LEN);
   blkd_set_our_mutype((void *) all_ctx, a2b_type);
-  clownix_real_timer_init(all_ctx);
+  clownix_real_timer_init(0, all_ctx);
   strncpy(all_ctx->g_net_name, argv[1], MAX_NAME_LEN-1);
   strncpy(all_ctx->g_name, argv[2], MAX_NAME_LEN-1);
-  strncpy(all_ctx->g_path, argv[4], MAX_PATH_LEN-1);
+  strncpy(all_ctx->g_path, argv[3], MAX_PATH_LEN-1);
   sock_fd_init(all_ctx);
   config_init();
-  shed_init(all_ctx);
+  sched_init(0, all_ctx);
+  wake_tx_watch_fd(all_ctx, 0);
+
   msg_mngt_loop(all_ctx);
   return 0;
 }

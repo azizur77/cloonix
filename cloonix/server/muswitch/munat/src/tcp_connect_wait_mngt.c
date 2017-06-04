@@ -191,7 +191,7 @@ static void timed_rx_from_out(long delta_ns, void *data)
   else if (!llid_slirptux_tcp_tx_to_slirptux_possible(llid))
     {
     channel_set_red_to_stop_reading(get_all_ctx(), llid);
-    clownix_real_timeout_add(50000000, timed_rx_from_out, 
+    clownix_real_timer_add(0, 50000000, timed_rx_from_out, 
                              (void *) ptr_llid_fd, NULL);
     }
   else
@@ -210,7 +210,7 @@ static void timed_rx_from_out(long delta_ns, void *data)
       {
       KERR("NOT READY YET");
       channel_set_red_to_stop_reading(get_all_ctx(), llid);
-      clownix_real_timeout_add(50000000, timed_rx_from_out, 
+      clownix_real_timer_add(0, 50000000, timed_rx_from_out, 
                                (void *) ptr_llid_fd, NULL);
       }
     }

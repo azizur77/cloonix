@@ -398,7 +398,8 @@ static int produce_list_sat_cmd(int offset, t_list_commands *hlist,
       }
     else if (cur->endp_type == endp_type_a2b)
       {
-      result = build_add_a2b_cmd(result, hlist, cur);
+      if (cur->num == 0)
+        result = build_add_a2b_cmd(result, hlist, cur);
       }
     else if (cur->endp_type == endp_type_nat)
       {

@@ -21,7 +21,6 @@ void topo_cr_item_text( t_bank_item *bitem, double x, double y, char *name);
 void topo_get_matrix_transform_point(t_bank_item *bitem, double *x, double *y);
 void topo_cr_item_set_z(t_bank_item *bitem);
 void topo_get_absolute_coords(t_bank_item *bitem);
-void vm_destruction_clean(char *vm_name);
 void modif_position_eth(t_bank_item *bitem, double xi, double yi);
 
 

@@ -77,15 +77,10 @@ typedef struct t_traf_endp
   int  nb_bytes_rx;
 } t_traf_endp;
 /*---------------------------------------------------------------------------*/
-
-
-typedef void (*t_fct_real_timeout)(long delta_ns, void *data);
-int  clownix_real_timeout_add(int nb_us, t_fct_real_timeout cb, 
+typedef void (*t_fct_real_timer)(long delta_ns, void *data);
+int  clownix_real_timer_add(int idx, int nb_us, t_fct_real_timer cb, 
                               void *data, long long *date_us);
-int clownix_real_timeout_exists(long long date_us, void **data);
-int  clownix_real_timeout_del(long long date_us, void **data);
-void clownix_real_timer_end(void);
-void clownix_real_timer_init(struct t_all_ctx *all_ctx);
+void clownix_real_timer_init(int idx, struct t_all_ctx *all_ctx);
 /*--------------------------------------------------------------------------*/
 
 

@@ -56,13 +56,11 @@ void bank_edge_create(char *name, int num, char *lan)
     {
     if (intf)
       {
-      if (sat)
-        KOUT(" ");
       edge_item = edge_does_exist(intf, blan);
       if (!edge_item)
         add_new_edge(intf, blan, eorig_modif);
       }
-    if (sat)
+    else if (sat)
       {
       edge_item = edge_does_exist(sat, blan);
       if (!edge_item)
@@ -134,8 +132,6 @@ void bank_edge_delete(char *name, int num, char *lan)
     {
     if (intf)
       {
-      if (sat)
-        KOUT(" ");
       edge_item = edge_does_exist(intf, blan);
       if (edge_item)
         {

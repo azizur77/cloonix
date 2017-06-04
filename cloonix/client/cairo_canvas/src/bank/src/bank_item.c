@@ -366,6 +366,7 @@ void bank_del_item(t_bank_item *bitem, int eorig)
     KOUT(" ");
   if (is_not_an_edge(bitem))
     bij_free_tag(bitem->tag); 
+//TODO
   unchain_from_head(bitem);
   clownix_free(bitem->pbi.pbi_node, __FUNCTION__);
   clownix_free(bitem->pbi.pbi_sat, __FUNCTION__);

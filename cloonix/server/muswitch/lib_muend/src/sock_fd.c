@@ -87,7 +87,7 @@ static void eventfull_can_be_sent(t_all_ctx *all_ctx, void *data)
   int is_blkd, cidx = msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__);
   if (cidx)
     {
-    for (i=0; i<2*MAX_TRAF_ENDPOINT; i++)
+    for (i=0; i<MAX_TRAF_ENDPOINT; i++)
       {
       if ((all_ctx->g_traf_endp[i].nb_pkt_tx) || 
           (all_ctx->g_traf_endp[i].nb_pkt_rx))

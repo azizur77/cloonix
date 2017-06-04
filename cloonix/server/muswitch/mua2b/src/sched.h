@@ -15,8 +15,8 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void sched_update_stats(void);
+void sched_tx0_activate(t_all_ctx *all_ctx);
+void sched_tx1_activate(t_all_ctx *all_ctx);
 void sched_tx_pkt(int num, t_blkd *blkd);
-void sched_qstats_zero(void);
-void shed_init(t_all_ctx *all_ctx);
+void sched_init(int num, t_all_ctx *all_ctx);
 /*---------------------------------------------------------------------------*/

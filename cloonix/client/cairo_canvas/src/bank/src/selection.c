@@ -47,9 +47,6 @@ static int selectioned_resolve(t_bank_item *bitem)
             KERR("%s %d", bitem->name, bitem->att_node->pbi.mutype);
           else
             {
-
-            KERR("%s %d  %d", bitem->name, bitem->att_node->pbi.mutype, bitem->num);
-
             to_cloonix_switch_create_edge(bitem->name, bitem->num, selectioned_lan->name); 
             }
           }

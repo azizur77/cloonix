@@ -90,6 +90,7 @@ typedef struct t_priv_endp
   int doors_fd_ready;
   int doors_fd_value;
   int muendp_stop_done;
+  int trace_alloc_count;
   t_topo_c2c c2c;
   t_topo_snf snf;
   t_lan_attached lan_attached[MAX_TRAF_ENDPOINT];
@@ -770,7 +771,15 @@ static void timer_endp_beat(void *data)
     if (cur->clone_start_pid)
       {
       if (cur->llid == 0)
+        {
         cur->llid = trace_alloc(cur);
+        cur->trace_alloc_count += 1;
+        if (cur->trace_alloc_count > 10)
+          {
+          KERR("ENDP %s %d NOT LISTENING", cur->name, cur->num);
+          endp_mngt_send_quit(cur->name, cur->num);
+          }
+        }
       else if (cur->pid == 0) 
         rpct_send_pid_req(NULL, cur->llid, type_hop_endp, cur->name, cur->num);
       else if ((cur->getsuidroot == 0) && 
@@ -791,7 +800,7 @@ static void timer_endp_beat(void *data)
         cur->periodic_count += 1;
         if (cur->periodic_count >= 5)
           {
-          rpct_send_pid_req(NULL, cur->llid, type_hop_endp, cur->name, cur->num);
+          rpct_send_pid_req(NULL,cur->llid,type_hop_endp,cur->name,cur->num);
           cur->periodic_count = 1;
           cur->unanswered_pid_req += 1;
           if (cur->unanswered_pid_req > 2)
@@ -1052,7 +1061,6 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
       }
     else if ((num == 1) && (mu->endp_type == endp_type_a2b))
       {
-      KERR("%s %d", name, num);
       mu0 = muendp_find_with_name(name, 0);
       if (!mu0) 
         KERR("%s %d", name, num);

@@ -45,7 +45,7 @@ typedef struct t_chain_timer
 {
   int inhibited;
   long long async_rx;
-  t_fct_real_timeout cb;
+  t_fct_real_timer cb;
   void *data;
   long long date_us;
   struct t_chain_timer *prev;
@@ -76,7 +76,7 @@ typedef struct t_real_timer
 /*---------------------------------------------------------------------------*/
 
 
-static t_real_timer *g_real_timer = NULL;
+static t_real_timer *g_real_timer[2];
 
 /*****************************************************************************/
 static long long get_target_date_us(void)
@@ -243,7 +243,7 @@ static t_chain_timer *look_for_chain_timer(t_real_timer *timer,
 
 /*****************************************************************************/
 static int insert_chain_timer(t_real_timer_item *rt, long long date_us,
-                              t_fct_real_timeout cb, void *data) 
+                              t_fct_real_timer cb, void *data) 
 {
   t_chain_timer *cur = rt->head_chain_timer;
   t_chain_timer *prev = NULL;
@@ -359,7 +359,7 @@ static void free_real_timer(t_real_timer *timer, t_real_timer_item *rt)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int clownix_real_timeout_add(int nb_us, t_fct_real_timeout cb, 
+int clownix_real_timer_add(int idx, int nb_us, t_fct_real_timer cb, 
                              void *data, long long *date_us)
 {
   int res, result = -1;
@@ -371,16 +371,16 @@ int clownix_real_timeout_add(int nb_us, t_fct_real_timeout cb,
     KOUT(" ");
   if (nb_us > 600000000)
     KOUT("%d", nb_us);
-  if (!g_real_timer)
+  if (!g_real_timer[idx])
     KERR(" ");
   else
     {
-    rt = alloc_real_timer(g_real_timer);
+    rt = alloc_real_timer(g_real_timer[idx]);
     if (rt)
       {
       loc_date_us = get_target_date_us();
       loc_date_us += nb_us;
-      while(look_for_chain_timer(g_real_timer, loc_date_us))
+      while(look_for_chain_timer(g_real_timer[idx], loc_date_us))
         loc_date_us += 100;
       result = 0;
       if (date_us)
@@ -397,80 +397,6 @@ int clownix_real_timeout_add(int nb_us, t_fct_real_timeout cb,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int clownix_real_timeout_del(long long date_us, void **data)
-{
-  int i, found = 0;
-  int result = -1;
-  t_chain_timer *chtim;
-  *data = NULL;
-  if (!g_real_timer)
-    KERR(" ");
-  else
-    {
-    for (i=1; i<MAX_REAL_TIMER; i++)
-      {
-      chtim = g_real_timer->tstore[i].head_chain_timer;
-      while(chtim)
-        {
-        if (chtim->date_us == date_us) 
-          {
-          *data = chtim->data;
-          if (chtim->inhibited == 0)
-            {
-            chtim->inhibited = 333;
-            found = 1;
-            }
-          break;
-          }
-        chtim = chtim->next;
-        }
-      if (found)
-        {
-        result = 0;
-        break;
-        }
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-int clownix_real_timeout_exists(long long date_us, void **data)
-{
-  int i, found = 0;
-  t_chain_timer *chtim;
-  *data = NULL;
-  if (!g_real_timer)
-    KERR(" ");
-  else
-    {
-    for (i=1; i<MAX_REAL_TIMER; i++)
-      {
-      chtim = g_real_timer->tstore[i].head_chain_timer;
-      while(chtim)
-        {
-        if (chtim->date_us == date_us)
-          {
-          if (chtim->inhibited == 0)
-            {
-            *data = chtim->data;
-            found = 1;
-            }
-          break;
-          }
-        chtim = chtim->next;
-        }
-      if (found)
-        break;
-      }
-    }
-  return found;
-}
-/*---------------------------------------------------------------------------*/
-
-
-/*****************************************************************************/
 static void err_event_cb(void *ptr, int llid, int err, int from)
 {
   KOUT(" ");
@@ -478,22 +404,22 @@ static void err_event_cb(void *ptr, int llid, int err, int from)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void rx_real_time_event_timeout(int val)
+static void rx_real_time_event_timeout(int idx, int val)
 {
   long long delta;
   long delta_ns = 0;;
   t_chain_timer *chtim;
-  if (!g_real_timer)
+  if (!g_real_timer[idx])
     KERR(" ");
   else
     {
     if ((val<=0) || (val>=MAX_REAL_TIMER))
       KOUT("%d", val);
-    if (!(g_real_timer->tstore[val].is_armed))
+    if (!(g_real_timer[idx]->tstore[val].is_armed))
       KOUT(" ");
-    g_real_timer->tstore[val].is_armed = 0;
-    g_real_timer->tstore[val].is_locked = 0;
-    chtim = g_real_timer->tstore[val].head_chain_timer;
+    g_real_timer[idx]->tstore[val].is_armed = 0;
+    g_real_timer[idx]->tstore[val].is_locked = 0;
+    chtim = g_real_timer[idx]->tstore[val].head_chain_timer;
     if (!chtim)
       KOUT(" ");
     if (!(chtim->cb))
@@ -509,16 +435,16 @@ static void rx_real_time_event_timeout(int val)
         }
       chtim->cb(delta_ns, chtim->data);
       }
-    free_real_timer(g_real_timer, &(g_real_timer->tstore[val]));
-    chtim = g_real_timer->tstore[val].head_chain_timer;
+    free_real_timer(g_real_timer[idx], &(g_real_timer[idx]->tstore[val]));
+    chtim = g_real_timer[idx]->tstore[val].head_chain_timer;
     if (chtim)
-      arm_real_timer(&(g_real_timer->tstore[val]), rearm_after_timeout);
+      arm_real_timer(&(g_real_timer[idx]->tstore[val]), rearm_after_timeout);
     }
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int rx_event_cb(void *ptr, int llid, int fd)
+static int rx_event_cb(int idx, int llid, int fd)
 {
   char buffer[512];
   int i, len, val;
@@ -532,7 +458,7 @@ static int rx_event_cb(void *ptr, int llid, int fd)
       for (i=0; i<len; i++)
         {
         val = (int) ((unsigned char) (buffer[i] & 0xFF));
-        rx_real_time_event_timeout(val);
+        rx_real_time_event_timeout(idx, val);
         }
       }
     } while ((len == -1 && errno == EINTR));
@@ -541,26 +467,43 @@ static int rx_event_cb(void *ptr, int llid, int fd)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static int rx0_event_cb(void *ptr, int llid, int fd)
+{
+  return rx_event_cb(0, llid, fd);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int rx1_event_cb(void *ptr, int llid, int fd)
+{
+  return rx_event_cb(1, llid, fd);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void real_time_handler(int signum, siginfo_t *info, void *nouse)
 {
-  int val;
+  int val, idx;
   char sival;
-  if (!g_real_timer)
-    KERR(" ");
+  sival = (char) (info->_sifields._rt.si_sigval.sival_int);
+  if (signum != SIGRTMIN+7)
+    KOUT(" ");
+  val = (int) ((unsigned char) (sival & 0xFF));
+  if ((val<=0) || (val>=2*MAX_REAL_TIMER))
+    KOUT("%d", val);
+  if (val < MAX_REAL_TIMER)
+    idx = 0;
   else
     {
-    sival = (char) (info->_sifields._rt.si_sigval.sival_int);
-    if (signum != SIGRTMIN+7)
-      KOUT(" ");
-    val = (int) ((unsigned char) (sival & 0xFF));
-    if ((val<=0) || (val>=MAX_REAL_TIMER))
-      KOUT("%d", val);
-    if (!(g_real_timer->tstore[val].is_armed))
-      KOUT(" ");
-    g_real_timer->tstore[val].is_locked = 1;
-    if (write(g_real_timer->real_time_event_fd,&sival,sizeof(sival))!=1)
-      KOUT("%d", errno);
+    val -= MAX_REAL_TIMER;
+    idx = 1;
+    sival = (char) val;
     }
+  if (!(g_real_timer[idx]->tstore[val].is_armed))
+    KOUT(" ");
+  g_real_timer[idx]->tstore[val].is_locked = 1;
+  if (write(g_real_timer[idx]->real_time_event_fd,&sival,sizeof(sival))!=1)
+    KOUT("%d", errno);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -587,38 +530,37 @@ static void start_real_timer_item(int sival, t_real_timer_item *rt)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void clownix_real_timer_end(void)
-{
-  if (!g_real_timer)
-    KERR(" ");
-  else
-    {
-    close(g_real_timer->real_time_event_fd);
-    g_real_timer = NULL;
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-void clownix_real_timer_init(t_all_ctx *all_ctx)
+void clownix_real_timer_init(int idx, t_all_ctx *all_ctx)
 { 
   int i, fds[2];
-  if (g_real_timer)
+  if (g_real_timer[idx])
     KOUT("GLOBAL CTX ALREADY DEFINED");
-  g_real_timer = (t_real_timer *) malloc(sizeof(t_real_timer));
-  memset(g_real_timer, 0, sizeof(t_real_timer));
-  fifo_real_timer_init(g_real_timer);
-  memset(g_real_timer->tstore,0,MAX_REAL_TIMER*sizeof(t_real_timer_item));
+  g_real_timer[idx] = (t_real_timer *) malloc(sizeof(t_real_timer));
+  memset(g_real_timer[idx], 0, sizeof(t_real_timer));
+  fifo_real_timer_init(g_real_timer[idx]);
+  memset(g_real_timer[idx]->tstore,0,MAX_REAL_TIMER*sizeof(t_real_timer_item));
   if (pipe(fds))
     KOUT(" ");
   nonblock_fd(fds[0]);
   nonblock_fd(fds[1]);
-  g_real_timer->real_time_event_fd = fds[1];
+  (g_real_timer[idx])->real_time_event_fd = fds[1];
   if ((fds[0] < 0) || (fds[0] >= MAX_SELECT_CHANNELS-1))
     KOUT("%d", fds[0]);
-  msg_watch_fd(all_ctx, fds[0], rx_event_cb, err_event_cb);
-  for (i=1; i<MAX_REAL_TIMER; i++)
-    start_real_timer_item(i, &(g_real_timer->tstore[i]));
+  if (idx == 0)
+    {
+    msg_watch_fd(all_ctx, fds[0], rx0_event_cb, err_event_cb);
+    for (i=1; i<MAX_REAL_TIMER; i++)
+      start_real_timer_item(i, &((g_real_timer[idx])->tstore[i]));
+    }
+  else if (idx == 1)
+    {
+    msg_watch_fd(all_ctx, fds[0], rx1_event_cb, err_event_cb);
+    for (i=1; i<MAX_REAL_TIMER; i++)
+      start_real_timer_item(i+MAX_REAL_TIMER, 
+                            &((g_real_timer[idx])->tstore[i]));
+    }
+  else
+    KOUT("%d", idx);
 }
 /*---------------------------------------------------------------------------*/
 

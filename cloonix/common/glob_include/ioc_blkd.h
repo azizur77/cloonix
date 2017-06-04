@@ -71,9 +71,9 @@ typedef struct t_blkd_group
 /*--------------------------------------------------------------------------*/
 typedef struct t_blkd
 {
+  uint32_t volatile count_reference;
   t_blkd_group *group;
   int   qemu_group_rank;
-  int   countref;
   int   llid;
   int   type;
   int   val;
