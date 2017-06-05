@@ -77,7 +77,6 @@ static t_blkd *malloc_create_new_blkd(t_blkd_group *group)
   cur->header_blkd = group->head_data + group->len_data_done;
   cur->payload_blkd = cur->header_blkd + cur->header_blkd_len;
   cur->group = group;
-  group->count_blkd_tied += 1;
   return cur;
 }
 /*---------------------------------------------------------------------------*/
@@ -120,7 +119,7 @@ static void pool_rx_alloc(t_blkd_fifo_rx *pool, t_blkd *blkd)
   if (__sync_val_compare_and_swap(&(pool->put), put, new_put) != put)
     KOUT(" ");
 
-  pool->qty += 1;
+  __sync_fetch_and_add(&(pool->qty), 1);
   if (pool->qty > pool->max_qty)
     pool->max_qty = pool->qty;
 
@@ -175,7 +174,7 @@ static t_blkd *pool_rx_get(t_blkd_fifo_rx *pool)
     pool->rec[pool->get].len_to_do = 0;
     pool->rec[pool->get].len_done = 0;
     pool->rec[pool->get].blkd = NULL;
-    pool->qty -= 1;
+    __sync_fetch_and_sub(&(pool->qty), 1);
     }
 
   __sync_lock_release(&(pool->circ_lock));
@@ -279,6 +278,7 @@ static void prepare_new_group_and_blkd(t_blkd_fifo_rx *pool,
   left_len = last_group->len_data_read - last_group->len_data_done;
   left_data = last_group->head_data + last_group->len_data_done;
   group = malloc_create_new_group(left_len, left_data);
+  __sync_fetch_and_add(&(group->count_blkd_tied), 1);
   blkd = malloc_create_new_blkd(group);
   pool_rx_alloc(pool, blkd);
   last_group->len_data_read = last_group->len_data_done;
@@ -289,6 +289,7 @@ static void prepare_new_group_and_blkd(t_blkd_fifo_rx *pool,
 static void prepare_new_blkd(t_blkd_fifo_rx *pool, t_blkd_group *group)
 {
   t_blkd *blkd;
+  __sync_fetch_and_add(&(group->count_blkd_tied), 1);
   blkd = malloc_create_new_blkd(group);
   pool_rx_alloc(pool, blkd);
 }

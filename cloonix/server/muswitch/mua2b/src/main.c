@@ -41,6 +41,7 @@
 
 static pthread_t g_thread;
 
+static int g_rx0, g_rx1;
 
 /*****************************************************************************/
 void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line)
@@ -170,11 +171,13 @@ int rx_from_traffic_sock(t_all_ctx *all_ctx, int tidx, t_blkd *bd)
       {
       sched_tx_pkt(1, bd);
       wake_tx_send(all_ctx, 1);
+      g_rx0 += 1;
       }
     else if (all_ctx->g_num == 1)
       {
       sched_tx_pkt(0, bd);
       wake_tx_send(all_ctx, 0);
+      g_rx1 += 1;
       }
     else
       KOUT("%d", all_ctx->g_num);
@@ -201,6 +204,23 @@ static void *thread_b_access(void *iargv)
   wake_tx_watch_fd(all_ctx, 1);
   msg_mngt_loop(all_ctx);
   return NULL;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void dump_counters(void)
+{
+//  int tx0, tx1;
+//  sched_get_g_tx(&tx0, &tx1);
+//  KERR("RX0:%d RX1:%d TX0:%d TX1:%d", g_rx0, g_rx1, tx0, tx1);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void time_heartbeat(t_all_ctx *all_ctx, void *data)
+{
+  dump_counters();
+  clownix_timeout_add(all_ctx, 100, time_heartbeat, NULL, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -249,6 +269,7 @@ int main (int argc, char *argv[])
   config_init();
   sched_init(0, all_ctx);
   wake_tx_watch_fd(all_ctx, 0);
+  clownix_timeout_add(all_ctx, 500, time_heartbeat, NULL, NULL, NULL);
 
   msg_mngt_loop(all_ctx);
   return 0;

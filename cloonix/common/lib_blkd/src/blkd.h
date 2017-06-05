@@ -33,8 +33,8 @@ typedef struct t_blkd_fifo_rx
   uint32_t volatile circ_lock;
   uint32_t put;
   uint32_t get;
+  uint32_t volatile qty;
   unsigned long rx_queued_bytes;
-  int qty;
   int max_qty;
   int dist_flow_control_on;
   int dist_flow_control_count;
@@ -53,8 +53,8 @@ typedef struct t_blkd_fifo_tx
   uint32_t volatile circ_lock;
   uint32_t put;
   uint32_t get;
+  uint32_t volatile qty;
   unsigned long tx_queued_bytes;
-  int qty;
   int max_qty;
   int dist_flow_control_on;
   int dist_flow_control_count;

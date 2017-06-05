@@ -39,6 +39,8 @@ typedef struct t_queue
 static t_all_ctx *g_all_ctx0 = NULL;
 static t_all_ctx *g_all_ctx1 = NULL;
 
+static int g_tx0, g_tx1;
+
 /*****************************************************************************/
 static long long get_target_date_us(void)
 {
@@ -100,9 +102,15 @@ static void activate_tx(int num, long long now)
   while(blkd)
     {
     if (num == 0)
+      {
       sock_fd_tx(g_all_ctx0, blkd);
+      g_tx0 += 1;
+      }
     else if (num == 1)
+      {
       sock_fd_tx(g_all_ctx1, blkd);
+      g_tx1 += 1;
+      }
     else
       KOUT("%d", num);
     blkd = do_dequeue(num, now);
@@ -142,6 +150,14 @@ void sched_tx_pkt(int num, t_blkd *blkd)
 {
   long long now = get_target_date_us();
   do_enqueue(num, now, blkd);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void sched_get_g_tx(int *tx0, int *tx1)
+{
+  *tx0 = g_tx0;
+  *tx1 = g_tx1;
 }
 /*---------------------------------------------------------------------------*/
 

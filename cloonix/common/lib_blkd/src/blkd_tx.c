@@ -68,7 +68,7 @@ static t_blkd_record *pool_tx_alloc(t_blkd_fifo_tx *pool, t_blkd *blkd)
   if (__sync_val_compare_and_swap(&(pool->put), put, new_put) != put)
     KOUT(" ");
 
-  pool->qty += 1;
+  __sync_fetch_and_add(&(pool->qty), 1);
   if (pool->qty > pool->slot_qty[pool->current_slot])
     pool->slot_qty[pool->current_slot] = pool->qty;
   if (pool->tx_queued_bytes > pool->slot_queue[pool->current_slot])
@@ -128,7 +128,7 @@ static t_blkd *pool_tx_free(t_blkd_fifo_tx *pool)
     pool->rec[pool->get].blkd = NULL;
     pool->rec[pool->get].len_to_do = 0;
     pool->rec[pool->get].len_done = 0;
-    pool->qty -= 1;
+    __sync_fetch_and_sub(&(pool->qty), 1);
     __sync_fetch_and_sub(&(blkd->count_reference), 1);
     }
 
@@ -143,34 +143,34 @@ static t_blkd *pool_tx_free(t_blkd_fifo_tx *pool)
 /*****************************************************************************/
 static int try_sending(int fd, t_blkd_record *rec, int *get_out)
 {
-  int len, len_to_tx, result = -1;
-  char *ptr_to_tx;
+  int len, len_2_tx, result = -1;
+  char *ptr_2_tx;
   int qemu_group_rank = rec->blkd->qemu_group_rank;
   if (qemu_group_rank)
     {
     if (rec->len_done < rec->blkd->header_blkd_len)
       {
-      len_to_tx = rec->blkd->header_blkd_len - rec->len_done;
-      ptr_to_tx = rec->blkd->header_blkd + rec->len_done;
-      len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
+      len_2_tx = rec->blkd->header_blkd_len - rec->len_done;
+      ptr_2_tx = rec->blkd->header_blkd + rec->len_done;
+      len = sock_unix_write(ptr_2_tx, len_2_tx, fd, get_out);
       }
     else
       {
-      len_to_tx = rec->len_to_do - rec->len_done;
-      ptr_to_tx=rec->blkd->payload_blkd+rec->len_done-rec->blkd->header_blkd_len;
-      len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
+      len_2_tx = rec->len_to_do - rec->len_done;
+      ptr_2_tx=rec->blkd->payload_blkd+rec->len_done-rec->blkd->header_blkd_len;
+      len = sock_unix_write(ptr_2_tx, len_2_tx, fd, get_out);
       }
     }
   else
     {
-    len_to_tx = rec->len_to_do - rec->len_done;
-    ptr_to_tx = rec->blkd->header_blkd + rec->len_done;
-    len = sock_unix_write(ptr_to_tx, len_to_tx, fd, get_out);
+    len_2_tx = rec->len_to_do - rec->len_done;
+    ptr_2_tx = rec->blkd->header_blkd + rec->len_done;
+    len = sock_unix_write(ptr_2_tx, len_2_tx, fd, get_out);
     }
   if (len >= 0)
     {
     rec->len_done += len;
-    if (len == len_to_tx)
+    if (len == len_2_tx)
       result = 0;
     else
       result = 1;

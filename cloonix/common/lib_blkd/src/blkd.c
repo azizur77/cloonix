@@ -527,7 +527,7 @@ t_blkd *blkd_create_tx_empty(int llid, int type, int val)
   t_blkd *cur = malloc(sizeof(t_blkd));
   memset(blkd_group, 0, sizeof(t_blkd_group));
   memset(cur, 0, sizeof(t_blkd));
-  blkd_group->count_blkd_tied = 1;
+  __sync_fetch_and_add(&(blkd_group->count_blkd_tied), 1);
   blkd_group->head_data = (char *) malloc(MAX_TOTAL_BLKD_SIZE);
   cur->qemu_group_rank = 0;
   cur->usec = cloonix_get_usec();
@@ -595,7 +595,7 @@ t_blkd *blkd_create_tx_full_copy(int len, char *buf,
   t_blkd *cur = malloc(sizeof(t_blkd));
   memset(blkd_group, 0, sizeof(t_blkd_group));
   memset(cur, 0, sizeof(t_blkd));
-  blkd_group->count_blkd_tied = 1;
+  __sync_fetch_and_add(&(blkd_group->count_blkd_tied), 1);
   blkd_group->head_data = (char *) malloc(MAX_TOTAL_BLKD_SIZE);
   if (len > PAYLOAD_BLKD_SIZE)
     KOUT("%d %d", (int) PAYLOAD_BLKD_SIZE, len); 
