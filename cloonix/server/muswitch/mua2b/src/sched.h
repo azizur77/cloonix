@@ -15,7 +15,6 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void sched_get_g_tx(int *tx0, int *tx1);
 void sched_tx0_activate(t_all_ctx *all_ctx);
 void sched_tx1_activate(t_all_ctx *all_ctx);
 void sched_tx_pkt(int num, t_blkd *blkd);

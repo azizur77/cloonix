@@ -69,6 +69,26 @@ void circ_slot_put(int num, void *elem)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+void *circ_slot_lookat(int num)
+{
+  void *elem = NULL;
+  uint32_t head, tail;
+  t_circ_ctx *circ_ctx;
+  if (num == 0)
+    circ_ctx = &g_circ_ctx0;
+  else if (num == 1)
+    circ_ctx = &g_circ_ctx1;
+  else
+    KOUT("%d", num);
+  head = (uint32_t) circ_ctx->head;
+  tail = (uint32_t) circ_ctx->tail;
+  if (circ_cnt(head, tail) >= 1)
+    elem = circ_ctx->queue[tail];
+  return elem;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 void *circ_slot_get(int num)
 {
   void *elem = NULL;

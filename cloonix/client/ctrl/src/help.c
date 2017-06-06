@@ -243,7 +243,7 @@ void help_a2b_config(char *line)
 {
   printf("\n\n%s <name> <cmd> <dir> <val>\n", line);
   printf("\nname is the a2b name.");
-  printf("\ncmd =  \"loss\" \"delay\" \"qsize\" \"bsize\" \"rate\"");
+  printf("\ncmd =  \"loss\" \"delay\" \"qsize\" \"bsize\" \"brate\"");
   printf("\ndir =  \"A2B\" \"B2A\"");
   printf("\nval is an integer.\n");
   printf("\n\n");
