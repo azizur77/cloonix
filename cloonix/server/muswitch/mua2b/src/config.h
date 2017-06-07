@@ -31,13 +31,21 @@ enum{
   input_dir_a2b,
   input_dir_b2a,
 };
-
 /*---------------------------------------------------------------------------*/
 typedef struct t_connect_side
 {
   int llid;
-  int tockens_1000;
-  t_qstats qstats;
+  long long enqueue;
+  long long dequeue;
+  long long dropped;
+  long long tockens;
+  long long stored;
+  long long lost;
+  int conf_loss;
+  int conf_delay;
+  int conf_qsize;
+  int conf_bsize;
+  int conf_brate;
 } t_connect_side;
 /*---------------------------------------------------------------------------*/
 t_connect_side *get_sideA(void);

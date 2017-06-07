@@ -45,7 +45,7 @@ static long long g_prev_date_us_b;
 
 
 /*****************************************************************************/
-static long long get_target_date_us(void)
+static long long get_date_us(void)
 {
   struct timespec ts;
   long long sec;
@@ -64,16 +64,16 @@ static long long get_target_date_us(void)
 /****************************************************************************/
 static void inc_queue_size(t_connect_side *side, int len)
 {
-  side->qstats.enqueue += len;
-  side->qstats.stored += len;
+  side->enqueue += len;
+  side->stored += len;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void dec_queue_size(t_connect_side *side, int len)
 {
-  side->qstats.dequeue += len;
-  side->qstats.stored -= len;
+  side->dequeue += len;
+  side->stored -= len;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -81,7 +81,7 @@ static void dec_queue_size(t_connect_side *side, int len)
 static int tocken_authorization(t_connect_side *side, int len)
 {
   int result = 0;
-  if (side->qstats.tockens > len)
+  if (side->tockens > (len * 1000))
     result = 1;
   return result;
 }
@@ -90,21 +90,19 @@ static int tocken_authorization(t_connect_side *side, int len)
 /****************************************************************************/
 static void update_remove_tockens(t_connect_side *side, int len)
 {
-  side->tockens_1000 -= (len * 1000);
-  if (side->tockens_1000 < 0)
-    KOUT("%d   %d",  side->tockens_1000, len);
-  side->qstats.tockens = side->tockens_1000/1000;
+  side->tockens -= (len * 1000);
+  if (side->tockens < 0)
+    KOUT("%lld %d", side->tockens, len);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void update_add_tockens(t_connect_side *side, int ms_delta)
 {
-  int conf_bsize_1000 = 1000 * side->qstats.conf_bsize;
-  side->tockens_1000 += side->qstats.conf_brate * ms_delta;
-  if (side->tockens_1000 > conf_bsize_1000)
-    side->tockens_1000 = conf_bsize_1000;
-  side->qstats.tockens = side->tockens_1000/1000;
+  long long conf_bsize = (1000 * side->conf_bsize);
+  side->tockens += side->conf_brate * ms_delta;
+  if (side->tockens > conf_bsize)
+    side->tockens = conf_bsize;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -154,7 +152,7 @@ static void activate_tx(int num, long long now,
     {
     delta = (int) (now - q->arrival_date_us);
     delta /= 1000;
-    if (delta < side->qstats.conf_delay)
+    if (delta < side->conf_delay)
       {
       KERR("Delay not reached, must wait");
       break;
@@ -227,23 +225,22 @@ static int is_lost(int loss)
 static int can_enqueue(int num, int len, t_connect_side *side)
 {
   int result = 0;
-  if (is_lost(side->qstats.conf_loss))
+  if (is_lost(side->conf_loss))
     {
-    side->qstats.lost += len;
+    side->lost += len;
     KERR("loss: %d", len);
     }
   else
     {
-    if (side->qstats.stored + len < side->qstats.conf_qsize)
+    if (side->stored + len < side->conf_qsize)
       {
       inc_queue_size(side, len);
       result = 1;
       }
     else
       {
-      side->qstats.dropped += len;
-      KERR("Q too big: %d + %d and %d", len, side->qstats.stored, 
-                                        side->qstats.conf_qsize);
+      side->dropped += len;
+      KERR("Q big: %d + %lld and %d", len, side->stored, side->conf_qsize);
       }
     }
   return result;
@@ -266,7 +263,7 @@ static void do_enqueue(int num, long long now,
     }
   else
     {
-    side->qstats.dropped += blkd->payload_len;
+    side->dropped += blkd->payload_len;
     KERR("%d %d", num, count);
     }
 }
@@ -276,7 +273,7 @@ static void do_enqueue(int num, long long now,
 void sched_tx0_activate(t_all_ctx *all_ctx)
 {
   int delta, ms_delta;
-  long long now = get_target_date_us();
+  long long now = get_date_us();
   t_connect_side *side = get_sideA();
   delta = (int) (now - g_prev_date_us_a);
   g_prev_date_us_a = now;
@@ -289,7 +286,7 @@ void sched_tx0_activate(t_all_ctx *all_ctx)
 void sched_tx1_activate(t_all_ctx *all_ctx)
 {
   int delta, ms_delta;
-  long long now = get_target_date_us();
+  long long now = get_date_us();
   t_connect_side *side = get_sideB();
   delta = (int) (now - g_prev_date_us_b);
   g_prev_date_us_b = now;
@@ -301,7 +298,7 @@ void sched_tx1_activate(t_all_ctx *all_ctx)
 /*****************************************************************************/
 void sched_tx_pkt(int num, t_blkd *blkd) 
 {
-  long long now = get_target_date_us();
+  long long now = get_date_us();
   t_connect_side *side;
   if (num == 0)
     side = get_sideA();

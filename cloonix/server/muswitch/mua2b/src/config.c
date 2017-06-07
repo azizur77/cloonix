@@ -39,28 +39,28 @@ void config_fill_resp(char *resp, int max_len)
   if ((max_len-len) > 20)
     len += sprintf(resp+len, "CONFIG A2B:\n");
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tdelay:%d\n", g_sideA.qstats.conf_delay);
+    len += sprintf(resp+len, "\tdelay:%d ms\n", g_sideB.conf_delay);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tloss:%d\n", g_sideA.qstats.conf_loss);
+    len += sprintf(resp+len, "\tloss:%d/10000\n", g_sideA.conf_loss);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tqsize:%d\n", g_sideA.qstats.conf_qsize);
+    len += sprintf(resp+len, "\tqsize:%d bytes\n", g_sideB.conf_qsize);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tbsize:%d\n", g_sideA.qstats.conf_bsize);
+    len += sprintf(resp+len, "\tbsize:%d bytes\n", g_sideB.conf_bsize);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tbrate:%d\n", g_sideA.qstats.conf_brate);
+    len += sprintf(resp+len, "\tbrate:%d bytes/sec\n", g_sideB.conf_brate);
 
   if ((max_len-len) > 20)
     len += sprintf(resp+len, "CONFIG B2A:\n");
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tdelay:%d\n", g_sideB.qstats.conf_delay);
+    len += sprintf(resp+len, "\tdelay:%d\n ms", g_sideA.conf_delay);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tloss:%d\n", g_sideB.qstats.conf_loss);
+    len += sprintf(resp+len, "\tloss:%d/10000\n", g_sideB.conf_loss);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tqsize:%d\n", g_sideB.qstats.conf_qsize);
+    len += sprintf(resp+len, "\tqsize:%d bytes\n", g_sideA.conf_qsize);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tbsize:%d\n", g_sideB.qstats.conf_bsize);
+    len += sprintf(resp+len, "\tbsize:%d bytes\n", g_sideA.conf_bsize);
   if ((max_len-len) > 20)
-    len += sprintf(resp+len, "\tbrate:%d\n", g_sideB.qstats.conf_brate);
+    len += sprintf(resp+len, "\tbrate:%d bytes/sec\n", g_sideA.conf_brate);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -88,19 +88,19 @@ int config_recv_command(int input_cmd, int input_dir, int val)
     switch (input_cmd)
       {
       case input_cmd_delay:
-        g_sideA.qstats.conf_delay = val;
+        g_sideB.conf_delay = val;
         break;
       case input_cmd_loss:
-        g_sideA.qstats.conf_loss = val;
+        g_sideA.conf_loss = val;
         break;
       case input_cmd_qsize:
-        g_sideA.qstats.conf_qsize = val;
+        g_sideB.conf_qsize = val;
         break;
       case input_cmd_bsize:
-        g_sideA.qstats.conf_bsize = val;
+        g_sideB.conf_bsize = val;
         break;
       case input_cmd_rate:
-        g_sideA.qstats.conf_brate = val;
+        g_sideB.conf_brate = val;
         break;
       default:
         KOUT("%d", input_cmd);
@@ -111,19 +111,19 @@ int config_recv_command(int input_cmd, int input_dir, int val)
     switch (input_cmd)
       {
       case input_cmd_delay:
-        g_sideB.qstats.conf_delay = val;
+        g_sideA.conf_delay = val;
         break;
       case input_cmd_loss:
-        g_sideB.qstats.conf_loss = val;
+        g_sideB.conf_loss = val;
         break;
       case input_cmd_qsize:
-        g_sideB.qstats.conf_qsize = val;
+        g_sideA.conf_qsize = val;
         break;
       case input_cmd_bsize:
-        g_sideB.qstats.conf_bsize = val;
+        g_sideA.conf_bsize = val;
         break;
       case input_cmd_rate:
-        g_sideB.qstats.conf_brate = val;
+        g_sideA.conf_brate = val;
         break;
       default:
         KOUT("%d", input_cmd);
@@ -142,12 +142,12 @@ void config_init(void)
 {
   memset(&g_sideA, 0, sizeof(t_connect_side));
   memset(&g_sideB, 0, sizeof(t_connect_side));
-  g_sideA.qstats.conf_qsize = 1000000;
-  g_sideB.qstats.conf_qsize = 1000000;
-  g_sideA.qstats.conf_bsize = 1000000;
-  g_sideB.qstats.conf_bsize = 1000000;
-  g_sideA.qstats.conf_brate = 10000000;
-  g_sideB.qstats.conf_brate = 10000000;
+  g_sideA.conf_qsize = 10000000;
+  g_sideB.conf_qsize = 10000000;
+  g_sideA.conf_bsize = 10000000;
+  g_sideB.conf_bsize = 10000000;
+  g_sideA.conf_brate = 100000000;
+  g_sideB.conf_brate = 100000000;
 
 }
 /*---------------------------------------------------------------------------*/

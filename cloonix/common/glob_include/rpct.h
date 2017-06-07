@@ -34,38 +34,6 @@ enum
   bnd_rpct_max,
   };
 
-
-
-#define MAX_SAMPLY 20
-/*---------------------------------------------------------------------------*/
-typedef struct t_qstats
-{
-  long long enqueue;
-  long long dequeue;
-  int stored;
-  int tockens;
-  int dropped;
-  int lost;
-  int sec_01_rate;
-  int sec_10_rate;
-  int sec_40_rate;
-  int conf_loss;
-  int conf_delay;
-  int conf_qsize;
-  int conf_bsize;
-  int conf_brate;
-  int samply_nb;
-  int samply_enqueue[MAX_SAMPLY];
-  int samply_dequeue[MAX_SAMPLY];
-  int samply_dropped[MAX_SAMPLY];
-  int samply_stored[MAX_SAMPLY];
-  int samply_msec[MAX_SAMPLY];
-} t_qstats;
-/*---------------------------------------------------------------------------*/
-
-
-
-
 /*---------------------------------------------------------------------------*/
 #define BLKD_ITEM_SUB  "<blkd_item_sub>\n"\
                        " <sub> %d </sub>\n"\

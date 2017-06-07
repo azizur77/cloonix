@@ -246,6 +246,11 @@ void help_a2b_config(char *line)
   printf("\ncmd =  \"loss\" \"delay\" \"qsize\" \"bsize\" \"brate\"");
   printf("\ndir =  \"A2B\" \"B2A\"");
   printf("\nval is an integer.\n");
+  printf("\nloss: 0 = no loss 10000 = all lost.\n");
+  printf("\ndelay: milli-sec.\n");
+  printf("\nqsize : octets that can be put in waiting queue.\n");
+  printf("\nbsize : max octets to fill the bucket.\n");
+  printf("\nbrate : octets per second throughput.\n");
   printf("\n\n");
 }
 /*---------------------------------------------------------------------------*/
