@@ -770,7 +770,9 @@ static void timer_endp_beat(void *data)
     next = cur->next;
     if (cur->clone_start_pid)
       {
-      if (cur->llid == 0)
+      if (cur->trace_alloc_count == 0)
+        cur->trace_alloc_count = 1;
+      else if (cur->llid == 0)
         {
         cur->llid = trace_alloc(cur);
         cur->trace_alloc_count += 1;

@@ -105,6 +105,27 @@ static void transfert_blink_on_eth_bitem(t_eth_blinks *cur)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void transfert_blink_on_sat(t_eth_blinks *cur, t_bank_item *bitem)
+{
+  if (cur->blink_rx)
+    {
+    bitem->pbi.blink_rx = 1;
+    cur->blink_rx = 0;
+    }
+  else
+    bitem->pbi.blink_rx = 0;
+  if (cur->blink_tx)
+    {
+    bitem->pbi.blink_tx = 1;
+    cur->blink_tx = 0;
+    }
+  else
+    bitem->pbi.blink_tx = 0;
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
 static void blink_on_obj(void)
 {
   int i;
@@ -113,9 +134,14 @@ static void blink_on_obj(void)
     {
     if (!(cur->to_be_deleted))
       {
-      for (i=0; i<cur->nb_eth; i++)
+      if (cur->nb_eth == 0)
         {
-        transfert_blink_on_eth_bitem(&(cur->eth_blinks[i]));
+        transfert_blink_on_sat(&(cur->eth_blinks[0]), cur->bitem);
+        }
+      else
+        {
+        for (i=0; i<cur->nb_eth; i++)
+          transfert_blink_on_eth_bitem(&(cur->eth_blinks[i]));
         }
       }
     cur = cur->glob_next;
@@ -141,18 +167,21 @@ static void eventfull_arrival(int nb_endp, t_eventfull_endp *endp)
         cur->bitem->pbi.pbi_node->node_cpu = endp[i].cpu;
         cur->bitem->pbi.pbi_node->node_ram = endp[i].ram;
         }
-      if (cur->eth_blinks[num].bitem_eth)
+      if ((num == 0) && (!(cur->eth_blinks[num].bitem_eth)))
+        {
+        if (endp[i].rx)
+          cur->eth_blinks[num].blink_rx = 1;
+        if (endp[i].tx)
+          cur->eth_blinks[num].blink_tx = 1;
+        }
+      else if (cur->eth_blinks[num].bitem_eth)
         {
         if (cur->eth_blinks[num].bitem_eth->num != num)
           KOUT(" ");
         if (endp[i].rx)
-          {
           cur->eth_blinks[num].blink_rx = 1;
-          }
         if (endp[i].tx)
-          {
           cur->eth_blinks[num].blink_tx = 1;
-          }
         }
       }
     }
