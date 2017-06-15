@@ -208,7 +208,12 @@ char *utils_get_endp_bin_path(int type)
   else if (type == endp_type_c2c)
     sprintf(path, "%s/server/muswitch/muc2c/cloonix_muc2c", cfg_get_bin_dir());
   else if (type == endp_type_a2b)
-    sprintf(path, "%s/server/muswitch/mua2b/cloonix_mua2b", cfg_get_bin_dir());
+    {
+    //KERR("BEWARE!!! mutst instead of mua2b");
+    //sprintf(path, "%s/server/muswitch/mutst/cloonix_mutst", cfg_get_bin_dir());
+    sprintf(path, "%s/server/muswitch/mua2b/cloonix_mua2b", 
+            cfg_get_bin_dir());
+    }
   else if (type == endp_type_nat)
     sprintf(path, "%s/server/muswitch/munat/cloonix_munat", cfg_get_bin_dir());
   else

@@ -628,7 +628,11 @@ void blkd_free(void *ptr, t_blkd *blkd)
   if (blkd_group->count_blkd_tied == 0) 
     {
     if (blkd_group->qemu_group_cb)
+      {
+      if (!ptr)
+        KOUT(" ");
       blkd_group->qemu_group_cb(ptr, blkd_group->data);
+      }
     free(blkd_group->head_data);
     memset(blkd_group, 0, sizeof(t_blkd_group));
     free(blkd_group);

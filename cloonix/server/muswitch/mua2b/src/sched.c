@@ -265,6 +265,7 @@ static void do_enqueue(int num, long long now,
     {
     side->dropped += blkd->payload_len;
     KERR("%d %d", num, count);
+    blkd_free(NULL, blkd);
     }
 }
 /*---------------------------------------------------------------------------*/

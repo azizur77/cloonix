@@ -16,7 +16,7 @@
 /*                                                                           */
 /*****************************************************************************/
 #define MASK_RX_BLKD_POOL 0x3FFF
-#define MASK_TX_BLKD_POOL 0x3FFF
+#define MASK_TX_BLKD_POOL 0x7FFF
 #define STORED_SLOTS 30
 #define STORED_SLOTS_IN_HALF_SEC 10
 #define STORED_SLOTS_IN_ONE_SEC 20

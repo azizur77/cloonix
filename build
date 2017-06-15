@@ -61,6 +61,7 @@ done
             muswitch/munat \
             muswitch/muc2c \
             muswitch/mua2b \
+            muswitch/mutst \
             muswitch/mulan \
             spice \
             qemu; do

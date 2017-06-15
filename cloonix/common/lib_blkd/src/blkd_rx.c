@@ -477,7 +477,10 @@ int blkd_fd_event_rx(void *ptr,
       if (read_state == read_state_ok)
         rx_ready_cb(ptr, llid);
       else
+        {
         rx_purge_all(ptr, llid);
+        KERR(" ");
+        }
       }
     }
   if (read_state == read_state_error)

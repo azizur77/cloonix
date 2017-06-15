@@ -38,6 +38,7 @@ rm -rf tmpbuild
             muswitch/munat \
             muswitch/muc2c \
             muswitch/mua2b \
+            muswitch/mutst \
             muswitch/mulan; do 
     cd ${CLOONIX_SERVER}/${i}
     make clean

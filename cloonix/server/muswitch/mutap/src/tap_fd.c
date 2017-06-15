@@ -96,7 +96,7 @@ void tap_fd_tx(t_all_ctx *all_ctx, t_blkd *blkd)
   int len, fd;
   fd = get_fd_with_llid(all_ctx, g_llid_tap);
   if (fd < 0)
-   KOUT(" ");
+    KOUT(" ");
   else if (g_fd_tap != fd)
     KOUT("%d %d", g_fd_tap, fd);
   else

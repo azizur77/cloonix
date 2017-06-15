@@ -61,6 +61,7 @@ CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
             muswitch/munat \
             muswitch/muc2c \
             muswitch/mua2b \
+            muswitch/mutst \
             muswitch/mulan ; do
     rm -f ${CLOONIX_SERVER}/${i}/cmd
     rm -f ${CLOONIX_SERVER}/${i}/Makefile
