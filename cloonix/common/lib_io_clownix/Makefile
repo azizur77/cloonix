@@ -10,7 +10,7 @@ INCLUDES= -I./src \
           -I${BLKD}/include \
           -I${GLOB_INCLUDE} 
 
-CFLAGS+= -g $(WARNINGS) $(INCLUDES) -lrt 
+CFLAGS+=-fPIC -g $(WARNINGS) $(INCLUDES) -lrt 
 
 AR = ar
 RANLIB = ranlib

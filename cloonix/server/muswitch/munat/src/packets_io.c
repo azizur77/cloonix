@@ -33,11 +33,11 @@
 #include "utils.h"
 #include "main.h"
 #include "packets_io.h"
-#include "cisco.h"
+#include "unix2inet.h"
 
 
 /****************************************************************************/
-static void cisco_or_gw_or_dns_arp_arrival(char *data, char *src_mac)
+static void unix2inet_or_gw_or_dns_arp_arrival(char *data, char *src_mac)
 {
   int resp_len;
   char *arp_tip, *arp_sip, *resp_data;
@@ -45,7 +45,7 @@ static void cisco_or_gw_or_dns_arp_arrival(char *data, char *src_mac)
   arp_sip = get_arp_sip(data);
   if ((!strcmp(arp_tip, get_gw_ip())) ||
       (!strcmp(arp_tip, get_dns_ip()))||
-      (!strcmp(arp_tip, get_cisco_ip())))
+      (!strcmp(arp_tip, get_unix2inet_ip())))
     {
     resp_len = format_arp_resp(src_mac, arp_sip, arp_tip, &resp_data);
     packet_output_to_slirptux(resp_len, resp_data);
@@ -54,14 +54,14 @@ static void cisco_or_gw_or_dns_arp_arrival(char *data, char *src_mac)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void cisco_arp_resp_arrival(char *data, char *src_mac)
+static void unix2inet_arp_resp_arrival(char *data, char *src_mac)
 {
   char *arp_tip, *arp_sip;
   arp_tip = get_arp_tip(data);
   arp_sip = get_arp_sip(data);
-  if (!strcmp(arp_tip, get_cisco_ip()))
+  if (!strcmp(arp_tip, get_unix2inet_ip()))
     {
-    cisco_arp_resp(src_mac, arp_sip);
+    unix2inet_arp_resp(src_mac, arp_sip);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -79,7 +79,7 @@ void packet_input_from_slirptux(int len, char *data)
     dst_mac = get_dst_mac(data);
     src_mac = get_src_mac(data);
     if (!strcmp(dst_mac, OUR_MAC_CISCO))
-      cisco_arp_resp_arrival(data, src_mac);
+      unix2inet_arp_resp_arrival(data, src_mac);
     }
   else if ((proto == proto_arp_req) || (proto == proto_ip))
     {
@@ -91,7 +91,7 @@ void packet_input_from_slirptux(int len, char *data)
         (!strcmp(dst_mac, OUR_MAC_CISCO)))
       {
       if (proto == proto_arp_req)
-        cisco_or_gw_or_dns_arp_arrival(data, src_mac);
+        unix2inet_or_gw_or_dns_arp_arrival(data, src_mac);
       else
         {
         name = get_name_with_mac(src_mac);

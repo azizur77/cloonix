@@ -1,6 +1,6 @@
 #!/bin/bash
 HERE=`pwd`
-OPENSSH=openssh-7.4p1
+OPENSSH=openssh-7.5p1
 rm -rf ${OPENSSH}
 if [ ! -e tainted_openssh ]; then
   echo tainted_openssh directory must exist 

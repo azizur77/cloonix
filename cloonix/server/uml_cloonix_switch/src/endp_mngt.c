@@ -533,6 +533,7 @@ static void muendp_free(char *name, int num)
 {
   int i, lan_num;
   t_priv_endp *mu = muendp_find_with_name(name, num);
+  char *pth = utils_get_endp_path(name, num);
   if (mu)
     {
     for (i=0; i<MAX_TRAF_ENDPOINT; i++)
@@ -564,6 +565,7 @@ static void muendp_free(char *name, int num)
     g_nb_muendp -= 1;
     stats_counters_death(name, num);
     event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    unlink(pth);
     }
 }
 /*---------------------------------------------------------------------------*/

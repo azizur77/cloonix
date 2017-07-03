@@ -41,7 +41,7 @@
 #include "bootp_input.h"
 #include "packets_io.h"
 #include "llid_slirptux.h"
-#include "cisco.h"
+#include "unix2inet.h"
 
 
 static char g_resolv_dns_ip[MAX_NAME_LEN];
@@ -269,7 +269,7 @@ int main (int argc, char *argv[])
   packets_io_init();
   machine_init();
   llid_slirptux_tcp_init();
-  cisco_init(all_ctx);
+  unix2inet_init(all_ctx);
   msg_mngt_loop(all_ctx);
   return 0;
 }

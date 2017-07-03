@@ -37,7 +37,7 @@ static void put_dst_mac(char *mac, char *data);
 
 static char g_our_ip_dns[MAX_NAME_LEN];
 static char g_our_ip_gw[MAX_NAME_LEN];
-static char g_our_ip_cisco[MAX_NAME_LEN];
+static char g_our_ip_unix2inet[MAX_NAME_LEN];
 
 /*****************************************************************************/
 int ip_string_to_int (uint32_t *inet_addr, char *ip_string)
@@ -108,9 +108,9 @@ char *get_gw_ip(void)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-char *get_cisco_ip(void)
+char *get_unix2inet_ip(void)
 {
-  return (g_our_ip_cisco);
+  return (g_our_ip_unix2inet);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -385,7 +385,7 @@ int format_arp_resp(char *mac, char *sip, char *tip, char **resp_data)
     our_mac = OUR_MAC_GW;
   else if (!strcmp(tip, get_dns_ip()))
     our_mac = OUR_MAC_DNS;
-  else if (!strcmp(tip, get_cisco_ip()))
+  else if (!strcmp(tip, get_unix2inet_ip()))
     our_mac = OUR_MAC_CISCO;
   else
     KOUT("%s", tip);
@@ -418,7 +418,7 @@ void fill_mac_ip_header(char *data, char *sip, char *dmac)
     our_mac = OUR_MAC_GW;
   else if (!strcmp(sip, get_dns_ip()))
     our_mac = OUR_MAC_DNS;
-  else if (!strcmp(sip, get_cisco_ip()))
+  else if (!strcmp(sip, get_unix2inet_ip()))
     our_mac = OUR_MAC_CISCO;
   else
     KOUT("%s", sip);
@@ -481,14 +481,14 @@ void fill_udp_ip_header(int len, char *data, int sport, int dport)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void init_utils(char *our_ip_dns, char *our_ip_gw, char *our_ip_cisco)
+void init_utils(char *our_ip_dns, char *our_ip_gw, char *our_ip_unix2inet)
 {
   gettimeofday(&start_time, NULL);
   memset(g_our_ip_dns, 0, MAX_NAME_LEN);
   strncpy(g_our_ip_dns, our_ip_dns, MAX_NAME_LEN - 1);
   memset(g_our_ip_gw, 0, MAX_NAME_LEN);
   strncpy(g_our_ip_gw, our_ip_gw, MAX_NAME_LEN - 1);
-  memset(g_our_ip_cisco, 0, MAX_NAME_LEN);
-  strncpy(g_our_ip_cisco, our_ip_cisco, MAX_NAME_LEN - 1);
+  memset(g_our_ip_unix2inet, 0, MAX_NAME_LEN);
+  strncpy(g_our_ip_unix2inet, our_ip_unix2inet, MAX_NAME_LEN - 1);
 }
 /*---------------------------------------------------------------------------*/

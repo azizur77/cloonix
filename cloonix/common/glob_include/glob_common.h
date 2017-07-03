@@ -133,6 +133,7 @@ enum{
 
   doors_type_low_prio_begin,
   doors_type_dbssh,
+  doors_type_openssh,
   doors_type_spice,
   doors_type_dbssh_x11_ctrl,
   doors_type_dbssh_x11_traf,

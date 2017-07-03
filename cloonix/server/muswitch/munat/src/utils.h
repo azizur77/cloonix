@@ -49,7 +49,7 @@ enum
   proto_ip,
 };
 /*---------------------------------------------------------------------------*/
-void init_utils(char *our_ip_dns, char *our_ip_gw,  char *our_ip_cisco);
+void init_utils(char *our_ip_dns, char *our_ip_gw,  char *our_ip_unix2inet);
 char *debug_print_packet(int is_tx, int ilen, char *buf);
 unsigned short in_cksum(unsigned short *addr, int len);
 /*---------------------------------------------------------------------------*/
@@ -82,7 +82,7 @@ char *flags_to_ascii(char flags);
 /*---------------------------------------------------------------------------*/
 char *get_dns_ip(void);
 char *get_gw_ip(void);
-char *get_cisco_ip(void);
+char *get_unix2inet_ip(void);
 /*---------------------------------------------------------------------------*/
 int ip_string_to_int (uint32_t *inet_addr, char *ip_string);
 /*---------------------------------------------------------------------------*/

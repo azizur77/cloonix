@@ -1,7 +1,39 @@
 #!/bin/bash
+HERE=`pwd`
 ./all_clean
-./patched_create
-cd tainted_openssh
-#sed -i "s/TARGETS=.*/TARGETS=ssh scp/" Makefile.in
-./configure
+
+export CFLAGS=-DNO_HMAC_CIPHER
+cd ${HERE}/../../common/lib_blkd
+make clean
 make
+cd ${HERE}/../../common/lib_rpct
+make clean
+make
+cd ${HERE}/../../common/lib_io_clownix
+make clean
+make
+cd ${HERE}/lib_doorways
+make clean
+make
+cd ${HERE}
+path_openssl=$(which openssl)
+if [ -z $path_openssl ]; then
+  echo openssl dev required
+  exit 1
+fi
+version_openssl=$(openssl version | awk "{print \$2}")
+version_openssl=${version_openssl%\.*}
+if [ "$version_openssl" = "1.1" ]; then
+./patched_create $version_openssl 
+else
+  ./patched_create
+fi
+cd tainted_openssh
+./configure
+# --with-openssl=no
+make OPENSSL=no
+mv ssh cloonix_u2i_ssh
+mv scp cloonix_u2i_scp
+mv cloonix_u2i_ssh $HERE
+mv cloonix_u2i_scp $HERE
+

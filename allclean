@@ -56,4 +56,6 @@ rm -rf tmpbuild
     cd ${CLOONIX_CLIENT}/${i}
     make clean
   done
+  cd ${CLOONIX_CLIENT}/openssh
+  ./all_clean
 #----------------------------------------------------------

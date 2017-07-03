@@ -223,7 +223,8 @@ int clo_mngt_low_input(t_clo *clo, t_low *low, int *inserted)
            (adjusted_seqno <= adjusted_recv_next + 2*TCP_WND),
            (adjusted_recv_next <= adjusted_seqno + adjusted_tcplen),
            (adjusted_seqno+adjusted_tcplen-1 <= adjusted_recv_next+2*TCP_WND));
-      KERR("%d %d %d %d", adjusted_seqno, adjusted_recv_next, 2*TCP_WND, adjusted_tcplen);
+      KERR("%d %d %d %d", adjusted_seqno, adjusted_recv_next, 
+                          2*TCP_WND, adjusted_tcplen);
       }
     }
   return result;

@@ -78,7 +78,7 @@ fct_build_get_debian_packages()
                      libevent-dev libreadline-dev python-pyparsing python-six \
                      libgstreamer-plugins-base1.0-dev libepoxy-dev \
                      libpolkit-gobject-1-dev libacl1-dev libegl1-mesa-dev \
-                     libpulse-dev sudo
+                     libpulse-dev sudo zlib1g-dev
 
   if ! tmux -c ls 1>/dev/null 2>&1 ; then
     localedef -f UTF-8 -i en_US en_US.UTF-8

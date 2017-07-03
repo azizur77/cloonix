@@ -258,7 +258,7 @@ static int get_dhcp_addr(uint32_t *addr, char *mac)
     alloc_active_mac(cur->name, mac);
     if (ip_string_to_int (&our_ip_gw, get_gw_ip()))
       KOUT(" ");
-    *addr = our_ip_gw + cur->vm_id + 2; 
+    *addr = our_ip_gw + cur->vm_id + 8; 
     result = 0;
     }
   return result;

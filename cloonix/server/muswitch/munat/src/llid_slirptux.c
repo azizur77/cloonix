@@ -32,7 +32,7 @@
 #include "packets_io.h"
 #include "llid_slirptux.h"
 #include "tcp_tux.h"
-#include "cisco.h"
+#include "unix2inet.h"
 
 
 void packet_output_to_slirptux(int len, char *data);
@@ -42,7 +42,7 @@ void packet_output_to_slirptux(int len, char *data);
 void llid_clo_high_close_rx(t_tcp_id *tcpid)
 {
   t_clo *clo;
-  cisco_close_tcpid(tcpid);
+  unix2inet_close_tcpid(tcpid);
   clo = util_get_fast_clo(tcpid);
 
   if (clo)
@@ -192,7 +192,7 @@ void llid_clo_high_synack_rx(t_tcp_id *tcpid)
   clo = util_get_fast_clo(tcpid);
   if (!clo)
     KERR(" ");
-  else if (cisco_ssh_syn_ack_arrival(tcpid))
+  else if (unix2inet_ssh_syn_ack_arrival(tcpid))
     {
     KERR(" ");
     llid_clo_high_close_rx(tcpid);

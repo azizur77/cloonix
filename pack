@@ -90,6 +90,11 @@ CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
     rm -rf ${CLOONIX_CLIENT}/${i}/src
   done
 #----------------------------------------------------------
+  rm -rf ${CLOONIX_CLIENT}/openssh/tainted_openssh
+  for i in all_clean cmd mkpatch openssh* patched_create ; do
+    rm -f ${CLOONIX_CLIENT}/openssh/$i
+  done
+#----------------------------------------------------------
 cd ${TMPBUILD_BIS}
 tar zcvf ../cloonix-${CLOONIX_VERSION}.tar.gz .
 rm -rf ${TMPBUILD_BIS}
