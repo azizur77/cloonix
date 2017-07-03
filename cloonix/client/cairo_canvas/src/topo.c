@@ -99,9 +99,9 @@ void topo_zoom_in_out_canvas(int in, int val)
   for (i=0; i<val; i++)
     {
     if (in)
-      cr_canvas_zoom(glob_canvas, 1.2, 0);
+      cr_canvas_zoom(glob_canvas, 1.4, 0);
     else
-      cr_canvas_zoom(glob_canvas, 0.8, 0);
+      cr_canvas_zoom(glob_canvas, 0.9, 0);
     }
   update_layout_center_scale(__FUNCTION__);
 }
@@ -1188,6 +1188,8 @@ GtkWidget *topo_canvas(void)
   g_object_set(G_OBJECT(glob_panner), "button", 2, NULL);
   cr_canvas_center_scale(CR_CANVAS(gtkwidget_canvas), WIDTH/2, HEIGH/2, WIDTH/3, HEIGH/3);
   cr_canvas_set_repaint_mode(glob_canvas, TRUE);
+  cr_canvas_set_min_scale_factor (glob_canvas,0.2,0.2);
+  cr_canvas_set_max_scale_factor (glob_canvas,5,5);
   return vbox;
 }
 /*--------------------------------------------------------------------------*/
