@@ -18,5 +18,7 @@
 /****************************************************************************/
 char *get_full_bin_path(char *input_callbin);
 int get_ip_port_from_path(char *param, int *ip, int *port);
+void doorways_init(char *cloonix_doors, char *cloonix_passwd);
+void doorways_loop(void);
 /*--------------------------------------------------------------------------*/
 

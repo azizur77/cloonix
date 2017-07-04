@@ -15,16 +15,15 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-char *get_g_buf(void);
-void dispach_err_switch (int llid, int err);
-void dispach_rx_switch(int llid, int len, char *buf);
-void dispach_door_llid(int llid);
-void dispach_door_end(int llid);
-void dispach_door_rx(int llid, int tid, int type, int val,int len,char *buf);
-int  dispach_send_to_traf_client(int llid, int val, int len, char *buf);
-int dispach_send_to_openssh_client(int dido_llid, int val, int len, char *buf);
-void in_rx_c2c(int inside_llid, int idx, int len, char *buf);
-void in_err_gene(void *ptr, int inside_llid, int err, int from);
-void dispach_init(void);
+void openssh_rx_from_client(int dido_llid, int len, char *buf);
+//void llid_traf_tx_to_client(char *name, int dido_llid,  
+//                            int len, int type, int val, 
+//                            char  *buf);
+//char *get_gbuf(void);
+//void llid_traf_delete(int dido_llid);
+//void send_resp_ok_to_traf_client(int dido_llid, int idx_x11); 
+//void send_to_traf_client(int dido_llid, int val, int len, char *buf);
+//void llid_traf_backdoor_destroyed(int backdoor_llid);
 /*--------------------------------------------------------------------------*/
+
 

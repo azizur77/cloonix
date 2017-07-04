@@ -431,28 +431,6 @@ static void pid_clone_check_and_kill(int pid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int *pid_find_all_pids_with_name(char *vm_name, int *len)
-{
-  static int pid_tab[MAX_FORK_IDENT];
-  int i;
-  *len = 0;
-  if(strlen(vm_name))
-    {
-    for (i=1; i <= current_max_pid; i++)
-      if (clone_ctx[i].used == i)
-        {
-        if (!strcmp(vm_name, clone_ctx[i].vm_name))
-          {
-          pid_tab[*len] = clone_ctx[i].pid;
-          *len += 1;
-          }
-        }
-      }
-  return pid_tab;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 void pid_clone_kill_single(int pid)
 {
   int ident = pid_find_ident(pid);

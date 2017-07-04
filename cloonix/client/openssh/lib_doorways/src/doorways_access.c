@@ -34,7 +34,7 @@ static char g_cloonix_doors[MAX_PATH_LEN];
 
 
 /*****************************************************************************/
-void heartbeat(int delta)
+static void heartbeat(int delta)
 {
   static int count = 0;
   (void) delta;
@@ -62,7 +62,8 @@ fprintf(stderr, "\nTODO\n");
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
+static void cb_doors_rx(int llid, int tid, int type, int val, 
+                        int len, char *buf)
 {
   char nat_name[MAX_NAME_LEN];
   (void) llid;
@@ -71,9 +72,9 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
     {
     if ((val == doors_val_init_link_ok) || (val == doors_val_init_link_ko))
       {
-      if (sscanf(buf,"OK OPENSSH_CLI_DOORS_RESP nat=%s", nat_name) == 1)
+      if (sscanf(buf,"OPENSSH_DOORWAYS_RESP nat=%s", nat_name) == 1)
         {
-        fprintf(stderr, "TODO\n");
+        fprintf(stderr, "TODO %s\n", nat_name);
         }
       else
         {
@@ -95,7 +96,7 @@ void cb_doors_rx(int llid, int tid, int type, int val, int len, char *buf)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void cb_doors_end(int llid)
+static void cb_doors_end(int llid)
 {
   (void) llid;
   fprintf(stderr, "\n%s\n", __FILE__);
@@ -109,7 +110,7 @@ static int callback_connect(void *ptr, int llid, int fd)
   (void) ptr;
   if (g_door_llid == 0)
     {
-    g_door_llid = doorways_sock_client_inet_end(doors_type_dbssh, llid, fd,
+    g_door_llid = doorways_sock_client_inet_end(doors_type_openssh, llid, fd,
                                                 g_cloonix_passwd,
                                                 cb_doors_end, cb_doors_rx);
     if (!g_door_llid)
@@ -118,8 +119,8 @@ static int callback_connect(void *ptr, int llid, int fd)
       exit(1);
       }
     memset(buf, 0, 2*MAX_NAME_LEN);
-    snprintf(buf, 2*MAX_NAME_LEN - 1, "OPENSSH_CLI_DOORS_REQ nat=%s", "nat");
-    if (doorways_tx(g_door_llid, 0, doors_type_dbssh,
+    snprintf(buf, 2*MAX_NAME_LEN - 1, "OPENSSH_DOORWAYS_REQ nat=%s", "nat");
+    if (doorways_tx(g_door_llid, 0, doors_type_openssh,
                     doors_val_init_link, strlen(buf)+1, buf))
       {
       fprintf(stderr, "ERROR INIT SEQ:\n%d, %s\n\n", (int) strlen(buf), buf);
@@ -133,7 +134,7 @@ static int callback_connect(void *ptr, int llid, int fd)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int cloonix_connect_remote(char *cloonix_doors)
+static int cloonix_connect_remote(char *cloonix_doors)
 {
   int ip, port;
   if (get_ip_port_from_path(cloonix_doors, &ip, &port) == -1)
@@ -151,8 +152,6 @@ int cloonix_connect_remote(char *cloonix_doors)
   return 0;
 }
 /*--------------------------------------------------------------------------*/
-
-
 
 /****************************************************************************/
 void doorways_init(char *cloonix_doors, char *cloonix_passwd)

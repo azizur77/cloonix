@@ -1,6 +1,6 @@
 diff -Naur openssh-7.5p1/Makefile.in tainted_openssh/Makefile.in
 --- openssh-7.5p1/Makefile.in	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/Makefile.in	2017-07-03 00:58:30.278219326 +0200
++++ tainted_openssh/Makefile.in	2017-07-04 10:39:44.345768731 +0200
 @@ -43,7 +43,7 @@
  CC=@CC@
  LD=@LD@
@@ -26,7 +26,7 @@ diff -Naur openssh-7.5p1/Makefile.in tainted_openssh/Makefile.in
  	ssh_api.o \
 diff -Naur openssh-7.5p1/misc.c tainted_openssh/misc.c
 --- openssh-7.5p1/misc.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/misc.c	2017-07-03 00:57:57.894066424 +0200
++++ tainted_openssh/misc.c	2017-07-04 10:39:44.345768731 +0200
 @@ -436,23 +436,16 @@
  char *
  colon(char *cp)
@@ -61,7 +61,7 @@ diff -Naur openssh-7.5p1/misc.c tainted_openssh/misc.c
  
 diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
 --- openssh-7.5p1/scp.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/scp.c	2017-07-03 00:57:57.894066424 +0200
++++ tainted_openssh/scp.c	2017-07-04 10:39:44.345768731 +0200
 @@ -115,6 +115,7 @@
  #include "misc.h"
  #include "progressmeter.h"
@@ -70,7 +70,23 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
  extern char *__progname;
  
-@@ -365,7 +366,24 @@
+@@ -179,6 +180,7 @@
+ 	}
+ }
+ 
++/*
+ static int
+ do_local_cmd(arglist *a)
+ {
+@@ -220,6 +222,7 @@
+ 
+ 	return (0);
+ }
++*/
+ 
+ /*
+  * This function executes the given command as the specified user on the
+@@ -365,7 +368,24 @@
  void source(int, char *[]);
  void tolocal(int, char *[]);
  void toremote(char *, int, char *[]);
@@ -96,7 +112,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
  int
  main(int argc, char **argv)
-@@ -375,6 +393,9 @@
+@@ -375,6 +395,9 @@
  	const char *errstr;
  	extern char *optarg;
  	extern int optind;
@@ -106,7 +122,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
  	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
  	sanitise_stdfd();
-@@ -436,7 +457,7 @@
+@@ -436,7 +459,7 @@
  			limit_kbps = strtonum(optarg, 1, 100 * 1024 * 1024,
  			    &errstr);
  			if (errstr != NULL)
@@ -115,7 +131,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  			limit_kbps *= 1024; /* kbps */
  			bandwidth_limit_init(&bwlimit, limit_kbps, COPY_BUFLEN);
  			break;
-@@ -447,7 +468,6 @@
+@@ -447,7 +470,6 @@
  			iamrecursive = 1;
  			break;
  		case 'S':
@@ -123,7 +139,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  			break;
  		case 'v':
  			addargs(&args, "-v");
-@@ -476,7 +496,7 @@
+@@ -476,7 +498,7 @@
  #endif
  			break;
  		default:
@@ -132,7 +148,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  		}
  	argc -= optind;
  	argv += optind;
-@@ -512,7 +532,7 @@
+@@ -512,7 +534,7 @@
  		exit(errs != 0);
  	}
  	if (argc < 2)
@@ -141,7 +157,19 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  	if (argc > 2)
  		targetshouldbedirectory = 1;
  
-@@ -598,16 +618,10 @@
+@@ -585,10 +607,9 @@
+ void
+ toremote(char *targ, int argc, char **argv)
+ {
+-	char *bp, *host, *src, *suser, *thost, *tuser, *arg;
++	char *bp, *src, *thost, *tuser, *arg;
+ 	arglist alist;
+ 	int i;
+-	u_int j;
+ 
+ 	memset(&alist, '\0', sizeof(alist));
+ 	alist.list = NULL;
+@@ -598,16 +619,10 @@
  		targ = ".";
  
  	arg = xstrdup(argv[argc - 1]);
@@ -162,7 +190,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
  	if (tuser != NULL && !okname(tuser)) {
  		free(arg);
-@@ -616,80 +630,14 @@
+@@ -616,80 +631,14 @@
  
  	for (i = 0; i < argc - 1; i++) {
  		src = colon(argv[i]);
@@ -248,7 +276,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  				    &remout) < 0)
  					exit(1);
  				if (response() < 0)
-@@ -713,33 +661,16 @@
+@@ -713,33 +662,16 @@
  	alist.list = NULL;
  
  	for (i = 0; i < argc - 1; i++) {
@@ -288,7 +316,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  		xasprintf(&bp, "%s -f %s%s",
  		    cmd, *src == '-' ? "-- " : "", src);
  		if (do_cmd(host, suser, bp, &remin, &remout) < 0) {
-@@ -1253,12 +1184,12 @@
+@@ -1253,12 +1185,12 @@
  }
  
  void
@@ -306,7 +334,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
 diff -Naur openssh-7.5p1/ssh.c tainted_openssh/ssh.c
 --- openssh-7.5p1/ssh.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/ssh.c	2017-07-03 00:57:57.898066444 +0200
++++ tainted_openssh/ssh.c	2017-07-04 10:39:44.345768731 +0200
 @@ -115,6 +115,7 @@
  #include "ssh-pkcs11.h"
  #endif
@@ -436,7 +464,7 @@ diff -Naur openssh-7.5p1/ssh.c tainted_openssh/ssh.c
  		verbose("Authenticated to %s ([%s]:%d).", host,
 diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
 --- openssh-7.5p1/sshconnect.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/sshconnect.c	2017-07-03 00:57:57.898066444 +0200
++++ tainted_openssh/sshconnect.c	2017-07-04 10:40:02.513794231 +0200
 @@ -41,6 +41,11 @@
  #include <string.h>
  #include <unistd.h>
@@ -449,10 +477,36 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  #include "xmalloc.h"
  #include "key.h"
  #include "hostfile.h"
-@@ -502,38 +507,84 @@
+@@ -82,6 +87,7 @@
+ static int show_other_keys(struct hostkeys *, Key *);
+ static void warn_changed_key(Key *);
+ 
++#if 0 //cloonix
+ /* Expand a proxy command */
+ static char *
+ expand_proxy_command(const char *proxy_command, const char *user,
+@@ -254,6 +260,7 @@
+ 	/* Indicate OK return */
  	return 0;
  }
++#endif //cloonix
  
+ void
+ ssh_kill_proxy_command(void)
+@@ -266,6 +273,7 @@
+ 		kill(proxy_command_pid, SIGHUP);
+ }
+ 
++#if 0 //cloonix
+ /*
+  * Creates a (possibly privileged) socket for use as the ssh connection.
+  */
+@@ -501,39 +509,86 @@
+ 
+ 	return 0;
+ }
++#endif //cloonix
++
 +
 +//CLOONIX
 +/*****************************************************************************/
@@ -468,7 +522,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
 +  return result;
 +}
 +/*---------------------------------------------------------------------------*/
-+
+ 
 +/*****************************************************************************/
  int
 -ssh_connect(const char *host, struct addrinfo *addrs,
@@ -551,7 +605,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  	chop(client_version_string);
  	debug("Local version string %.100s", client_version_string);
  }
-@@ -543,7 +594,7 @@
+@@ -543,7 +598,7 @@
   * identification string.
   */
  void
@@ -560,7 +614,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  {
  	char buf[256], remote_version[256];	/* must be same size! */
  	int remote_major, remote_minor, mismatch;
-@@ -565,7 +616,7 @@
+@@ -565,7 +620,7 @@
  	 */
  	if (options.protocol == SSH_PROTO_2) {
  		enable_compat20();
@@ -569,7 +623,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  		client_banner_sent = 1;
  	}
  
-@@ -678,7 +729,7 @@
+@@ -678,7 +733,7 @@
  		logit("Server version \"%.100s\" uses unsafe RSA signature "
  		    "scheme; disabling use of RSA keys", remote_version);
  	if (!client_banner_sent)
@@ -578,7 +632,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  	chop(server_version_string);
  }
  
-@@ -1242,6 +1293,7 @@
+@@ -1242,6 +1297,7 @@
  	int r = -1, flags = 0;
  	char valid[64], *fp = NULL, *cafp = NULL;
  	struct sshkey *plain = NULL;
@@ -586,7 +640,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  
  	if ((fp = sshkey_fingerprint(host_key,
  	    options.fingerprint_hash, SSH_FP_DEFAULT)) == NULL) {
-@@ -1356,8 +1408,9 @@
+@@ -1356,8 +1412,9 @@
   * This function does not require super-user privileges.
   */
  void
@@ -598,7 +652,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  {
  	char *host;
  	char *server_user, *local_user;
-@@ -1370,7 +1423,7 @@
+@@ -1370,7 +1427,7 @@
  	lowercase(host);
  
  	/* Exchange protocol version identification strings with the server. */
@@ -609,7 +663,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  	packet_set_nonblocking();
 diff -Naur openssh-7.5p1/sshconnect.h tainted_openssh/sshconnect.h
 --- openssh-7.5p1/sshconnect.h	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/sshconnect.h	2017-07-03 00:57:57.898066444 +0200
++++ tainted_openssh/sshconnect.h	2017-07-04 10:39:44.349768737 +0200
 @@ -32,14 +32,14 @@
  };
  

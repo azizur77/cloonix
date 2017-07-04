@@ -65,7 +65,7 @@ static void shift_right_2_char(char *str)
   char *ptr_src = str+strlen(str)-1;
   if (strlen(str) < 1)
     {
-    fprintf(stderr, "FATAL %s", __FUNCTION__);
+    fprintf(stderr, "FATAL %s\n", __FUNCTION__);
     exit(255);
     }
   *(ptr_dst+1) = 0;
@@ -90,13 +90,13 @@ char *get_full_bin_path(char *input_callbin)
   strncpy(callbin, input_callbin, MAX_PATH_LEN-1);
   if (!getcwd(path, MAX_PATH_LEN-1))
     {
-    fprintf(stderr, "FATAL getcwd %s", input_callbin);
+    fprintf(stderr, "FATAL getcwd %s\n", input_callbin);
     exit(255);
     }
   ptr = strrchr(callbin, '/');
   if (!ptr)
     {
-    fprintf(stderr, "FATAL get_full_bin_path %s", input_callbin);
+    fprintf(stderr, "FATAL get_full_bin_path %s\n", input_callbin);
     exit(255);
     }
   else
@@ -107,7 +107,7 @@ char *get_full_bin_path(char *input_callbin)
       ptr = strrchr(path, '/');
       if (!ptr)
         {
-        fprintf(stderr, "FATAL %s %s", callbin, path);
+        fprintf(stderr, "FATAL %s %s\n", callbin, path);
         exit(255);
         }
       *ptr = 0;
@@ -123,7 +123,7 @@ char *get_full_bin_path(char *input_callbin)
       {
       if (callbin[1] != '/')
         {
-        fprintf(stderr, "FATAL %s not managed", callbin);
+        fprintf(stderr, "FATAL %s not managed\n", callbin);
         exit(255);
         }
       len = strlen(path);
@@ -135,7 +135,7 @@ char *get_full_bin_path(char *input_callbin)
       }
     else
       {
-      fprintf(stderr, "FATAL %s not managed", callbin);
+      fprintf(stderr, "FATAL %s not managed\n", callbin);
       exit(255);
       }
     }
@@ -150,7 +150,7 @@ int get_ip_port_from_path(char *param, int *ip, int *port)
   int result = -1;
   char *ptr_ip, *ptr_port;
   if (strlen(param) >= MAX_PATH_LEN)
-    fprintf(stderr, "param LENGTH Problem");
+    fprintf(stderr, "param LENGTH Problem\n");
   else
     {
     memset(pm, 0, MAX_PATH_LEN);
@@ -162,14 +162,14 @@ int get_ip_port_from_path(char *param, int *ip, int *port)
       *ptr_port = 0;
       ptr_port++;
       if (ip_string_to_int (ip, ptr_ip))
-        fprintf(stderr, "IP param Problem %s", param);
+        fprintf(stderr, "IP param Problem %s\n", param);
       else if (tst_port(ptr_port, port))
-        fprintf(stderr, "PORT param Problem %s", param);
+        fprintf(stderr, "PORT param Problem %s\n", param);
       else
         result = 0;
       }
     else
-      fprintf(stderr, "Bad address: %s", param);
+      fprintf(stderr, "Bad address: %s\n", param);
     }
   return result;
 }

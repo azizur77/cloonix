@@ -15,16 +15,46 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-char *get_g_buf(void);
-void dispach_err_switch (int llid, int err);
-void dispach_rx_switch(int llid, int len, char *buf);
-void dispach_door_llid(int llid);
-void dispach_door_end(int llid);
-void dispach_door_rx(int llid, int tid, int type, int val,int len,char *buf);
-int  dispach_send_to_traf_client(int llid, int val, int len, char *buf);
-int dispach_send_to_openssh_client(int dido_llid, int val, int len, char *buf);
-void in_rx_c2c(int inside_llid, int idx, int len, char *buf);
-void in_err_gene(void *ptr, int inside_llid, int err, int from);
-void dispach_init(void);
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include "lib_doorways.h"
+
+
+/*****************************************************************************/
+static void usage(char *name)
+{
+  printf("%s\n", name);
+  printf("?\n");
+  exit (0);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+int main (int argc, char *argv[])
+{
+  int ip, port;
+  char *full_bin = get_full_bin_path(argv[0]);
+  if (argc != 3)
+    {
+    fprintf(stderr, "Bad param number: %d\n", argc);
+    usage(argv[0]);
+    }
+  if (get_ip_port_from_path(argv[1], &ip, &port))
+    {
+    fprintf(stderr, "Bad doorways address: %s\n", argv[1]);
+    usage(argv[0]);
+    }
+  fprintf(stdout, "Full path: %s\n", full_bin);
+  doorways_init(argv[1], argv[2]);
+  doorways_loop();
+  return 0;
+}
 /*--------------------------------------------------------------------------*/
+
 

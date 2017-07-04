@@ -24,6 +24,7 @@
 #include "util_sock.h"
 #include "doorways_sock.h"
 #include "llid_traffic.h"
+#include "openssh_traf.h"
 #include "llid_x11.h"
 #include "c2c.h"
 
@@ -343,6 +344,17 @@ static void dispach_door_rx_spice(int dido_llid, int val, int len, char *buf)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void dispach_door_rx_openssh(int dido_llid, int val, int len, char *buf)
+{
+  t_transfert *olt;
+  olt = get_dido_transfert(dido_llid);
+  if (!olt)
+    alloc_transfert(dido_llid, 0, doors_type_openssh);
+  openssh_rx_from_client(dido_llid, len, buf);
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void dispach_door_rx_dbssh(int dido_llid, int val, int len, char *buf)
 {
   t_transfert *olt;
@@ -386,6 +398,10 @@ void dispach_door_rx(int dido_llid, int tid, int type, int val,
       c2c_server_dispach_rx_init(dido_llid, val, len, buf);
       break;
 
+    case doors_type_openssh:
+      dispach_door_rx_openssh(dido_llid, val, len, buf);
+      break;
+
     default:
       KOUT("%d", dido_llid);
     }
@@ -404,6 +420,20 @@ int dispach_send_to_traf_client(int dido_llid, int val, int len, char *buf)
   return result;
 }
 /*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int dispach_send_to_openssh_client(int dido_llid, int val, int len, char *buf)
+{
+  int result = -1;
+  if (msg_exist_channel(dido_llid))
+    {
+    doorways_tx(dido_llid, 0, doors_type_openssh, val, len, buf);
+    result = 0;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 static void timer_heartbeat(void *data)

@@ -2,7 +2,6 @@
 HERE=`pwd`
 ./all_clean
 
-export CFLAGS=-DNO_HMAC_CIPHER
 cd ${HERE}/../../common/lib_blkd
 make clean
 make
@@ -31,8 +30,7 @@ else
 fi
 cd tainted_openssh
 ./configure
-# --with-openssl=no
-make OPENSSL=no
+make
 mv ssh cloonix_u2i_ssh
 mv scp cloonix_u2i_scp
 mv cloonix_u2i_ssh $HERE
