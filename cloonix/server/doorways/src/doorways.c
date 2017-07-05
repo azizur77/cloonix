@@ -48,11 +48,11 @@ static int g_server_inet_port;
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *get_tux_with_name(char *tux)
+char *get_u2i_nat_path_with_name(char *nat)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1, "%s/tux/%s", g_root_work, tux);
+  snprintf(path, MAX_PATH_LEN-1, "%s/endp/%s_0_u2i", g_root_work, nat);
   return path;
 }
 /*--------------------------------------------------------------------------*/

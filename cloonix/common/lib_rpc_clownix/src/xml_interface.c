@@ -809,18 +809,23 @@ static int topo_kvm_format(char *buf, t_topo_kvm *ikvm)
 static int topo_c2c_format(char *buf, t_topo_c2c *c2c)
 {
   int len;
+  char master[MAX_NAME_LEN];
+  char slave[MAX_NAME_LEN];
   if ((!c2c->name) || (!c2c->master_cloonix) || (!c2c->slave_cloonix))
     KOUT("%p %p %p", c2c->name, c2c->master_cloonix, c2c->slave_cloonix);
-  if ((!strlen(c2c->name)) ||
-      (!strlen(c2c->master_cloonix)) ||
-      (!strlen(c2c->slave_cloonix)))
-    KOUT("%d %d %d", (int)strlen(c2c->name),
-                     (int)strlen(c2c->master_cloonix),
-                     (int)strlen(c2c->slave_cloonix));
+  if (!strlen(c2c->name))
+     KOUT(" ");
+  memset(master, 0, MAX_NAME_LEN);
+  memset(slave, 0, MAX_NAME_LEN);
+  strncpy(master, c2c->master_cloonix, MAX_NAME_LEN-1);
+  strncpy(slave, c2c->slave_cloonix, MAX_NAME_LEN-1);
+  if (strlen(master) == 0)
+    strcpy(master, "undefined_xname");
+  if (strlen(slave) == 0)
+    strcpy(slave, "undefined_xname");
 
   len = sprintf(buf, EVENT_TOPO_C2C, c2c->name,
-                                     c2c->master_cloonix,
-                                     c2c->slave_cloonix,
+                                     master, slave,
                                      c2c->local_is_master,
                                      c2c->is_peered,
                                      c2c->ip_slave,
@@ -1514,6 +1519,10 @@ static void helper_fill_topo_c2c(char *msg, t_topo_c2c *c2c)
                                   &(c2c->ip_slave),
                                   &(c2c->port_slave)) != 7) 
     KOUT("%s", msg);
+  if (!strcmp(c2c->master_cloonix, "undefined_xname"))
+    memset(c2c->master_cloonix, 0, MAX_NAME_LEN);
+  if (!strcmp(c2c->slave_cloonix, "undefined_xname"))
+    memset(c2c->slave_cloonix, 0, MAX_NAME_LEN);
 }
 /*---------------------------------------------------------------------------*/
 

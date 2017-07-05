@@ -996,7 +996,7 @@ static void plug_to_backdoor_llid(t_backdoor_vm *bvm)
   char nousebuf[MAX_PATH_LEN];
   int fd, llid, len;
   fd = sock_nonblock_client_unix(bvm->backdoor);
-  if (fd > 0)
+  if (fd >= 0)
     {
     do
       {

@@ -68,6 +68,17 @@ static t_transfert *get_inside_transfert(int inside_llid)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+int dispatch_get_dido_llid_with_inside_llid(int inside_llid)
+{
+  int result = 0;
+  t_transfert *t = get_inside_transfert(inside_llid);
+  if (t)
+    result = t->dido_llid;
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void alloc_transfert(int dido_llid, int inside_llid, int type)
 {
   t_transfert *olt, *ilt;
@@ -347,10 +358,21 @@ static void dispach_door_rx_spice(int dido_llid, int val, int len, char *buf)
 static void dispach_door_rx_openssh(int dido_llid, int val, int len, char *buf)
 {
   t_transfert *olt;
+  int inside_llid;
   olt = get_dido_transfert(dido_llid);
   if (!olt)
-    alloc_transfert(dido_llid, 0, doors_type_openssh);
-  openssh_rx_from_client(dido_llid, len, buf);
+    {
+    inside_llid = openssh_rx_from_client_init(dido_llid, len, buf);
+    if (inside_llid > 0)
+      alloc_transfert(dido_llid, inside_llid, doors_type_openssh);
+    }
+  else
+    {
+    if (!msg_exist_channel(olt->inside_llid))
+      free_transfert(olt->dido_llid, olt->inside_llid);
+    else
+      openssh_tx_to_nat(olt->inside_llid, len, buf);
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -433,7 +455,6 @@ int dispach_send_to_openssh_client(int dido_llid, int val, int len, char *buf)
   return result;
 }
 /*--------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 static void timer_heartbeat(void *data)

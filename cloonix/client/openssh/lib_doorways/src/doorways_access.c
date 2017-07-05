@@ -27,19 +27,32 @@
 #include "lib_doorways.h"
 
 
-static int g_door_llid;
-static int g_connect_llid;
+static int  g_door_llid;
+static int  g_connect_llid;
 static char g_cloonix_passwd[MSG_DIGEST_LEN+1];
 static char g_cloonix_doors[MAX_PATH_LEN];
+static char g_address_in_vm[MAX_PATH_LEN];
+static t_beat_time g_beat;
+static t_rx_cb g_rx_cb;
 
 
 /*****************************************************************************/
 static void heartbeat(int delta)
 {
+  static int beat_count = 0;
   static int count = 0;
   (void) delta;
+  if (g_door_llid)
+    {
+    beat_count++;
+    if (beat_count == 100)
+      {
+      g_beat();
+      beat_count = 0;
+      }
+    }
   count++;
-  if (count == 500)
+  if (count == 300)
     {
     if (!g_door_llid)
       {
@@ -53,19 +66,11 @@ static void heartbeat(int delta)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void cb_doors_rx_nominal(int len, char *buf)
-{
-(void) len;
-(void) buf;
-fprintf(stderr, "\nTODO\n");
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 static void cb_doors_rx(int llid, int tid, int type, int val, 
                         int len, char *buf)
 {
   char nat_name[MAX_NAME_LEN];
+  char *nat_msg = g_address_in_vm;
   (void) llid;
   (void) tid;
   if (type == doors_type_openssh)
@@ -74,7 +79,12 @@ static void cb_doors_rx(int llid, int tid, int type, int val,
       {
       if (sscanf(buf,"OPENSSH_DOORWAYS_RESP nat=%s", nat_name) == 1)
         {
-        fprintf(stderr, "TODO %s\n", nat_name);
+        if (doorways_tx(g_door_llid, 0, doors_type_openssh,
+                        doors_val_none, strlen(nat_msg)+1, nat_msg))
+          {
+          fprintf(stderr, "ERROR TALKING TO NAT:\n%s\n\n", nat_msg);
+          exit(1);
+          }
         }
       else
         {
@@ -84,7 +94,7 @@ static void cb_doors_rx(int llid, int tid, int type, int val,
       }
     else if (val == doors_val_none)
       {
-      cb_doors_rx_nominal(len, buf);
+      g_rx_cb(len, buf);
       }
     }
   else
@@ -98,8 +108,9 @@ static void cb_doors_rx(int llid, int tid, int type, int val,
 /*****************************************************************************/
 static void cb_doors_end(int llid)
 {
-  (void) llid;
-  fprintf(stderr, "\n%s\n", __FILE__);
+  if (msg_exist_channel(llid))
+    msg_delete_channel(llid);
+  fprintf(stderr, "\nDoorways llid brocken by peer\n");
 }
 /*---------------------------------------------------------------------------*/
 
@@ -116,6 +127,11 @@ static int callback_connect(void *ptr, int llid, int fd)
     if (!g_door_llid)
       {
       fprintf(stderr, "\nConnect not possible: %s\n\n", g_cloonix_doors);
+      exit(1);
+      }
+    if (!msg_exist_channel(g_door_llid))
+      {
+      fprintf(stderr, "\nBad doors llid: %s\n\n", g_cloonix_doors);
       exit(1);
       }
     memset(buf, 0, 2*MAX_NAME_LEN);
@@ -154,10 +170,30 @@ static int cloonix_connect_remote(char *cloonix_doors)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void doorways_init(char *cloonix_doors, char *cloonix_passwd)
+void doorways_access_tx(int len, char *buf)
 {
+  if (!msg_exist_channel(g_door_llid))
+    {
+    fprintf(stderr, "ERROR TX, llid dead\n%d\n", len);
+    exit(1);
+    }
+  if (doorways_tx(g_door_llid,0,doors_type_openssh,doors_val_none,len,buf))
+    {
+    fprintf(stderr, "ERROR TX, bad tx:\n%d\n", len);
+    exit(1);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void doorways_access_init(char *cloonix_doors, char *cloonix_passwd,
+                          char *address_in_vm, t_beat_time beat, t_rx_cb rx_cb)
+{
+  g_beat = beat;
+  g_rx_cb = rx_cb;
   memset(g_cloonix_passwd, 0, MSG_DIGEST_LEN+1);
   memset(g_cloonix_doors, 0, MAX_PATH_LEN);
+  memset(g_address_in_vm, 0, MAX_PATH_LEN);
   strncpy(g_cloonix_passwd, cloonix_passwd, MSG_DIGEST_LEN); 
   strncpy(g_cloonix_doors, cloonix_doors, MAX_PATH_LEN);
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
@@ -173,7 +209,7 @@ void doorways_init(char *cloonix_doors, char *cloonix_passwd)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void doorways_loop(void)
+void doorways_access_loop(void)
 {
   msg_mngt_loop();
 }

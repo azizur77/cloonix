@@ -21,30 +21,10 @@
 #include <string.h>
 #include "io_clownix.h"
 #include "dispach.h"
+#include "sock.h"
 
+char *get_u2i_nat_path_with_name(char *nat);
 
-
-#define MAX_RESP_LEN 500
-
-typedef struct t_timer_resp
-{
-  int dido_llid;
-  char buf[MAX_RESP_LEN];
-} t_timer_resp;
-
-
-/****************************************************************************/
-static void fill_200_char_resp(char *buf, char *nat)
-{
-  char empyness[MAX_RESP_LEN];
-  memset(buf, 0, MAX_RESP_LEN);
-  memset(empyness, ' ', MAX_RESP_LEN);
-  snprintf(buf, 200, "OPENSSH_DOORWAYS_RESP nat=%s %s", nat, empyness);
-  buf[200] = 0;
-  if (strlen(buf) != 199)
-    KOUT("%d ", (int) strlen(buf));
-}
-/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void send_to_openssh_client(int dido_llid, int val, int len, char *buf)
@@ -62,40 +42,102 @@ static void send_to_openssh_client(int dido_llid, int val, int len, char *buf)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void timer_auto(void *data)
+void openssh_tx_to_nat(int inside_llid, int len, char *buf)
 {
-  t_timer_resp *resp = (t_timer_resp *) data;
-  send_to_openssh_client(resp->dido_llid, doors_val_init_link_ok, 
-                         strlen(resp->buf) + 1, resp->buf);
+  watch_tx(inside_llid, len, buf);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void arm_auto_timer_with_resp(int dido_llid, char *nat)
+static int nat_rx_cb(void *ptr, int llid, int fd)
 {
-  t_timer_resp *resp;
-  resp = (t_timer_resp *) clownix_malloc(sizeof(t_timer_resp), 10);
-  memset(resp, 0, sizeof(t_timer_resp));
-  resp->dido_llid = dido_llid;
-  fill_200_char_resp(resp->buf, nat);
-  clownix_timeout_add(100, timer_auto, (void *) resp, NULL, NULL);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void openssh_rx_from_client(int dido_llid, int len, char *buf_rx)
-{
-  char nat[MAX_NAME_LEN];
-
-  if (sscanf(buf_rx, "OPENSSH_DOORWAYS_REQ nat=%s", nat) == 1)
+  int len;
+  char *buf = get_g_buf();
+  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid);
+  if (dido_llid > 0)
     {
-    arm_auto_timer_with_resp(dido_llid, nat);
+    len = read (fd, buf, MAX_DOORWAYS_BUF_LEN);
+    if (len > 0)
+      send_to_openssh_client(dido_llid, doors_val_none, len, buf);
+    else
+      {
+      KERR("%d %d", dido_llid, llid);
+      dispach_door_end(dido_llid);
+      if (msg_exist_channel(llid))
+        msg_delete_channel(llid);
+      }
     }
   else
     {
-    send_to_openssh_client(dido_llid, doors_val_init_link_ko,
-                           strlen("KO") + 1, "KO");
+    KERR("%d %d", dido_llid, llid);
+    if (msg_exist_channel(llid))
+      msg_delete_channel(llid);
     }
+  return len;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void nat_err_cb (void *ptr, int llid, int err, int from)
+{
+  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid);
+  KERR("%d %d %d %d", dido_llid, llid, err, from);
+  if (dido_llid)
+    dispach_door_end(dido_llid);
+  if (msg_exist_channel(llid))
+    msg_delete_channel(llid);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static int plug_to_nat_llid(char *unix_sock)
+{
+  char nousebuf[MAX_PATH_LEN];
+  int fd, llid, len, result = -1;
+  fd = sock_nonblock_client_unix(unix_sock);
+  if (fd >= 0)
+    {
+    do
+      {
+      len = read(fd, nousebuf, MAX_PATH_LEN);
+      if (len && (len != -1))
+        KERR("%d", len);
+      }
+    while (len > 0);
+    llid = msg_watch_fd(fd, nat_rx_cb, nat_err_cb, "cloon");
+    if (llid == 0)
+      KOUT(" ");
+    result = llid;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+int openssh_rx_from_client_init(int dido_llid, int len, char *buf_rx)
+{
+  char *unix_sock;
+  char nat[MAX_NAME_LEN];
+  char resp[MAX_PATH_LEN];
+  int llid, result = -1;
+  memset(resp, 0, MAX_PATH_LEN);
+  if (sscanf(buf_rx, "OPENSSH_DOORWAYS_REQ nat=%s", nat) == 1)
+    {
+    unix_sock = get_u2i_nat_path_with_name(nat);
+    llid = plug_to_nat_llid(unix_sock);
+    if (llid > 0)
+      {
+      snprintf(resp, MAX_PATH_LEN-1, "OPENSSH_DOORWAYS_RESP nat=%s", nat);
+      result = llid;
+      }
+    else
+      snprintf(resp, MAX_PATH_LEN-1, "KOCONN %s", unix_sock); 
+    }
+  else
+    snprintf(resp, MAX_PATH_LEN-1, "KOSCAN"); 
+  send_to_openssh_client(dido_llid, doors_val_init_link_ko, 
+                         strlen(resp) + 1, resp);
+  return result;
 }
 /*--------------------------------------------------------------------------*/
 

@@ -1185,8 +1185,7 @@ void recv_topo_small_event_unsub(int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void local_add_sat(int llid, int tid, char *name, int type, 
-                          t_c2c_req_info *c2c_info)
+void local_add_sat(int llid, int tid, char *name, int type, t_c2c_req_info *c2c_info)
 {
   char info[MAX_PATH_LEN];
   char recpath[MAX_PATH_LEN];

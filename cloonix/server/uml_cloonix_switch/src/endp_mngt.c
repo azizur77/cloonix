@@ -48,12 +48,16 @@
 void uml_clownix_switch_error_cb(void *ptr, int llid, int err, int from);
 void uml_clownix_switch_rx_cb(int llid, int len, char *buf);
 void murpc_dispatch_send_tx_flow_control(int llid, int rank, int stop);
+void local_add_sat(int llid, int tid, char *name, int type, 
+                   t_c2c_req_info *c2c_info);
+
 
 /****************************************************************************/
 typedef struct t_time_delay
 {
   char name[MAX_NAME_LEN];
   int num;
+  t_c2c_req_info c2c_info;
 } t_time_delay;
 /*--------------------------------------------------------------------------*/
 
@@ -91,6 +95,7 @@ typedef struct t_priv_endp
   int doors_fd_value;
   int muendp_stop_done;
   int trace_alloc_count;
+  char c2c_passwd_slave[MSG_DIGEST_LEN];
   t_topo_c2c c2c;
   t_topo_snf snf;
   t_lan_attached lan_attached[MAX_TRAF_ENDPOINT];
@@ -130,8 +135,6 @@ static int try_send_endp(t_priv_endp *mu, char *msg)
       rpct_send_diag_msg(NULL, mu->llid, mu->pid, msg);
       result = 0;
       }
-    else
-      KERR("%s", mu->name);
     }
   return result;
 }
@@ -439,7 +442,9 @@ void endp_mngt_snf_set_recpath(char *name, int num, char *recpath)
 
 /****************************************************************************/
 void endp_mngt_c2c_info(char *name, int num, int local_is_master, 
-                       char *master, char *slave, int ip, int port)
+                        char *master, char *slave, int ip, int port,
+                        char *slave_passwd)
+
 {
   t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
@@ -453,9 +458,11 @@ void endp_mngt_c2c_info(char *name, int num, int local_is_master,
       strncpy(mu->c2c.name, name, MAX_NAME_LEN-1);
       strncpy(mu->c2c.master_cloonix, master, MAX_NAME_LEN-1);
       strncpy(mu->c2c.slave_cloonix, slave, MAX_NAME_LEN-1);
+      memcpy(mu->c2c_passwd_slave, slave_passwd, MSG_DIGEST_LEN);
       mu->c2c.local_is_master = local_is_master;
       mu->c2c.ip_slave = ip;
       mu->c2c.port_slave = port;
+      event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
       }
     }
 }
@@ -569,6 +576,52 @@ static void muendp_free(char *name, int num)
     }
 }
 /*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void timer_c2c_restart(void *data)
+{
+  t_time_delay *td = (t_time_delay *) data;
+  local_add_sat(0, 0, td->name, endp_type_c2c, &(td->c2c_info));
+  clownix_free(data, __FUNCTION__);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void arm_restart_c2c(char *name, int num, t_c2c_req_info *c2c_info)
+{
+  t_time_delay *td;
+  td = (t_time_delay *) clownix_malloc(sizeof(t_time_delay), 4);
+  memset(td, 0, sizeof(t_time_delay));
+  strncpy(td->name, name, MAX_NAME_LEN-1);
+  td->num = num;
+  memcpy(&td->c2c_info, c2c_info, sizeof(t_c2c_req_info));
+  clownix_timeout_add(200, timer_c2c_restart, (void *)td, NULL, NULL);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void endp_mngt_c2c_disconnect(char *name, int num)
+{
+  char savname[MAX_NAME_LEN];
+  t_c2c_req_info c2c_info;
+  t_priv_endp *mu = muendp_find_with_name(name, num);
+  memset(savname, 0, MAX_NAME_LEN); 
+  memset(&c2c_info, 0, sizeof(t_c2c_req_info));
+  if (!mu)
+    KERR("%s", name);
+  else
+    {
+    strncpy(savname, name, MAX_NAME_LEN-1);
+    strncpy(c2c_info.cloonix_slave, mu->c2c.slave_cloonix, MAX_NAME_LEN-1);
+    memcpy(c2c_info.passwd_slave, mu->c2c_passwd_slave, MSG_DIGEST_LEN);
+    c2c_info.ip_slave = mu->c2c.ip_slave;
+    c2c_info.port_slave = mu->c2c.port_slave;
+    endp_evt_quick_death(savname, num);
+    muendp_free(savname, num);
+    arm_restart_c2c(savname, num, &c2c_info);
+    }
+}
+/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid)

@@ -728,7 +728,7 @@ t_topo_info *cfg_produce_topo_info(void)
     {
     if (!cur)
       KOUT("%d %d", nb_endp, i);
-    if ((cur->num == 0) && (cur->pid != 0))
+    if (cur->num == 0)
       {
       switch (cur->endp_type)
         {
@@ -744,7 +744,7 @@ t_topo_info *cfg_produce_topo_info(void)
           break;
 
         case endp_type_snf:
-          if (cur->snf.name[0])
+          if ((cur->snf.name[0]) && (cur->pid != 0))
             { 
             if (i_snf == topo->nb_snf)
               KOUT(" ");
@@ -758,10 +758,13 @@ t_topo_info *cfg_produce_topo_info(void)
         case endp_type_raw:
         case endp_type_a2b:
         case endp_type_nat:
-          if (i_sat == topo->nb_sat)
-            KOUT(" ");
-          fill_topo_sat(&(topo->sat[i_sat]), cur);
-          i_sat += 1;
+          if (cur->pid != 0)
+            {
+            if (i_sat == topo->nb_sat)
+              KOUT(" ");
+            fill_topo_sat(&(topo->sat[i_sat]), cur);
+            i_sat += 1;
+            }
           break;
 
         case endp_type_kvm:

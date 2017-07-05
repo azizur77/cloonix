@@ -28,19 +28,33 @@
 /*****************************************************************************/
 static void usage(char *name)
 {
-  printf("%s\n", name);
-  printf("?\n");
+  printf("\n%s 127.0.0.1:43211 nemoclown user=cisco=ip=172.17.0.11=port=23456=cloonix_info_end\n\n", name);
   exit (0);
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+void beat_time(void)
+{
+  static int cur_sec = 0;
+  char str[100];
+  sprintf(str, "CliBeat: %d", cur_sec++);
+  doorways_access_tx(strlen(str) + 1, str);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void rx_cb(int len, char *buf)
+{
+  printf("%s\n", buf);
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int main (int argc, char *argv[])
 {
   int ip, port;
-  char *full_bin = get_full_bin_path(argv[0]);
-  if (argc != 3)
+  if (argc != 4)
     {
     fprintf(stderr, "Bad param number: %d\n", argc);
     usage(argv[0]);
@@ -50,9 +64,8 @@ int main (int argc, char *argv[])
     fprintf(stderr, "Bad doorways address: %s\n", argv[1]);
     usage(argv[0]);
     }
-  fprintf(stdout, "Full path: %s\n", full_bin);
-  doorways_init(argv[1], argv[2]);
-  doorways_loop();
+  doorways_access_init(argv[1], argv[2], argv[3], beat_time, rx_cb);
+  doorways_access_loop();
   return 0;
 }
 /*--------------------------------------------------------------------------*/

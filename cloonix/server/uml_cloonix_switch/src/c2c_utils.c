@@ -142,7 +142,7 @@ int c2c_globtopo_add(t_sc2c *c2c)
     {
     endp_mngt_c2c_info(c2c->name, 0, c2c->local_is_master,
                        c2c->master_cloonix, c2c->slave_cloonix,
-                       c2c->ip_slave, c2c->port_slave);
+                       c2c->ip_slave, c2c->port_slave, c2c->slave_passwd);
     result = 0;
     }
   return result;
@@ -433,7 +433,10 @@ static void peer_err_cb (int llid)
 {
   t_sc2c *c2c = c2c_find_with_llid(llid);
   if (c2c)
+    {
+    endp_mngt_c2c_disconnect(c2c->name, 0);
     c2c_abort_error(c2c, (char *) __FUNCTION__, __LINE__);
+    }
 }
 /*--------------------------------------------------------------------------*/
 

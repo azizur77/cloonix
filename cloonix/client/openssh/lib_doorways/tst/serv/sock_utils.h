@@ -15,17 +15,10 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-int dispatch_get_dido_llid_with_inside_llid(int inside_llid);
-char *get_g_buf(void);
-void dispach_err_switch (int llid, int err);
-void dispach_rx_switch(int llid, int len, char *buf);
-void dispach_door_llid(int llid);
-void dispach_door_end(int llid);
-void dispach_door_rx(int llid, int tid, int type, int val,int len,char *buf);
-int  dispach_send_to_traf_client(int llid, int val, int len, char *buf);
-int dispach_send_to_openssh_client(int dido_llid, int val, int len, char *buf);
-void in_rx_c2c(int inside_llid, int idx, int len, char *buf);
-void in_err_gene(void *ptr, int inside_llid, int err, int from);
-void dispach_init(void);
-/*--------------------------------------------------------------------------*/
+int util_server_socket_inet(char *str_port);
+int util_client_socket_inet(char *ip_string, char *str_port);
+int util_server_socket_unix(char *path);
+int util_client_socket_unix(char *path);
+/*---------------------------------------------------------------------------*/
+
 

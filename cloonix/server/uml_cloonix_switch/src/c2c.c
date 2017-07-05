@@ -320,11 +320,11 @@ int c2c_create_master_begin(char *name,
   event_print("master create c2c %s "
               "ip_slave:%X  port_slave:%d",
                name,  ip_slave, port_slave);
-    c2c = c2c_alloc(1, name, ip_slave, port_slave, passwd_slave);
-    c2c_arm_timer(c2c, 10, time_try_connect_peer);
-    if (c2c_globtopo_add(c2c))
-      KERR("%s", name);
-    result = 0;
+  c2c = c2c_alloc(1, name, ip_slave, port_slave, passwd_slave);
+  c2c_arm_timer(c2c, 10, time_try_connect_peer);
+  if (c2c_globtopo_add(c2c))
+    KERR("%s", name);
+  result = 0;
   return result;
 }
 /*--------------------------------------------------------------------------*/

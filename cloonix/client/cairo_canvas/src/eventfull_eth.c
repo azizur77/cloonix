@@ -307,9 +307,12 @@ void eventfull_obj_delete(char *name)
 {
   t_obj_blinks *cur = get_obj_blinks_with_name(name);
   if (!cur)
-    KOUT("%s", name);
-  cur->to_be_deleted = 1;
-  clownix_timeout_add(1, timeout_obj_delete, cur, NULL, NULL);
+    KERR("%s", name);
+  else
+    {
+    cur->to_be_deleted = 1;
+    clownix_timeout_add(1, timeout_obj_delete, cur, NULL, NULL);
+    }
 }
 /*---------------------------------------------------------------------------*/
 

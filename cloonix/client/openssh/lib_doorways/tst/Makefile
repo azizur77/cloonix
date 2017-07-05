@@ -1,5 +1,5 @@
 OBJ_DIR=.
-EXE = doorways_tst
+EXE = tst
 SRC = doorways_tst.c 
 WARNINGS=-Wall
 IO_CLOWNIX=../../../../common/lib_io_clownix

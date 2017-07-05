@@ -213,33 +213,40 @@ static int add_all_tidx_tx(t_lan_attached *lan_attached)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
+static int collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
 {
-  int i;
+  int i, real_nb = 0;
   t_endp *next, *cur = endp;
   t_vm *vm;
   for (i=0; i<nb; i++)
     {
     if (!cur)
       KOUT(" ");
-    strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
-    eventfull[i].num  = cur->num;
-    eventfull[i].type = cur->endp_type;
-    if ((cur->endp_type == endp_type_kvm) && (cur->num == 0)) 
+    if (strlen(cur->name) == 0)
+      KERR("%d", cur->endp_type);
+    else
       {
-      vm = cfg_get_vm(cur->name);
-      eventfull[i].ram  = vm->ram;
-      eventfull[i].cpu  = vm->cpu;
+      strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
+      eventfull[i].num  = cur->num;
+      eventfull[i].type = cur->endp_type;
+      if ((cur->endp_type == endp_type_kvm) && (cur->num == 0)) 
+        {
+        vm = cfg_get_vm(cur->name);
+        eventfull[i].ram  = vm->ram;
+        eventfull[i].cpu  = vm->cpu;
+        }
+      eventfull[i].ok   = cur->c2c.is_peered;
+      eventfull[i].rx   = add_all_tidx_rx(cur->lan_attached);
+      eventfull[i].tx   = add_all_tidx_tx(cur->lan_attached);
+      real_nb += 1;
       }
-    eventfull[i].ok   = cur->c2c.is_peered;
-    eventfull[i].rx   = add_all_tidx_rx(cur->lan_attached);
-    eventfull[i].tx   = add_all_tidx_tx(cur->lan_attached);
     next = endp_mngt_get_next(cur);
     clownix_free(cur, __FILE__);
     cur = next;
     }
   if (cur)
     KOUT(" ");
+  return real_nb;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -273,6 +280,7 @@ static void timeout_collect_eventfull(void *data)
   t_vm *vm   = cfg_get_first_vm(&nb_vm);
   t_endp *endp   = endp_mngt_get_first(&nb_endp);
   t_eventfull_subs *cur = head_eventfull_subs;
+  int nb;
   eventfull_endp = 
   (t_eventfull_endp *) clownix_malloc(nb_endp * sizeof(t_eventfull_endp), 13);
   memset(eventfull_endp, 0, nb_endp * sizeof(t_eventfull_endp));
@@ -282,14 +290,14 @@ static void timeout_collect_eventfull(void *data)
     refresh_ram_cpu_vm(nb_vm, vm);
     count = 0;
     }
-  collect(eventfull_endp, nb_endp, endp); 
+  nb = collect(eventfull_endp, nb_endp, endp); 
   while (cur)
     {
     llid = cur->llid;
     tid = cur->tid;
     if (msg_exist_channel(llid))
       {
-      send_eventfull(llid, tid, nb_endp, eventfull_endp); 
+      send_eventfull(llid, tid, nb, eventfull_endp); 
       }
     else
       event_print ("EVENTFULL ERROR!!!!!!");

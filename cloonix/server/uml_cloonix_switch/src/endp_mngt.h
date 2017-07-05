@@ -70,8 +70,10 @@ void endp_mngt_snf_set_capture(char *name, int num, int capture_on);
 void endp_mngt_snf_set_recpath(char *name, int num, char *recpath);
 
 void endp_mngt_c2c_info(char *name, int num, int local_is_master,
-                       char *master, char *slave, int ip, int port);             
+                        char *master, char *slave, int ip, int port, 
+                        char *slave_passwd);             
 void endp_mngt_c2c_peered(char *name, int num, int is_peered);
+void endp_mngt_c2c_disconnect(char *name, int num);
 void endp_mngt_add_attached_lan(int llid, char *name, int num,
                                 int tidx, char *lan);
 void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan);
