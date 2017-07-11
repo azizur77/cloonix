@@ -1,6 +1,6 @@
 diff -Naur openssh-7.5p1/Makefile.in tainted_openssh/Makefile.in
 --- openssh-7.5p1/Makefile.in	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/Makefile.in	2017-07-08 17:18:30.367800560 +0200
++++ tainted_openssh/Makefile.in	2017-07-11 22:29:10.406524930 +0200
 @@ -43,7 +43,7 @@
  CC=@CC@
  LD=@LD@
@@ -26,7 +26,7 @@ diff -Naur openssh-7.5p1/Makefile.in tainted_openssh/Makefile.in
  	ssh_api.o \
 diff -Naur openssh-7.5p1/misc.c tainted_openssh/misc.c
 --- openssh-7.5p1/misc.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/misc.c	2017-07-08 17:18:30.367800560 +0200
++++ tainted_openssh/misc.c	2017-07-11 22:29:10.406524930 +0200
 @@ -436,23 +436,16 @@
  char *
  colon(char *cp)
@@ -61,7 +61,7 @@ diff -Naur openssh-7.5p1/misc.c tainted_openssh/misc.c
  
 diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
 --- openssh-7.5p1/scp.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/scp.c	2017-07-08 17:18:30.371800579 +0200
++++ tainted_openssh/scp.c	2017-07-11 22:29:10.406524930 +0200
 @@ -115,11 +115,15 @@
  #include "misc.h"
  #include "progressmeter.h"
@@ -373,7 +373,7 @@ diff -Naur openssh-7.5p1/scp.c tainted_openssh/scp.c
  
 diff -Naur openssh-7.5p1/ssh.c tainted_openssh/ssh.c
 --- openssh-7.5p1/ssh.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/ssh.c	2017-07-08 17:21:03.456535511 +0200
++++ tainted_openssh/ssh.c	2017-07-11 22:29:10.406524930 +0200
 @@ -115,6 +115,8 @@
  #include "ssh-pkcs11.h"
  #endif
@@ -537,7 +537,7 @@ diff -Naur openssh-7.5p1/ssh.c tainted_openssh/ssh.c
  		verbose("Authenticated to %s ([%s]:%d).", host,
 diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
 --- openssh-7.5p1/sshconnect.c	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/sshconnect.c	2017-07-08 17:18:30.371800579 +0200
++++ tainted_openssh/sshconnect.c	2017-07-11 22:29:10.406524930 +0200
 @@ -41,6 +41,11 @@
  #include <string.h>
  #include <unistd.h>
@@ -729,7 +729,7 @@ diff -Naur openssh-7.5p1/sshconnect.c tainted_openssh/sshconnect.c
  	packet_set_nonblocking();
 diff -Naur openssh-7.5p1/sshconnect.h tainted_openssh/sshconnect.h
 --- openssh-7.5p1/sshconnect.h	2017-03-20 03:39:27.000000000 +0100
-+++ tainted_openssh/sshconnect.h	2017-07-08 17:18:30.371800579 +0200
++++ tainted_openssh/sshconnect.h	2017-07-11 22:29:10.406524930 +0200
 @@ -32,14 +32,14 @@
  };
  

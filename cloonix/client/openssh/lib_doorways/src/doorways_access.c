@@ -271,44 +271,50 @@ static int input_extract_init(char *inputs)
   memset(g_cloonix_nat, 0, MAX_NAME_LEN);
   memset(g_address_in_vm, 0, MAX_PATH_LEN);
 
-fprintf(stderr, "INPUT %s", inputs);
   ptr = strchr(inputs, '=');
   if (!ptr)
     fprintf(stderr, "BAD INPUT1 %s", inputs);
   else
     { 
-    *ptr = ' ';
-    ptr = strchr(inputs, '=');
+    ptr += 1;
+    ptr = strchr(ptr, '=');
     if (!ptr)
       fprintf(stderr, "BAD INPUT11 %s", inputs);
     else
       { 
       *ptr = ' ';
-      ptr = strchr(inputs, '@');
+      ptr = strchr(ptr, '=');
       if (!ptr)
-        fprintf(stderr, "BAD INPUT2 %s", inputs);
+        fprintf(stderr, "BAD INPUT111 %s", inputs);
       else
         {
         *ptr = ' ';
-        if (sscanf(inputs, "%s %s %s %s", g_cloonix_doors,
-                                          g_cloonix_passwd,
-                                          g_cloonix_nat,
-                                          g_address_in_vm) != 4)
-          fprintf(stderr, "BAD INPUT3 %s", inputs);
+        ptr = strchr(ptr, '@');
+        if (!ptr)
+          fprintf(stderr, "BAD INPUT2 %s", inputs);
         else
           {
-          if (get_ip_port_from_path(g_cloonix_doors, &ip, &port))
-            fprintf(stderr, "BAD INPUT4 %s", inputs);
+          *ptr = ' ';
+          if (sscanf(inputs, "%s %s %s %s", g_cloonix_doors,
+                                            g_cloonix_passwd,
+                                            g_cloonix_nat,
+                                            g_address_in_vm) != 4)
+            fprintf(stderr, "BAD INPUT3 %s", inputs);
           else
             {
-            ptr = strstr(g_address_in_vm, "cloonix_info_end");
-            if (!ptr)
-              fprintf(stderr, "BAD INPUT5 %s", inputs);
+            if (get_ip_port_from_path(g_cloonix_doors, &ip, &port))
+              fprintf(stderr, "BAD INPUT4 %s", inputs);
             else
               {
-              ptr = ptr + strlen("cloonix_info_end");
-              *ptr = 0;
-              result = 0;
+              ptr = strstr(g_address_in_vm, "cloonix_info_end");
+              if (!ptr)
+                fprintf(stderr, "BAD INPUT5 %s", inputs);
+              else
+                {
+                ptr = ptr + strlen("cloonix_info_end");
+                *ptr = 0;
+                result = 0;
+                }
               }
             }
           }

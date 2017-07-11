@@ -158,7 +158,7 @@ int get_ip_port_from_path(char *param, int *ip, int *port)
     memset(pm, 0, MAX_PATH_LEN);
     strncpy(pm, param, MAX_PATH_LEN-1);
     ptr_ip = pm;
-    ptr_port = strchr(pm, ':');
+    ptr_port = strchr(pm, '=');
     if (ptr_port)
       {
       *ptr_port = 0;
