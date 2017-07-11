@@ -30,7 +30,7 @@ typedef struct t_pbi_node
   int  node_cpu;
   int  node_evt_ping_ok;
   int  node_evt_cga_ping_ok;
-  int  node_evt_tmux_launch_ok;
+  int  node_evt_dtach_launch_ok;
 } t_pbi_node;
 
 typedef struct t_pbi_sat
@@ -103,7 +103,7 @@ typedef struct t_bank_item
   int  button_1_moved;
   int  button_1_double_click;
   int  spicy_gtk_pid;
-  int  tmux_pid;
+  int  dtach_pid;
   int  qmonitor_pid;
   int  wireshark_pid;
   long long abs_beat_eua_timeout;
@@ -190,8 +190,8 @@ void refresh_all_connected_groups(void);
 /*--------------------------------------------------------------------------*/
 int bank_get_qmonitor_pid(char *name);
 void bank_set_qmonitor_pid(char *name, int val);
-int bank_get_tmux_pid(char *name);
-void bank_set_tmux_pid(char *name, int val);
+int bank_get_dtach_pid(char *name);
+void bank_set_dtach_pid(char *name, int val);
 int bank_get_spicy_gtk_pid(char *name);
 void bank_set_spicy_gtk_pid(char *name, int val);
 int bank_get_wireshark_pid(char *name);

@@ -1146,12 +1146,12 @@ void recv_topo_small_event_sub(int llid, int tid)
       if (!cur)
         KOUT(" ");
 
-      if (cur->tmux_launch == 1)
+      if (cur->dtach_launch == 1)
         send_topo_small_event(llid, tid, cur->kvm.name, 
-                              NULL, NULL, vm_evt_tmux_launch_ok);
+                              NULL, NULL, vm_evt_dtach_launch_ok);
       else
         send_topo_small_event(llid, tid, cur->kvm.name,
-                              NULL, NULL, vm_evt_tmux_launch_ko);
+                              NULL, NULL, vm_evt_dtach_launch_ko);
 
       if (cur->kvm.vm_config_flags & VM_FLAG_CLOONIX_AGENT_PING_OK)
         send_topo_small_event(llid, tid, cur->kvm.name,

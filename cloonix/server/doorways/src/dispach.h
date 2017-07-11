@@ -15,7 +15,8 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-int dispatch_get_dido_llid_with_inside_llid(int inside_llid);
+int dispatch_get_dido_llid_with_inside_llid(int inside_llid, int *init_done);
+void dispatch_set_init_done_with_inside_llid(int inside_llid);
 char *get_g_buf(void);
 void dispach_err_switch (int llid, int err);
 void dispach_rx_switch(int llid, int len, char *buf);

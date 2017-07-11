@@ -236,7 +236,6 @@ static void random_clc(t_topo_clc *conf)
   random_choice_str(conf->work_dir, MAX_PATH_LEN);
   random_choice_str(conf->bin_dir, MAX_PATH_LEN);
   random_choice_str(conf->bulk_dir, MAX_PATH_LEN);
-  random_choice_str(conf->tmux_bin, MAX_PATH_LEN);
   conf->server_port = rand();
   conf->flags_config = rand();
 }
@@ -257,8 +256,6 @@ static void topo_config_diff(t_topo_clc *cfa, t_topo_clc *cfb)
     KERR("%s %s", cfa->bin_dir,  cfb->bin_dir);
   if (strcmp(cfa->bulk_dir, cfb->bulk_dir))
     KERR("%s %s", cfa->bulk_dir, cfb->bulk_dir);
-  if (strcmp(cfa->tmux_bin, cfb->tmux_bin))
-    KERR("%s %s", cfa->tmux_bin, cfb->tmux_bin);
   if (cfa->server_port != cfb->server_port)
     KERR("%d %d", cfa->server_port, cfb->server_port);
   if (cfa->flags_config != cfb->flags_config)
@@ -1405,7 +1402,6 @@ void recv_work_dir_resp(int llid, int itid, t_topo_clc *iclc)
     random_choice_str(clc.username,MAX_NAME_LEN);
     clc.server_port = rand();
     random_choice_str(clc.bin_dir,MAX_PATH_LEN);
-    random_choice_str(clc.tmux_bin,MAX_PATH_LEN);
     random_choice_str(clc.work_dir,MAX_PATH_LEN);
     random_choice_str(clc.bulk_dir,MAX_PATH_LEN);
     clc.flags_config = rand();

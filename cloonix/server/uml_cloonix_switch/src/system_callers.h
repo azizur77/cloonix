@@ -15,6 +15,8 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
+void mk_endp_dir(void);
+void mk_dtach_dir(void);
 int mk_machine_dirs(char *name, int vm_id);
 int umid_pid_already_exists(int vm_id);
 int unlink_sub_dir_files(char *dir, char *err);

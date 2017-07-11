@@ -447,13 +447,11 @@ static char **create_qemu_argv(t_vm *vm)
   char *kvm_exe = qemu_cmd_format(vm);
   argv = (char **)clownix_malloc(10 * sizeof(char *), 13);
   memset(argv, 0, 10 * sizeof(char *));
-  argv[i++] = alloc_argv(utils_get_tmux_bin_path());
-  argv[i++] = alloc_argv("-S");
-  argv[i++] = alloc_argv(utils_get_tmux_sock_path());
-  argv[i++] = alloc_argv("new-session");
-  argv[i++] = alloc_argv("-s");
-  argv[i++] = alloc_argv(vm->kvm.name);
-  argv[i++] = alloc_argv("-d");
+  argv[i++] = alloc_argv(utils_get_dtach_bin_path());
+  argv[i++] = alloc_argv("-n");
+  argv[i++] = alloc_argv(utils_get_dtach_sock_path(vm->kvm.name));
+  argv[i++] = alloc_argv("/bin/bash");
+  argv[i++] = alloc_argv("-c");
   argv[i++] = kvm_exe;
   argv[i++] = NULL;
   return argv;
@@ -511,7 +509,7 @@ static int launch_qemu_vm(t_vm *vm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void tmux_duplicate_callback(int status, char *name)
+static void dtach_duplicate_callback(int status, char *name)
 {
   t_vm   *vm = cfg_get_vm(name);
   t_wake_up_eths *wake_up_eths;
@@ -525,10 +523,10 @@ static void tmux_duplicate_callback(int status, char *name)
     KOUT(" ");
   if (status)
     {
-    sprintf(err, "ERROR TMUX WITH SAME NAME EXISTS: %s\n", name);
+    sprintf(err, "ERROR DTACH WITH SAME NAME EXISTS: %s\n", name);
     event_print(err);
     send_status_ko(wake_up_eths->llid, wake_up_eths->tid, err);
-    utils_launched_vm_death(name, error_death_tmuxerr);
+    utils_launched_vm_death(name, error_death_dtacherr);
     }
   else
     qemu_vm_automaton(NULL, 0, name); 
@@ -572,11 +570,12 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
     }
   switch (state)
     {
+//    case auto_idle:
+//      wake_up_eths->state = auto_create_disk;
+//      dtach_duplicate_check(name, dtach_duplicate_callback);
+//      break;
+//    case auto_create_disk:
     case auto_idle:
-      wake_up_eths->state = auto_create_disk;
-      tmux_duplicate_check(name, tmux_duplicate_callback);
-      break;
-    case auto_create_disk:
       wake_up_eths->state = auto_create_vm_launch;
       if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
         clownix_timeout_add(1, static_vm_timeout, (void *) wake_up_eths,
@@ -601,7 +600,7 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
                             NULL, NULL);
       break;
     case auto_create_vm_connect:
-      vm->tmux_launch = 1;
+      vm->dtach_launch = 1;
       arm_utils_finish_vm_init(name, 4000);
       qmonitor_begin_qemu_unix(name);
       qmp_begin_qemu_unix(name);
@@ -610,7 +609,7 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
                         utils_get_qbackdoor_path(vm->kvm.vm_id));
       memset(&vm_evt, 0, sizeof(t_small_evt));
       strncpy(vm_evt.name, name, MAX_NAME_LEN-1);
-      vm_evt.evt = vm_evt_tmux_launch_ok;
+      vm_evt.evt = vm_evt_dtach_launch_ok;
       event_subscriber_send(topo_small_event, (void *) &vm_evt);
       break;
     default:

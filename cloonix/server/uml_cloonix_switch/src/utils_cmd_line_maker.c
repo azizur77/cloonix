@@ -115,7 +115,19 @@ char *utils_get_endp_sock_dir(void)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1,"%s/%s", cfg_get_root_work(), ENDP_SOCK_DIR);
+  snprintf(path, MAX_PATH_LEN-1,"%s/%s", 
+           cfg_get_root_work(), ENDP_SOCK_DIR);
+  return path;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+char *utils_get_endp_cli_sock_dir(void)
+{
+  static char path[MAX_PATH_LEN];
+  memset(path, 0, MAX_PATH_LEN);
+  snprintf(path, MAX_PATH_LEN-1,"%s/%s", 
+           cfg_get_root_work(), ENDP_CLI_SOCK_DIR);
   return path;
 }
 /*--------------------------------------------------------------------------*/
@@ -243,22 +255,32 @@ char *utils_get_muswitch_traf_dir(void)
 
 
 /*****************************************************************************/
-char *utils_get_tmux_bin_path(void)
+char *utils_get_dtach_bin_path(void)
 {
-  static char tmux[MAX_PATH_LEN];
-  sprintf(tmux, "/usr/bin/tmux");
-  return tmux;
+  static char dtach[MAX_PATH_LEN];
+  sprintf(dtach, "%s/server/dtach/dtach", cfg_get_bin_dir());
+  return dtach;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_tmux_sock_path(void)
+char *utils_get_dtach_sock_dir(void)
 {
-  static char tmux_sock[MAX_PATH_LEN];
-  sprintf(tmux_sock, "%s/%s", cfg_get_root_work(), TMUX_SOCK);
-  return tmux_sock;
+  static char dtach_sock[MAX_PATH_LEN];
+  sprintf(dtach_sock, "%s/%s", cfg_get_root_work(), DTACH_SOCK);
+  return dtach_sock;
 }
 /*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+char *utils_get_dtach_sock_path(char *name)
+{
+  static char dtach_sock[MAX_PATH_LEN];
+  sprintf(dtach_sock, "%s/%s/%s", cfg_get_root_work(), DTACH_SOCK, name);
+  return dtach_sock;
+}
+/*---------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 char *utils_get_spice_path(int vm_id)

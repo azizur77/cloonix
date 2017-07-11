@@ -642,7 +642,6 @@ static void local_err_cb (void *ptr, int local_llid, int err, int from)
     }
   else
     {
-    KERR("%d %d %d %d", ld->dido_llid, ld->local_llid, err, from);
     llid_traf_delete(ld->dido_llid);
     }
 }

@@ -133,7 +133,7 @@ void cipher_change_key(char *key)
 
 
 /*****************************************************************************/
-void cipher_init(void)
+void cipher_myinit(void)
 {
   cipher_ctx = EVP_CIPHER_CTX_new();
   EVP_add_digest(EVP_sha256());
@@ -143,7 +143,7 @@ void cipher_init(void)
 }
 /*---------------------------------------------------------------------------*/
 #else //NO_HMAC_CIPHER
-void cipher_init(void)
+void cipher_myinit(void)
 {
 }
 #endif //NO_HMAC_CIPHER

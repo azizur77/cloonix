@@ -761,7 +761,7 @@ void intf_ctx_menu(t_bank_item *bitem)
 /****************************************************************************/
 void node_ctx_menu(t_bank_item *bitem)
 {
-  GtkWidget *tmux_console, *desktop=NULL, *xterm_qmonitor;
+  GtkWidget *dtach_console, *desktop=NULL, *xterm_qmonitor;
   GtkWidget *item_delete, *item_info, *item_color;
   GtkWidget *save_whole, *save_derived;
   GtkWidget *creboot_vm, *qreboot_vm, *halt_vm;
@@ -785,7 +785,7 @@ void node_ctx_menu(t_bank_item *bitem)
     qreboot_vm = gtk_menu_item_new_with_label("send reboot req to qemu");
     halt_vm = gtk_menu_item_new_with_label("send poweroff req to agent");
     }
-  tmux_console = gtk_menu_item_new_with_label("tmux console");
+  dtach_console = gtk_menu_item_new_with_label("dtach console");
   item_info = gtk_menu_item_new_with_label("Info");
   item_color = gtk_menu_item_new_with_label("Color");
   item_hidden = gtk_menu_item_new_with_label("Hidden/Visible");
@@ -800,8 +800,8 @@ void node_ctx_menu(t_bank_item *bitem)
                    G_CALLBACK(hidden_visible_node), (gpointer) pm);
   g_signal_connect(G_OBJECT(menu), "hide",
                    G_CALLBACK(menu_hidden), (gpointer) pm);
-  g_signal_connect(G_OBJECT(tmux_console), "activate",
-                   G_CALLBACK(node_tmux_console), (gpointer) pm);
+  g_signal_connect(G_OBJECT(dtach_console), "activate",
+                   G_CALLBACK(node_dtach_console), (gpointer) pm);
   if (bitem->bank_type == bank_type_node) 
     {
     if (desktop)
@@ -812,7 +812,7 @@ void node_ctx_menu(t_bank_item *bitem)
     }
   if ((bitem->bank_type == bank_type_node) && (desktop)) 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), desktop);
-  gtk_menu_shell_append(GTK_MENU_SHELL(menu), tmux_console);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), dtach_console);
   if (bitem->bank_type == bank_type_node) 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), xterm_qmonitor);
 

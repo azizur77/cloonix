@@ -783,7 +783,7 @@ static void on_item_paint_node(CrItem *item, cairo_t *c)
   cairo_arc (c, bitem->pbi.x0, bitem->pbi.y0, NODE_DIA/2, 0, 2*M_PI);
   if (bitem->pbi.flag_trace)
     paint_yellow(c);
-  else if ((bitem->pbi.flag == flag_tmux_launch_ko) || 
+  else if ((bitem->pbi.flag == flag_dtach_launch_ko) || 
            (bitem->pbi.flag == flag_normal))
     cairo_set_source_rgba (c, 0.50, 0.30, 0.30, 1.0);
   else
@@ -794,7 +794,7 @@ static void on_item_paint_node(CrItem *item, cairo_t *c)
         cairo_set_source_rgba (c, brown.r, brown.g, brown.b, 1.0);
     else
       {
-      if (bitem->pbi.flag == flag_tmux_launch_ok)
+      if (bitem->pbi.flag == flag_dtach_launch_ok)
         cairo_set_source_rgba (c, 0.90, 0.10, 0.10, 1.0);
       else if (bitem->pbi.flag == flag_ping_ok)
         {

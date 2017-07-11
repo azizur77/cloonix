@@ -27,7 +27,7 @@ typedef struct t_item_ident
 
 void menu_utils_init(void);
 void node_del_val_save(char *name);
-void node_tmux_console(GtkWidget *mn, t_item_ident *pm);
+void node_dtach_console(GtkWidget *mn, t_item_ident *pm);
 void node_xterm_qmonitor(GtkWidget *mn, t_item_ident *pm);
 void node_qemu_spice(GtkWidget *mn, t_item_ident *pm);
 GtkWidget *canvas_cursors(void);

@@ -252,6 +252,8 @@ static void mk_and_tst_work_path(void)
     KOUT("%s", cfg_get_root_work());
     }
   my_mkdir(cfg_get_root_work());
+  mk_endp_dir();
+  mk_dtach_dir();
   sprintf(path1, "%s/cloonix_lock",  cfg_get_root_work());
   check_for_another_instance(path1, 0);
 }
@@ -312,19 +314,20 @@ static void connect_from_client_unix(void *ptr, int llid, int llid_new)
 static void launching(void)
 {
   char clownlock[MAX_PATH_LEN];
-  char tst_tmux[MAX_PATH_LEN];
-  char *tmux = utils_get_tmux_bin_path();
-  if (!file_exists(tmux, X_OK))
+  char tst_dtach[MAX_PATH_LEN];
+  char *dtach = utils_get_dtach_bin_path();
+  if (!file_exists(dtach, X_OK))
     {
-    printf("\"%s\" not found or not executable\n", tmux);
-    KOUT("\"%s\" not found or not executable\n", tmux);
+    printf("\"%s\" not found or not executable\n", dtach);
+    KOUT("\"%s\" not found or not executable\n", dtach);
     }
-  memset(tst_tmux, 0, MAX_PATH_LEN);
-  snprintf(tst_tmux, MAX_PATH_LEN-1, "%s -c pwd", tmux);
-  if (system(tst_tmux))
+  memset(tst_dtach, 0, MAX_PATH_LEN);
+  snprintf(tst_dtach, MAX_PATH_LEN-1, 
+           "%s -c /tmp/tst_dtach pwd 1>/dev/null", dtach);
+  if (system(tst_dtach))
     {
-    printf("\"%s\" does not seem to work\n", tmux);
-    KOUT("\"%s\" does not seem to work\n", tmux);
+    printf("\"%s\" does not seem to work\n", dtach);
+    KOUT("\"%s\" does not seem to work\n", dtach);
     }
   set_cloonix_name(cfg_get_cloonix_name());
   printf("\n\n");

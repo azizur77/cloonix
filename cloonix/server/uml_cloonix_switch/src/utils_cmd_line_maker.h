@@ -40,8 +40,9 @@ char *utils_get_qhvc0_path(int vm_id);
 char *utils_get_qbackdoor_path(int vm_id);
 char *utils_get_qbackdoor_hvc0_path(int vm_id);
 
-char *utils_get_tmux_bin_path(void);
-char *utils_get_tmux_sock_path(void);
+char *utils_get_dtach_bin_path(void);
+char *utils_get_dtach_sock_dir(void);
+char *utils_get_dtach_sock_path(char *name);
 char *utils_get_qemu_img(void);
 char *utils_qemu_img_derived(char *backing_file, char *derived_file);
 void utils_qemu_img_copy_backing(char *cow, char *dest, char *cmd);
@@ -61,6 +62,7 @@ char *utils_get_muswitch_traf_dir(void);
 char *utils_mulan_get_sock_path(char *lan);
 /*--------------------------------------------------------------------------*/
 char *utils_get_endp_sock_dir(void);
+char *utils_get_endp_cli_sock_dir(void);
 char *utils_get_endp_path(char *name, int num);
 char *utils_get_endp_name(char *name, int num);
 /*--------------------------------------------------------------------------*/

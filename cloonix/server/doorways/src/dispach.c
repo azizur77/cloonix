@@ -36,6 +36,7 @@ typedef struct t_transfert
   int dido_llid;
   int inside_llid;
   int beat_count;
+  int init_done;
   struct t_transfert *prev;
   struct t_transfert *next;
 } t_transfert;
@@ -68,15 +69,30 @@ static t_transfert *get_inside_transfert(int inside_llid)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int dispatch_get_dido_llid_with_inside_llid(int inside_llid)
+int dispatch_get_dido_llid_with_inside_llid(int inside_llid, int *init_done)
 {
   int result = 0;
   t_transfert *t = get_inside_transfert(inside_llid);
   if (t)
+    {
     result = t->dido_llid;
+    *init_done = t->init_done;
+    }
   return result;
 }
 /*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void dispatch_set_init_done_with_inside_llid(int inside_llid)
+{
+  t_transfert *t = get_inside_transfert(inside_llid);
+  if (t)
+    {
+    t->init_done = 1;
+    }
+}
+/*--------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 static void alloc_transfert(int dido_llid, int inside_llid, int type)

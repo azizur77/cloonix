@@ -16,13 +16,9 @@
 /*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 /*                                                                          */
 /****************************************************************************/
-typedef void (*t_beat_time)(void);
-typedef void (*t_rx_cb)(int len, char *buf);
-char *get_full_bin_path(char *input_callbin);
-int get_ip_port_from_path(char *param, int *ip, int *port);
-void doorways_access_tx(int len, char *buf);
-void doorways_access_init(char *cloonix_doors, char *cloonix_passwd,
-                          char *address_in_vm, t_beat_time beat, t_rx_cb rx);
-void doorways_access_loop(void);
+int test_file_is_socket(char *path);
+char *get_random_choice_str(void);
+char *get_full_bin_path(char *callbin);
+void doorways_access_init(char *sockpath);
 /*--------------------------------------------------------------------------*/
 

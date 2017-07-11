@@ -16,6 +16,8 @@
 /*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 /*                                                                          */
 /****************************************************************************/
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -174,4 +176,51 @@ int get_ip_port_from_path(char *param, int *ip, int *port)
   return result;
 }
 /*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int my_rand(int max)
+{
+  unsigned int result = rand();
+  result %= max;
+  return (int) result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+char *get_random_choice_str(void)
+{
+  static char name[8];
+  int i, chance;
+  long long date_us = cloonix_get_usec();
+  srand((int) (date_us & 0xFFFF));
+  memset (name, 0 , 8);
+  for (i=0; i < 4; i++)
+    {
+    chance = my_rand(3);
+    if (chance == 0)
+      name[i] = 'A'+ my_rand(26);
+    else if (chance == 1)
+      name[i] = 'a'+ my_rand(26);
+    else
+      name[i] = '0'+ my_rand(10);
+    }
+  return name;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int test_file_is_socket(char *path)
+{
+  int result = -1;
+  struct stat stat_file;
+  if (!stat(path, &stat_file))
+    {
+    if (S_ISSOCK(stat_file.st_mode))
+      result = 0;
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+
 

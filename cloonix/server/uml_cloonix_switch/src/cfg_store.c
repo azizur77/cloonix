@@ -477,9 +477,6 @@ void cfg_set_host_conf(t_topo_clc *conf)
   if (cfg.clc.network[0])
     KOUT(" ");
   memcpy(&(cfg.clc), conf, sizeof(t_topo_clc));
-  snprintf(conf->tmux_bin, MAX_PATH_LEN-1, "%s", utils_get_tmux_bin_path());
-  snprintf(cfg.clc.tmux_bin, MAX_PATH_LEN-1, "%s", 
-           utils_get_tmux_bin_path());
   if (file_exists(WIRESHARK_BINARY_QT, X_OK))
     cfg.clc.flags_config |= FLAGS_CONFIG_WIRESHARK_QT_PRESENT;
   else if (file_exists(WIRESHARK_BINARY, X_OK))

@@ -29,7 +29,7 @@ enum
   error_death_cdrom,
   error_death_umlerr,
   error_death_qemuerr,
-  error_death_tmuxerr,
+  error_death_dtacherr,
   error_death_kvmerr,
   error_death_kvmcb,
   error_death_kvmmonitor,
@@ -47,16 +47,16 @@ int get_nb_mask(char *mask_string);
 void machine_init(void);
 
 /*****************************************************************************/
-typedef void (*t_tmux_duplicate_callback)(int status, char *name);
+typedef void (*t_dtach_duplicate_callback)(int status, char *name);
 /*---------------------------------------------------------------------------*/
-typedef struct t_check_tmux_duplicate
+typedef struct t_check_dtach_duplicate
 {
   char name[MAX_NAME_LEN];
   char msg[MAX_NAME_LEN];
-  t_tmux_duplicate_callback cb;
-} t_check_tmux_duplicate;
+  t_dtach_duplicate_callback cb;
+} t_check_dtach_duplicate;
 /*---------------------------------------------------------------------------*/
-void tmux_duplicate_check(char *name, t_tmux_duplicate_callback cb);
+void dtach_duplicate_check(char *name, t_dtach_duplicate_callback cb);
 /*---------------------------------------------------------------------------*/
 void timeout_start_vm_create_automaton(void *data);
 /*---------------------------------------------------------------------------*/

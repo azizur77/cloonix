@@ -51,14 +51,24 @@ void openssh_tx_to_nat(int inside_llid, int len, char *buf)
 /****************************************************************************/
 static int nat_rx_cb(void *ptr, int llid, int fd)
 {
-  int len;
+  int len, init_done;
   char *buf = get_g_buf();
-  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid);
+  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid, &init_done);
   if (dido_llid > 0)
     {
     len = read (fd, buf, MAX_DOORWAYS_BUF_LEN);
     if (len > 0)
-      send_to_openssh_client(dido_llid, doors_val_none, len, buf);
+      {
+      if (init_done == 1)
+        {
+        send_to_openssh_client(dido_llid, doors_val_none, len, buf);
+        }
+      else
+        {
+        send_to_openssh_client(dido_llid, doors_val_sig, len, buf);
+        dispatch_set_init_done_with_inside_llid(llid);
+        }
+      }
     else
       {
       KERR("%d %d", dido_llid, llid);
@@ -78,14 +88,27 @@ static int nat_rx_cb(void *ptr, int llid, int fd)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void nat_err_cb (void *ptr, int llid, int err, int from)
+static void timer_close_dido_llid(void *data)
 {
-  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid);
-  KERR("%d %d %d %d", dido_llid, llid, err, from);
+  unsigned long ul_llid = (unsigned long) data;
+  int init_done, llid = (int)ul_llid;
+  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid, &init_done);
   if (dido_llid)
     dispach_door_end(dido_llid);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void nat_err_cb (void *ptr, int llid, int err, int from)
+{
+  char *nack = "UNIX2INET_NACK_CUTOFF";
+  unsigned long ul_llid = (unsigned long) llid;
+  int init_done;
+  int dido_llid = dispatch_get_dido_llid_with_inside_llid(llid, &init_done);
+  clownix_timeout_add(20,timer_close_dido_llid,(void *)ul_llid,NULL,NULL);
   if (msg_exist_channel(llid))
     msg_delete_channel(llid);
+  send_to_openssh_client(dido_llid, doors_val_sig, strlen(nack) + 1, nack);
 }
 /*--------------------------------------------------------------------------*/
 

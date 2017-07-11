@@ -100,7 +100,6 @@
                          "  <work_dir> %s </work_dir>\n"\
                          "  <bulk_dir> %s </bulk_dir>\n"\
                          "  <bin_dir> %s </bin_dir>\n"\
-                         "  <tmux_bin> %s </tmux_bin>\n"\
                          "  <flags> %d </flags>\n"\
                          "</work_dir_resp>"
 /*---------------------------------------------------------------------------*/
@@ -311,7 +310,7 @@
                               "  version:%s \n"\
                               "  network:%s username:%s server_port:%d \n"\
                               "  work_dir:%s bulk_dir:%s bin_dir:%s \n"\
-                              "  tmux_bin:%s flags_config:%d \n"\
+                              "  flags_config:%d \n"\
                               "  nb_kvm:%d nb_c2c:%d nb_snf:%d \n"\
                               "  nb_sat:%d nb_endp:%d \n"
 

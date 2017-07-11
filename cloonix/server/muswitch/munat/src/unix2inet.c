@@ -46,12 +46,11 @@ enum {
 typedef struct t_ctx_unix2inet
 {
   int state;
+  int llid;
   t_all_ctx *all_ctx;
   char remote_user[MAX_NAME_LEN];
   char remote_ip[MAX_NAME_LEN];
   uint16_t remote_port;
-  int payload_len;
-  u8_t payload[TCP_MAX_SIZE];
   long long timeout_abs_beat;
   int timeout_ref;
   t_tcp_id tcpid;
@@ -81,6 +80,38 @@ static void free_ctx(t_all_ctx *all_ctx, int llid);
 
 
 /*****************************************************************************/
+static void doorways_tx_resp(t_all_ctx *all_ctx, int llid, int val)
+{
+  char *ack;
+  switch(val)
+    {
+    case 0:
+      ack="UNIX2INET_ACK_OPEN";
+      break;
+
+    case 1:
+      ack="UNIX2INET_NACK_TIMEOUT";
+      break;
+
+    default:
+      ack="UNIX2INET_NACK_NOREASON";
+      break;
+    }
+  data_tx(all_ctx, llid, strlen(ack) + 1, ack);
+}
+/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static void timeout_free_ctx(t_all_ctx *all_ctx, void *data)
+{
+  t_timeout_info *ti = (t_timeout_info *) data;
+  free_ctx(all_ctx, ti->llid);
+  free(ti);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 static void timeout_waiting_for_arp(t_all_ctx *all_ctx, void *data)
 {
   t_timeout_info *ti = (t_timeout_info *) data;
@@ -88,17 +119,24 @@ static void timeout_waiting_for_arp(t_all_ctx *all_ctx, void *data)
   int llid;
   uint16_t port;
   if (free_ctx_waiting_for_arp_resp(ti->ip, &llid, &port))
+    {
     KERR("%s", ti->ip);
+    free(ti);
+    }
   else
     {
-    KERR("TIMEOUT WAIT ARP %s %d", ti->ip, port);
     ctx = find_ctx(ti->llid);
     if (!ctx)
-      KERR("%s %d", ti->ip, port);
+      {
+      KERR("TIMEOUT WAIT ARP %s %d", ti->ip, port);
+      free(ti);
+      }
     else
-      free_ctx(all_ctx, ti->llid);
+      {
+      doorways_tx_resp(ctx->all_ctx, llid, 1);
+      clownix_timeout_add(all_ctx,10,timeout_free_ctx,(void *)ti,NULL,NULL);
+      }
     }
-  free(ti);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -121,8 +159,6 @@ static int arm_timeout_waiting_for_arp(t_all_ctx *all_ctx,
   return result;
 }
 /*---------------------------------------------------------------------------*/
-
-
 
 /*****************************************************************************/
 static int alloc_ctx_waiting_for_arp(t_all_ctx *all_ctx, 
@@ -190,10 +226,11 @@ static t_ctx_unix2inet *alloc_ctx(t_all_ctx *all_ctx, int llid)
   t_ctx_unix2inet *ctx = (t_ctx_unix2inet *) malloc(sizeof(t_ctx_unix2inet));
   if ((llid <= 0) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%d", llid);
-  KERR("%s %d", __FUNCTION__, llid);
   memset(ctx, 0, sizeof(t_ctx_unix2inet));
   ctx->all_ctx = all_ctx;
+  ctx->llid = llid;
   llid_to_ctx[llid] = ctx;
+  DOUT((void *) all_ctx, FLAG_HOP_APP, "%s %d", __FUNCTION__, llid);
   return ctx;
 }
 /*---------------------------------------------------------------------------*/
@@ -205,13 +242,14 @@ static void free_ctx(t_all_ctx *all_ctx, int llid)
   int is_blkd;
   if ((llid <= 0) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%d", llid);
-  KERR("%s %d", __FUNCTION__, llid);
   if (!ctx)
     KERR("%d", llid);
   else
     {
+    llid_slirptux_tcp_close_llid(llid);
     free(ctx);
     llid_to_ctx[llid] = 0;
+    DOUT((void *) all_ctx, FLAG_HOP_APP, "%s %d", __FUNCTION__, llid);
     }
   if (msg_exist_channel(all_ctx, llid, &is_blkd, __FUNCTION__))
     msg_delete_channel(all_ctx, llid);
@@ -221,7 +259,7 @@ static void free_ctx(t_all_ctx *all_ctx, int llid)
 /*****************************************************************************/
 static void change_state(t_ctx_unix2inet *ctx, int state)
 {
-  KERR("STATE: %d -> %d", ctx->state, state);
+//  KERR("STATE: %d -> %d", ctx->state, state);
   ctx->state = state;
 }
 /*---------------------------------------------------------------------------*/
@@ -288,6 +326,7 @@ static int get_info_from_buf(t_ctx_unix2inet *ctx, int len, char *ibuf)
   char *ptr;
   char *buf = (char *) malloc(len);
   memcpy(buf, ibuf, len);
+  DOUT(get_all_ctx(), FLAG_HOP_APP, "INIT: %s", ibuf); 
   if (len >= TCP_MAX_SIZE)
     KERR("%d %s %d", len, buf, TCP_MAX_SIZE); 
   else
@@ -310,10 +349,8 @@ static int get_info_from_buf(t_ctx_unix2inet *ctx, int len, char *ibuf)
         {
         ctx->remote_port = (port & 0xFFFF);
         ptr = ptr + strlen("cloonix_info_end");
-        ctx->payload_len = len - (ptr - buf);
-        if ((ctx->payload_len < 1) || (ctx->payload_len >= TCP_MAX_SIZE)) 
-          KOUT("%d %s %d %d", len, buf, TCP_MAX_SIZE, ctx->payload_len); 
-        memcpy(ctx->payload, ptr, ctx->payload_len);
+        if ((*ptr) != 0)
+          KOUT("%d %s", len, buf); 
         result = 0;
         }
       }
@@ -324,31 +361,30 @@ static int get_info_from_buf(t_ctx_unix2inet *ctx, int len, char *ibuf)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int send_first_tcp_syn(t_ctx_unix2inet *ctx, int llid,
+static int send_first_tcp_syn(t_ctx_unix2inet *ctx,
                               char *remote_mac, char *remote_ip,
                               uint16_t remote_port)
 {
   int result = -1;
   t_clo *clo;
-  unix2inet_init_tcp_id(&(ctx->tcpid),remote_mac,remote_ip,llid,remote_port);
+  unix2inet_init_tcp_id(&(ctx->tcpid), remote_mac, remote_ip,
+                        ctx->llid, remote_port);
   if (clo_high_syn_tx(&(ctx->tcpid)))
     {
     KERR(" ");
-    free_ctx(ctx->all_ctx, llid);
+    free_ctx(ctx->all_ctx, ctx->llid);
     }
   else
     {
     clo = util_get_fast_clo(&(ctx->tcpid));
     if (clo)
       {
-      util_attach_llid_clo(llid, clo);
-      clo->tcpid.llid_unlocked = 1;
       result = 0;
       }
     else
       {
       KERR(" ");
-      free_ctx(ctx->all_ctx, llid);
+      free_ctx(ctx->all_ctx, ctx->llid);
       }
     }
   return result;
@@ -413,7 +449,7 @@ static void unix2inet_ssh_rx_cb(t_all_ctx *all_ctx, int llid,
       }
     else
       {
-      DOUT(ptr, FLAG_HOP_APP, "%s DATA OF LEN: %d", __FUNCTION__, len);
+      DOUT(ptr, FLAG_HOP_APP, "%s 1DATA OF LEN: %d", __FUNCTION__, len);
       if (clo_high_data_tx(&(ctx->tcpid), len, (u8_t *) buf))
         KERR("%s %s", ctx->remote_user, ctx->remote_ip);
       }
@@ -425,7 +461,6 @@ static void unix2inet_ssh_rx_cb(t_all_ctx *all_ctx, int llid,
 static void unix2inet_ssh_err_cb(void *ptr, int llid, int err, int from)
 {
   t_all_ctx *all_ctx = (t_all_ctx *) ptr;
-  KERR("OPENSSH CLOSED");
   free_ctx(all_ctx, llid);
   DOUT(ptr, FLAG_HOP_APP, "%s", __FUNCTION__);
 }
@@ -460,12 +495,14 @@ void unix2inet_arp_resp(char *mac, char *ip)
     ctx = find_ctx(llid);
     if (!ctx)
       KERR("%s %d %s", ip, port, mac);
+    else if (ctx->llid != llid)
+      KERR("%d %d %s %d %s", ctx->llid, llid, ip, port, mac);
     else
       {
       ti = clownix_timeout_del(ctx->all_ctx, ctx->timeout_abs_beat, 
                                ctx->timeout_ref, __FILE__, __LINE__);
       free(ti);
-      if (send_first_tcp_syn(ctx, llid, mac, ip, port))
+      if (send_first_tcp_syn(ctx, mac, ip, port))
         KERR("%s %d %s", ip, port, mac);
       else
         change_state(ctx, state_wait_syn_ack);
@@ -493,25 +530,17 @@ int unix2inet_ssh_syn_ack_arrival(t_tcp_id *tcpid)
     KERR("%d", llid);
   else if (!clo)
     KERR("%d", llid);
-  else if (clo->tcpid.llid != llid)
-    KERR("%d %d", llid, clo->tcpid.llid);
+  else if (clo->tcpid.llid != 0)
+    KERR("%d", clo->tcpid.llid);
   else if (ctx->state != state_wait_syn_ack) 
     KERR("%d %d", llid, ctx->state);
   else
     {
-    if (ctx->payload_len == 0)
-      KERR("%d %s", ctx->state, (char *) ctx->payload);
-    else
-      { 
-      if (clo_high_data_tx(&(ctx->tcpid), ctx->payload_len, ctx->payload))
-        KERR("%d %d %s", ctx->state, ctx->payload_len, (char *) ctx->payload);
-      else
-        {  
-        ctx->payload_len = 0;
-        change_state(ctx, state_running);
-        result = 0;
-        }
-      }
+    doorways_tx_resp(ctx->all_ctx, ctx->llid, 0);
+    util_attach_llid_clo(ctx->llid, clo);
+    clo->tcpid.llid_unlocked = 1;
+    change_state(ctx, state_running);
+    result = 0;
     }
   return result;
 }

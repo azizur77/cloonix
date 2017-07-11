@@ -74,6 +74,9 @@ CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
   rm -rf ${CLOONIX_SERVER}/qemu/sources
   rm -rf ${CLOONIX_SERVER}/qemu/qemu_bin/tainted_qemu
 #----------------------------------------------------------
+  rm -f ${CLOONIX_SERVER}/dtach/cmd
+  rm -f ${CLOONIX_SERVER}/dtach/dtach_source.tar.gz
+#----------------------------------------------------------
   rm -rf ${CLOONIX_CLIENT}/lib_client
   rm -rf ${CLOONIX_CLIENT}/lib_zor
   rm -rf ${CLOONIX_CLIENT}/spice

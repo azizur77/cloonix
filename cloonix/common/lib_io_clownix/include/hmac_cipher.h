@@ -21,7 +21,7 @@ int hmac_extract_and_decipher(int len, char *buf, char **outbuf);
 int hmac_insert_and_cipher(int len, char *buf, char **outbuf);
 void cipher_change_key(char *key);
 #endif
-void cipher_init(void);
+void cipher_myinit(void);
 /*---------------------------------------------------------------------------*/
 
 

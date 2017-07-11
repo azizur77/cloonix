@@ -145,6 +145,7 @@ enum{
 enum{
   doors_val_min = 200,
   doors_val_none,
+  doors_val_sig,
   doors_val_init_link,
   doors_val_init_link_ok,
   doors_val_init_link_ko,
@@ -160,7 +161,6 @@ typedef struct t_topo_clc
   char work_dir[MAX_PATH_LEN];
   char bin_dir[MAX_PATH_LEN];
   char bulk_dir[MAX_PATH_LEN];
-  char tmux_bin[MAX_PATH_LEN];
   int  flags_config;
 } t_topo_clc;
 /*---------------------------------------------------------------------------*/

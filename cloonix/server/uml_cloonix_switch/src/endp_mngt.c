@@ -1091,7 +1091,6 @@ int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type)
     if ((num == 0) && (mu->endp_type != endp_type_kvm))
       layout_add_sat(name, llid);
 
-    my_mkdir(utils_get_endp_sock_dir());
     if (mu->endp_type == endp_type_c2c)
       {
       create_two_endp_arg(name, num, endp_type, &mua1, &mua2);

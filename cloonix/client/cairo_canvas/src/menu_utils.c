@@ -58,7 +58,7 @@ enum {
   type_pid_qmonitor,
   type_pid_spicy_gtk,
   type_pid_wireshark,
-  type_pid_tmux,
+  type_pid_dtach,
 };
 typedef struct t_pid_wait
 {
@@ -203,10 +203,10 @@ static void death_pid_wait_launch(void *data, int status, char *name)
         bank_set_wireshark_pid(pid_wait->name, 0);
       break;
 
-    case type_pid_tmux:
-      pid = bank_get_tmux_pid(pid_wait->name);
+    case type_pid_dtach:
+      pid = bank_get_dtach_pid(pid_wait->name);
       if (pid == pid_wait->pid)
-        bank_set_tmux_pid(pid_wait->name, 0);
+        bank_set_dtach_pid(pid_wait->name, 0);
       break;
 
     default:
@@ -255,11 +255,11 @@ static void launch_new_pid(t_pid_wait *pid_wait)
       bank_set_wireshark_pid(pid_wait->name, pid);
       break;
 
-    case type_pid_tmux:
+    case type_pid_dtach:
       pid = pid_clone_launch(start_launch, death_pid_wait_launch, NULL,
                              (void *)(pid_wait->argv), (void *) pid_wait,
                              NULL, pid_wait->name, -1, 0);
-      bank_set_tmux_pid(pid_wait->name, pid);
+      bank_set_dtach_pid(pid_wait->name, pid);
       break;
 
     default:
@@ -284,8 +284,8 @@ static void launch_pid_wait(int type, char *nm, char **argv)
     case type_pid_wireshark:
       pid = bank_get_wireshark_pid(nm);
       break;
-    case type_pid_tmux:
-      pid = bank_get_tmux_pid(nm);
+    case type_pid_dtach:
+      pid = bank_get_dtach_pid(nm);
       break;
     default:
       KOUT(" ");
@@ -425,12 +425,12 @@ void node_qemu_spice(GtkWidget *mn, t_item_ident *pm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void node_tmux_console(GtkWidget *mn, t_item_ident *pm)
+void node_dtach_console(GtkWidget *mn, t_item_ident *pm)
 {
   char *nm = pm->name;
   char **argv = get_argv_local_dbssh(nm);
   if (check_before_start_launch(argv))
-    launch_pid_wait(type_pid_tmux, nm, argv);
+    launch_pid_wait(type_pid_dtach, nm, argv);
 }
 /*--------------------------------------------------------------------------*/
 

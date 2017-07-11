@@ -529,7 +529,7 @@ diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 +    KOUT("%d %s", (int) strlen(password), password);
 +  if (strlen(password) >= MSG_DIGEST_LEN)
 +    KOUT("%d %s", (int) strlen(password), password);
-+  cipher_init(password);
++  cipher_myinit(password);
 +  if (sock >= MAX_FD_NUMBER_CTX)
 +    KOUT("%d %d", sock, MAX_FD_NUMBER_CTX);
 +  memset(buf, 0, 300);
@@ -794,7 +794,7 @@ diff -Naur spice-gtk/src/hmac_cipher.c tainted_spice/src/hmac_cipher.c
 +/*---------------------------------------------------------------------------*/
 +
 +/*****************************************************************************/
-+void cipher_init(char *key)
++void cipher_myinit(char *key)
 +{
 +  cipher_ctx = EVP_CIPHER_CTX_new();
 +  if ((strlen(key) < 2) || (strlen(key) >= MSG_DIGEST_LEN))
@@ -836,7 +836,7 @@ diff -Naur spice-gtk/src/hmac_cipher.h tainted_spice/src/hmac_cipher.h
 +char *compute_msg_digest(int len, char *data);
 +int hmac_extract_and_decipher(int len, char *buf, char **outbuf);
 +int hmac_insert_and_cipher(int len, char *buf, char **outbuf);
-+void cipher_init(char *key);
++void cipher_myinit(char *key);
 +/*---------------------------------------------------------------------------*/
 +
 +

@@ -293,8 +293,6 @@ static void topo_config_check_str(t_topo_clc *cf, int line)
     KOUT("%d", line);
   if (strlen(cf->bulk_dir) >= MAX_PATH_LEN)
     KOUT("%d", line);
-  if (strlen(cf->tmux_bin) >= MAX_PATH_LEN)
-    KOUT("%d", line);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -314,8 +312,6 @@ static void topo_config_swapon(t_topo_clc *cf, t_topo_clc *icf)
     strcpy(cf->bin_dir, NO_DEFINED_VALUE);
   if (strlen(cf->bulk_dir) == 0)
     strcpy(cf->bulk_dir, NO_DEFINED_VALUE);
-  if (strlen(cf->tmux_bin) == 0)
-    strcpy(cf->tmux_bin, NO_DEFINED_VALUE);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -335,8 +331,6 @@ static void topo_config_swapoff(t_topo_clc  *cf, t_topo_clc *icf)
     memset(cf->bin_dir, 0, MAX_NAME_LEN);
   if (!strcmp(cf->bulk_dir, NO_DEFINED_VALUE))
     memset(cf->bulk_dir, 0, MAX_NAME_LEN);
-  if (!strcmp(cf->tmux_bin, NO_DEFINED_VALUE))
-    memset(cf->tmux_bin, 0, MAX_NAME_LEN);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -696,7 +690,6 @@ void send_work_dir_resp(int llid, int tid, t_topo_clc *icf)
                                        cf.work_dir,
                                        cf.bulk_dir,
                                        cf.bin_dir,
-                                       cf.tmux_bin,
                                        cf.flags_config);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -903,7 +896,6 @@ void send_event_topo(int llid, int tid, t_topo_info *topo)
                                       cf.work_dir,
                                       cf.bulk_dir,
                                       cf.bin_dir,
-                                      cf.tmux_bin,
                                       cf.flags_config,
                                       topo->nb_kvm,
                                       topo->nb_c2c,
@@ -1596,13 +1588,12 @@ static t_topo_info *helper_event_topo (char *msg, int *tid)
                                      icf.work_dir,
                                      icf.bulk_dir,
                                      icf.bin_dir,
-                                     icf.tmux_bin,
                                      &(icf.flags_config),
                                      &(topo->nb_kvm),
                                      &(topo->nb_c2c),
                                      &(topo->nb_snf),
                                      &(topo->nb_sat),
-                                     &(topo->nb_endp)) != 15)
+                                     &(topo->nb_endp)) != 14)
     KOUT("%s", msg);
   topo_config_swapoff(&(topo->clc), &icf);
   topo->kvm= (t_topo_kvm *) clownix_malloc(topo->nb_kvm*sizeof(t_topo_kvm),16);
@@ -2163,8 +2154,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
                                      icf.work_dir,
                                      icf.bulk_dir,
                                      icf.bin_dir,
-                                     icf.tmux_bin,
-                                     &(icf.flags_config)) != 10)
+                                     &(icf.flags_config)) != 9)
         KOUT("%s", msg);
       topo_config_swapoff(&cf, &icf);
       recv_work_dir_resp(llid, tid, &cf);

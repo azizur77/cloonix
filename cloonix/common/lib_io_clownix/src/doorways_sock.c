@@ -654,7 +654,10 @@ static int rx_cb(void *ptr, int llid, int fd)
     else 
       {
       if (rx_doorways(lid, result, buf))
+        {
         KERR("%d", result);
+        clean_llid(llid);
+        }
       }
     }
   return result;
@@ -1019,7 +1022,7 @@ void doorways_clean_llid(int llid)
 /****************************************************************************/
 void doorways_sock_init(void)
 {
-  cipher_init();
+  cipher_myinit();
   g_init_done = 777;
   memset(g_llid_data, 0, sizeof(t_llid *) * CLOWNIX_MAX_CHANNELS); 
   g_listen_llid_inet = 0;

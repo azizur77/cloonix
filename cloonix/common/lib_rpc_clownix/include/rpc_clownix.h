@@ -16,7 +16,7 @@
 /*                                                                           */
 /*****************************************************************************/
 #define NO_DEFINED_VALUE "NO_DEFINED_VALUE_ITEM"
-#define TMUX_SOCK "tmux_sock"
+#define DTACH_SOCK "dtach"
 #define DOORS_CTRL_SOCK "doors_ctrl_sock"
 #define SPICE_SOCK "spice_sock"
 #define CLOONIX_SWITCH "cloonix_switch"
@@ -25,6 +25,7 @@
 #define MUSWITCH_SOCK_DIR "mu"
 #define MUSWITCH_TRAF_DIR "tmu"
 #define ENDP_SOCK_DIR "endp"
+#define ENDP_CLI_SOCK_DIR "cli"
 
 
 #define MAX_STATS_ITEMS 30
@@ -75,8 +76,8 @@ enum
 {
   vm_evt_none = 0,
   vm_evt_poll_not_used,
-  vm_evt_tmux_launch_ok,
-  vm_evt_tmux_launch_ko,
+  vm_evt_dtach_launch_ok,
+  vm_evt_dtach_launch_ko,
   vm_evt_ping_ok,
   vm_evt_ping_ko,
   vm_evt_cloonix_ga_ping_ok,

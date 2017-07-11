@@ -827,7 +827,7 @@ int add_new_node(char *name, char *kernel, char *rootfs_used,
     bitem->pbi.color_choice = color_choice;
     bitem->pbi.pbi_node->node_vm_id = vm_id;
     bitem->pbi.pbi_node->node_vm_config_flags = vm_config_flags;
-    bitem->pbi.flag = flag_tmux_launch_ko;
+    bitem->pbi.flag = flag_dtach_launch_ko;
     topo_add_cr_item_to_canvas(bitem, NULL);
     write_node_name(bitem);
     topo_get_absolute_coords(bitem);

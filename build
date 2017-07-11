@@ -65,7 +65,8 @@ done
             muswitch/mutst \
             muswitch/mulan \
             spice \
-            qemu; do
+            qemu \
+            dtach; do
 
     echo
     echo DOING:

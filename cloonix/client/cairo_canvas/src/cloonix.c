@@ -74,7 +74,7 @@ static char g_current_directory[MAX_PATH_LEN];
 static char g_doors_client_addr[MAX_PATH_LEN];
 static char g_cloonix_root_tree[MAX_PATH_LEN];
 static char g_tmp_work_path[MAX_PATH_LEN];
-static char g_tmux_work_path[MAX_PATH_LEN];
+static char g_dtach_work_path[MAX_PATH_LEN];
 static char g_password[MSG_DIGEST_LEN];
 static char **g_saved_environ;
 /*--------------------------------------------------------------------------*/
@@ -202,9 +202,9 @@ char *get_tmp_work_path(void)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static const char *get_tmux_work_path(void)
+static const char *get_dtach_work_path(void)
 {
-  return (g_tmux_work_path);
+  return (g_dtach_work_path);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -225,16 +225,8 @@ char *get_distant_cloonix_tree(void)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *get_distant_tmux(void)
-{
-  return g_clc.tmux_bin;
-}
-/*--------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 char **get_argv_local_dbssh(char *name)
 {
-  char *tmux;
   static char bin_path[MAX_PATH_LEN];
   static char doors_addr[MAX_PATH_LEN];
   static char username[2*MAX_NAME_LEN];
@@ -261,10 +253,9 @@ char **get_argv_local_dbssh(char *name)
            get_local_cloonix_tree());
   strncpy(doors_addr, get_doors_client_addr(), MAX_PATH_LEN-1);
   snprintf(username, MAX_PATH_LEN-1, "local_host_dropbear");
-  tmux = get_distant_tmux();
   snprintf(cmd, 2*MAX_PATH_LEN-1, 
-           "%s -S %s attach -t %s; sleep 10", 
-           tmux, get_tmux_work_path(), nm);
+           "%s/server/dtach/dtach -a %s/%s; sleep 10", 
+           get_distant_cloonix_tree(), get_dtach_work_path(), nm);
   KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
   return (argv);
 }
@@ -459,8 +450,8 @@ void work_dir_resp(int tid, t_topo_clc *conf)
   memcpy(&g_clc, conf, sizeof(t_topo_clc));
   snprintf(g_tmp_work_path, MAX_PATH_LEN-1, "/tmp/%s", 
            local_get_cloonix_name());
-  snprintf(g_tmux_work_path, MAX_PATH_LEN-1, "%s/%s",
-                             g_clc.work_dir, TMUX_SOCK);
+  snprintf(g_dtach_work_path, MAX_PATH_LEN-1, "%s/%s",
+                             g_clc.work_dir, DTACH_SOCK);
   my_mkdir(g_tmp_work_path);
 
   if (gtk_init_check(NULL, NULL) == FALSE)

@@ -51,7 +51,7 @@ static void action_read(int fd)
     }
   else
     {
-    fprintf(stdout, "echoing: %s\n", buf);
+    fprintf(stdout, "echoing: %d %s\n", rx_len, buf);
     write(g_fd, buf, rx_len);
     }
 }

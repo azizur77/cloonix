@@ -463,54 +463,55 @@ void machine_recv_kill_clownix(void)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void tmux_duplicate_clone_msg(void *data, char *msg)
+static void dtach_duplicate_clone_msg(void *data, char *msg)
 {
-  char tmux_name[MAX_NAME_LEN+2];
-  t_check_tmux_duplicate *tmux = (t_check_tmux_duplicate *) data;
-  memset(tmux_name, 0, MAX_NAME_LEN+2);
-  snprintf(tmux_name, MAX_NAME_LEN+1, "%s: ", tmux->name);
-  if (!strncmp(msg, tmux_name, strlen(tmux_name)))
-    strcpy(tmux->msg, "DUPLICATE");
+  char dtach_name[MAX_NAME_LEN+2];
+  t_check_dtach_duplicate *dtach = (t_check_dtach_duplicate *) data;
+  memset(dtach_name, 0, MAX_NAME_LEN+2);
+  snprintf(dtach_name, MAX_NAME_LEN+1, "%s: ", dtach->name);
+  if (!strncmp(msg, dtach_name, strlen(dtach_name)))
+    strcpy(dtach->msg, "DUPLICATE");
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void tmux_duplicate_clone_death(void *data, int status, char *name)
+static void dtach_duplicate_clone_death(void *data, int status, char *name)
 {
-  t_check_tmux_duplicate *tmux = (t_check_tmux_duplicate *) data;
-  if (!tmux->cb)
+  t_check_dtach_duplicate *dtach = (t_check_dtach_duplicate *) data;
+  if (!dtach->cb)
     KOUT(" ");
-  if (!strcmp(tmux->msg, "DUPLICATE"))
-    tmux->cb(-1, tmux->name);
+  if (!strcmp(dtach->msg, "DUPLICATE"))
+    dtach->cb(-1, dtach->name);
   else
-    tmux->cb(0, tmux->name);
+    dtach->cb(0, dtach->name);
   clownix_free(data, __FUNCTION__);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int tmux_duplicate_clone(void *data)
+static int dtach_duplicate_clone(void *data)
 {
-  char *cmd = utils_get_tmux_bin_path();
-  char *sock = utils_get_tmux_sock_path();
+  t_check_dtach_duplicate *dtach = (t_check_dtach_duplicate *) data;
+  char *cmd = utils_get_dtach_bin_path();
+  char *sock = utils_get_dtach_sock_path(dtach->name);
 
-  char *argv[] = { cmd, "-S", sock, "ls", NULL, };
+  char *argv[] = { cmd, "-n", sock, "ls", NULL, };
   my_popen(cmd, argv);
   return 0;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void tmux_duplicate_check(char *name, t_tmux_duplicate_callback cb)
+void dtach_duplicate_check(char *name, t_dtach_duplicate_callback cb)
 {
-  t_check_tmux_duplicate *tmux;
-  int len = sizeof(t_check_tmux_duplicate);
-  tmux = (t_check_tmux_duplicate *) clownix_malloc(len, 7);
-  memset(tmux, 0, len);
-  strncpy(tmux->name, name, MAX_NAME_LEN-1);
-  tmux->cb = cb;
-  pid_clone_launch(tmux_duplicate_clone, tmux_duplicate_clone_death,
-                   tmux_duplicate_clone_msg, NULL, tmux, tmux, name, -1, 1);
+  t_check_dtach_duplicate *dtach;
+  int len = sizeof(t_check_dtach_duplicate);
+  dtach = (t_check_dtach_duplicate *) clownix_malloc(len, 7);
+  memset(dtach, 0, len);
+  strncpy(dtach->name, name, MAX_NAME_LEN-1);
+  dtach->cb = cb;
+  pid_clone_launch(dtach_duplicate_clone, dtach_duplicate_clone_death,
+                   dtach_duplicate_clone_msg, NULL, dtach, dtach, name, -1, 1);
 }
 /*---------------------------------------------------------------------------*/
 

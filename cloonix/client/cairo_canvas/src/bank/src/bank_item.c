@@ -597,22 +597,22 @@ void bank_set_qmonitor_pid(char *name, int val)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int bank_get_tmux_pid(char *name)
+int bank_get_dtach_pid(char *name)
 {
   t_bank_item *bitem = look_for_node_with_id(name);
   int result = 0;
   if (bitem)
-    result = bitem->tmux_pid;
+    result = bitem->dtach_pid;
   return result;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void bank_set_tmux_pid(char *name, int val)
+void bank_set_dtach_pid(char *name, int val)
 {
   t_bank_item *bitem = look_for_node_with_id(name);
   if (bitem)
-    bitem->tmux_pid = val;
+    bitem->dtach_pid = val;
 }
 /*--------------------------------------------------------------------------*/
 
