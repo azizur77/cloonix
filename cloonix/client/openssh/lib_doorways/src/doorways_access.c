@@ -351,7 +351,6 @@ static void first_read_process(int len, char *buf)
 /*****************************************************************************/
 static void err_cli_cb (void *ptr, int llid, int err, int from)
 {
-  fprintf(stderr, "Client Cutoff %d %d", err, from);
   local_exit(1);
 }
 /*---------------------------------------------------------------------------*/
@@ -439,7 +438,6 @@ static int unix_socket_create(char *sockcli)
 /****************************************************************************/
 void doorways_access_init(char *sockcli)
 {
-fprintf(stderr, "INPUT %s", sockcli);
   memset(g_sockcli, 0, MAX_PATH_LEN);
   strncpy(g_sockcli, sockcli, MAX_PATH_LEN-1);
   change_state(state_waiting_first_read);

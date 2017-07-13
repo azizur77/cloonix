@@ -108,7 +108,7 @@ static void muresp_timeout(void *data)
     if (msg_exist_channel(mut->cli_llid))
       {
       send_mucli_dialog_resp(mut->cli_llid, mut->cli_tid,
-                             mut->name, mut->num, "KO TIMEOUT", 1);
+                             mut->name, mut->num, "RESPKO TIMEOUT", 1);
       }
     }
   clownix_free(mut, __FUNCTION__);

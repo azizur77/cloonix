@@ -157,7 +157,7 @@ if [ $UID != 0 ]; then
   exit
 fi
 case "$name" in
-  "Debian" | "Ubuntu")
+  "Debian" | "Ubuntu" | "Kali")
     printf "\n\tInstall tool is apt-get.\n\n"
     apt-get --assume-yes update
     if [ $depends_build = 1 ]; then

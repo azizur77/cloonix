@@ -126,7 +126,28 @@ int  raw_fd_open(t_all_ctx *all_ctx, char *tap_name)
 void rpct_recv_cli_req(void *ptr, int llid, int tid,
                     int cli_llid, int cli_tid, char *line)
 {
-  KERR("%s", line);
+  t_machine *mach;
+  t_all_ctx *all_ctx = (t_all_ctx *) ptr;
+  char resp[MAX_PATH_LEN];
+  char name[MAX_NAME_LEN];
+  memset(resp, 0, MAX_PATH_LEN);
+  DOUT((void *)all_ctx, FLAG_HOP_DIAG, "%s", line);
+  if (sscanf(line, "whatip %s", name) == 1)
+    {
+    mach = look_for_machine_with_name(name);
+    if (mach)
+      {
+      if (strlen(mach->ip))
+        snprintf(resp, MAX_PATH_LEN-1, "RESPOK %s %s", name, mach->ip);
+      else
+        snprintf(resp, MAX_PATH_LEN-1, "RESPKO UNKNOWN IP FOR VM: %s", name);
+      }
+    else
+      snprintf(resp, MAX_PATH_LEN-1, "RESPKO UNKNOWN VM: %s", name);
+    }
+  else
+    snprintf(resp, MAX_PATH_LEN-1, "RESPKO NO CMD: %s", line);
+  rpct_send_cli_resp(all_ctx, llid, tid, cli_llid, cli_tid, resp);
 }
 /*---------------------------------------------------------------------------*/
 

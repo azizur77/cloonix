@@ -663,7 +663,7 @@ static void execchild(struct ChanSess *chansess)
     addnewvar("PATH", pth); 
     addnewvar("USER", "root");
     addnewvar("HOME", "/root");
-    addnewvar("TERM", "xterm");
+    addnewvar("TERM", "rxvt-unicode");
     addnewvar("XAUTHORITY", "/root/.Xauthority");
     if (chansess->cloonix_name)
       addnewvar("PROMPT_COMMAND", chansess->cloonix_name);

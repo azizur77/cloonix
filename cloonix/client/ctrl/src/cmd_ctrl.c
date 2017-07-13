@@ -780,12 +780,12 @@ static void mud_cli_dialog_cb(int tid, char *name, int eth,
 {
   if (status)
     {
-    printf("\n\nFAIL DEST NOT FOUND: %s %d %s\n\n", name, eth, line);
+    printf("RESPKO DEST NOT FOUND: %s %d %s\n\n", name, eth, line);
     exit(1);
     }
   else
     {
-    printf("\n\n%s\n\n", line);
+    printf("%s\n\n", line);
     exit(0);
     }
 }
@@ -938,7 +938,7 @@ static void stats_endp_cb(int tid, char *name, int num,
 {
   if (status)
     {
-    printf("\nKO\n");
+    printf("RESPKO\n");
     exit(1); 
     }
   printf("\n%s %d\n", name, num);
@@ -953,7 +953,7 @@ static void stats_sysinfo_cb(int tid, char *name,
 {
   if (status)
     {
-    printf("\nKO\n");
+    printf("RESPKO\n");
     exit(1);
     }
   printf("\n%s %d\n", name, si->time_ms);
