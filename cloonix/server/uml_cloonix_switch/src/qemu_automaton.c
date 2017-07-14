@@ -289,25 +289,27 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-#define QEMU_OPTS \
+#define QEMU_OPTS_BASE \
    " -m %d"\
-   " -serial mon:stdio"\
-   " -nographic"\
-   " -nodefaults"\
    " -name %s"\
-   " -device virtio-serial-pci"\
+   " -serial mon:stdio"\
    " -chardev socket,id=mon1,path=%s,server,nowait"\
    " -mon chardev=mon1,mode=readline"\
    " -chardev socket,id=qmp1,path=%s,server,nowait"\
-   " -mon chardev=qmp1,mode=control"\
+   " -mon chardev=qmp1,mode=control"
+
+#define QEMU_OPTS_CLOONIX \
+   " -device virtio-serial-pci"\
    " -chardev socket,path=%s,server,nowait,id=cloon"\
    " -device virtserialport,chardev=cloon,name=net.cloonix.0"\
    " -chardev socket,path=%s,server,nowait,id=hvc0"\
-   " -device virtconsole,chardev=hvc0"
-
-#define QEMU_SPICE \
+   " -device virtconsole,chardev=hvc0"\
    " -balloon virtio"\
-   " -device virtio-rng-pci"\
+   " -device virtio-rng-pci"
+
+   //" -vga virtio -display gtk,gl=on",
+#define QEMU_SPICE \
+   " -vga qxl"\
    " -soundhw hda"\
    " -usb"\
    " -chardev spicevmc,id=charredir0,name=usbredir"\
@@ -321,8 +323,7 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 /****************************************************************************/
 static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
 {
-  int i, nb_cpu,  len=0;
-  char option_kvm_txt[MAX_NAME_LEN];
+  int i, nb_cpu,  len;
   char cmd_start[3*MAX_PATH_LEN];
   char cpu_type[MAX_NAME_LEN];
   char *rootfs, *added_disk, *gname;
@@ -331,7 +332,6 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     KOUT(" ");
   spice_path = utils_get_spice_path(vm->kvm.vm_id);
   nb_cpu = vm->kvm.cpu;
-  strcpy(option_kvm_txt, "-enable-kvm");
   if (inside_cloonix(&gname))
     {
     strcpy(cpu_type, "kvm64");
@@ -340,24 +340,32 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     {
     strcpy(cpu_type, "host,+vmx");
     }
-  sprintf(cmd_start, QEMU_OPTS, 
-          vm->kvm.mem,
-          vm->kvm.name,
-          utils_get_qmonitor_path(vm->kvm.vm_id),
-          utils_get_qmp_path(vm->kvm.vm_id),
-          utils_get_qbackdoor_path(vm->kvm.vm_id),
-          utils_get_qhvc0_path(vm->kvm.vm_id));
-  len += sprintf(linux_cmd+len, " %s"
-                                " -pidfile %s/%s/pid"
-                                " -cpu %s"
-                                " -smp %d,maxcpus=%d,cores=1"
-                                " %s"
-                                " -vga qxl",
-                                //" -vga virtio -display gtk,gl=on",
+
+  len = sprintf(cmd_start, QEMU_OPTS_BASE, 
+                vm->kvm.mem,
+                vm->kvm.name,
+                utils_get_qmonitor_path(vm->kvm.vm_id),
+                utils_get_qmp_path(vm->kvm.vm_id));
+
+  if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
+    len += sprintf(cmd_start+len, QEMU_OPTS_CLOONIX, 
+                   utils_get_qbackdoor_path(vm->kvm.vm_id),
+                   utils_get_qhvc0_path(vm->kvm.vm_id));
+
+  len = sprintf(linux_cmd, " %s"
+                           " -pidfile %s/%s/pid"
+                           " -cpu %s"
+                           " -smp %d,maxcpus=%d,cores=1"
+                           " -enable-kvm",
           cmd_start, cfg_get_work_vm(vm->kvm.vm_id), DIR_UMID,
-          cpu_type, nb_cpu, nb_cpu, option_kvm_txt);
+          cpu_type, nb_cpu, nb_cpu);
   if (spice_libs_exists())
-    len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
+    {
+    if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
+      len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
+    else
+      len += sprintf(linux_cmd+len," -nographic");
+    }
   if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
     if (vm->kvm.p9_host_share[0] == 0) 
@@ -508,31 +516,6 @@ static int launch_qemu_vm(t_vm *vm)
 }
 /*--------------------------------------------------------------------------*/
 
-/****************************************************************************/
-static void dtach_duplicate_callback(int status, char *name)
-{
-  t_vm   *vm = cfg_get_vm(name);
-  t_wake_up_eths *wake_up_eths;
-  char err[MAX_PRINT_LEN];
-  if (!vm)
-    return;
-  wake_up_eths = vm->wake_up_eths;
-  if (!wake_up_eths)
-    return;
-  if (strcmp(wake_up_eths->name, name))
-    KOUT(" ");
-  if (status)
-    {
-    sprintf(err, "ERROR DTACH WITH SAME NAME EXISTS: %s\n", name);
-    event_print(err);
-    send_status_ko(wake_up_eths->llid, wake_up_eths->tid, err);
-    utils_launched_vm_death(name, error_death_dtacherr);
-    }
-  else
-    qemu_vm_automaton(NULL, 0, name); 
-}
-/*--------------------------------------------------------------------------*/
-
 /*****************************************************************************/
 void arm_utils_finish_vm_init(char *name, int val)
 {
@@ -570,11 +553,6 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
     }
   switch (state)
     {
-//    case auto_idle:
-//      wake_up_eths->state = auto_create_disk;
-//      dtach_duplicate_check(name, dtach_duplicate_callback);
-//      break;
-//    case auto_create_disk:
     case auto_idle:
       wake_up_eths->state = auto_create_vm_launch;
       if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)

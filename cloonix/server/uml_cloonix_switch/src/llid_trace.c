@@ -34,6 +34,7 @@
 #include "stats_counters.h"
 #include "stats_counters_sysinfo.h"
 #include "blkd_sub.h"
+#include "unix2inet.h"
 
 /*---------------------------------------------------------------------------*/
 typedef struct t_event_to_llid
@@ -392,6 +393,7 @@ void llid_trace_free(int llid, int from_clone, const char* fct)
   stats_counters_llid_close(llid);
   stats_counters_sysinfo_llid_close(llid);
   blkd_sub_llid_close(llid, from_clone);
+  unix2inet_llid_cutoff(llid);
 
   cur = llid_trace_data[llid];
   if (cur)

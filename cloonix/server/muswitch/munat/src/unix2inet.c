@@ -31,6 +31,7 @@
 #include "machine.h"
 #include "utils.h"
 #include "packets_io.h"
+#include "llid_slirptux.h"
 
 #define OFFSET_PORT 30000
 #define MAX_INFO_LEN 200
@@ -78,6 +79,7 @@ static int free_ctx_waiting_for_arp_resp(char *ip, int *llid, uint16_t *port);
 static t_ctx_unix2inet *find_ctx(int llid);
 static void free_ctx(t_all_ctx *all_ctx, int llid);
 
+void req_unix2inet_conpath_evt(t_all_ctx *all_ctx, int llid,  char *name);
 
 /*****************************************************************************/
 static void doorways_tx_resp(t_all_ctx *all_ctx, int llid, int val)
@@ -367,6 +369,7 @@ static int send_first_tcp_syn(t_ctx_unix2inet *ctx,
 {
   int result = -1;
   t_clo *clo;
+  t_machine *machine;
   unix2inet_init_tcp_id(&(ctx->tcpid), remote_mac, remote_ip,
                         ctx->llid, remote_port);
   if (clo_high_syn_tx(&(ctx->tcpid)))
@@ -379,7 +382,17 @@ static int send_first_tcp_syn(t_ctx_unix2inet *ctx,
     clo = util_get_fast_clo(&(ctx->tcpid));
     if (clo)
       {
-      result = 0;
+      machine = look_for_machine_with_ip(remote_ip);
+      if (!machine)
+        {
+        KERR(" ");
+        free_ctx(ctx->all_ctx, ctx->llid);
+        }
+      else
+        {
+        req_unix2inet_conpath_evt(ctx->all_ctx, ctx->llid, machine->name);
+        result = 0;
+        }
       }
     else
       {
@@ -584,6 +597,12 @@ void unix2inet_close_tcpid(t_tcp_id *tcpid)
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+void free_unix2inet_conpath(t_all_ctx *all_ctx, int llid, char *name)
+{
+  free_ctx(all_ctx, llid);
+}
+/*---------------------------------------------------------------------------*/
 
 
 /*****************************************************************************/

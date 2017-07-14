@@ -15,9 +15,12 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void cisco_close_tcpid(t_tcp_id *tcpid);
-void cisco_arp_resp(char *mac, char *ip);
-int cisco_ssh_syn_ack_arrival(t_tcp_id *tcp_id);
-void cisco_init(t_all_ctx *all_ctx);
-/*--------------------------------------------------------------------------*/
+void unix2inet_monitor(int llid, int llid_con, char *satname, char *vmname);
+void unix2inet_lan_event(int llid, int llid_con);
+void unix2inet_llid_cutoff(int llid);
+void unix2inet_vm_cutoff(char *vmname);
+void unix2inet_init(void);
+/*---------------------------------------------------------------------------*/
+
+
 

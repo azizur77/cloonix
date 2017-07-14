@@ -49,10 +49,21 @@ static char g_buf[MAX_SLIRP_RX_PROCESS];
 
 
 /*****************************************************************************/
+void req_unix2inet_conpath_evt(t_all_ctx *all_ctx, int llid, char *name)
+{
+  char msg[MAX_PATH_LEN];
+  int cloonix_llid = blkd_get_cloonix_llid((void *) all_ctx);
+  sprintf(msg, "unix2inet_conpath_evt_monitor llid=%d name=%s",
+          llid, name);
+  rpct_send_app_msg((void *) all_ctx, cloonix_llid, 0, msg);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line)
 {
   char name[MAX_NAME_LEN];
-  int vm_id, vm_eth;
+  int vm_id, vm_eth, llid_con;
   int m[6];
   char mac[MAX_NAME_LEN];
 
@@ -79,6 +90,11 @@ void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line)
                                   m[0]&0xFF, m[1]&0xFF, m[2]&0xFF,
                                   m[3]&0xFF, m[4]&0xFF, m[5]&0xFF);
     unset_dhcp_addr(name, vm_id, vm_eth, mac);
+    }
+  else if (sscanf(line, "unix2inet_conpath_evt_break llid=%d name=%s",
+                  &llid_con, name) == 2)
+    {
+    free_unix2inet_conpath((t_all_ctx *)ptr, llid_con, name);
     }
   else
     KERR("%s", line);

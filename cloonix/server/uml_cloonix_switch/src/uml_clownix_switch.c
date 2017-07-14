@@ -65,6 +65,7 @@
 #include "blkd_sub.h"
 #include "blkd_data.h"
 #include "cloonix_conf_info.h"
+#include "unix2inet.h"
 
 static t_topo_clc g_clc;
 static t_cloonix_conf_info *g_cloonix_conf_info;
@@ -542,6 +543,7 @@ int main (int argc, char *argv[])
     KOUT(" ");
   g_i_am_in_cloonix = i_am_inside_cloonix(g_i_am_in_cloonix_name);
 
+  unix2inet_init();
   init_g_user();
   job_for_select_init();
   utils_init();

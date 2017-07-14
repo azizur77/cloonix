@@ -44,6 +44,7 @@
 #include "lan_to_name.h"
 #include "layout_rpc.h"
 #include "layout_topo.h"
+#include "unix2inet.h"
 
 void uml_clownix_switch_error_cb(void *ptr, int llid, int err, int from);
 void uml_clownix_switch_rx_cb(int llid, int len, char *buf);
@@ -511,7 +512,7 @@ void endp_mngt_add_attached_lan(int llid, char *name, int num,
 /****************************************************************************/
 void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan)
 {
-  int lan_num;
+  int lan_num, llid, llid_con;
   t_priv_endp *mu = muendp_find_with_name(name, num);
   if (!mu)
     KERR("%s %d %s", name, num, lan);
@@ -527,6 +528,12 @@ void endp_mngt_del_attached_lan(char *name, int num, int tidx, char *lan)
                             mu->lan_attached[tidx].lan_num);
       else
         {
+        if (mu->lan_attached[tidx].unix2inet_evt_on)
+          {
+          llid = mu->lan_attached[tidx].unix2inet_llid;
+          llid_con = mu->lan_attached[tidx].unix2inet_llid_con;
+          unix2inet_lan_event(llid, llid_con);
+          }
         memset(&(mu->lan_attached[tidx]), 0, sizeof(t_lan_attached));
         event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
         }
@@ -1469,6 +1476,58 @@ void endp_mngt_erase_eventfull_stats(void)
 
     cur = cur->next;
     }
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
+int endp_mngt_get_all_lan(char *name, int nb_num, int *nb_lan, int *lan)
+{
+  int i, j, result = -1;
+  t_priv_endp *endp;
+  *nb_lan = 0;
+  for (i=0; i<nb_num; i++)
+    {
+    endp = muendp_find_with_name(name, i);
+    if (endp)
+      {
+      result = 0;
+      for (j=0; j<MAX_TRAF_ENDPOINT; j++)
+        {
+        if (endp->lan_attached[j].lan_num)
+          {
+          lan[*nb_lan] = endp->lan_attached[j].lan_num;
+          *nb_lan += 1;
+          }
+        }
+      }
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
+int endp_mngt_set_evt(char *name, int nb_num, int lan, int llid, int llid_con)
+{
+  int i, j, result = -1;
+  t_priv_endp *endp;
+  for (i=0; i<nb_num; i++)
+    {
+    endp = muendp_find_with_name(name, i);
+    if (endp)
+      {
+      for (j=0; j<MAX_TRAF_ENDPOINT; j++)
+        {
+        if (endp->lan_attached[j].lan_num == lan)
+          {
+          endp->lan_attached[j].unix2inet_evt_on = 1;
+          endp->lan_attached[j].unix2inet_llid = llid;
+          endp->lan_attached[j].unix2inet_llid_con = llid_con;
+          result = 0;
+          }
+        }
+      }
+    }
+  return result;
 }
 /*---------------------------------------------------------------------------*/
 

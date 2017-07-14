@@ -18,6 +18,9 @@
 typedef struct t_lan_attached
 {
   int lan_num;
+  int unix2inet_evt_on;
+  int unix2inet_llid;
+  int unix2inet_llid_con;
   int eventfull_rx_p;
   int eventfull_tx_p;
 } t_lan_attached;
@@ -53,6 +56,9 @@ void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line);
 void endp_mngt_send_quit(char *name, int num);
 void endp_mngt_err_cb (int llid);
 void endp_mngt_pid_resp(int llid, char *name, int toppid, int pid);
+int endp_mngt_get_all_lan(char *name, int nb_num, int *nb_lan, int *lan);
+int endp_mngt_set_evt(char *name, int nb_num, int lan, int llid, int llid_con);
+
 void endp_mngt_init(void);
 
 int fd_ready_doors_clone_has_arrived(char *name, int doors_fd);

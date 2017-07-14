@@ -29,7 +29,6 @@ enum
   error_death_cdrom,
   error_death_umlerr,
   error_death_qemuerr,
-  error_death_dtacherr,
   error_death_kvmerr,
   error_death_kvmcb,
   error_death_kvmmonitor,

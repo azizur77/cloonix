@@ -200,7 +200,7 @@ void help_mud_sat(char *line)
 /*****************************************************************************/
 void help_mud_eth(char *line)
 {
-  printf("\n\n\n%s <name> <num> \"txt of msg\"\n\n\n", line);
+  printf("\n\n\n%s <name> <num> \"set_link 0\"\n\n\n", line);
 }
 /*---------------------------------------------------------------------------*/
 

@@ -54,7 +54,8 @@ SRC = \
       c2c.c \
       c2c_utils.c \
       blkd_sub.c \
-      blkd_data.c 
+      blkd_data.c \
+      unix2inet.c
 
 INCLUDES= -I./src \
           -I$(GLOB_INCLUDE) \

@@ -31,6 +31,7 @@
 #include "cfg_store.h"
 #include "endp_mngt.h"
 #include "mulan_mngt.h"
+#include "unix2inet.h"
 
 
 /****************************************************************************/
@@ -61,7 +62,6 @@ static void snf_globtopo_small_event(char *name, int num_evt, char *path)
   event_subscriber_send(topo_small_event, (void *) &evt);
 }
 /*--------------------------------------------------------------------------*/
-
 
 /****************************************************************************/
 static t_mutimeout *mutimeout_find(int llid, int cli_llid, int cli_tid)
@@ -271,7 +271,26 @@ void rpct_recv_evt_msg(void *ptr, int llid, int tid, char *line)
 /*****************************************************************************/
 void rpct_recv_app_msg(void *ptr, int llid, int tid, char *line)
 {
-  KERR("%s", line);
+  char vmname[MAX_NAME_LEN];
+  char satname[MAX_NAME_LEN];
+  int num, mutype, llid_con;
+  if (endp_mngt_can_be_found_with_llid(llid, satname, &num, &mutype))
+    {
+    if (mutype == endp_type_nat)
+      {
+      if (sscanf(line, "unix2inet_conpath_evt_monitor llid=%d name=%s",
+                 &llid_con, vmname) == 2)
+        {
+        unix2inet_monitor(llid, llid_con, satname, vmname);
+        }
+      else
+        KERR("%s", line);
+      }
+    else
+      KERR("%s", line);
+    }
+  else
+    KERR("%s", line);
 }
 /*---------------------------------------------------------------------------*/
 
