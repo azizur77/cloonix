@@ -96,23 +96,30 @@ static int start_launch(void *ptr)
 void launch_xterm_double_click(char *name_vm, int vm_config_flags)
 {
   static char title[2*MAX_NAME_LEN];
+  static char net[MAX_NAME_LEN];
   static char name[MAX_NAME_LEN];
   static char cmd[2*MAX_PATH_LEN];
   static char xvt[MAX_PATH_LEN];
   static char *argv[] = {xvt, "-T", title, "-e", 
                          "/bin/bash", "-c", cmd, NULL};
+  static char *argvcisco[] = {xvt, "-T", title, "-e", 
+                              "/usr/local/bin/cloonix_osh",
+                              net, "nat", cmd, NULL};
   memset(cmd, 0, 2*MAX_PATH_LEN);
   memset(title, 0, 2*MAX_NAME_LEN);
   memset(name, 0, MAX_NAME_LEN);
+  memset(net, 0, MAX_NAME_LEN);
   cloonix_get_xvt(xvt);
-  strcpy(name, name_vm);
+  strncpy(name, name_vm, MAX_NAME_LEN);
+  strncpy(net, local_get_cloonix_name(), MAX_NAME_LEN);
 
   if (vm_config_flags & VM_CONFIG_FLAG_CISCO)
     {
-    snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", local_get_cloonix_name(), name);
-    sprintf(cmd, "%s/server/qmonitor/qmonitor %s %s %s; sleep 5",
-                 get_distant_cloonix_tree(), get_doors_client_addr(),
-                 get_password(), name);
+    snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", net, name);
+    sprintf(cmd, "cisco@%s",  name);
+    if (check_before_start_launch(argvcisco))
+      pid_clone_launch(start_launch, NULL, NULL, (void *)(argvcisco),
+                       NULL, NULL, name_vm, -1, 0);
     }
   else
     {
@@ -121,10 +128,10 @@ void launch_xterm_double_click(char *name_vm, int vm_config_flags)
              "%s/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh %s %s %s",
              get_local_cloonix_tree(),  get_doors_client_addr(),
              get_password(), name);
+    if (check_before_start_launch(argv))
+      pid_clone_launch(start_launch, NULL, NULL, (void *)(argv),
+                       NULL, NULL, name_vm, -1, 0);
     }
-  if (check_before_start_launch(argv))
-    pid_clone_launch(start_launch, NULL, NULL, (void *)(argv),
-                     NULL, NULL, name_vm, -1, 0);
 }
 /*--------------------------------------------------------------------------*/
 
