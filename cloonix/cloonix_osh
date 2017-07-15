@@ -76,5 +76,6 @@ SOCK=${WORK}/${cloonix_name}/cli
 shift 3
 
 BIN_SSH=${CLOONIX_TREE}/client/openssh/cloonix_u2i_ssh
-${BIN_SSH} ${SOCK} -i ${CLOONIX_TREE}/id_rsa -X ${PARAMS} "$@"
+#${BIN_SSH} ${SOCK} -i ${CLOONIX_TREE}/id_rsa -X ${PARAMS} "$@"
+${BIN_SSH} ${SOCK} -i ${CLOONIX_TREE}/id_rsa ${PARAMS} "$@"
 
