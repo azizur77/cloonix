@@ -10,7 +10,7 @@ if [ ! -f $CLOONIX_CONFIG ]; then
 fi
 CLOONIX_TREE=$(cat $CLOONIX_CONFIG |grep CLOONIX_TREE | awk -F = '{print $2}')
 CLOONIX_WORK=$(cat $CLOONIX_CONFIG |grep CLOONIX_WORK | awk -F = '{print $2}')
-WORK=$(eval echo $CLOONIX_WORK)
+CLOONIX_WORK=$(eval echo $CLOONIX_WORK)
 
 
 
@@ -71,7 +71,10 @@ if [ "${resp}" != "RESPOK" ]; then
 fi
 
 PARAMS="${ip}=${port}=${passwd}=${nat_name}@user=${user_name}=ip=${ip_vm}=port=22=cloonix_info_end"
-SOCK=${WORK}/${cloonix_name}/cli
+SOCK=${CLOONIX_WORK}/${cloonix_name}/cli
+if [ ! -e $SOCK ]; then
+  mkdir -p $SOCK
+fi
 
 shift 3
 
