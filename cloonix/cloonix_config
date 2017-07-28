@@ -1,5 +1,5 @@
 ##################################################
-CLOONIX_VERSION=37-00
+CLOONIX_VERSION=37-01
 CLOONIX_TREE=/usr/local/bin/cloonix
 CLOONIX_WORK=${HOME}/cloonix_data
 CLOONIX_BULK=${HOME}/cloonix_data/bulk
@@ -77,12 +77,5 @@ CLOONIX_NET: vnb8 {
 }
 #-------------------------------------------------
 
-##################################################
-CLOONIX_NET: ebmr {
-  cloonix_ip       192.168.2.5
-  cloonix_port     43220
-  cloonix_passwd   eclown
-}
-#-------------------------------------------------
 
 

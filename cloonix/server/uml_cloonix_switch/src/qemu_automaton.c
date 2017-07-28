@@ -46,7 +46,8 @@
 #include "file_read_write.h"
 #include "endp_mngt.h"
 
-#define DRIVE_PARAMS " -drive file=%s,index=%d,media=disk,if=virtio,cache=writeback"
+#define DRIVE_PARAMS_CISCO " -drive file=%s,index=%d,media=disk,if=virtio,cache=directsync"
+#define DRIVE_PARAMS " -drive file=%s,index=%d,media=disk,if=virtio"
 
 #define VIRTIO_9P " -fsdev local,id=fsdev0,security_model=passthrough,path=%s"\
                   " -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=%s"
@@ -364,7 +365,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
       len += sprintf(linux_cmd+len, QEMU_SPICE, spice_path);
     else
-      len += sprintf(linux_cmd+len," -nographic");
+      len += sprintf(linux_cmd+len," -nographic -vga none");
     }
   if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
@@ -397,8 +398,12 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_FULL_VIRT)
       len += sprintf(linux_cmd+len, DRIVE_FULL_VIRT, rootfs, 0);
     else
-      len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
-  
+      {
+      if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO)
+        len += sprintf(linux_cmd+len, DRIVE_PARAMS_CISCO, rootfs, 0);
+      else
+        len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
+      } 
     cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
     len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
   
@@ -410,7 +415,6 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     {
     len += sprintf(linux_cmd+len, ADDED_CDROM, vm->kvm.added_cdrom);
     }
-
 
   for (i=0; i<vm->kvm.nb_eth; i++)
     {
@@ -431,7 +435,7 @@ static char *qemu_cmd_format(t_vm *vm)
                   cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
                   cfg_get_bin_dir(), QEMU_BIN_DIR);
   len += create_linux_cmd_kvm(vm, cmd+len);
-  strcat(cmd, ";sleep 10");
+  strcat(cmd, ";sleep 1");
   return cmd;
 }
 /*--------------------------------------------------------------------------*/

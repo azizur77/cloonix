@@ -36,15 +36,15 @@ Build and install from github sources:
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
-    wget http://cloonix.fr/bin_stored/v-37-00/jessie-cloonix-37-00.tar.gz
-    wget http://cloonix.fr/bin_stored/v-37-00/install_depends.gz
-    wget http://cloonix.fr/bin_stored/v-37-00/install_cloonix.gz
+    wget http://cloonix.fr/bin_stored/v-37-01/jessie-cloonix-37-01.tar.gz
+    wget http://cloonix.fr/bin_stored/v-37-01/install_depends.gz
+    wget http://cloonix.fr/bin_stored/v-37-01/install_cloonix.gz
     gunzip install_depends.gz
     gunzip install_cloonix.gz
     chmod +x install_depends
     chmod +x install_cloonix
     ./install_depends run
-    ./install_cloonix jessie-cloonix-37-00.tar.gz
+    ./install_cloonix jessie-cloonix-37-01.tar.gz
 
   To run the pre-compiled software, the host needs a subset of the packets
   needed for the build, install_depends can be launched with run as input
@@ -55,7 +55,7 @@ Install from already compiled binaries found at cloonix.fr:
 To use the software, a virtual machine qcow2 is necessary:
 ----------------------------------------------------------
        
-    wget http://cloonix.fr/bulk_stored/v-37-00/jessie.qcow2.xz
+    wget http://cloonix.fr/bulk_stored/v-37-01/jessie.qcow2.xz
     mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
     cd ${HOME}/cloonix_data/bulk
     xz -d jessie.qcow2.xz
@@ -69,19 +69,18 @@ To use the software, a virtual machine qcow2 is necessary:
 Use a demo script to begin using cloonix:
 -----------------------------------------
 
-    wget http://cloonix.fr/demo_stored/v-37-00/ping.sh
-    chmod +x ping.sh 
-    ./ping.sh
+  http://cloonix.fr/demo_stored
 
   Download one of the demo scripts provided at cloonix.fr, choose the 
   "ping.sh" script because it is the simplest one and launch it.
   
 
 
-
 NOTE:
 -----
   To use the sniffer, you must install wireshark-qt on the machine
   hosting the cloonix server.
+  To build a cisco csr1000v machine compatible with cloonix, see the
+  documentation at http://cloonix.fr
 
 ---------------------------------------------------------------------

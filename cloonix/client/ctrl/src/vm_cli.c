@@ -199,7 +199,7 @@ int cmd_add_vm_kvm(int argc, char **argv)
       cpu = param_tester(argv[2], 1, 32);
       if (cpu != -1)
         {
-        eth = param_tester(argv[3], 1, MAX_ETH_VM);
+        eth = param_tester(argv[3], 0, MAX_ETH_VM);
           {
           if (eth != -1)
             {

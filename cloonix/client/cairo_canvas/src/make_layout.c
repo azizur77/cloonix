@@ -48,12 +48,15 @@ t_layout_node *make_layout_node(t_bank_item *cur)
   layout_node.color = cur->pbi.color_choice;
   layout_node.nb_eth = cur->num;
   eth = cur->head_eth_list;
-  while (eth && eth->next)
+  if (eth)
     {
-    eth = eth->next;
+    while (eth && eth->next)
+      {
+      eth = eth->next;
+      count++;
+      }
     count++;
     }
-  count++;
   if (cur->num != count)
     KOUT("%d  %d", cur->num, count);
   for (i=0; i<count; i++)
