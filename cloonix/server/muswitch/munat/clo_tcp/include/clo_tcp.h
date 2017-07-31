@@ -183,6 +183,7 @@ int  clo_high_syn_tx(t_tcp_id *tcpid);
 int  clo_high_synack_tx(t_tcp_id *tcpid);
 int  clo_high_close_tx(t_tcp_id *tcpid);
 void clo_heartbeat_timer(void);
+void clo_high_free_tcpid(t_tcp_id *tcpid);
 /*---------------------------------------------------------------------------*/
 t_all_ctx *get_all_ctx(void);
 /*---------------------------------------------------------------------------*/

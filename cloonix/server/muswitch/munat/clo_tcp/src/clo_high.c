@@ -146,15 +146,18 @@ static void local_send_data_to_low(t_clo *clo, t_hdata *cur, int adjust)
   u32_t ackno, seqno, unused_seqno;
   u16_t loc_wnd, dist_wnd;
   u8_t *data;
-  clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &unused_seqno,
-                               &loc_wnd, &dist_wnd);
-  clo_mngt_get_txdata(clo, cur, &seqno, &len, &data);
-  util_send_data(&(clo->tcpid), ackno, seqno, loc_wnd, len, data);
-  if (adjust)
-    clo_mngt_adjust_send_next(clo, seqno, len);
-  clo->ackno_sent = ackno;
-  if (clo->have_to_ack > 0)
-    clo->have_to_ack -= 1;
+  if(clo_mngt_get_state(clo) == state_established)
+    {
+    clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &unused_seqno,
+                                 &loc_wnd, &dist_wnd);
+    clo_mngt_get_txdata(clo, cur, &seqno, &len, &data);
+    util_send_data(&(clo->tcpid), ackno, seqno, loc_wnd, len, data);
+    if (adjust)
+      clo_mngt_adjust_send_next(clo, seqno, len);
+    clo->ackno_sent = ackno;
+    if (clo->have_to_ack > 0)
+      clo->have_to_ack -= 1;
+    }
 }
 /*---------------------------------------------------------------------------*/
 
@@ -394,6 +397,42 @@ int clo_high_syn_tx(t_tcp_id *tcpid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void reset_rx_close_all(t_clo *clo)
+{
+  int is_blkd, llid;
+  u32_t local_ip = clo->tcpid.local_ip;
+  u32_t remote_ip = clo->tcpid.remote_ip;
+  u16_t local_port = clo->tcpid.local_port;
+  u16_t remote_port = clo->tcpid.remote_port;
+  llid = clo->tcpid.llid;
+
+  KERR("%X %X %d %d", local_ip, remote_ip, local_port, remote_port);
+
+  if (msg_exist_channel(get_all_ctx(), llid, &is_blkd, __FUNCTION__))
+    msg_delete_channel(get_all_ctx(), llid);
+  if (clo->tcpid.llid)
+    util_detach_llid_clo(clo->tcpid.llid, clo);
+  clo_mngt_set_state(clo, state_closed);
+  util_silent_purge_hdata_and_ldata(clo);
+  init_closed_state_count_if_not_done(clo, 1, __LINE__);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void clo_high_free_tcpid(t_tcp_id *tcpid)
+{
+  t_clo *clo;
+  clo = clo_mngt_find(tcpid);
+  if (clo)
+    {
+    clo_mngt_set_state(clo, state_closed);
+    util_silent_purge_hdata_and_ldata(clo);
+    init_closed_state_count_if_not_done(clo, 1, __LINE__);
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 int clo_high_close_tx(t_tcp_id *tcpid)
 {
   int is_blkd, llid, state, result = -1;
@@ -556,7 +595,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         if (clo->has_been_closed_from_outside_socket == 1)
           clo->has_been_closed_from_outside_socket = 0; 
         clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
-        util_send_finack(&(clo->tcpid), ackno, seqno, loc_wnd);
+        util_send_finack(&(clo->tcpid), low->seqno+1, low->ackno, loc_wnd);
         clo_mngt_adjust_send_next(clo, seqno, 1);
         clo_mngt_set_state(clo, state_fin_wait_last_ack);
         }
@@ -632,47 +671,40 @@ void clo_low_input(int mac_len, u8_t *mac_data)
       }
     else
       {
-      if (!clo_mngt_low_input(clo, low, &inserted))
+      if ((low->flags & TH_RST) ==  TH_RST)
         {
-        if ((low->flags & TH_RST) ==  TH_RST)
+        reset_rx_close_all(clo);
+        }
+      else if (!clo_mngt_low_input(clo, low, &inserted))
+        {
+        if (!existing_tcp_low_input(clo, low))
           {
-          async_fct_call(num_fct_high_close_rx, clo->id_tcpid, &(clo->tcpid), 
-                         0, NULL);
-          clo_mngt_set_state(clo, state_closed);
-          util_silent_purge_hdata_and_ldata(clo);
-          init_closed_state_count_if_not_done(clo, 4, __LINE__);
-          }
-        else
-          {
-          if (!existing_tcp_low_input(clo, low))
+          if (inserted)
             {
-            if (inserted)
+            res = fct_high_data_rx_possible(&(clo->tcpid));
+            if (res == -1)
+              break_of_com_kill_both_sides(clo, __LINE__);
+            if (res == 1)
               {
-              res = fct_high_data_rx_possible(&(clo->tcpid));
-              if (res == -1)
-                break_of_com_kill_both_sides(clo, __LINE__);
-              if (res == 1)
+              change = clo_mngt_adjust_loc_wnd(clo, TCP_WND);
+              if (!clo_mngt_get_new_rxdata(clo, &len, &data))
                 {
-                change = clo_mngt_adjust_loc_wnd(clo, TCP_WND);
-                if (!clo_mngt_get_new_rxdata(clo, &len, &data))
-                  {
-                  fct_high_data_rx(&(clo->tcpid), len, data);
-                  }
-                }
-              else if (res == 0)
-                {
-                if (clo->tcpid.llid_unlocked)
-                  change = clo_mngt_adjust_loc_wnd(clo, TCP_WND_MIN);
+                fct_high_data_rx(&(clo->tcpid), len, data);
                 }
               }
-            if ((change || clo->have_to_ack) &&
-                (clo_mngt_get_state(clo) == state_established))
+            else if (res == 0)
               {
-              if (timed_send_ack(clo))
-                {
-                if (clo->have_to_ack > 0)
-                  clo->have_to_ack -= 1;
-                }
+              if (clo->tcpid.llid_unlocked)
+                change = clo_mngt_adjust_loc_wnd(clo, TCP_WND_MIN);
+              }
+            }
+          if ((change || clo->have_to_ack) &&
+              (clo_mngt_get_state(clo) == state_established))
+            {
+            if (timed_send_ack(clo))
+              {
+              if (clo->have_to_ack > 0)
+                clo->have_to_ack -= 1;
               }
             }
           }
@@ -732,8 +764,7 @@ static void send_all_data_to_send(void)
   t_clo *cur = get_head_clo();
   while (cur)
     {
-    if ((cur->head_hdata) &&
-        (clo_mngt_get_state(cur) == state_established))
+    if (cur->head_hdata) 
       try_send_data2low_timer(cur);
     cur = cur->next;
     }
@@ -806,7 +837,11 @@ static void non_activ_count_inc(void)
     else
       cur->syn_sent_non_activ_count = 0;
     if (cur->non_activ_count == 400) 
+      {
       KERR("TOLOOKINTO Connection lasting more than 100 sec");
+      KERR("%X %X %d %d", cur->tcpid.local_ip, cur->tcpid.remote_ip,
+                          cur->tcpid.local_port, cur->tcpid.remote_port);
+      }
     if (cur->non_activ_count > 500000) 
       {
       KERR(" ");

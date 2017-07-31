@@ -158,13 +158,11 @@ static void cb_doors_rx(int llid, int tid, int type, int val,
         if (doorways_tx(g_door_llid, 0, doors_type_openssh,
                         doors_val_none, strlen(nat_msg)+1, nat_msg))
           {
-          fprintf(stderr, "ERROR TALKING TO NAT:\n%s\n\n", nat_msg);
           local_exit(1);
           }
         }
       else
         {
-        fprintf(stderr, "ERROR1: %s\n", buf);
         local_exit(1);
         }
       }
@@ -179,18 +177,14 @@ static void cb_doors_rx(int llid, int tid, int type, int val,
         send_first_read_residual_data();
         change_state(state_nominal_exchange);
         }
-      else
-        fprintf(stderr, "ERROR6: %s\n", buf);
       }
     else
       {
-      fprintf(stderr, "ERROR7: %s\n", buf);
       local_exit(1);
       }
     }
   else
     {
-    fprintf(stderr, "ERROR3: %s\n", buf);
     local_exit(1);
     }
 }
@@ -217,25 +211,21 @@ static int callback_connect(void *ptr, int llid, int fd)
                                                 cb_doors_end, cb_doors_rx);
     if (!g_door_llid)
       {
-      fprintf(stderr, "\nConnect not possible: %s\n\n", g_cloonix_doors);
       local_exit(1);
       }
     if (!msg_exist_channel(g_door_llid))
       {
-      fprintf(stderr, "\nBad doors llid: %s\n\n", g_cloonix_doors);
       local_exit(1);
       }
     memset(buf, 0, 2*MAX_NAME_LEN);
-    snprintf(buf, 2*MAX_NAME_LEN - 1, "OPENSSH_DOORWAYS_REQ nat=%s", g_cloonix_nat);
+    snprintf(buf, 2*MAX_NAME_LEN - 1, "OPENSSH_DOORWAYS_REQ nat=%s",
+             g_cloonix_nat);
     if (doorways_tx(g_door_llid, 0, doors_type_openssh,
                     doors_val_init_link, strlen(buf)+1, buf))
       {
-      fprintf(stderr, "ERROR INIT SEQ:\n%d, %s\n\n", (int) strlen(buf), buf);
       local_exit(1);
       }
     }
-  else
-    fprintf(stderr, "TWO CONNECTS FOR ONE REQUEST");
   return 0;
 }
 /*---------------------------------------------------------------------------*/

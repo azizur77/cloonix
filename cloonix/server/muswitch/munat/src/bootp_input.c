@@ -44,12 +44,13 @@
 #define RFC1533_NETMASK         1
 
 
-#define LEASE_TIME (0xFFFFF)
+#define LEASE_TIME (0x00FFF)
 #define DHCPDISCOVER            1
 #define DHCPOFFER               2
 #define DHCPREQUEST             3
 #define DHCPACK                 5
 #define DHCPNACK                6
+#define DHCPRELEASE             7
 
 typedef struct t_eth_mac
 {
@@ -343,7 +344,7 @@ static int format_rbp(struct bootp_t *bp, struct bootp_t *rbp,
   q += 4;
   *q++ = RFC2132_MSG_TYPE;
   *q++ = 1;
-  *q++ = (type==DHCPDISCOVER)?DHCPOFFER:DHCPACK;
+  *q++ = (type==DHCPDISCOVER) ?DHCPOFFER:DHCPACK;
   *q++ = RFC2132_SRV_ID;
   *q++ = 4;
   *q++ = (our_ip_gw >> 24) & 0xFF;
