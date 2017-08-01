@@ -405,9 +405,6 @@ static void reset_rx_close_all(t_clo *clo)
   u16_t local_port = clo->tcpid.local_port;
   u16_t remote_port = clo->tcpid.remote_port;
   llid = clo->tcpid.llid;
-
-  KERR("%X %X %d %d", local_ip, remote_ip, local_port, remote_port);
-
   if (msg_exist_channel(get_all_ctx(), llid, &is_blkd, __FUNCTION__))
     msg_delete_channel(get_all_ctx(), llid);
   if (clo->tcpid.llid)
@@ -595,7 +592,7 @@ static int existing_tcp_low_input(t_clo *clo, t_low *low)
         if (clo->has_been_closed_from_outside_socket == 1)
           clo->has_been_closed_from_outside_socket = 0; 
         clo_mngt_get_ackno_seqno_wnd(clo, &ackno, &seqno, &loc_wnd, &dist_wnd);
-        util_send_finack(&(clo->tcpid), low->seqno+1, low->ackno, loc_wnd);
+        util_send_finack(&(clo->tcpid), ackno, seqno, loc_wnd);
         clo_mngt_adjust_send_next(clo, seqno, 1);
         clo_mngt_set_state(clo, state_fin_wait_last_ack);
         }
