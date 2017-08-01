@@ -36,15 +36,15 @@ Build and install from github sources:
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
-    wget http://cloonix.fr/bin_stored/v-37-01/jessie-cloonix-37-01.tar.gz
-    wget http://cloonix.fr/bin_stored/v-37-01/install_depends.gz
-    wget http://cloonix.fr/bin_stored/v-37-01/install_cloonix.gz
+    wget http://cloonix.fr/bin_stored/v-37-02/jessie-cloonix-37-02.tar.gz
+    wget http://cloonix.fr/bin_stored/v-37-02/install_depends.gz
+    wget http://cloonix.fr/bin_stored/v-37-02/install_cloonix.gz
     gunzip install_depends.gz
     gunzip install_cloonix.gz
     chmod +x install_depends
     chmod +x install_cloonix
     ./install_depends run
-    ./install_cloonix jessie-cloonix-37-01.tar.gz
+    ./install_cloonix jessie-cloonix-37-02.tar.gz
 
   To run the pre-compiled software, the host needs a subset of the packets
   needed for the build, install_depends can be launched with run as input
@@ -55,7 +55,7 @@ Install from already compiled binaries found at cloonix.fr:
 To use the software, a virtual machine qcow2 is necessary:
 ----------------------------------------------------------
        
-    wget http://cloonix.fr/bulk_stored/v-37-01/jessie.qcow2.xz
+    wget http://cloonix.fr/bulk_stored/v-37-02/jessie.qcow2.xz
     mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
     cd ${HOME}/cloonix_data/bulk
     xz -d jessie.qcow2.xz
