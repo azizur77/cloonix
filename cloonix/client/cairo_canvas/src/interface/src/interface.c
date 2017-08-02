@@ -220,6 +220,7 @@ void timer_topo_subscribe(void *data)
   client_topo_sub(0,callback_topo);
   client_topo_small_event_sub(0, topo_small_event_cb);
   layout_set_ready_for_send();
+  client_req_eventfull(eventfull_cb);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -261,7 +262,6 @@ void interface_switch_init(char *path, char *password)
   clownix_timeout_add(300, timer_client_is_connected, NULL, NULL, NULL);
   while(!client_is_connected())
     msg_mngt_loop_once();
-  client_req_eventfull(eventfull_cb);
   clownix_timeout_add(1, timer_layout_subscribe, NULL, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
