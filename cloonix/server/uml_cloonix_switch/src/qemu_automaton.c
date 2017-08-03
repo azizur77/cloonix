@@ -400,7 +400,11 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     else
       {
       if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO)
+        {
         len += sprintf(linux_cmd+len, DRIVE_PARAMS_CISCO, rootfs, 0);
+        len += sprintf(linux_cmd+len,
+        " -uuid 3824cca6-7603-423b-8e5c-84d15d9b0a6a -nodefaults");
+        }
       else
         len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
       } 
