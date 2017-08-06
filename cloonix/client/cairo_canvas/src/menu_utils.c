@@ -320,7 +320,7 @@ static void debug_print_cmd(char **argv)
     {
     len += sprintf(info+len, "%s ", argv[i]);
     }
-//  KERR("%s", info);
+  KERR("%s", info);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -448,7 +448,7 @@ void node_xterm_qmonitor(GtkWidget *mn, t_item_ident *pm)
   cloonix_get_xvt(xvt);
   strncpy(nm, pm->name, MAX_NAME_LEN-1);
   snprintf(title, 2*MAX_NAME_LEN-1, "%s/%s", local_get_cloonix_name(), nm);
-  sprintf(cmd, "%s/server/qmonitor/qmonitor %s %s %s; sleep 5", 
+  sprintf(cmd, "%s/client/qmonitor/qmonitor %s %s %s; sleep 5", 
                get_distant_cloonix_tree(), get_doors_client_addr(),
                get_password(), nm); 
   if (check_before_start_launch(argv))

@@ -52,7 +52,6 @@ done
 #----------------------------------------------------------
   for i in  doorways \
             uml_cloonix_switch \
-            qmonitor \
             muswitch/lib_ioc \
             muswitch/lib_mulan \
             muswitch/lib_muend \
@@ -85,6 +84,7 @@ done
 #----------------------------------------------------------
   for i in  lib_client \
             ctrl \
+            qmonitor \
             cairo_canvas/crcanvas_gtk \
             cairo_canvas/src/bank \
             cairo_canvas/src/interface \
