@@ -42,6 +42,17 @@ char *get_glob_layout_path(void)
 /*---------------------------------------------------------------------------*/
 
 /****************************************************************************/
+void work_dir_resp(int tid, t_topo_clc *conf)
+{
+  printf("CLOONIX_VERSION=%s\n", conf->version);
+  printf("CLOONIX_TREE=%s\n", conf->bin_dir);
+  printf("CLOONIX_WORK=%s\n", conf->work_dir);
+  printf("CLOONIX_BULK=%s\n", conf->bulk_dir);
+  exit(0);
+}
+/*---------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static void callback_print(int tid, char *info)
 {
   printf("%s\n", info);
@@ -253,6 +264,15 @@ int cmd_topo_dump(int argc, char **argv)
 {
   init_connection_to_uml_cloonix_switch();
   client_topo_sub(0, callback_topo_topo);
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int cmd_config_dump(int argc, char **argv)
+{
+  init_connection_to_uml_cloonix_switch();
+  client_get_path(0, work_dir_resp);
   return 0;
 }
 /*---------------------------------------------------------------------------*/

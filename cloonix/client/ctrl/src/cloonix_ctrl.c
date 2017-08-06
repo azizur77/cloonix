@@ -192,6 +192,7 @@ struct cmd_struct level_sub_cmd[] = {
 struct cmd_struct level_main_cmd[] = {
 {"kil", "Destroys all objects, cleans and kills switch", NULL, cmd_kill, NULL},
 {"rma", "Destroys all cloonix objects and graphs",  NULL, cmd_delall,    NULL},
+{"dcf", "Dump config", NULL,  cmd_config_dump, NULL},
 {"dmp", "Dump topo", NULL,  cmd_topo_dump, NULL},
 {"lst", "List commands to replay topo", NULL,  cmd_list_commands, NULL},
 {"add", "Add one cloonix object to topo", level_add_cmd, NULL, NULL},

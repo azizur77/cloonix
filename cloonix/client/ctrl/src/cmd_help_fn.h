@@ -30,6 +30,7 @@ int cmd_snf_set_file(int argc, char **argv);
 int cmd_kill(int argc, char **argv);
 int cmd_delall(int argc, char **argv);
 int cmd_name_dump(int argc, char **argv);
+int cmd_config_dump(int argc, char **argv);
 int cmd_topo_dump(int argc, char **argv);
 int cmd_pid_dump(int argc, char **argv);
 int cmd_add_vm_kvm(int argc, char **argv);
