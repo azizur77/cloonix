@@ -320,7 +320,7 @@ static void debug_print_cmd(char **argv)
     {
     len += sprintf(info+len, "%s ", argv[i]);
     }
-  KERR("%s", info);
+//  KERR("%s", info);
 }
 /*--------------------------------------------------------------------------*/
 
