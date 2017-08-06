@@ -46,10 +46,9 @@ set -e
               --disable-smartcard \
               --disable-lz4
 
-sed -i s"/controller//" src/Makefile
 make clean
 make
-for i in Makefile doc/Makefile data/Makefile man/Makefile src/Makefile src/controller/Makefile; do
+for i in Makefile doc/Makefile data/Makefile man/Makefile src/Makefile ; do
   sed -i s"%POLICYDIR = .*%POLICYDIR = ${TARGET}%" $i
   sed -i s"%ACL_HELPER_DIR = .*%ACL_HELPER_DIR = ${TARGET}%" $i
 done
