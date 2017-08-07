@@ -83,4 +83,11 @@ NOTE:
   To build a cisco csr1000v machine compatible with cloonix, see the
   documentation at http://cloonix.fr
 
+  On the jessie, from the 37.03 version, you must have an updated 
+  glib2, to make the spice compilation work, I did:
+  tar xvf glib2.0_2.48.0.orig.tar.xz
+  ./configure --prefix=/usr/local
+  make
+  make install
+
 ---------------------------------------------------------------------
