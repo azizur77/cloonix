@@ -91,3 +91,11 @@ NOTE:
   make install
 
 ---------------------------------------------------------------------
+If no machine wants to be created, test the compilation of the qemu
+with a working machine qcow2 as follows:
+
+export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
+/usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-x86_64 \
+-L /usr/local/bin/cloonix/server/qemu/qemu_bin \
+-hda rootfs.qcow2 -nographic -serial=stdio
+---------------------------------------------------------------------
