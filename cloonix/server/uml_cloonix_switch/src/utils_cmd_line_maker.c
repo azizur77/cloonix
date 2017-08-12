@@ -122,12 +122,21 @@ char *utils_get_endp_sock_dir(void)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-char *utils_get_endp_cli_sock_dir(void)
+char *utils_get_cli_sock_dir(void)
 {
   static char path[MAX_PATH_LEN];
   memset(path, 0, MAX_PATH_LEN);
-  snprintf(path, MAX_PATH_LEN-1,"%s/%s", 
-           cfg_get_root_work(), ENDP_CLI_SOCK_DIR);
+  snprintf(path, MAX_PATH_LEN-1,"%s/%s", cfg_get_root_work(), CLI_SOCK_DIR);
+  return path;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+char *utils_get_snf_pcap_dir(void)
+{
+  static char path[MAX_PATH_LEN];
+  memset(path, 0, MAX_PATH_LEN);
+  snprintf(path, MAX_PATH_LEN-1,"%s/%s", cfg_get_root_work(), SNF_PCAP_DIR);
   return path;
 }
 /*--------------------------------------------------------------------------*/

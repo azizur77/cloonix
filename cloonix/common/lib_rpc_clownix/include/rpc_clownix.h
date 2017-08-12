@@ -25,7 +25,8 @@
 #define MUSWITCH_SOCK_DIR "mu"
 #define MUSWITCH_TRAF_DIR "tmu"
 #define ENDP_SOCK_DIR "endp"
-#define ENDP_CLI_SOCK_DIR "cli"
+#define CLI_SOCK_DIR "cli"
+#define SNF_PCAP_DIR "snf"
 
 
 #define MAX_STATS_ITEMS 30

@@ -127,7 +127,9 @@ int pcap_file_start(t_all_ctx *all_ctx)
   int result = -1;
   pcap_hdr_s hdr_s;
   DOUT(all_ctx, FLAG_HOP_DIAG, "%s",  __FUNCTION__);
-  if (g_fd == 0)
+  if (g_path_file[0] == 0)
+    KERR("%s", "PATH_FILE NOT INITIALIZED");
+  else if (g_fd == 0)
     {
     g_stop_req = 0;
     g_fd = open(g_path_file, O_CREAT|O_TRUNC|O_WRONLY, 0666);
@@ -198,7 +200,6 @@ void pcap_file_init(t_all_ctx *all_ctx, char *net_name, char *name)
 {
   g_fd = 0;
   g_count_packets = 0;
-  snprintf(g_path_file, MAX_PATH_LEN-1, "/tmp/cloonix_%s_%s.pcap",
-                                         net_name, name);
+  memset(g_path_file, 0, MAX_PATH_LEN);
 }
 /*--------------------------------------------------------------------------*/

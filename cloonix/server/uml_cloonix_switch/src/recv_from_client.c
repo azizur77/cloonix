@@ -1185,14 +1185,14 @@ void recv_topo_small_event_unsub(int llid, int tid)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void local_add_sat(int llid, int tid, char *name, int type, t_c2c_req_info *c2c_info)
+void local_add_sat(int llid, int tid, char *name, int type,
+                   t_c2c_req_info *c2c_info)
 {
   char info[MAX_PATH_LEN];
   char recpath[MAX_PATH_LEN];
   int capture_on=0;
   int abort_upon_err = 0;
-  snprintf(recpath, MAX_PATH_LEN-1, "/tmp/cloonix_%s_%s.pcap",
-           cfg_get_cloonix_name(), name);
+  snprintf(recpath, MAX_PATH_LEN-1, "%s/%s.pcap", utils_get_snf_pcap_dir(), name);
   if (endp_mngt_start(llid, tid, name, 0, type))
     {
     snprintf( info, MAX_PATH_LEN-1, "Bad start of %s", name);

@@ -73,7 +73,6 @@ static guint main_timeout;
 static char g_current_directory[MAX_PATH_LEN];
 static char g_doors_client_addr[MAX_PATH_LEN];
 static char g_cloonix_root_tree[MAX_PATH_LEN];
-static char g_tmp_work_path[MAX_PATH_LEN];
 static char g_dtach_work_path[MAX_PATH_LEN];
 static char g_password[MSG_DIGEST_LEN];
 static char **g_saved_environ;
@@ -193,13 +192,6 @@ void cloonix_get_xvt(char *xvt)
     strncpy(xvt, "/usr/bin/urxvt", MAX_PATH_LEN-1);
 }
 /*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-char *get_tmp_work_path(void)
-{
-  return (g_tmp_work_path);
-}
-/*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static const char *get_dtach_work_path(void)
@@ -448,12 +440,8 @@ void work_dir_resp(int tid, t_topo_clc *conf)
   menu_init();
   popup_init();
   memcpy(&g_clc, conf, sizeof(t_topo_clc));
-  snprintf(g_tmp_work_path, MAX_PATH_LEN-1, "/tmp/%s", 
-           local_get_cloonix_name());
   snprintf(g_dtach_work_path, MAX_PATH_LEN-1, "%s/%s",
                              g_clc.work_dir, DTACH_SOCK);
-  my_mkdir(g_tmp_work_path);
-
   if (gtk_init_check(NULL, NULL) == FALSE)
     KOUT("Error in gtk_init_check function");
 

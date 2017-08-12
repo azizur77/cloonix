@@ -84,6 +84,7 @@ typedef struct t_priv_endp
   int getsuidroot;
   int open_endp;
   int init_munat_mac;
+  int init_pcap_snf;
   int endp_type;
   int llid;
   int cli_llid;
@@ -826,6 +827,7 @@ static void send_type_req(t_priv_endp *cur)
 /****************************************************************************/
 static void timer_endp_beat(void *data)
 {
+  char line[2*MAX_PATH_LEN];
   t_priv_endp *next, *cur = g_head_muendp;
   while(cur)
     {
@@ -855,6 +857,14 @@ static void timer_endp_beat(void *data)
         send_type_req(cur);
       else
         {
+        if ((cur->endp_type == endp_type_snf) &&
+            (cur->init_pcap_snf == 0))
+          {
+          snprintf(line, 2*MAX_PATH_LEN - 1, "-set_conf %s/%s.pcap",
+                   utils_get_snf_pcap_dir(), cur->name);
+          rpct_send_cli_req(NULL, cur->llid, 0, 0, 0, line);
+          cur->init_pcap_snf = 1;
+          }
         if ((cur->endp_type == endp_type_nat) &&
             (cur->init_munat_mac == 0))
           {

@@ -191,7 +191,9 @@ void last_action_self_destruction(void *data)
     event_print("DELETE PROBLEM: %s\n", err);
   if (unlink_sub_dir_files_except_dir(utils_get_dtach_sock_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);
-  if (unlink_sub_dir_files_except_dir(utils_get_endp_cli_sock_dir(), err))
+  if (unlink_sub_dir_files_except_dir(utils_get_cli_sock_dir(), err))
+    event_print("DELETE PROBLEM: %s\n", err);
+  if (unlink_sub_dir_files_except_dir(utils_get_snf_pcap_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);
   if (unlink_sub_dir_files_except_dir(utils_get_muswitch_sock_dir(), err))
     event_print("DELETE PROBLEM: %s\n", err);

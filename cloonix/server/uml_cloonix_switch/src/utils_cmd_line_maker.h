@@ -62,7 +62,8 @@ char *utils_get_muswitch_traf_dir(void);
 char *utils_mulan_get_sock_path(char *lan);
 /*--------------------------------------------------------------------------*/
 char *utils_get_endp_sock_dir(void);
-char *utils_get_endp_cli_sock_dir(void);
+char *utils_get_cli_sock_dir(void);
+char *utils_get_snf_pcap_dir(void);
 char *utils_get_endp_path(char *name, int num);
 char *utils_get_endp_name(char *name, int num);
 /*--------------------------------------------------------------------------*/
