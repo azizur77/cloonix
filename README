@@ -97,5 +97,5 @@ with a working machine qcow2 as follows:
 export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
 /usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-x86_64 \
 -L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--hda rootfs.qcow2 -nographic -serial=stdio
+-hda rootfs.qcow2 -nographic
 ---------------------------------------------------------------------
