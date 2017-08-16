@@ -439,7 +439,6 @@ static char *qemu_cmd_format(t_vm *vm)
                   cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
                   cfg_get_bin_dir(), QEMU_BIN_DIR);
   len += create_linux_cmd_kvm(vm, cmd+len);
-  strcat(cmd, ";sleep 1");
   return cmd;
 }
 /*--------------------------------------------------------------------------*/
@@ -483,13 +482,49 @@ static int start_launch_args(void *ptr)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void timer_launch_end(void *data)
+{
+  char *name = (char *) data;
+  char err[MAX_PRINT_LEN];
+  t_vm   *vm = cfg_get_vm(name);
+  t_wake_up_eths *wake_up_eths;
+  if (vm)
+    {
+    wake_up_eths = vm->wake_up_eths;
+    if (wake_up_eths)
+      {
+      if (strcmp(wake_up_eths->name, name))
+        KERR(" ");
+      else
+        {
+        if (!file_exists(utils_get_dtach_sock_path(name), F_OK))
+          {
+          sprintf(err, "ERROR QEMU UNEXPECTED STOP %s\n", name);
+          event_print(err);
+          send_status_ko(wake_up_eths->llid, wake_up_eths->tid, err);
+          utils_launched_vm_death(name, error_death_qemu_quiterr);
+          }
+        }
+      }
+    }
+  clownix_free(data, __FUNCTION__);
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
 static void launcher_death(void *data, int status, char *name)
 {
   int i;
+  char *time_name;
   char **argv = (char **) data;
   for (i=0; argv[i] != NULL; i++)
     clownix_free(argv[i], __FUNCTION__);
   clownix_free(argv, __FUNCTION__);
+  time_name = clownix_malloc(MAX_NAME_LEN, 5);
+  memset(time_name, 0, MAX_NAME_LEN);
+  strncpy(time_name, name, MAX_NAME_LEN-1);
+  clownix_timeout_add(500, timer_launch_end, (void *) time_name, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
 
