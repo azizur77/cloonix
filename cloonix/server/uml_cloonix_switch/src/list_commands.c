@@ -410,6 +410,27 @@ static int produce_list_sat_cmd(int offset, t_list_commands *hlist,
       }
     else
       KERR("%s %d", cur->name, cur->num); 
+    next = endp_mngt_get_next(cur);
+    clownix_free(cur, __FILE__);
+    cur = next;
+    }
+  if (cur)
+    KOUT(" ");
+  result = produce_sleep_line(result, hlist, 5);
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int produce_list_lan_cmd(int offset, t_list_commands *hlist,
+                                int nb_endp, t_endp *endp)
+{
+  t_endp *next, *cur = endp;
+  int i, j, lan, result = offset;
+  for (i=0; i<nb_endp; i++)
+    {
+    if (!cur)
+      KOUT(" ");
 
     for (j=0; j<MAX_TRAF_ENDPOINT; j++)
       {
@@ -432,6 +453,7 @@ static int produce_list_sat_cmd(int offset, t_list_commands *hlist,
   return result;
 }
 /*---------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 static int produce_list_canvas_layout_cmd(int offset, t_list_commands *hlist, 
@@ -547,13 +569,16 @@ int produce_list_commands(t_list_commands *hlist)
 {
   int nb_vm, nb_endp, result = 0;
   t_vm  *vm  = cfg_get_first_vm(&nb_vm);
-  t_endp *endp = endp_mngt_get_first(&nb_endp);
+  t_endp *endp;
   int go, width, height, cx, cy, cw, ch;
   t_layout_xml *layout_xml;
 
   result = produce_first_lines(result, hlist);
   result = produce_list_vm_cmd(result, hlist, nb_vm, vm); 
+  endp = endp_mngt_get_first(&nb_endp);
   result = produce_list_sat_cmd(result, hlist, nb_endp, endp);
+  endp = endp_mngt_get_first(&nb_endp);
+  result = produce_list_lan_cmd(result, hlist, nb_endp, endp);
   get_layout_main_params(&go, &width, &height, &cx, &cy, &cw, &ch);
   result = produce_list_canvas_layout_cmd(result, hlist, go, 
                                                width, height, 
