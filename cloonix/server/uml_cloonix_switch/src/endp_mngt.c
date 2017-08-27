@@ -438,7 +438,10 @@ void endp_mngt_snf_set_recpath(char *name, int num, char *recpath)
 {
   t_topo_snf *snf = get_snf(name, num);
   if (snf)
+    {
     strncpy(snf->recpath, recpath, MAX_PATH_LEN-1);
+    event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
+    }
 }
 /*--------------------------------------------------------------------------*/
 

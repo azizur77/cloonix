@@ -741,7 +741,7 @@ t_topo_info *cfg_produce_topo_info(void)
           break;
 
         case endp_type_snf:
-          if ((cur->snf.name[0]) && (cur->pid != 0))
+          if ((cur->snf.name[0]) && (cur->snf.recpath[0]) && (cur->pid != 0))
             { 
             if (i_snf == topo->nb_snf)
               KOUT(" ");
