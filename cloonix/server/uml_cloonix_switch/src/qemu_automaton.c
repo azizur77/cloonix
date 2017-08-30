@@ -299,8 +299,11 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
    " -chardev socket,id=qmp1,path=%s,server,nowait"\
    " -mon chardev=qmp1,mode=control"
 
+
 #define QEMU_OPTS_CLOONIX \
    " -device virtio-serial-pci"\
+   " -device virtio-mouse-pci"\
+   " -device virtio-keyboard-pci"\
    " -chardev socket,path=%s,server,nowait,id=cloon"\
    " -device virtserialport,chardev=cloon,name=net.cloonix.0"\
    " -chardev socket,path=%s,server,nowait,id=hvc0"\
@@ -308,14 +311,17 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
    " -balloon virtio"\
    " -device virtio-rng-pci"
 
-   //" -vga virtio -display gtk,gl=on",
+//   " -vga virtio -display gtk,gl=on"\
+//   " -vga qxl"\
+//   " -spice unix,addr=%s,disable-ticketing,gl=on,rendernode=/dev/dri/card0"\
+
 #define QEMU_SPICE \
    " -vga qxl"\
    " -soundhw hda"\
    " -usb"\
    " -chardev spicevmc,id=charredir0,name=usbredir"\
-   " -device usb-redir,chardev=charredir0,id=redir0"\
    " -spice unix,addr=%s,disable-ticketing"\
+   " -device usb-redir,chardev=charredir0,id=redir0"\
    " -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0"\
    " -chardev spicevmc,id=spicechannel0,name=vdagent"
 /*--------------------------------------------------------------------------*/

@@ -51,8 +51,8 @@ port=$(echo $cloonix_info |awk '{print $4}')
 passwd=$(echo $cloonix_info |awk '{print $6}')
 
 
-DIST_CLOONIX_TREE=$(cloonix_cli nemo dcf |grep  CLOONIX_TREE | awk -F = '{print $2}')
-DIST_CLOONIX_WORK=$(cloonix_cli nemo dcf |grep  CLOONIX_WORK | awk -F = '{print $2}')
+DIST_CLOONIX_TREE=$(cloonix_cli $cloonix_name dcf |grep  CLOONIX_TREE | awk -F = '{print $2}')
+DIST_CLOONIX_WORK=$(cloonix_cli $cloonix_name dcf |grep  CLOONIX_WORK | awk -F = '{print $2}')
 
 
 BIN_BEAR=${CLOONIX_TREE}/common/agent_dropbear/agent_bin/dropbear_cloonix_ssh

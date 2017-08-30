@@ -35,7 +35,7 @@ set -e
               --enable-usbredir \
               --enable-gstaudio=yes \
               --enable-gstvideo=yes \
-              --enable-pulse \
+              --disable-pulse \
               --disable-gtk-doc \
               --disable-gtk-doc-html \
               --disable-gtk-doc-pdf \

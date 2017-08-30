@@ -32,3 +32,13 @@ make
 make install
 
 
+cd ${TARGET}
+tar xvf ${HERE}/virglrenderer/virglrenderer.tar.gz
+cd virglrenderer
+
+./configure --prefix=${TARGET} --libdir=${TARGET}
+
+make clean
+make
+make install
+
