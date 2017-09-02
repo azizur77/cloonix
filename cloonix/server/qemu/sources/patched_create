@@ -1,7 +1,7 @@
 #!/bin/bash
 HERE=`pwd`
 
-QEMU_NAME=qemu-2.9.0
+QEMU_NAME=qemu-2.10.0
 
 QEMU_TAR_NAME=${QEMU_NAME}.tar.xz
 
