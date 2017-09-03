@@ -47,7 +47,6 @@ fct_build_get_arch_packages()
              readline libevent gtk3 python2 python2-pyparsing \
              python2-six intltool opus polkit acl mesa libusb \
              gst-plugins-base ttf-dejavu
-#pulseaudio
 
   yes | pacman -Sy gcc-multilib
 
@@ -60,7 +59,6 @@ fct_run_get_arch_packages()
   pacman --noconfirm --force -Syu \
              tar cdrkit rxvt-unicode readline libevent gtk3 \
              opus polkit acl mesa libusb gst-plugins-base ttf-dejavu
-#pulseaudio
 }
 #--------------------------------------------------------------------------
 fct_build_get_debian_packages()
@@ -72,18 +70,9 @@ fct_build_get_debian_packages()
                      libevent-dev libreadline-dev python-pyparsing python-six \
                      libgstreamer-plugins-base1.0-dev libepoxy-dev libdrm-dev \
                      libgbm-dev libpolkit-gobject-1-dev libacl1-dev \
-		     libegl1-mesa-dev sudo zlib1g-dev libgles2-mesa-dev
+		     libegl1-mesa-dev sudo zlib1g-dev libgles2-mesa-dev \
+                     liborc-0.4-dev
 
-
-
-#libgles2-mesa-dev
-#libxcb-composite0-dev
-#libudev-dev
-#libmtdev-dev
-#libpam0g-dev
-#
-
-#libpulse-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -91,8 +80,6 @@ fct_run_get_debian_packages()
   apt-get -y install tar genisoimage rxvt-unicode libusb-1.0 libopus0 \
                      libgtk-3-0 libepoxy0 libegl1-mesa libsasl2-2 \
                      libgstreamer-plugins-base1.0
-#libpulse0
-
 }
 #--------------------------------------------------------------------------
 fct_build_get_centos_packages()
@@ -106,8 +93,6 @@ fct_build_get_centos_packages()
          pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel polkit-devel libacl-devel \
          dejavu-serif-fonts
-#pulseaudio-libs-devel
-
 }
 #--------------------------------------------------------------------------
 fct_run_get_centos_packages()
@@ -116,8 +101,6 @@ fct_run_get_centos_packages()
          tar genisoimage gtk3 xterm libevent libusb opus \
          cyrus-sasl dejavu-serif-fonts libepoxy polkit libacl \
          gstreamer1-plugins-base libjpeg-turbo
-#pulseaudio-libs
-
 }
 #--------------------------------------------------------------------------
 fct_build_get_fedora_packages()
@@ -130,20 +113,7 @@ fct_build_get_fedora_packages()
          gtk3-devel libcap-devel libevent-devel readline-devel \
          python pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel libdrm-devel mesa-libgbm-devel polkit-devel \
-	 libacl-devel dejavu-serif-fonts
-
-  mesa-utils
-  mesa-utils-extra
-
-#mesa-libGLES-devel
-#libgudev-devel
-#systemd-devel
-#mtdev-devel
-#libinput-devel
-#pam-devel
-
-#pulseaudio-libs-devel
-
+	 libacl-devel dejavu-serif-fonts orc-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
@@ -152,8 +122,6 @@ fct_run_get_fedora_packages()
          tar genisoimage gtk3 rxvt-unicode libevent libusb opus \
          cyrus-sasl dejavu-serif-fonts libepoxy polkit libacl \
          gstreamer1-plugins-base libjpeg-turbo
-
-#pulseaudio-libs
 }
 #--------------------------------------------------------------------------
 fct_build_get_opensuse_packages()
@@ -166,8 +134,6 @@ fct_build_get_opensuse_packages()
          python python-pyparsing python-six dejavu-fonts patch \
          gstreamer-plugins-base-devel libepoxy-devel polkit-devel \
          libacl-devel glibc-locale
-
-#libpulse-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
@@ -177,8 +143,6 @@ fct_run_get_opensuse_packages()
          libopus0 cyrus-sasl dejavu-fonts libepoxy0 polkit libacl \
          gstreamer-plugins-base glibc-locale libgthread-2_0-0 \
          libjpeg62
-#libpulse0
-
 }
 #--------------------------------------------------------------------------
 if [ $UID != 0 ]; then
