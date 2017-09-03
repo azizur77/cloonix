@@ -99,9 +99,4 @@ export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
 -L /usr/local/bin/cloonix/server/qemu/qemu_bin \
 -hda lede.qcow2 -nographic
 ---------------------------------------------------------------------
-export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
-/usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-x86_64 \
--L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--hda lede.qcow2 -vga virtio -display gtk,gl=on -spice unix,addr=/tmp/spice,disable-ticketing
----------------------------------------------------------------------
 
