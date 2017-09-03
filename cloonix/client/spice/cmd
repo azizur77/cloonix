@@ -39,7 +39,6 @@ set -e
               --disable-gtk-doc \
               --disable-gtk-doc-html \
               --disable-gtk-doc-pdf \
-              --disable-controler \
               --disable-dbus \
               --disable-vala \
               --disable-webdav \
