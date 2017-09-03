@@ -315,25 +315,6 @@ int cmd_halt_vm(int argc, char **argv)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-int cmd_creboot_vm(int argc, char **argv)
-{
-  int result = -1;
-  char *name;
-  if (argc == 1)
-    {
-    name = argv[0];
-    if (strlen(name)>2) 
-      {
-      result = 0;
-      init_connection_to_uml_cloonix_switch();
-      client_reboot_vm(0, callback_end, name, 1);
-      }
-    }
-  return result;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 int cmd_qreboot_vm(int argc, char **argv)
 {
   int result = -1;

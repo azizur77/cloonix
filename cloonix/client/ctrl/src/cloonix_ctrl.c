@@ -130,10 +130,7 @@ struct cmd_struct level_del_cmd[] = {
 
 /****************************************************************************/
 struct cmd_struct level_vm_cmd[] = {
-{"reboot", "Reboot vm from the inside by cloonix_agent",  NULL, 
-                                           cmd_creboot_vm, help_creboot_vm},
-{"rebootq", "Reboot vm from the outside by qemu qemu",  NULL, 
-                                           cmd_qreboot_vm, help_qreboot_vm},
+{"reboot", "Reboot vm by qemu",  NULL, cmd_qreboot_vm, help_qreboot_vm},
 {"halt",   "Poweroff vm from the inside by cloonix_agent",     NULL, 
                                             cmd_halt_vm, help_halt_vm},
 {"help",  "",                     level_vm_cmd, NULL, NULL},
