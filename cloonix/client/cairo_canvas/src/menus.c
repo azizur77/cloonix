@@ -197,13 +197,6 @@ static void node_sav_rootfs(GtkWidget *mn, t_item_ident *pm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void node_creboot_vm(GtkWidget *mn, t_item_ident *pm)
-{
-  client_reboot_vm(0, end_cb_node_reboot, pm->name, 1);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 static void node_qreboot_vm(GtkWidget *mn, t_item_ident *pm)
 {
   client_reboot_vm(0, end_cb_node_reboot, pm->name, 0);
@@ -764,7 +757,7 @@ void node_ctx_menu(t_bank_item *bitem)
   GtkWidget *dtach_console, *desktop=NULL, *xterm_qmonitor;
   GtkWidget *item_delete, *item_info, *item_color;
   GtkWidget *save_whole, *save_derived;
-  GtkWidget *creboot_vm, *qreboot_vm, *halt_vm;
+  GtkWidget *qreboot_vm, *halt_vm;
   GtkWidget *separator, *separator2, *menu = gtk_menu_new();
   GtkWidget *item_hidden;
   char *whole_rootfs = "save whole rootfs"; 
@@ -781,9 +774,8 @@ void node_ctx_menu(t_bank_item *bitem)
     {
     save_whole = gtk_menu_item_new_with_label(whole_rootfs);
     save_derived = gtk_menu_item_new_with_label(derived_rootfs);
-    creboot_vm = gtk_menu_item_new_with_label("send reboot req to agent");
     qreboot_vm = gtk_menu_item_new_with_label("send reboot req to qemu");
-    halt_vm = gtk_menu_item_new_with_label("send poweroff req to agent");
+    halt_vm = gtk_menu_item_new_with_label("send poweroff req to qemu");
     }
   dtach_console = gtk_menu_item_new_with_label("dtach console");
   item_info = gtk_menu_item_new_with_label("Info");
@@ -824,9 +816,6 @@ void node_ctx_menu(t_bank_item *bitem)
                      G_CALLBACK(node_sav_derived), (gpointer) pm);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), save_whole);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), save_derived);
-    g_signal_connect(G_OBJECT(creboot_vm), "activate",
-                     G_CALLBACK(node_creboot_vm), (gpointer) pm);
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu), creboot_vm);
     g_signal_connect(G_OBJECT(qreboot_vm), "activate",
                      G_CALLBACK(node_qreboot_vm), (gpointer) pm);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), qreboot_vm);

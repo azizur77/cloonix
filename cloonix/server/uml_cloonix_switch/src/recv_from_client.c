@@ -59,7 +59,7 @@
 int produce_list_commands(t_list_commands *list);
 
 static void recv_del_vm(int llid, int tid, char *name);
-static void recv_halt_vm(int llid, int tid, char *name);
+static void recv_halt_vm(int llid, int tid, char *name, int is_cloonix_halt);
 static void recv_reboot_vm(int llid,int tid,char *name,int is_cloonix_reboot);
 static void recv_promiscious(int llid, int tid, char *name, int eth, int on);
 
@@ -259,8 +259,11 @@ void recv_vmcmd(int llid, int tid, char *name, int cmd, int param)
     case vmcmd_del:
       recv_del_vm(llid, tid, name);
       break;
-    case vmcmd_halt:
-      recv_halt_vm(llid, tid, name);
+    case vmcmd_halt_with_cloonix_agent:
+      recv_halt_vm(llid, tid, name, 1);
+      break;
+    case vmcmd_halt_with_qemu:
+      recv_halt_vm(llid, tid, name, 0);
       break;
     case vmcmd_reboot_with_cloonix_agent:
       recv_reboot_vm(llid, tid, name, 1);
@@ -1444,7 +1447,7 @@ static void recv_reboot_vm(int llid,int tid,char *name,int is_cloonix_reboot)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void recv_halt_vm(int llid, int tid, char *name)
+static void recv_halt_vm(int llid, int tid, char *name, int is_cloonix_halt)
 {
   int job_idx;
   char buf[MAX_NAME_LEN];
@@ -1452,17 +1455,27 @@ static void recv_halt_vm(int llid, int tid, char *name)
   t_opaque_agent_req *opaque;
   if (vm)
     {
-    opaque = (void *) clownix_malloc(sizeof(t_opaque_agent_req), 9);
-    memset(opaque, 0, sizeof(t_opaque_agent_req));
-    opaque->llid = llid;
-    opaque->tid = tid;
-    strncpy(opaque->name, name, MAX_NAME_LEN-1);
-    strncpy(opaque->action, "poweroff", MAX_NAME_LEN-1);
-    job_idx = timeout_service_alloc(doors_timeout_service_cb, 
-                                   (void *)opaque, 300);
-    memset(buf, 0, MAX_NAME_LEN);
-    snprintf(buf, MAX_NAME_LEN-1, HALT_REQUEST, job_idx);
-    doors_send_command(get_doorways_llid(), 0, name, buf);
+    if (is_cloonix_halt)
+      {
+      opaque = (void *) clownix_malloc(sizeof(t_opaque_agent_req), 9);
+      memset(opaque, 0, sizeof(t_opaque_agent_req));
+      opaque->llid = llid;
+      opaque->tid = tid;
+      strncpy(opaque->name, name, MAX_NAME_LEN-1);
+      strncpy(opaque->action, "poweroff", MAX_NAME_LEN-1);
+      job_idx = timeout_service_alloc(doors_timeout_service_cb, 
+                                     (void *)opaque, 300);
+      memset(buf, 0, MAX_NAME_LEN);
+      snprintf(buf, MAX_NAME_LEN-1, HALT_REQUEST, job_idx);
+      doors_send_command(get_doorways_llid(), 0, name, buf);
+      }
+    else
+      {
+      if (qmp_end_qemu_unix(name))
+        send_status_ko(llid, tid, name);
+      else
+        send_status_ok(llid, tid, name);
+      }
     }
   else
     send_status_ko(llid, tid, "MACHINE NOT FOUND");

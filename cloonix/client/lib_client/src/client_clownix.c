@@ -502,7 +502,7 @@ void client_halt_vm(int tid, t_end_cb cb, char *nm)
   new_tid = set_response_callback(cb, tid);
   if (!g_llid)
     KOUT(" ");
-  send_vmcmd(g_llid, new_tid, nm, vmcmd_halt, 0);
+  send_vmcmd(g_llid, new_tid, nm, vmcmd_halt_with_qemu, 0);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif

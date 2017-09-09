@@ -64,7 +64,8 @@ enum {
 enum {
   vmcmd_min = 0,
   vmcmd_del,
-  vmcmd_halt,
+  vmcmd_halt_with_cloonix_agent,
+  vmcmd_halt_with_qemu,
   vmcmd_reboot_with_cloonix_agent,
   vmcmd_reboot_with_qemu,
   vmcmd_promiscious_flag_set,

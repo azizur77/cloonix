@@ -34,6 +34,7 @@ GtkWidget *canvas_cursors(void);
 void topo_delete(GtkWidget *mn);
 void topo_save(GtkWidget *mn);
 void start_wireshark(char *name, t_bank_item *bitem);
+void start_local_wireshark(char *name, t_bank_item *bitem);
 
 
 
