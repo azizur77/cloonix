@@ -248,7 +248,7 @@ char **get_argv_local_dbssh(char *name)
   snprintf(cmd, 2*MAX_PATH_LEN-1, 
            "%s/server/dtach/dtach -a %s/%s; sleep 10", 
            get_distant_cloonix_tree(), get_dtach_work_path(), nm);
-  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
+//  KERR("%s %s %s -t %s %s\n", bin_path, doors_addr, g_password, username, cmd);
   return (argv);
 }
 /*--------------------------------------------------------------------------*/

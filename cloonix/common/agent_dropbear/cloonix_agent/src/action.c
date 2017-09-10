@@ -197,11 +197,14 @@ static int add_listen_x11(int display_sock_x11)
 static void remove_listen_x11(t_dropbear_ctx *dctx)
 {
   char x11_path[MAX_ASCII_LEN];
-  memset(x11_path, 0, MAX_ASCII_LEN);
-  snprintf(x11_path, MAX_ASCII_LEN-1, "%s%d",
-           UNIX_X11_SOCKET_PREFIX, dctx->display_sock_x11);
-  close(dctx->fd_listen_x11);
-  unlink(x11_path);
+  if (dctx->fd_listen_x11 != -1)
+    {
+    memset(x11_path, 0, MAX_ASCII_LEN);
+    snprintf(x11_path, MAX_ASCII_LEN-1, "%s%d",
+             UNIX_X11_SOCKET_PREFIX, dctx->display_sock_x11);
+    close(dctx->fd_listen_x11);
+    unlink(x11_path);
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -264,7 +267,6 @@ static void free_ctx(int dido_llid)
     remove_listen_x11(dctx);
     if (dctx->is_allocated_x11_display_idx)
       x11_pool_release(dctx->display_sock_x11);
-
     if (dctx->next)
       dctx->next->prev = dctx->prev;
     if (dctx->prev)
@@ -302,7 +304,7 @@ void action_events(fd_set *infd)
   while (dctx)
     {
     next = dctx->next;
-    if (FD_ISSET(dctx->fd_listen_x11, infd))
+    if ((dctx->fd_listen_x11 != -1) && FD_ISSET(dctx->fd_listen_x11, infd))
       x11_event_listen(dctx->dido_llid, dctx->display_sock_x11, 
                        dctx->fd_listen_x11);
     if (FD_ISSET(dctx->fd, infd))
@@ -331,7 +333,8 @@ void action_prepare_fd_set(fd_set *infd, fd_set *outfd)
     {
     FD_SET(dctx->fd, infd);
     nonblock_prepare_fd_set(dctx->fd, outfd);
-    FD_SET(dctx->fd_listen_x11, infd);
+    if (dctx->fd_listen_x11 != -1)
+      FD_SET(dctx->fd_listen_x11, infd);
     dctx = dctx->next;
     } 
 }
