@@ -74,12 +74,14 @@ activate(CrPanner *panner)
 {
         GdkWindow *window;
         GdkCursor *cursor;
+	GdkDisplay *display;
 
         g_return_if_fail(panner->canvas != NULL);
 
 	window = gtk_widget_get_window(GTK_WIDGET(panner->canvas));
-        cursor = gdk_cursor_new(panner->cursor);
-        gdk_window_set_cursor(window, cursor);
+	display = gdk_window_get_display(window);
+	cursor = gdk_cursor_new_for_display(display, panner->cursor);
+	gdk_window_set_cursor(window, cursor);
         g_object_unref(cursor);
         panner->flags |= CR_PANNER_ACTIVE;
 }

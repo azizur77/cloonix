@@ -75,7 +75,6 @@ update_adjustment_factor(CrCanvas *canvas, GtkAdjustment *adjustment, gdouble
                 gtk_adjustment_set_page_size(adjustment, viewport_length);
                 gtk_adjustment_set_page_increment(adjustment, viewport_length);
                 gtk_adjustment_set_step_increment(adjustment, viewport_length/10);
-                gtk_adjustment_changed(adjustment);
         }
 }
 
@@ -96,7 +95,6 @@ update_adjustment_world(CrCanvas *canvas, GtkAdjustment *adjustment,
                 gtk_adjustment_set_step_increment(adjustment, length/10);
                 gtk_adjustment_set_upper(adjustment, upper);
                 gtk_adjustment_set_lower(adjustment, 0);
-                gtk_adjustment_changed(adjustment);
         }
 
         value = CLAMP(value, 0, gtk_adjustment_get_upper(adjustment) - length);
@@ -105,7 +103,6 @@ update_adjustment_world(CrCanvas *canvas, GtkAdjustment *adjustment,
                 gtk_adjustment_set_value(adjustment, value);
                 g_signal_handlers_block_matched(adjustment, G_SIGNAL_MATCH_DATA,
                                 0, 0, NULL, NULL, canvas);
-                gtk_adjustment_value_changed(adjustment);
                 g_signal_handlers_unblock_matched(adjustment, 
                                 G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, canvas);
         }
@@ -206,7 +203,6 @@ recenter_adjustment(GtkAdjustment *adjustment, gdouble *newval_ref)
 
         if (*newval_ref != gtk_adjustment_get_value(adjustment)) {
                 gtk_adjustment_set_value(adjustment, *newval_ref);
-                gtk_adjustment_value_changed(adjustment);
         }
 }
 
@@ -249,6 +245,9 @@ static gboolean
 on_repaint_revert_idle(CrCanvas *canvas)
 {
         cairo_t *cr;
+GdkDrawingContext *context;
+GdkWindow *window;
+cairo_region_t *cairo_region;
         /* This is a high priority update that gets called
          * before the expose event.
          * We set another idle to be called after the expose event to run
@@ -259,15 +258,17 @@ on_repaint_revert_idle(CrCanvas *canvas)
                         (GSourceFunc) repaint_revert,
                         canvas, NULL);
 
-        cr = gdk_cairo_create (gtk_widget_get_window(GTK_WIDGET(canvas)));
+window = gtk_widget_get_window(GTK_WIDGET(canvas));
+cairo_region = gdk_window_get_clip_region(window);
+context = gdk_window_begin_draw_frame(window, cairo_region);
+cr = gdk_drawing_context_get_cairo_context(context);
+
 
         g_signal_emit(canvas, cr_canvas_signals[BEFORE_PAINT], 0, cr,
                         (canvas->flags & CR_CANVAS_VIEWPORT_CHANGED) != 0);
 
         canvas->flags &= ~CR_CANVAS_VIEWPORT_CHANGED;
-
-        cairo_destroy(cr);
-
+gdk_window_end_draw_frame(window, context);
         return FALSE;
 }
 
@@ -284,9 +285,18 @@ static void
 update(CrCanvas *canvas)
 {
         cairo_t *cr;
+GdkDrawingContext *context;
+GdkWindow *window;
+cairo_region_t *cairo_region;
+
 	if (!gtk_widget_get_mapped (GTK_WIDGET(canvas)))
 		return;
-        cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(canvas)));
+window = gtk_widget_get_window(GTK_WIDGET(canvas));
+cairo_region = gdk_window_get_clip_region(window);
+context = gdk_window_begin_draw_frame(window, cairo_region);
+cr = gdk_drawing_context_get_cairo_context(context);
+
+
         if (canvas->update_idle_id) {
                 g_source_remove(canvas->update_idle_id);
                 canvas->update_idle_id = 0;
@@ -310,7 +320,7 @@ update(CrCanvas *canvas)
                         (canvas->flags & CR_CANVAS_VIEWPORT_CHANGED) != 0);
 
         canvas->flags &= ~CR_CANVAS_VIEWPORT_CHANGED;
-        cairo_destroy(cr);
+gdk_window_end_draw_frame(window, context);
 
         if (!(canvas->flags & CR_CANVAS_REPAINT_MODE) &&
                         canvas->flags & CR_CANVAS_NEED_UPDATE) {
@@ -346,9 +356,15 @@ static void
 quick_update(CrCanvas *canvas) 
 {
         cairo_t *cr;
+GdkDrawingContext *context;
+GdkWindow *window;
+cairo_region_t *cairo_region;
 	if (!gtk_widget_get_mapped(GTK_WIDGET(canvas)))
 		return;
-        cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(canvas)));
+window = gtk_widget_get_window(GTK_WIDGET(canvas));
+cairo_region = gdk_window_get_clip_region(window);
+context = gdk_window_begin_draw_frame(window, cairo_region);
+cr = gdk_drawing_context_get_cairo_context(context);
 
         if (canvas->update_idle_id) {
                 g_source_remove(canvas->update_idle_id);
@@ -363,7 +379,7 @@ quick_update(CrCanvas *canvas)
 
         canvas->flags &= ~CR_CANVAS_NEED_UPDATE;
         canvas->flags &= ~CR_CANVAS_IGNORE_INVALIDATE;
-        cairo_destroy(cr);
+gdk_window_end_draw_frame(window, context);
 }
 
 static void
@@ -916,6 +932,9 @@ motion_event(GtkWidget *widget, GdkEventMotion *event)
         GdkEvent event_copy;
         gboolean state;
         cairo_matrix_t pick_matrix;
+GdkDrawingContext *context;
+GdkWindow *window;
+cairo_region_t *cairo_region;
 
         canvas = CR_CANVAS(widget);
         root_item = CR_ITEM(canvas->root);
@@ -923,7 +942,10 @@ motion_event(GtkWidget *widget, GdkEventMotion *event)
         event_copy = *((GdkEvent *) event);
         new_item = NULL;
 
-        cr = gdk_cairo_create (gtk_widget_get_window(widget));
+window = gtk_widget_get_window(widget);
+cairo_region = gdk_window_get_clip_region(window);
+context = gdk_window_begin_draw_frame(window, cairo_region);
+cr = gdk_drawing_context_get_cairo_context(context);
 
         cairo_matrix_init_identity(&pick_matrix);
         if (canvas->pick_item)
@@ -946,7 +968,7 @@ motion_event(GtkWidget *widget, GdkEventMotion *event)
                                 event->y);
 
                 if (new_item == canvas->pick_item) {
-                        cairo_destroy(cr);
+gdk_window_end_draw_frame(window, context);
                         return state;
                 }
                 /* should i send motion events to the item?*/
@@ -986,7 +1008,7 @@ motion_event(GtkWidget *widget, GdkEventMotion *event)
                         canvas->pick_item = NULL;
                 }
         }
-        cairo_destroy(cr);
+gdk_window_end_draw_frame(window, context);
         return state;
 }
 
