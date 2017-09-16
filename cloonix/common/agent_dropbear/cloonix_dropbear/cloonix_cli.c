@@ -295,7 +295,9 @@ static int put_in_file_xauth_line(char *xauth_bin, char *dpy, char *file)
         else
           { 
           if (fputs(line, fp) != EOF)
+            {
             result = 0;
+            }
           if (fclose(fp))
             KERR("%s", file);
           }
@@ -885,7 +887,11 @@ size_t cloonix_write(int fd, const void *ibuf, size_t count)
       }
     }
   else
+    {
     result = write(fd, buf, count);
+    if (result != count)
+      KERR("%d %d", result, count);
+    }
   return result;
 }
 /*--------------------------------------------------------------------------*/

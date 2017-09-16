@@ -40,7 +40,6 @@
 #define MAX_TOT_LEN_WARNING_DOORWAYS_Q 100000000
 #define MAX_TOT_LEN_DOORWAYS_Q 500000000
 #define MAX_TOT_LEN_DOORWAYS_SOCK_Q 50000000
-#define MAX_RCVBUF_SOCK 10000000
 
 
 typedef struct t_rx_pktbuf
@@ -123,6 +122,7 @@ static int max_tx_sock_queue_len_reached(int llid, int cidx, int fd)
       {
       if (used > MAX_TOT_LEN_DOORWAYS_SOCK_Q) 
         {
+        KERR("%d %d", used, MAX_TOT_LEN_DOORWAYS_SOCK_Q);
         channel_tx_local_flow_ctrl(NULL, llid, 1);
         clownix_timeout_add(2,fct_stop_writing_timeout,(void *) ul_llid,NULL,NULL);
         g_max_tx_sock_queue_len_reached += 1;
@@ -387,13 +387,6 @@ static int tx_write(char *msg, int len, int fd)
     if ((errno == EAGAIN) || (errno == EINTR))
       tx_len = 0;
     }
-/*
-  else if (tx_len > 0)
-    {
-    if (tx_len != len)
-      KERR("%d %d", tx_len, len);
-    }
-*/
   return tx_len;
 }
 /*---------------------------------------------------------------------------*/
@@ -434,6 +427,7 @@ static int doors_tx_send_chunk(t_data_channel *dchan, int cidx,
     }
   else if (len < 0)
     {
+    KERR("%d", errno);
     if (errno != EPIPE)
       KERR("%d", errno);
     dchan->tot_txq_size = 0;
@@ -988,14 +982,19 @@ int doorways_tx(int llid, int tid, int type, int val, int len, char *buf)
       if (dchan->llid != lid->llid)
         KOUT(" ");
       if (dchan->tot_txq_size >  MAX_TOT_LEN_WARNING_DOORWAYS_Q)
+        {
+        KERR("%d %d", dchan->tot_txq_size, MAX_TOT_LEN_WARNING_DOORWAYS_Q);
         g_max_tx_doorway_queue_len_reached += 1;
+        }
       if (dchan->tot_txq_size <  MAX_TOT_LEN_DOORWAYS_Q)
         {
         doorways_tx_split(lid, cidx, dchan, tid, type, val, len, buf);
         result = 0;
         }
       else
-        KERR("%d", (int) dchan->tot_txq_size);
+        {
+        KERR("%d %d", (int) dchan->tot_txq_size, MAX_TOT_LEN_DOORWAYS_Q);
+        }
       }
     else
       KERR(" ");

@@ -702,6 +702,8 @@ void watch_tx(int llid, int len, char *str_tx)
       memcpy (ntx, str_tx, len);
       chain_append_tx(&(dchan[cidx].tx), &(dchan[cidx].last_tx), len, ntx);
       }
+    else
+      KERR("%d %d", dchan[cidx].tot_txq_size, MAX_TOT_LEN_QDAT);
     }
 }
 /*---------------------------------------------------------------------------*/

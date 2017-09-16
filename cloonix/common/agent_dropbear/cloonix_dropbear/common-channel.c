@@ -157,13 +157,17 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
       {
       if (len < 0 && ((errno != EINTR) && (errno != EAGAIN)))
         {
+        KERR("%d", errno);
         result = -1;
         close_chan_fd(channel, fd);
         }
       return result;
       }
     if (len != maxlen)
+      {
+      KERR("%d %d", len, maxlen);
       result = -2;
+      }
     cbuf_incrread(cbuf, len);
     channel->recvdonelen += len;
     if (channel->recvdonelen >= RECV_WINDOWEXTEND)
@@ -564,8 +568,7 @@ void send_msg_request_failure()
 /****************************************************************************/
 void wrapper_exit(int val, char *file, int line)
 {
-  (void) file;
-  (void) line;
+  KERR("%s %d %d", file, line, val);
   exit(val);
 }
 /*--------------------------------------------------------------------------*/
