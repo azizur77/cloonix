@@ -616,7 +616,11 @@ void edge_ctx_menu(t_bank_item *bitem)
                    G_CALLBACK(menu_hidden), (gpointer) pm);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_delete);
   gtk_widget_show_all(menu);
+#if GTK_MINOR_VERSION >= 22
   gtk_menu_popup_at_pointer(GTK_MENU(menu), NULL);
+#else
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, 0);
+#endif
 }
 /*--------------------------------------------------------------------------*/
 
@@ -651,7 +655,11 @@ void lan_ctx_menu(t_bank_item *bitem)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_hidden);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_delete);
   gtk_widget_show_all(menu);
+#if GTK_MINOR_VERSION >= 22
   gtk_menu_popup_at_pointer(GTK_MENU(menu), NULL);
+#else
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, 0);
+#endif
 }
 /*--------------------------------------------------------------------------*/
 
@@ -692,7 +700,11 @@ void sat_ctx_menu(t_bank_item *bitem)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_delete);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_info);
   gtk_widget_show_all(menu);
+#if GTK_MINOR_VERSION >= 22
   gtk_menu_popup_at_pointer(GTK_MENU(menu), NULL);
+#else
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, 0);
+#endif
 }
 /*--------------------------------------------------------------------------*/
 
@@ -746,7 +758,11 @@ void intf_ctx_menu(t_bank_item *bitem)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_hidden);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_info);
   gtk_widget_show_all(menu);
+#if GTK_MINOR_VERSION >= 22
   gtk_menu_popup_at_pointer(GTK_MENU(menu), NULL);
+#else
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, 0);
+#endif
 }
 /*--------------------------------------------------------------------------*/
 
@@ -831,7 +847,11 @@ void node_ctx_menu(t_bank_item *bitem)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_delete);
   node_item_color(item_color, pm);
   gtk_widget_show_all(menu);
+#if GTK_MINOR_VERSION >= 22
   gtk_menu_popup_at_pointer(GTK_MENU(menu), NULL);
+#else
+  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, 0);
+#endif
 }
 /*--------------------------------------------------------------------------*/
 

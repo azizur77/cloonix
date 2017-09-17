@@ -245,9 +245,13 @@ static gboolean
 on_repaint_revert_idle(CrCanvas *canvas)
 {
         cairo_t *cr;
-GdkDrawingContext *context;
-GdkWindow *window;
-cairo_region_t *cairo_region;
+
+#if GTK_MINOR_VERSION >= 22
+	GdkDrawingContext *context;
+	GdkWindow *window;
+	cairo_region_t *cairo_region;
+#endif
+
         /* This is a high priority update that gets called
          * before the expose event.
          * We set another idle to be called after the expose event to run
@@ -258,17 +262,26 @@ cairo_region_t *cairo_region;
                         (GSourceFunc) repaint_revert,
                         canvas, NULL);
 
-window = gtk_widget_get_window(GTK_WIDGET(canvas));
-cairo_region = gdk_window_get_clip_region(window);
-context = gdk_window_begin_draw_frame(window, cairo_region);
-cr = gdk_drawing_context_get_cairo_context(context);
+#if GTK_MINOR_VERSION >= 22
+	window = gtk_widget_get_window(GTK_WIDGET(canvas));
+	cairo_region = gdk_window_get_clip_region(window);
+	context = gdk_window_begin_draw_frame(window, cairo_region);
+	cr = gdk_drawing_context_get_cairo_context(context);
+#else
+	cr = gdk_cairo_create (gtk_widget_get_window(GTK_WIDGET(canvas)));
+#endif
+
 
 
         g_signal_emit(canvas, cr_canvas_signals[BEFORE_PAINT], 0, cr,
                         (canvas->flags & CR_CANVAS_VIEWPORT_CHANGED) != 0);
 
         canvas->flags &= ~CR_CANVAS_VIEWPORT_CHANGED;
-gdk_window_end_draw_frame(window, context);
+#if GTK_MINOR_VERSION >= 22
+	gdk_window_end_draw_frame(window, context);
+#else
+	cairo_destroy(cr);
+#endif
         return FALSE;
 }
 
@@ -285,16 +298,22 @@ static void
 update(CrCanvas *canvas)
 {
         cairo_t *cr;
-GdkDrawingContext *context;
-GdkWindow *window;
-cairo_region_t *cairo_region;
+#if GTK_MINOR_VERSION >= 22
+	GdkDrawingContext *context;
+	GdkWindow *window;
+	cairo_region_t *cairo_region;
+#endif
 
 	if (!gtk_widget_get_mapped (GTK_WIDGET(canvas)))
 		return;
-window = gtk_widget_get_window(GTK_WIDGET(canvas));
-cairo_region = gdk_window_get_clip_region(window);
-context = gdk_window_begin_draw_frame(window, cairo_region);
-cr = gdk_drawing_context_get_cairo_context(context);
+#if GTK_MINOR_VERSION >= 22
+	window = gtk_widget_get_window(GTK_WIDGET(canvas));
+	cairo_region = gdk_window_get_clip_region(window);
+	context = gdk_window_begin_draw_frame(window, cairo_region);
+	cr = gdk_drawing_context_get_cairo_context(context);
+#else
+	cr = gdk_cairo_create (gtk_widget_get_window(GTK_WIDGET(canvas)));
+#endif
 
 
         if (canvas->update_idle_id) {
@@ -320,7 +339,11 @@ cr = gdk_drawing_context_get_cairo_context(context);
                         (canvas->flags & CR_CANVAS_VIEWPORT_CHANGED) != 0);
 
         canvas->flags &= ~CR_CANVAS_VIEWPORT_CHANGED;
-gdk_window_end_draw_frame(window, context);
+#if GTK_MINOR_VERSION >= 22
+	gdk_window_end_draw_frame(window, context);
+#else
+	cairo_destroy(cr);
+#endif
 
         if (!(canvas->flags & CR_CANVAS_REPAINT_MODE) &&
                         canvas->flags & CR_CANVAS_NEED_UPDATE) {
@@ -356,15 +379,21 @@ static void
 quick_update(CrCanvas *canvas) 
 {
         cairo_t *cr;
-GdkDrawingContext *context;
-GdkWindow *window;
-cairo_region_t *cairo_region;
+#if GTK_MINOR_VERSION >= 22
+	GdkDrawingContext *context;
+	GdkWindow *window;
+	cairo_region_t *cairo_region;
+#endif
 	if (!gtk_widget_get_mapped(GTK_WIDGET(canvas)))
 		return;
-window = gtk_widget_get_window(GTK_WIDGET(canvas));
-cairo_region = gdk_window_get_clip_region(window);
-context = gdk_window_begin_draw_frame(window, cairo_region);
-cr = gdk_drawing_context_get_cairo_context(context);
+#if GTK_MINOR_VERSION >= 22
+	window = gtk_widget_get_window(GTK_WIDGET(canvas));
+	cairo_region = gdk_window_get_clip_region(window);
+	context = gdk_window_begin_draw_frame(window, cairo_region);
+	cr = gdk_drawing_context_get_cairo_context(context);
+#else
+	cr = gdk_cairo_create (gtk_widget_get_window(GTK_WIDGET(canvas)));
+#endif
 
         if (canvas->update_idle_id) {
                 g_source_remove(canvas->update_idle_id);
@@ -379,7 +408,11 @@ cr = gdk_drawing_context_get_cairo_context(context);
 
         canvas->flags &= ~CR_CANVAS_NEED_UPDATE;
         canvas->flags &= ~CR_CANVAS_IGNORE_INVALIDATE;
-gdk_window_end_draw_frame(window, context);
+#if GTK_MINOR_VERSION >= 22
+	gdk_window_end_draw_frame(window, context);
+#else
+	cairo_destroy(cr);
+#endif
 }
 
 static void
@@ -932,9 +965,11 @@ motion_event(GtkWidget *widget, GdkEventMotion *event)
         GdkEvent event_copy;
         gboolean state;
         cairo_matrix_t pick_matrix;
-GdkDrawingContext *context;
-GdkWindow *window;
-cairo_region_t *cairo_region;
+#if GTK_MINOR_VERSION >= 22
+	GdkDrawingContext *context;
+	GdkWindow *window;
+	cairo_region_t *cairo_region;
+#endif
 
         canvas = CR_CANVAS(widget);
         root_item = CR_ITEM(canvas->root);
@@ -942,10 +977,14 @@ cairo_region_t *cairo_region;
         event_copy = *((GdkEvent *) event);
         new_item = NULL;
 
-window = gtk_widget_get_window(widget);
-cairo_region = gdk_window_get_clip_region(window);
-context = gdk_window_begin_draw_frame(window, cairo_region);
-cr = gdk_drawing_context_get_cairo_context(context);
+#if GTK_MINOR_VERSION >= 22
+	window = gtk_widget_get_window(widget);
+	cairo_region = gdk_window_get_clip_region(window);
+	context = gdk_window_begin_draw_frame(window, cairo_region);
+	cr = gdk_drawing_context_get_cairo_context(context);
+#else
+	cr = gdk_cairo_create (gtk_widget_get_window(GTK_WIDGET(widget)));
+#endif
 
         cairo_matrix_init_identity(&pick_matrix);
         if (canvas->pick_item)
@@ -968,7 +1007,11 @@ cr = gdk_drawing_context_get_cairo_context(context);
                                 event->y);
 
                 if (new_item == canvas->pick_item) {
-gdk_window_end_draw_frame(window, context);
+#if GTK_MINOR_VERSION >= 22
+	gdk_window_end_draw_frame(window, context);
+#else
+	cairo_destroy(cr);
+#endif
                         return state;
                 }
                 /* should i send motion events to the item?*/
@@ -1008,7 +1051,11 @@ gdk_window_end_draw_frame(window, context);
                         canvas->pick_item = NULL;
                 }
         }
-gdk_window_end_draw_frame(window, context);
+#if GTK_MINOR_VERSION >= 22
+	gdk_window_end_draw_frame(window, context);
+#else
+	cairo_destroy(cr);
+#endif
         return state;
 }
 
