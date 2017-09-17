@@ -65,7 +65,7 @@ int cloonix_get_pid(void);
 #define FLAG_HOP_APP    0x0004
 #define FLAG_HOP_DOORS  0x0008
 
-#define MAX_DOORWAYS_BUF_LEN    10000000
+#define MAX_DOORWAYS_BUF_LEN 1000000
 #define MAX_DOOR_CTRL_LEN 1000
 
 
