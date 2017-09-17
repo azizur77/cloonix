@@ -53,6 +53,8 @@
 #include "cloonix_conf_info.h"
 
 
+extern char **environ;
+
 
 /*--------------------------------------------------------------------------*/
 gboolean refresh_request_timeout (gpointer  data);
@@ -512,6 +514,8 @@ char **get_saved_environ(void)
 /*****************************************************************************/
 static char **save_environ(void)
 {
+  return environ;
+/*
   char *tree;
   char *xauthority;
   char ld_lib[MAX_PATH_LEN];
@@ -550,6 +554,7 @@ static char **save_environ(void)
   memset(username, 0, MAX_NAME_LEN);
   snprintf(username, MAX_NAME_LEN-1, "USER=%s", getenv("USER"));
   return environ;
+*/
 }
 /*---------------------------------------------------------------------------*/
 
