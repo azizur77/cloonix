@@ -293,7 +293,12 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 #define QEMU_OPTS_BASE \
    " -m %d"\
    " -name %s"\
+   " -no-user-config"\
+   " -nodefaults"\
    " -serial mon:stdio"\
+   " -rtc base=utc,driftfix=slew"\
+   " -global kvm-pit.lost_tick_policy=delay"\
+   " -no-hpet -no-shutdown -boot strict=on"\
    " -chardev socket,id=mon1,path=%s,server,nowait"\
    " -mon chardev=mon1,mode=readline"\
    " -chardev socket,id=qmp1,path=%s,server,nowait"\
@@ -308,20 +313,29 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
    " -device virtserialport,chardev=cloon,name=net.cloonix.0"\
    " -chardev socket,path=%s,server,nowait,id=hvc0"\
    " -device virtconsole,chardev=hvc0"\
-   " -balloon virtio"\
+   " -device virtio-balloon-pci,id=balloon0"\
    " -device virtio-rng-pci"
 
-//   " -vga virtio -display gtk,gl=on"\
-//   " -vga qxl"\
-//   " -spice unix,addr=%s,disable-ticketing,gl=on,rendernode=/dev/dri/card0"\
+/*
+
+   " -vga virtio -display gtk,gl=on"\
+   " -vga qxl"\
+   " -spice unix,addr=%s,disable-ticketing,gl=on,rendernode=/dev/dri/card0"\
+
+*/
 
 #define QEMU_SPICE \
-   " -vga qxl"\
-   " -soundhw hda"\
-   " -usb"\
+   " -device qxl-vga,id=video0,ram_size=67108864,"\
+   "vram_size=67108864,vram64_size_mb=0,vgamem_mb=16"\
+   " -device intel-hda,id=sound0"\
+   " -device hda-duplex,id=sound0-codec0,bus=sound0.0,cad=0"\
+   " -device ich9-usb-ehci1,id=usb,bus=pci.0"\
+   " -device ich9-usb-uhci1,masterbus=usb.0,firstport=0,bus=pci.0,multifunction=on"\
    " -chardev spicevmc,id=charredir0,name=usbredir"\
-   " -spice unix,addr=%s,disable-ticketing"\
    " -device usb-redir,chardev=charredir0,id=redir0"\
+   " -chardev spicevmc,id=charredir1,name=usbredir"\
+   " -device usb-redir,chardev=charredir1,id=redir1"\
+   " -spice unix,addr=%s,disable-ticketing"\
    " -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0"\
    " -chardev spicevmc,id=spicechannel0,name=vdagent"
 /*--------------------------------------------------------------------------*/
@@ -361,9 +375,9 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
 
   len = sprintf(linux_cmd, " %s"
                            " -pidfile %s/%s/pid"
+                           " -machine pc,accel=kvm,usb=off,dump-guest-core=off"
                            " -cpu %s"
-                           " -smp %d,maxcpus=%d,cores=1"
-                           " -enable-kvm",
+                           " -smp %d,maxcpus=%d,cores=1",
           cmd_start, cfg_get_work_vm(vm->kvm.vm_id), DIR_UMID,
           cpu_type, nb_cpu, nb_cpu);
   if (spice_libs_exists())
@@ -409,7 +423,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
         {
         len += sprintf(linux_cmd+len, DRIVE_PARAMS_CISCO, rootfs, 0);
         len += sprintf(linux_cmd+len,
-        " -uuid 3824cca6-7603-423b-8e5c-84d15d9b0a6a -nodefaults");
+        " -uuid 3824cca6-7603-423b-8e5c-84d15d9b0a6a");
         }
       else
         len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);

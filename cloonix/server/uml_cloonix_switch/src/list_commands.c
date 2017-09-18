@@ -376,7 +376,7 @@ static int produce_list_sat_cmd(int offset, t_list_commands *hlist,
                                 int nb_endp, t_endp *endp)
 {
   t_endp *next, *cur = endp;
-  int i, j, lan, result = offset;
+  int i, result = offset;
   for (i=0; i<nb_endp; i++)
     {
     if (!cur)
