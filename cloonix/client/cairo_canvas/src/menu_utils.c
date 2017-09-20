@@ -161,7 +161,7 @@ static int start_launch(void *ptr)
 {
   char **argv = (char **) ptr;
   char **environ = get_saved_environ();
-  execve(argv[0], argv, environ);
+  execvpe(argv[0], argv, environ);
   return 0;
 }
 /*---------------------------------------------------------------------------*/
@@ -344,17 +344,14 @@ int check_before_start_launch(char **argv)
 /****************************************************************************/
 static void start_qemu_spice(char *password, char *path, t_qemu_spice_item *it)
 {
-  char title[2*MAX_NAME_LEN];
-  char *argv[] = {path, title,
-                  "-d", it->doors_server_path,
-                  "-c", it->spice_server_path, 
-                  "-w", password, 
-                  NULL};
-  memset(title, 0, 2*MAX_NAME_LEN);
-  snprintf (title, 2*MAX_NAME_LEN-1, "--title=%s/%s", 
-            local_get_cloonix_name(), it->vm_name);
-  if (check_before_start_launch(argv))
-    launch_pid_wait(type_pid_spicy_gtk, it->vm_name, argv);
+  char name[MAX_NAME_LEN];
+  char net[MAX_NAME_LEN];
+  char *argv[] = { "cloonix_ice", net, name, NULL }; 
+  memset(name, 0, MAX_NAME_LEN);
+  memset(net, 0, MAX_NAME_LEN);
+  snprintf (name, MAX_NAME_LEN-1, "%s", it->vm_name);
+  snprintf (net, MAX_NAME_LEN-1, "%s", local_get_cloonix_name());
+  launch_pid_wait(type_pid_spicy_gtk, it->vm_name, argv);
 }
 /*--------------------------------------------------------------------------*/
 
