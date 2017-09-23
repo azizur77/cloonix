@@ -619,7 +619,10 @@ t_blkd *blkd_create_tx_full_copy(int len, char *buf,
 /****************************************************************************/
 void blkd_free(void *ptr, t_blkd *blkd)
 {
-  t_blkd_group *blkd_group = blkd->group;
+  t_blkd_group *blkd_group;
+  if (!blkd)
+    KOUT(" ");
+  blkd_group = blkd->group;
   if (!blkd_group)
     KOUT(" ");
   if (blkd_group->count_blkd_tied <= 0)
