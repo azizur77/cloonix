@@ -27,12 +27,12 @@ CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
     rm -rf ${CLOONIX_COMMON}/agent_dropbear/${i}
   done
 #----------------------------------------------------------
-  for i in cmd spice_protocol spice_usb; do
+  for i in cmd spice_protocol spice_usb virglrenderer; do
     rm -rf ${CLOONIX_COMMON}/spice/${i}
   done
 #----------------------------------------------------------
   for i in share spice_client spice-protocol \
-           spice_server usbredir include ; do
+           spice_server usbredir include virglrenderer ; do
     rm -rf ${CLOONIX_COMMON}/spice/spice_lib/${i}
   done
 #----------------------------------------------------------
