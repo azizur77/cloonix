@@ -163,16 +163,10 @@ struct cmd_struct level_cnf_cmd[] = {
 {"snf",  "Sniffer actions", level_snf_cmd, NULL, NULL},
 {"a2b",  "A2b actions", level_a2b_cmd, NULL, NULL},
 {"lay", "Layout modifications on canvas", level_layout_cmd, NULL, NULL},
-{"help",  "",                     level_cnf_cmd, NULL, NULL},
-};
-/*---------------------------------------------------------------------------*/
-
-/****************************************************************************/
-struct cmd_struct level_mud_cmd[] = {
 {"lan",  "Send cmd to mulan", NULL, cmd_mud_lan, help_mud_lan},
 {"eth",  "Send cmd to mueth", NULL, cmd_mud_eth, help_mud_eth},
 {"sat",  "Send cmd to musat", NULL, cmd_mud_sat, help_mud_sat},
-{"help",  "",                       level_mud_cmd, NULL, NULL},
+{"help",  "",                     level_cnf_cmd, NULL, NULL},
 };
 /*---------------------------------------------------------------------------*/
 
@@ -196,7 +190,6 @@ struct cmd_struct level_main_cmd[] = {
 {"sav", "Save sub-menu", level_sav_cmd, NULL,  NULL},
 {"cnf", "Configure a cloonix object", level_cnf_cmd, NULL, NULL},
 {"sub", "Subscribe to stats counters", level_sub_cmd, NULL, NULL},
-{"mud", "Dialog with mulan, mutap, musnf and mueth",level_mud_cmd,NULL,NULL},
 {"hop", "dump 1 hop debug", NULL, cmd_event_hop, help_event_hop},
 {"pid", "dump pids of processes", NULL, cmd_pid_dump, NULL},
 {"evt", "prints events",         NULL,  cmd_event_print, NULL},
