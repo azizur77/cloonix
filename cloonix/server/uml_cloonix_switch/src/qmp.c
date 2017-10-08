@@ -421,6 +421,7 @@ static int get_received_msg(char *name, char *qmp_msg)
     msg_type = msg_type_rx_balloon_change_event;
 //  else
 //    KERR("%s UNKNOWN_RX: %s", name, ptr_start);
+  KERR("%s RX: %s", name, ptr_start);
   return msg_type;
 }
 /*--------------------------------------------------------------------------*/

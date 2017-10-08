@@ -68,8 +68,14 @@
   "  mount /dev/sr0 /mnt/cloonix_config_fs\n"\
   "  mount -o remount,exec /dev/sr0\n"\
   "fi\n"\
-  "${CONFIG}/cloonix_agent\n"\
-  "${CONFIG}/dropbear_cloonix_sshd\n"\
+  "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
+  "  rm ${CONFIG}/cloonix_agent\n"\
+  "  rm ${CONFIG}/dropbear_cloonix_sshd\n"\
+  "  mv ${CONFIG}/cloonix_agent_arm ${CONFIG}/cloonix_agent\n"\
+  "  mv ${CONFIG}/dropbear_cloonix_sshd_arm ${CONFIG}/dropbear_cloonix_sshd\n"\
+  "fi\n"\
+  "${CONFIG}/cloonix_agent_arm\n"\
+  "${CONFIG}/dropbear_cloonix_sshd_arm\n"\
   "APID=\"$(pidof cloonix_agent)\"\n"\
   "DPID=\"$(pidof dropbear_cloonix_sshd)\"\n"\
   "if [ \"$DPID\" != \"\" ]; then\n"\

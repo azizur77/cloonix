@@ -340,6 +340,40 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
    " -chardev spicevmc,id=spicechannel0,name=vdagent"
 /*--------------------------------------------------------------------------*/
 
+/****************************************************************************/
+static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
+{
+  int i, len;
+  char cmd_start[3*MAX_PATH_LEN];
+  len = sprintf(cmd_start, " -m %d -name %s",
+                vm->kvm.mem, vm->kvm.name);
+  len = sprintf(linux_cmd, 
+                " %s -pidfile %s/%s/pid" 
+                " -nographic"
+                " -drive file=%s,if=virtio"
+                " -device virtio-serial-pci"
+                " -chardev socket,path=%s,server,nowait,id=cloon"
+                " -device virtserialport,chardev=cloon,name=net.cloonix.0"
+                " -chardev socket,path=%s,server,nowait,id=hvc0"
+                " -device virtconsole,chardev=hvc0"
+                " -chardev socket,id=mon1,path=%s,server,nowait"
+                " -mon chardev=mon1,mode=readline"
+                " -chardev socket,id=qmp1,path=%s,server,nowait"
+                " -mon chardev=qmp1,mode=control"
+                " -append \"root=/dev/vda rootwait\"",
+                cmd_start, cfg_get_work_vm(vm->kvm.vm_id),
+                DIR_UMID, vm->kvm.rootfs_used,
+                utils_get_qbackdoor_path(vm->kvm.vm_id),
+                utils_get_qhvc0_path(vm->kvm.vm_id),
+                utils_get_qmonitor_path(vm->kvm.vm_id),
+                utils_get_qmp_path(vm->kvm.vm_id));
+  for (i=0; i<vm->kvm.nb_eth; i++)
+    {
+    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
+    }
+  return len;
+}
+/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
@@ -374,12 +408,12 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
                    utils_get_qhvc0_path(vm->kvm.vm_id));
 
   len = sprintf(linux_cmd, " %s"
-                           " -pidfile %s/%s/pid"
-                           " -machine pc,accel=kvm,usb=off,dump-guest-core=off"
-                           " -cpu %s"
-                           " -smp %d,maxcpus=%d,cores=1",
-          cmd_start, cfg_get_work_vm(vm->kvm.vm_id), DIR_UMID,
-          cpu_type, nb_cpu, nb_cpu);
+                        " -pidfile %s/%s/pid"
+                        " -machine pc,accel=kvm,usb=off,dump-guest-core=off"
+                        " -cpu %s"
+                        " -smp %d,maxcpus=%d,cores=1",
+                        cmd_start, cfg_get_work_vm(vm->kvm.vm_id),
+                        DIR_UMID, cpu_type, nb_cpu, nb_cpu);
   if (spice_libs_exists())
     {
     if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
@@ -454,11 +488,23 @@ static char *qemu_cmd_format(t_vm *vm)
   int len = 0;
   char *cmd = (char *) clownix_malloc(MAX_BIG_BUF, 7);
   memset(cmd, 0,  MAX_BIG_BUF);
-  len += snprintf(cmd, MAX_BIG_BUF-1,
-                  "%s/server/qemu/%s/%s -L %s/server/qemu/%s ",
-                  cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
-                  cfg_get_bin_dir(), QEMU_BIN_DIR);
-  len += create_linux_cmd_kvm(vm, cmd+len);
+  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ARM)
+    {
+    len += snprintf(cmd, MAX_BIG_BUF-1,
+           "%s/server/qemu/%s/%s -L %s/server/qemu/%s -M virt -kernel %s/%s",
+                     cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE,
+                     cfg_get_bin_dir(), QEMU_BIN_DIR, 
+                     cfg_get_bulk(), vm->kvm.linux_kernel);
+    len += create_linux_cmd_arm(vm, cmd+len);
+    }
+  else
+    {
+    len += snprintf(cmd, MAX_BIG_BUF-1,
+           "%s/server/qemu/%s/%s -L %s/server/qemu/%s ",
+                    cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
+                    cfg_get_bin_dir(), QEMU_BIN_DIR);
+    len += create_linux_cmd_kvm(vm, cmd+len);
+    }
   return cmd;
 }
 /*--------------------------------------------------------------------------*/
@@ -580,7 +626,7 @@ static int launch_qemu_vm(t_vm *vm)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void arm_utils_finish_vm_init(char *name, int val)
+void timer_utils_finish_vm_init(char *name, int val)
 {
   char *nm;
   nm = (char *) clownix_malloc(MAX_NAME_LEN, 9);
@@ -642,7 +688,7 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
       break;
     case auto_create_vm_connect:
       vm->dtach_launch = 1;
-      arm_utils_finish_vm_init(name, 4000);
+      timer_utils_finish_vm_init(name, 4000);
       qmonitor_begin_qemu_unix(name);
       qmp_begin_qemu_unix(name);
       qhvc0_begin_qemu_unix(name);

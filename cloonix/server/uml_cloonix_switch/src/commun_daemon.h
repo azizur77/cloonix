@@ -53,6 +53,7 @@ typedef struct t_pid_info
 #define CLOONIX_INTERNAL_COM "cloonix_internal_com"
 #define QEMU_BIN_DIR "qemu_bin"
 #define QEMU_EXE "qemu-system-x86_64"
+#define QEMU_ARM_EXE "qemu-system-arm"
 #define QEMU_IMG "qemu-img"
 #define DIR_CLOONIX_DISKS "disks"
 #define CLOONIX_VM_WORKDIR "vm"

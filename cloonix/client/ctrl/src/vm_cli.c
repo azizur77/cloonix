@@ -40,6 +40,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\tcpu is the processor qty\n");
   printf("\n\teth is the ethernet qty\n");
   printf("\n\t[options]");
+  printf("\n\t       --arm_kernel=<zImage> ");
   printf("\n\t       --persistent ");
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
   printf("\n\t       --install_cdrom=<cdrom_file_path>");
@@ -59,6 +60,7 @@ void help_add_vm_kvm(char *line)
   printf("%s jessie 1000 1 3 jessie.qcow2\n", line);
   printf("%s cloon 1000 1 1 /tmp/jessie.qcow2 --persistent\n", line);
   printf("%s clown 1000 1 2 stretch.qcow2 --9p_share=/tmp\n", line);
+  printf("%s armvirt 256 1 2 lede-17.01.3-armvirt-root.ext4 --arm_kernel=lede-17.01.3-armvirt-zImage\n", line);
   printf("\n\n\n");
 }
 /*-------------------------------------------------------------------------*/
@@ -119,7 +121,12 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
   prop_flags |= VM_CONFIG_FLAG_EVANESCENT;
   for (i=0; i<argc; i++)
     {
-    if (!strcmp(argv[i], "--persistent"))
+    if (!strncmp(argv[i], "--arm_kernel=", strlen("--arm_kernel=")))
+      {
+      prop_flags |= VM_CONFIG_FLAG_ARM;
+      img_linux = argv[i] + strlen("--arm_kernel=");
+      }
+    else if (!strcmp(argv[i], "--persistent"))
       {
       prop_flags |= VM_CONFIG_FLAG_PERSISTENT;
       prop_flags &= ~VM_CONFIG_FLAG_EVANESCENT;

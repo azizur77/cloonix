@@ -50,7 +50,7 @@
 
 void uml_clownix_switch_error_cb(void *ptr, int llid, int err, int from);
 void uml_clownix_switch_rx_cb(int llid, int len, char *buf);
-void arm_utils_finish_vm_init(char *name, int val);
+void timer_utils_finish_vm_init(char *name, int val);
 
 
 static void doorways_start(void);
@@ -182,7 +182,7 @@ void doors_recv_event(int llid, int tid, char *name, char *line)
     }
   else if (!strcmp(line, PING_OK))
     {
-    arm_utils_finish_vm_init(name, 1);
+    timer_utils_finish_vm_init(name, 1);
     qhvc0_event_backdoor(name, backdoor_evt_ping_ok);
     }
   else if (!strcmp(line, PING_KO))
