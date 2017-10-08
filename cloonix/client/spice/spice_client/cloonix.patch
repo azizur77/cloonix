@@ -1,6 +1,6 @@
 diff -Naur spice-gtk/configure tainted_spice/configure
---- spice-gtk/configure	2017-09-01 16:03:22.000000000 +0200
-+++ tainted_spice/configure	2017-09-01 22:34:03.929748223 +0200
+--- spice-gtk/configure	2017-10-07 19:53:05.000000000 +0200
++++ tainted_spice/configure	2017-10-07 19:53:20.416913333 +0200
 @@ -20360,6 +20360,7 @@
  else
    enable_vala="no"
@@ -11,7 +11,7 @@ diff -Naur spice-gtk/configure tainted_spice/configure
  VALA_REQUIRED=0.14
 diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 --- spice-gtk/src/cloonix.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/cloonix.c	2017-09-01 22:32:36.109260451 +0200
++++ tainted_spice/src/cloonix.c	2017-10-07 19:53:20.416913333 +0200
 @@ -0,0 +1,612 @@
 +#include <unistd.h>
 +#include <stdlib.h>
@@ -627,7 +627,7 @@ diff -Naur spice-gtk/src/cloonix.c tainted_spice/src/cloonix.c
 +
 diff -Naur spice-gtk/src/cloonix.h tainted_spice/src/cloonix.h
 --- spice-gtk/src/cloonix.h	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/cloonix.h	2017-09-01 22:32:36.109260451 +0200
++++ tainted_spice/src/cloonix.h	2017-10-07 19:53:20.416913333 +0200
 @@ -0,0 +1,22 @@
 +
 +
@@ -653,7 +653,7 @@ diff -Naur spice-gtk/src/cloonix.h tainted_spice/src/cloonix.h
 +
 diff -Naur spice-gtk/src/hmac_cipher.c tainted_spice/src/hmac_cipher.c
 --- spice-gtk/src/hmac_cipher.c	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/hmac_cipher.c	2017-09-01 22:32:36.109260451 +0200
++++ tainted_spice/src/hmac_cipher.c	2017-10-07 19:53:20.416913333 +0200
 @@ -0,0 +1,146 @@
 +/****************************************************************************/
 +/* Copyright (C) 2006-2014 Cloonix <clownix@clownix.net>  License RPL       */
@@ -803,7 +803,7 @@ diff -Naur spice-gtk/src/hmac_cipher.c tainted_spice/src/hmac_cipher.c
 +
 diff -Naur spice-gtk/src/hmac_cipher.h tainted_spice/src/hmac_cipher.h
 --- spice-gtk/src/hmac_cipher.h	1970-01-01 01:00:00.000000000 +0100
-+++ tainted_spice/src/hmac_cipher.h	2017-09-01 22:32:36.109260451 +0200
++++ tainted_spice/src/hmac_cipher.h	2017-10-07 19:53:20.416913333 +0200
 @@ -0,0 +1,28 @@
 +/*****************************************************************************/
 +/*    Copyright (C)  2006-2012    Cloonix,    <clownix@clownix.net>          */
@@ -834,8 +834,8 @@ diff -Naur spice-gtk/src/hmac_cipher.h tainted_spice/src/hmac_cipher.h
 +
 +
 diff -Naur spice-gtk/src/Makefile.am tainted_spice/src/Makefile.am
---- spice-gtk/src/Makefile.am	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/Makefile.am	2017-09-01 22:32:36.109260451 +0200
+--- spice-gtk/src/Makefile.am	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/Makefile.am	2017-10-07 19:53:20.416913333 +0200
 @@ -220,6 +220,8 @@
  							\
  	spice-client.c					\
@@ -855,8 +855,8 @@ diff -Naur spice-gtk/src/Makefile.am tainted_spice/src/Makefile.am
  	spice-glib-enums.c				\
  	spice-option.c					\
 diff -Naur spice-gtk/src/Makefile.in tainted_spice/src/Makefile.in
---- spice-gtk/src/Makefile.in	2017-09-01 16:03:24.000000000 +0200
-+++ tainted_spice/src/Makefile.in	2017-09-01 22:32:36.109260451 +0200
+--- spice-gtk/src/Makefile.in	2017-10-07 19:53:07.000000000 +0200
++++ tainted_spice/src/Makefile.in	2017-10-07 19:53:20.416913333 +0200
 @@ -213,6 +213,7 @@
  	spice-audio.c spice-audio-priv.h spice-common.h spice-util.c \
  	spice-util-priv.h spice-option.h spice-option.c spice-client.c \
@@ -900,8 +900,8 @@ diff -Naur spice-gtk/src/Makefile.in tainted_spice/src/Makefile.in
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spice-file-transfer-task.Plo@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spice-glib-enums.Plo@am__quote@
 diff -Naur spice-gtk/src/spice-channel.c tainted_spice/src/spice-channel.c
---- spice-gtk/src/spice-channel.c	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/spice-channel.c	2017-09-01 22:32:36.109260451 +0200
+--- spice-gtk/src/spice-channel.c	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/spice-channel.c	2017-10-07 19:53:20.416913333 +0200
 @@ -47,6 +47,11 @@
  
  #include "gio-coroutine.h"
@@ -976,8 +976,8 @@ diff -Naur spice-gtk/src/spice-channel.c tainted_spice/src/spice-channel.c
      c->conn = spice_session_channel_open_host(c->session, channel, &c->tls, &c->error);
      if (c->conn == NULL) {
 diff -Naur spice-gtk/src/spice-common.h tainted_spice/src/spice-common.h
---- spice-gtk/src/spice-common.h	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/spice-common.h	2017-09-01 22:32:36.109260451 +0200
+--- spice-gtk/src/spice-common.h	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/spice-common.h	2017-10-07 19:53:20.416913333 +0200
 @@ -33,4 +33,13 @@
  
  #include "spice-util.h"
@@ -993,8 +993,8 @@ diff -Naur spice-gtk/src/spice-common.h tainted_spice/src/spice-common.h
 +
  #endif // SPICE_COMMON_H_
 diff -Naur spice-gtk/src/spice-session.c tainted_spice/src/spice-session.c
---- spice-gtk/src/spice-session.c	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/spice-session.c	2017-09-01 22:32:36.113260473 +0200
+--- spice-gtk/src/spice-session.c	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/spice-session.c	2017-10-07 19:53:20.416913333 +0200
 @@ -34,6 +34,13 @@
  #include "channel-playback-priv.h"
  #include "spice-audio-priv.h"
@@ -1379,8 +1379,8 @@ diff -Naur spice-gtk/src/spice-session.c tainted_spice/src/spice-session.c
  {
      g_return_val_if_fail(SPICE_IS_SESSION(session), NULL);
 diff -Naur spice-gtk/src/spice-session-priv.h tainted_spice/src/spice-session-priv.h
---- spice-gtk/src/spice-session-priv.h	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/spice-session-priv.h	2017-09-01 22:32:36.113260473 +0200
+--- spice-gtk/src/spice-session-priv.h	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/spice-session-priv.h	2017-10-07 19:53:20.416913333 +0200
 @@ -63,6 +63,8 @@
  void spice_session_get_pubkey(SpiceSession *session, guint8 **pubkey, guint *size);
  guint spice_session_get_verify(SpiceSession *session);
@@ -1391,8 +1391,8 @@ diff -Naur spice-gtk/src/spice-session-priv.h tainted_spice/src/spice-session-pr
  const gchar* spice_session_get_host(SpiceSession *session);
  const gchar* spice_session_get_cert_subject(SpiceSession *session);
 diff -Naur spice-gtk/src/spice-widget-egl.c tainted_spice/src/spice-widget-egl.c
---- spice-gtk/src/spice-widget-egl.c	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/src/spice-widget-egl.c	2017-09-01 22:32:36.113260473 +0200
+--- spice-gtk/src/spice-widget-egl.c	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/src/spice-widget-egl.c	2017-10-07 19:53:20.416913333 +0200
 @@ -220,7 +220,7 @@
  #endif
  
@@ -1453,8 +1453,8 @@ diff -Naur spice-gtk/src/spice-widget-egl.c tainted_spice/src/spice-widget-egl.c
                                         (EGLClientBuffer)NULL,
                                         attrs);
 diff -Naur spice-gtk/tools/spice-cmdline.c tainted_spice/tools/spice-cmdline.c
---- spice-gtk/tools/spice-cmdline.c	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/tools/spice-cmdline.c	2017-09-01 22:32:36.113260473 +0200
+--- spice-gtk/tools/spice-cmdline.c	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/tools/spice-cmdline.c	2017-10-07 19:53:20.420913355 +0200
 @@ -27,9 +27,25 @@
  static char *tls_port;
  static char *password;
@@ -1494,9 +1494,9 @@ diff -Naur spice-gtk/tools/spice-cmdline.c tainted_spice/tools/spice-cmdline.c
          g_object_set(session, "uri", uri, NULL);
      if (host)
 diff -Naur spice-gtk/tools/spicy.c tainted_spice/tools/spicy.c
---- spice-gtk/tools/spicy.c	2017-09-01 15:48:20.000000000 +0200
-+++ tainted_spice/tools/spicy.c	2017-09-01 22:32:36.113260473 +0200
-@@ -1979,7 +1979,6 @@
+--- spice-gtk/tools/spicy.c	2017-10-07 19:52:39.000000000 +0200
++++ tainted_spice/tools/spicy.c	2017-10-07 19:53:20.420913355 +0200
+@@ -1982,7 +1982,6 @@
      GOptionContext *context;
      spice_connection *conn;
      gchar *conf_file, *conf;
@@ -1504,7 +1504,7 @@ diff -Naur spice-gtk/tools/spicy.c tainted_spice/tools/spicy.c
  
      keyfile = g_key_file_new();
  
-@@ -2028,23 +2027,6 @@
+@@ -2031,23 +2030,6 @@
      spice_set_session_option(conn->session);
      spice_cmdline_session_setup(conn->session);
  
