@@ -74,8 +74,8 @@
   "  mv ${CONFIG}/cloonix_agent_arm ${CONFIG}/cloonix_agent\n"\
   "  mv ${CONFIG}/dropbear_cloonix_sshd_arm ${CONFIG}/dropbear_cloonix_sshd\n"\
   "fi\n"\
-  "${CONFIG}/cloonix_agent_arm\n"\
-  "${CONFIG}/dropbear_cloonix_sshd_arm\n"\
+  "${CONFIG}/cloonix_agent\n"\
+  "${CONFIG}/dropbear_cloonix_sshd\n"\
   "APID=\"$(pidof cloonix_agent)\"\n"\
   "DPID=\"$(pidof dropbear_cloonix_sshd)\"\n"\
   "if [ \"$DPID\" != \"\" ]; then\n"\
