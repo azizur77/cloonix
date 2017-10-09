@@ -983,7 +983,7 @@ int doorways_tx(int llid, int tid, int type, int val, int len, char *buf)
         KOUT(" ");
       if (dchan->tot_txq_size >  MAX_TOT_LEN_WARNING_DOORWAYS_Q)
         {
-        KERR("%d %d", dchan->tot_txq_size, MAX_TOT_LEN_WARNING_DOORWAYS_Q);
+        KERR("%d %d", (int) dchan->tot_txq_size, MAX_TOT_LEN_WARNING_DOORWAYS_Q);
         g_max_tx_doorway_queue_len_reached += 1;
         }
       if (dchan->tot_txq_size <  MAX_TOT_LEN_DOORWAYS_Q)

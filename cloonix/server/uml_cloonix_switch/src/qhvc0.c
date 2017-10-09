@@ -53,31 +53,32 @@
   "#!/bin/sh\n"\
   "set +e\n"\
   "CONFIG=/mnt/cloonix_config_fs\n"\
-  "APID=\"$(pidof cloonix_agent)\"\n"\
-  "DPID=\"$(pidof dropbear_cloonix_sshd)\"\n"\
+  "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
+  "  AGT=cloonix_agent_arm\n"\
+  "  DRP=dropbear_cloonix_sshd_arm\n"\
+  "else\n"\
+  "  AGT=cloonix_agent\n"\
+  "  DRP=dropbear_cloonix_sshd\n"\
+  "fi\n"\
+  "APID=\"$(pidof $AGT )\"\n"\
+  "DPID=\"$(pidof $DRP )\"\n"\
   "if [ \"$APID\" != \"\" ]; then\n"\
   "  kill $APID\n"\
   "fi\n"\
   "if [ \"$DPID\" != \"\" ]; then\n"\
   "  kill $DPID\n"\
   "fi\n"\
-  "if [ ! -e ${CONFIG}/cloonix_agent ]; then\n"\
+  "if [ ! -e ${CONFIG}/$AGT ]; then\n"\
   "  mkdir -p /mnt/cloonix_config_fs\n"\
   "  umount /dev/sr0\n"\
   "  umount /dev/sr0\n"\
   "  mount /dev/sr0 /mnt/cloonix_config_fs\n"\
   "  mount -o remount,exec /dev/sr0\n"\
   "fi\n"\
-  "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
-  "  rm ${CONFIG}/cloonix_agent\n"\
-  "  rm ${CONFIG}/dropbear_cloonix_sshd\n"\
-  "  mv ${CONFIG}/cloonix_agent_arm ${CONFIG}/cloonix_agent\n"\
-  "  mv ${CONFIG}/dropbear_cloonix_sshd_arm ${CONFIG}/dropbear_cloonix_sshd\n"\
-  "fi\n"\
-  "${CONFIG}/cloonix_agent\n"\
-  "${CONFIG}/dropbear_cloonix_sshd\n"\
-  "APID=\"$(pidof cloonix_agent)\"\n"\
-  "DPID=\"$(pidof dropbear_cloonix_sshd)\"\n"\
+  "${CONFIG}/$AGT\n"\
+  "${CONFIG}/$DRP\n"\
+  "APID=\"$(pidof $AGT )\"\n"\
+  "DPID=\"$(pidof $DRP )\"\n"\
   "if [ \"$DPID\" != \"\" ]; then\n"\
   "  if [ \"$APID\" != \"\" ]; then\n"\
   "    echo i_think_cloonix_agent_is_up\n"\

@@ -890,7 +890,7 @@ size_t cloonix_write(int fd, const void *ibuf, size_t count)
     {
     result = write(fd, buf, count);
     if (result != count)
-      KERR("%d %d", result, count);
+      KERR("%d %d", result, (int) count);
     }
   return result;
 }

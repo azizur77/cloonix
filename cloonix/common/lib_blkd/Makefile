@@ -10,10 +10,9 @@ INCLUDES= -I./src \
 
 CFLAGS+= -fPIC -g $(WARNINGS) $(INCLUDES) 
 
-AR = ar
-RANLIB = ranlib
-
-CC=gcc
+AR?=ar
+RANLIB?=ranlib
+CC?=gcc
 
 SRC = sock_unix.c \
       common.c \

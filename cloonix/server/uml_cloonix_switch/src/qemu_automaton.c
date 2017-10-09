@@ -52,8 +52,6 @@
 #define VIRTIO_9P " -fsdev local,id=fsdev0,security_model=passthrough,path=%s"\
                   " -device virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=%s"
 
-#define CDROM " -drive file=%s,index=%d,media=cdrom,if=virtio"
-
 #define DRIVE_FULL_VIRT " -drive file=%s,index=%d,media=disk,if=ide"
 
 #define INSTALL_DISK " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
@@ -343,14 +341,21 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 /****************************************************************************/
 static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
 {
-  int i, len;
-  char cmd_start[3*MAX_PATH_LEN];
-  len = sprintf(cmd_start, " -m %d -name %s",
-                vm->kvm.mem, vm->kvm.name);
-  len = sprintf(linux_cmd, 
-                " %s -pidfile %s/%s/pid" 
-                " -nographic"
-                " -drive file=%s,if=virtio"
+  int i, len = 0;
+  char *cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
+  len += sprintf(linux_cmd+len, 
+                 " -m %d -name %s"
+                 " -pidfile %s/%s/pid -nographic"
+                 " -drive file=%s,if=virtio"
+                 " -append \"root=/dev/vda rootwait\"",
+                 vm->kvm.mem, vm->kvm.name,
+                 cfg_get_work_vm(vm->kvm.vm_id),
+                 DIR_UMID, vm->kvm.rootfs_used);
+
+  for (i=0; i<vm->kvm.nb_eth; i++)
+    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
+
+  len += sprintf(linux_cmd+len, 
                 " -device virtio-serial-pci"
                 " -chardev socket,path=%s,server,nowait,id=cloon"
                 " -device virtserialport,chardev=cloon,name=net.cloonix.0"
@@ -359,18 +364,14 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
                 " -chardev socket,id=mon1,path=%s,server,nowait"
                 " -mon chardev=mon1,mode=readline"
                 " -chardev socket,id=qmp1,path=%s,server,nowait"
-                " -mon chardev=qmp1,mode=control"
-                " -append \"root=/dev/vda rootwait\"",
-                cmd_start, cfg_get_work_vm(vm->kvm.vm_id),
-                DIR_UMID, vm->kvm.rootfs_used,
+                " -mon chardev=qmp1,mode=control",
                 utils_get_qbackdoor_path(vm->kvm.vm_id),
                 utils_get_qhvc0_path(vm->kvm.vm_id),
                 utils_get_qmonitor_path(vm->kvm.vm_id),
                 utils_get_qmp_path(vm->kvm.vm_id));
-  for (i=0; i<vm->kvm.nb_eth; i++)
-    {
-    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
-    }
+
+  len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
+
   return len;
 }
 /*--------------------------------------------------------------------------*/

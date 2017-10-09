@@ -31,7 +31,7 @@
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
 #include <sys/time.h>
-#include <execinfo.h>
+
 
 #include "sock.h"
 #include "commun.h"

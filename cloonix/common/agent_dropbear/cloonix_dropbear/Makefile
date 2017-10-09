@@ -55,9 +55,9 @@ bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
 mandir=${datarootdir}/man
 
-CC=gcc
-AR=ar
-RANLIB=ranlib
+CC?=gcc
+AR?=ar
+RANLIB?=ranlib
 STRIP=strip
 INSTALL=install
 CPPFLAGS=

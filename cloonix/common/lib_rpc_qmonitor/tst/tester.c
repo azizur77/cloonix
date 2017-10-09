@@ -81,7 +81,7 @@ static void heartbeat (int delta)
 }
 /*---------------------------------------------------------------------------*/
 
-#define MAX_PRINT_LEN 10000
+#define MAX_PRINT_LEN 5000
 
 /*****************************************************************************/
 void recv_sub2qmonitor(int llid, int itid, char *iname, int ion_off)

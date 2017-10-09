@@ -703,7 +703,7 @@ void watch_tx(int llid, int len, char *str_tx)
       chain_append_tx(&(dchan[cidx].tx), &(dchan[cidx].last_tx), len, ntx);
       }
     else
-      KERR("%d %d", dchan[cidx].tot_txq_size, MAX_TOT_LEN_QDAT);
+      KERR("%d %d", (int)dchan[cidx].tot_txq_size, MAX_TOT_LEN_QDAT);
     }
 }
 /*---------------------------------------------------------------------------*/

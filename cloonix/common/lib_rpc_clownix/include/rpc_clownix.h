@@ -38,7 +38,7 @@
 #define MAX_ITEM_LEN       200
 #define MAX_TYPE_LEN       32
 #define MAX_BIG_BUF        10000 
-#define MAX_PRINT_LEN      2500
+#define MAX_PRINT_LEN      5000
 #define HALF_SEC_BEAT      50 
 #define MAX_ARGC_ARGV      100
 #define MAX_INTF_MNGT      100

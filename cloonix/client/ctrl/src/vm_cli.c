@@ -60,7 +60,7 @@ void help_add_vm_kvm(char *line)
   printf("%s jessie 1000 1 3 jessie.qcow2\n", line);
   printf("%s cloon 1000 1 1 /tmp/jessie.qcow2 --persistent\n", line);
   printf("%s clown 1000 1 2 stretch.qcow2 --9p_share=/tmp\n", line);
-  printf("%s armvirt 256 1 2 lede-17.01.3-armvirt-root.ext4 --arm_kernel=lede-17.01.3-armvirt-zImage\n", line);
+  printf("%s armvirt 256 1 2 lede-root.ext4 --arm_kernel=lede-zImage-initramfs\n", line);
   printf("\n\n\n");
 }
 /*-------------------------------------------------------------------------*/

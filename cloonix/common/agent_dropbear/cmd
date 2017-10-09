@@ -9,6 +9,11 @@ LIB_CLOWNIX=${HERE}/../lib_io_clownix
 BLKD=${HERE}/../lib_blkd
 RPCT=${HERE}/../lib_rpct
 
+export CC=gcc
+export AR=ar
+export RANLIB=ranlib
+export CFLAGS=""
+
 cd $LIB_CLOWNIX
 make clean
 make

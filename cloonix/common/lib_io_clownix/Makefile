@@ -12,9 +12,10 @@ INCLUDES= -I./src \
 
 CFLAGS+=-fPIC -g $(WARNINGS) $(INCLUDES) -lrt 
 
-AR = ar
-RANLIB = ranlib
+AR?=ar
+RANLIB?=ranlib
 CC?=gcc
+
 SRC =  channel.c \
        util_sock.c \
        msg_layer.c \

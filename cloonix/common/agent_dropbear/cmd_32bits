@@ -10,6 +10,10 @@ LIB_CLOWNIX=${HERE}/../lib_io_clownix
 BLKD=${HERE}/../lib_blkd
 RPCT=${HERE}/../lib_rpct
 
+export CC=gcc
+export AR=ar
+export RANLIB=ranlib
+
 cd $LIB_CLOWNIX
 export CFLAGS="-m32 -DNO_HMAC_CIPHER"
 export LDFLAGS=-m32

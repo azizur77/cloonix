@@ -109,5 +109,5 @@ export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
 -drive file=lede-armvirt-32-root.ext4,format=raw,if=virtio -append 'root=/dev/vda rootwait'
 
 For the arm emulation, no gui to create a vm, use:
-cloonix_cli nemo add kvm tst 256 1 2 lede-17.01.3-armvirt-root.ext4 --arm_kernel=lede-17.01.3-armvirt-zImage
+cloonix_cli nemo add kvm tst 256 1 2 lede_root.ext4 --arm_kernel=lede_zImage
 

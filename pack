@@ -23,7 +23,7 @@ CLOONIX_COMMON=${TMPBUILD_BIS}/cloonix/common
 CLOONIX_SERVER=${TMPBUILD_BIS}/cloonix/server
 CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
 #----------------------------------------------------------
-  for i in cloonix_agent cloonix_dropbear cmd cmd_alien; do
+  for i in cloonix_agent cloonix_dropbear cmd cmd_32bits; do
     rm -rf ${CLOONIX_COMMON}/agent_dropbear/${i}
   done
 #----------------------------------------------------------

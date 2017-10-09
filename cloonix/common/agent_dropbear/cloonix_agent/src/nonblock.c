@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include "commun.h"
 
 #define MAX_FD 1000

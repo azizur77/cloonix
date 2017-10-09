@@ -26,7 +26,7 @@ done
   sleep 1
 #----------------------------------------------------------
   cd ${CLOONIX_COMMON}/agent_dropbear
-  ./cmd_alien
+  ./cmd_32bits
 #----------------------------------------------------------
   for i in agent_dropbear \
            spice \
