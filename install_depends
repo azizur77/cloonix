@@ -86,6 +86,7 @@ fct_build_get_centos_packages()
   yum -y install \
          tar genisoimage xterm make gcc gcc-c++ m4 bc \
          glibc-devel.i686 glibc-devel.x86_64 libstdc++-devel.i686 \
+         libstdc++-devel.x86_64 \
          intltool ncurses-devel libjpeg-turbo-devel libusb-devel \
          libgusb-devel cyrus-sasl-devel opus-devel openssl openssl-devel \
          gtk3-devel libcap-devel libevent-devel readline-devel \
