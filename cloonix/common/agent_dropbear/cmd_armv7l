@@ -7,7 +7,7 @@ if [ -z $AGENT_BIN_ALIEN ]; then
   exit -1
 fi
 
-export STAGING_DIR=/home/perrier/lede02/staging_dir
+export STAGING_DIR=/home/perrier/lede03/staging_dir
 TOOLCHAIN_ARM=toolchain-arm_cortex-a15+neon-vfpv4_gcc-5.4.0_musl_eabi
 CROSS_ARM=${STAGING_DIR}/${TOOLCHAIN_ARM}
 export CC=${CROSS_ARM}/bin/arm-openwrt-linux-gcc

@@ -292,6 +292,7 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 #define QEMU_OPTS_BASE \
    " -m %d"\
    " -name %s"\
+   " -serial stdio"\
    " -nodefaults"\
    " -rtc base=utc,driftfix=slew"\
    " -global kvm-pit.lost_tick_policy=delay"\
@@ -344,6 +345,8 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
   char *cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
   len += sprintf(linux_cmd+len, 
                  " -m %d -name %s"
+                 " -serial stdio"
+                 " -nodefaults"
                  " -pidfile %s/%s/pid -nographic"
                  " -drive file=%s,if=virtio"
                  " -append \"root=/dev/vda rootwait\"",
