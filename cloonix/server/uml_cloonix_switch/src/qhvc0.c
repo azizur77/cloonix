@@ -52,13 +52,19 @@
   "cat > /tmp/dropbear_cloonix_agent.sh << \"INSIDE_EOF\"\n"\
   "#!/bin/sh\n"\
   "set +e\n"\
+  "if [ ! -e /dev/virtio-ports/net.cloonix.0 ]; then\n"\
+  "  mkdir -p /dev/virtio-ports\n"\
+  "  cd  /dev/virtio-ports\n"\
+  "  ln -s ../vport0p1 net.cloonix.0\n"\
+  "  cd -\n"\
+  "fi\n"\
   "CONFIG=/mnt/cloonix_config_fs\n"\
   "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
-  "  AGT=cloonix_agent_arm\n"\
-  "  DRP=dropbear_cloonix_sshd_arm\n"\
+  "  AGT=cloonix_agent_armv7l\n"\
+  "  DRP=dropbear_cloonix_sshd_armv7l\n"\
   "else\n"\
-  "  AGT=cloonix_agent\n"\
-  "  DRP=dropbear_cloonix_sshd\n"\
+  "  AGT=cloonix_agent_i386\n"\
+  "  DRP=dropbear_cloonix_sshd_i386\n"\
   "fi\n"\
   "APID=\"$(pidof $AGT )\"\n"\
   "DPID=\"$(pidof $DRP )\"\n"\

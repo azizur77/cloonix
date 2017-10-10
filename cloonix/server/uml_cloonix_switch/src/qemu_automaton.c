@@ -56,8 +56,9 @@
 
 #define INSTALL_DISK " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
 
-#define ADDED_CDROM " -drive file=%s,media=cdrom"
-
+#define ADDED_CDROM " -drive file=%s,if=none,media=cdrom,id=cd"\
+                    " -device virtio-scsi-pci"\
+                    " -device scsi-disk,drive=cd"
 
 typedef struct t_cprootfs_config
 {
@@ -291,9 +292,7 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 #define QEMU_OPTS_BASE \
    " -m %d"\
    " -name %s"\
-   " -no-user-config"\
    " -nodefaults"\
-   " -serial mon:stdio"\
    " -rtc base=utc,driftfix=slew"\
    " -global kvm-pit.lost_tick_policy=delay"\
    " -no-hpet -no-shutdown -boot strict=on"\
@@ -352,8 +351,6 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
                  cfg_get_work_vm(vm->kvm.vm_id),
                  DIR_UMID, vm->kvm.rootfs_used);
 
-  for (i=0; i<vm->kvm.nb_eth; i++)
-    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
 
   len += sprintf(linux_cmd+len, 
                 " -device virtio-serial-pci"
@@ -369,6 +366,9 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
                 utils_get_qhvc0_path(vm->kvm.vm_id),
                 utils_get_qmonitor_path(vm->kvm.vm_id),
                 utils_get_qmp_path(vm->kvm.vm_id));
+
+  for (i=0; i<vm->kvm.nb_eth; i++)
+    len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
 
   len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
 
@@ -488,22 +488,41 @@ static char *qemu_cmd_format(t_vm *vm)
 {
   int len = 0;
   char *cmd = (char *) clownix_malloc(MAX_BIG_BUF, 7);
+  char path_qemu_exe[MAX_PATH_LEN];
+  char path_kern[MAX_PATH_LEN];
+  char path_initrd[MAX_PATH_LEN];
   memset(cmd, 0,  MAX_BIG_BUF);
+  memset(path_qemu_exe, 0, MAX_PATH_LEN);
+  memset(path_kern, 0, MAX_PATH_LEN);
+  memset(path_initrd, 0, MAX_PATH_LEN);
   if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ARM)
     {
-    len += snprintf(cmd, MAX_BIG_BUF-1,
-           "%s/server/qemu/%s/%s -L %s/server/qemu/%s -M virt -kernel %s/%s",
-                     cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE,
-                     cfg_get_bin_dir(), QEMU_BIN_DIR, 
-                     cfg_get_bulk(), vm->kvm.linux_kernel);
+    snprintf(path_qemu_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s",
+             cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE);
+    snprintf(path_kern, MAX_PATH_LEN-1, "%s/%s",
+             cfg_get_bulk(), vm->kvm.linux_kernel);
+    snprintf(path_initrd, MAX_PATH_LEN-1, "%s/%s-initramfs",
+             cfg_get_bulk(), vm->kvm.linux_kernel);
+    if (!file_exists(path_initrd, F_OK))
+      {
+      len += snprintf(cmd, MAX_BIG_BUF-1,
+      "%s -L %s/server/qemu/%s -M virt -kernel %s",
+      path_qemu_exe, cfg_get_bin_dir(), QEMU_BIN_DIR, path_kern); 
+      }
+    else
+      {
+      len += snprintf(cmd, MAX_BIG_BUF-1,
+      "%s -L %s/server/qemu/%s -M virt -kernel %s -initrd %s",
+      path_qemu_exe,cfg_get_bin_dir(),QEMU_BIN_DIR,path_kern,path_initrd); 
+      }
     len += create_linux_cmd_arm(vm, cmd+len);
     }
   else
     {
-    len += snprintf(cmd, MAX_BIG_BUF-1,
-           "%s/server/qemu/%s/%s -L %s/server/qemu/%s ",
-                    cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE,
-                    cfg_get_bin_dir(), QEMU_BIN_DIR);
+    snprintf(path_qemu_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s",
+             cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_EXE);
+    len += snprintf(cmd, MAX_BIG_BUF-1, "%s -L %s/server/qemu/%s ",
+                    path_qemu_exe, cfg_get_bin_dir(), QEMU_BIN_DIR);
     len += create_linux_cmd_kvm(vm, cmd+len);
     }
   return cmd;

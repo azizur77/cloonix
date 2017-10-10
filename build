@@ -25,9 +25,6 @@ done
   echo
   sleep 1
 #----------------------------------------------------------
-  cd ${CLOONIX_COMMON}/agent_dropbear
-  ./cmd_32bits
-#----------------------------------------------------------
   for i in agent_dropbear \
            spice \
            lib_rpc_clownix \
