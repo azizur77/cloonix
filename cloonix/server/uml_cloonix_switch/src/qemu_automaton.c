@@ -343,13 +343,15 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
 {
   int i, len = 0;
   char *cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
+  char *spice_path = utils_get_spice_path(vm->kvm.vm_id);
   len += sprintf(linux_cmd+len, 
                  " -m %d -name %s"
                  " -serial stdio"
+                 " -nographic"
                  " -nodefaults"
-                 " -pidfile %s/%s/pid -nographic"
+                 " -pidfile %s/%s/pid"
                  " -drive file=%s,if=virtio"
-                 " -append \"root=/dev/vda rootwait\"",
+                 " -append \"root=/dev/vda earlyprintk=ttyAMA0 net.ifnames=0\"",
                  vm->kvm.mem, vm->kvm.name,
                  cfg_get_work_vm(vm->kvm.vm_id),
                  DIR_UMID, vm->kvm.rootfs_used);
