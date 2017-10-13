@@ -94,6 +94,7 @@ int cloonix_get_pid(void);
 #define VM_CONFIG_FLAG_ADDED_DISK      0x0100
 #define VM_CONFIG_FLAG_CISCO           0x0200
 #define VM_CONFIG_FLAG_ARM             0x0400
+#define VM_CONFIG_FLAG_AARCH64         0x0800
 #define VM_FLAG_DERIVED_BACKING        0x10000
 #define VM_FLAG_IS_INSIDE_CLOONIX      0x20000
 #define VM_FLAG_CLOONIX_AGENT_PING_OK  0x80000

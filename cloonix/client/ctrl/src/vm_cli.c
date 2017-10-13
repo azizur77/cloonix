@@ -41,6 +41,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\teth is the ethernet qty\n");
   printf("\n\t[options]");
   printf("\n\t       --arm_kernel=<zImage> ");
+  printf("\n\t       --aarch64_kernel=<zImage> ");
   printf("\n\t       --persistent ");
   printf("\n\t       --9p_share=<host_shared_dir_file_path>");
   printf("\n\t       --install_cdrom=<cdrom_file_path>");
@@ -125,6 +126,11 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
       {
       prop_flags |= VM_CONFIG_FLAG_ARM;
       img_linux = argv[i] + strlen("--arm_kernel=");
+      }
+    else if (!strncmp(argv[i], "--aarch64_kernel=", strlen("--aarch64_kernel=")))
+      {
+      prop_flags |= VM_CONFIG_FLAG_AARCH64;
+      img_linux = argv[i] + strlen("--aarch64_kernel=");
       }
     else if (!strcmp(argv[i], "--persistent"))
       {

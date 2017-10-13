@@ -17,7 +17,7 @@ mv tainted_qemu ${HERE}/qemu_bin
 cd ${HERE}/qemu_bin/tainted_qemu
 
  CONFIGURATION_OPTS="--prefix=/usr/local
-                     --target-list=x86_64-softmmu,arm-softmmu
+                     --target-list=x86_64-softmmu,arm-softmmu,aarch64-softmmu
                      --enable-fdt
                      --enable-kvm
                      --enable-spice
@@ -89,6 +89,7 @@ make -j 5
 
 mv x86_64-softmmu/qemu-system-x86_64 ${HERE}/qemu_bin
 mv arm-softmmu/qemu-system-arm  ${HERE}/qemu_bin
+mv aarch64-softmmu/qemu-system-aarch64 ${HERE}/qemu_bin
 mv qemu-img                     ${HERE}/qemu_bin
 cp ./pc-bios/bios-256k.bin      ${HERE}/qemu_bin
 cp ./pc-bios/kvmvapic.bin       ${HERE}/qemu_bin

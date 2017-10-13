@@ -24,7 +24,7 @@ CLOONIX_SERVER=${TMPBUILD_BIS}/cloonix/server
 CLOONIX_CLIENT=${TMPBUILD_BIS}/cloonix/client
 #----------------------------------------------------------
   for i in cloonix_agent cloonix_dropbear \
-           cmd cmd_i386 cmd_armv7l; do
+           cmd cmd_i386 cmd_armv7l cmd_aarch64; do
     rm -rf ${CLOONIX_COMMON}/agent_dropbear/${i}
   done
 #----------------------------------------------------------

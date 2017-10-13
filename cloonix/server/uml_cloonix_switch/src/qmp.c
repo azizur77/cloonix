@@ -73,6 +73,10 @@ enum {
   msg_type_rx_spice_event,
   msg_type_rx_rtc_change_event,
   msg_type_rx_balloon_change_event,
+  msg_type_rx_nic_rx_filter_changed,
+  msg_type_rx_device_tray_moved,
+  msg_type_rx_stop,
+  msg_type_rx_resume,
   msg_type_rx_unknown,
 };
 
@@ -419,9 +423,16 @@ static int get_received_msg(char *name, char *qmp_msg)
     msg_type = msg_type_rx_rtc_change_event;
   else if (strstr(ptr_start, "\"event\": \"BALLOON_CHANGE\""))
     msg_type = msg_type_rx_balloon_change_event;
-//  else
-//    KERR("%s UNKNOWN_RX: %s", name, ptr_start);
-  KERR("%s RX: %s", name, ptr_start);
+  else if (strstr(ptr_start, "\"event\": \"NIC_RX_FILTER_CHANGED\""))
+    msg_type = msg_type_rx_nic_rx_filter_changed;
+  else if (strstr(ptr_start, "\"event\": \"DEVICE_TRAY_MOVED\""))
+    msg_type = msg_type_rx_device_tray_moved;
+  else if (strstr(ptr_start, "\"event\": \"STOP\""))
+    msg_type = msg_type_rx_stop;
+  else if (strstr(ptr_start, "\"event\": \"RESUME\""))
+    msg_type = msg_type_rx_resume;
+  else
+    KERR("%s UNKNOWN_RX: %s", name, ptr_start);
   return msg_type;
 }
 /*--------------------------------------------------------------------------*/
@@ -629,6 +640,8 @@ static void make_whole_rx_and_act(t_qmp_vm *qvm, int len, char *buf)
           (msg_type == msg_type_rx_running_false) ||
           (msg_type == msg_type_rx_return))
         auto_state_msg_rx(qvm, msg_type);
+      else if (msg_type == msg_type_rx_shutdown_event)
+        wrapper_call_machine_death(qvm, 200);
       memset(qvm->whole_rx, 0, MAX_WHOLE_RX_LEN); 
       }
     }

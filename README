@@ -105,9 +105,20 @@ For the arm emulation, test as follows:
 export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
 /usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-arm \
 -L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--nographic -M virt -m 64 -kernel lede-armvirt-32-zImage \
--drive file=lede-armvirt-32-root.ext4,format=raw,if=virtio -append 'root=/dev/vda rootwait'
+-nographic -M virt -m 64 -kernel lede_arm_zImage -initrd lede_arm_zImage \
+-drive file=lede_arm_root.ext4,format=raw,if=virtio -append 'root=/dev/vda'
+
+or
+
+export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
+/usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-aarch64 \
+-L /usr/local/bin/cloonix/server/qemu/qemu_bin \
+-nographic -M virt -cpu cortex-a57 -m 256 -kernel lede_aarch64_Image \
+-initrd lede_aarch64_Image-initramfs \
+-drive file=lede_aarch64_root.ext4,format=raw,if=virtio -append 'root=/dev/vda'
+
 
 For the arm emulation, no gui to create a vm, use:
-cloonix_cli nemo add kvm tst 256 1 2 lede_root.ext4 --arm_kernel=lede_zImage
+cloonix_cli nemo add kvm tst32 256 1 2 lede_arm_root.ext4 --arm_kernel=lede_arm_zImage
+cloonix_cli nemo add kvm tst64 256 1 2 lede_aarch64_root.ext4 --aarch64_kernel=lede_aarch64_Image
 

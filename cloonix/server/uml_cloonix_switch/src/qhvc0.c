@@ -62,9 +62,14 @@
   "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
   "  AGT=cloonix_agent_armv7l\n"\
   "  DRP=dropbear_cloonix_sshd_armv7l\n"\
-  "else\n"\
-  "  AGT=cloonix_agent_i386\n"\
-  "  DRP=dropbear_cloonix_sshd_i386\n"\
+  "else \n"\
+  "  if [ \"$(uname -m)\" = \"aarch64\" ]; then\n"\
+  "    AGT=cloonix_agent_aarch64\n"\
+  "    DRP=dropbear_cloonix_sshd_aarch64\n"\
+  "  else\n"\
+  "    AGT=cloonix_agent_i386\n"\
+  "    DRP=dropbear_cloonix_sshd_i386\n"\
+  "  fi\n"\
   "fi\n"\
   "APID=\"$(pidof $AGT )\"\n"\
   "DPID=\"$(pidof $DRP )\"\n"\

@@ -728,6 +728,12 @@ static int test_qemu_kvm_wanted_files(t_topo_kvm *kvm, char *rootfs,
              cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE);
     snprintf(bz_image, MAX_PATH_LEN-1, "%s/%s", cfg_get_bulk(), bzimage);
     }
+  else if (kvm->vm_config_flags & VM_CONFIG_FLAG_AARCH64)
+    {
+    snprintf(qemu_kvm_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s", 
+             cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_AARCH64_EXE);
+    snprintf(bz_image, MAX_PATH_LEN-1, "%s/%s", cfg_get_bulk(), bzimage);
+    }
   else
     {
     snprintf(qemu_kvm_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s", 

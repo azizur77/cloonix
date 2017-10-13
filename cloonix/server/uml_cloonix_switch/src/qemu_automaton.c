@@ -56,9 +56,11 @@
 
 #define INSTALL_DISK " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
 
-#define ADDED_CDROM " -drive file=%s,if=none,media=cdrom,id=cd"\
-                    " -device virtio-scsi-pci"\
-                    " -device scsi-disk,drive=cd"
+#define CDROM " -drive file=%s,if=none,media=cdrom,id=cd"\
+              " -device virtio-scsi-pci"\
+              " -device scsi-disk,drive=cd"
+
+#define ADDED_CDROM " -drive file=%s,media=cdrom"
 
 typedef struct t_cprootfs_config
 {
@@ -343,7 +345,6 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
 {
   int i, len = 0;
   char *cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
-  char *spice_path = utils_get_spice_path(vm->kvm.vm_id);
   len += sprintf(linux_cmd+len, 
                  " -m %d -name %s"
                  " -serial stdio"
@@ -375,7 +376,7 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
   for (i=0; i<vm->kvm.nb_eth; i++)
     len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
 
-  len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
+  len += sprintf(linux_cmd+len, CDROM, cdrom);
 
   return len;
 }
@@ -469,13 +470,13 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
         len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
       } 
     cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
-    len += sprintf(linux_cmd+len, ADDED_CDROM, cdrom);
+    len += sprintf(linux_cmd+len, CDROM, cdrom);
   
-    if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
+    if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
       len += sprintf(linux_cmd+len, DRIVE_PARAMS, added_disk, 1);
     }
 
-  if  (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)
+  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_CDROM)
     {
     len += sprintf(linux_cmd+len, ADDED_CDROM, vm->kvm.added_cdrom);
     }
@@ -493,6 +494,7 @@ static char *qemu_cmd_format(t_vm *vm)
 {
   int len = 0;
   char *cmd = (char *) clownix_malloc(MAX_BIG_BUF, 7);
+  char mach[MAX_NAME_LEN];
   char path_qemu_exe[MAX_PATH_LEN];
   char path_kern[MAX_PATH_LEN];
   char path_initrd[MAX_PATH_LEN];
@@ -500,25 +502,38 @@ static char *qemu_cmd_format(t_vm *vm)
   memset(path_qemu_exe, 0, MAX_PATH_LEN);
   memset(path_kern, 0, MAX_PATH_LEN);
   memset(path_initrd, 0, MAX_PATH_LEN);
-  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ARM)
+  memset(mach, 0, MAX_NAME_LEN);
+  if ((vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ARM) ||
+      (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_AARCH64))
     {
-    snprintf(path_qemu_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s",
-             cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE);
     snprintf(path_kern, MAX_PATH_LEN-1, "%s/%s",
              cfg_get_bulk(), vm->kvm.linux_kernel);
     snprintf(path_initrd, MAX_PATH_LEN-1, "%s/%s-initramfs",
              cfg_get_bulk(), vm->kvm.linux_kernel);
+    if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_AARCH64)
+      {
+      snprintf(path_qemu_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s",
+               cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_AARCH64_EXE);
+      snprintf(mach, MAX_NAME_LEN-1, "-M virt --cpu cortex-a57");
+      }
+    else
+      {
+      snprintf(path_qemu_exe, MAX_PATH_LEN-1, "%s/server/qemu/%s/%s",
+               cfg_get_bin_dir(), QEMU_BIN_DIR, QEMU_ARM_EXE);
+      snprintf(mach, MAX_NAME_LEN-1, "-M virt");
+      }
     if (!file_exists(path_initrd, F_OK))
       {
       len += snprintf(cmd, MAX_BIG_BUF-1,
-      "%s -L %s/server/qemu/%s -M virt -kernel %s",
-      path_qemu_exe, cfg_get_bin_dir(), QEMU_BIN_DIR, path_kern); 
+      "%s -L %s/server/qemu/%s %s -kernel %s",
+      path_qemu_exe, cfg_get_bin_dir(), QEMU_BIN_DIR, mach, path_kern); 
       }
     else
       {
       len += snprintf(cmd, MAX_BIG_BUF-1,
-      "%s -L %s/server/qemu/%s -M virt -kernel %s -initrd %s",
-      path_qemu_exe,cfg_get_bin_dir(),QEMU_BIN_DIR,path_kern,path_initrd); 
+      "%s -L %s/server/qemu/%s %s -kernel %s -initrd %s",
+      path_qemu_exe, cfg_get_bin_dir(), QEMU_BIN_DIR,
+      mach, path_kern, path_initrd); 
       }
     len += create_linux_cmd_arm(vm, cmd+len);
     }
