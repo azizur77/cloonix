@@ -344,13 +344,13 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
            ctx->tcpid.local_port, ctx->tcpid.local_ip);
     ctx->count = 0;
     res = connect(fd, addr, addr_len);
-    KERR("%d", res);
+    KERR("%d %d", res, errno);
     }
   else
     {
     ctx = alloc_ctx(cb, tcpid, fd);
     res = connect(fd, addr, addr_len);
-    KERR("%d", res);
+    KERR("%d %d", res, errno);
     clownix_timeout_add(get_all_ctx(), 1, timer_connect_wait, (void *) ctx, 
                         &(ctx->timer_abs_beat), &(ctx->timer_ref));
     }
