@@ -300,7 +300,6 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
       if ((ctx->count == 10) || (ctx->count == 20))
         {
         res = connect(ctx->fd, &(ctx->addr), ctx->addr_len);
-        KERR("%d %d", res, errno);
         KERR(" RETRY CONNECT TO PORT %d %08X", 
              ctx->tcpid.local_port, ctx->tcpid.local_ip);
         }
@@ -342,7 +341,6 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
     {
     ctx = alloc_ctx(cb, tcpid, fd, addr, addr_len);
     res = connect(fd, addr, addr_len);
-    KERR("%d %d", res, errno);
     clownix_timeout_add(get_all_ctx(), 1, timer_connect_wait, (void *) ctx, 
                         &(ctx->timer_abs_beat), &(ctx->timer_ref));
     }
