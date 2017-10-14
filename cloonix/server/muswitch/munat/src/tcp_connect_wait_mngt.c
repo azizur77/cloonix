@@ -63,6 +63,8 @@ typedef struct t_connect_ctx
   int end_ctx_call;
   long long timer_abs_beat;
   int timer_ref;
+  struct sockaddr addr;
+  int addr_len;
   struct t_connect_ctx *prev;
   struct t_connect_ctx *next;
 } t_connect_ctx;
@@ -70,11 +72,15 @@ typedef struct t_connect_ctx
 static t_connect_ctx *head_ctx = NULL;
 
 /*****************************************************************************/
-static t_connect_ctx *alloc_ctx(t_connect cb, t_tcp_id *tcpid, int fd)
+static t_connect_ctx *alloc_ctx(t_connect cb, t_tcp_id *tcpid, int fd,
+	                        struct sockaddr *addr, int addr_len)
+
 {
   t_connect_ctx *ctx;
   ctx = (t_connect_ctx *) malloc(sizeof(t_connect_ctx));
   memset(ctx, 0, sizeof(t_connect_ctx));
+  memcpy(&(ctx->addr), addr, sizeof(struct sockaddr));
+  ctx->addr_len = addr_len;
   ctx->cb = cb;
   memcpy(&(ctx->tcpid), tcpid, sizeof(t_tcp_id)); 
   ctx->fd = fd;
@@ -272,7 +278,7 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
 {
   t_connect_ctx *ctx = (t_connect_ctx *) data;
   t_connect_ctx *stctx;
-  int llid, so_error, val_delay;
+  int res, so_error, llid = -1;
   socklen_t len = sizeof so_error;
   stctx = find_ctx(&(ctx->tcpid));
   if (!stctx)
@@ -282,7 +288,7 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
   ctx->timer_abs_beat = 0;
   ctx->timer_ref = 0;
   ctx->count++;
-  if (ctx->count > 20)
+  if (ctx->count > 30)
     {
     KERR(" FAIL CONNECT TO PORT %d", ctx->tcpid.local_port);
     end_ctx(ctx, -1);
@@ -291,41 +297,30 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
     {
     if (!quick_select_ok(ctx->fd))
       {
-      if (ctx->count > 10)
+      if ((ctx->count == 10) || (ctx->count == 20))
         {
-        if (ctx->count == 20)
-          KERR(" RETRY AGAIN CONNECT TO PORT %d %08X", 
-               ctx->tcpid.local_port, ctx->tcpid.local_ip);
-        val_delay = 200;
+        res = connect(ctx->fd, &(ctx->addr), ctx->addr_len);
+        KERR("%d %d", res, errno);
+        KERR(" RETRY CONNECT TO PORT %d %08X", 
+             ctx->tcpid.local_port, ctx->tcpid.local_ip);
         }
-      else if (ctx->count > 5)
-        {
-        if (ctx->count == 6)
-          KERR(" RETRY CONNECT TO PORT %d %08X", 
-               ctx->tcpid.local_port, ctx->tcpid.local_ip);
-        val_delay = 30;
-        }
-      else
-        val_delay = 2;
-      clownix_timeout_add(get_all_ctx(), val_delay, timer_connect_wait, 
+      clownix_timeout_add(get_all_ctx(), 5, timer_connect_wait, 
                           data, &(ctx->timer_abs_beat), &(ctx->timer_ref));
       }
     else
       {
+      if ((ctx->fd < 0) || (ctx->fd >= MAX_SELECT_CHANNELS-1))
+        KOUT("%d", ctx->fd);
       getsockopt(ctx->fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
       if (so_error == 0) 
         {
-        if ((ctx->fd < 0) || (ctx->fd >= MAX_SELECT_CHANNELS-1))
-          KOUT("%d", ctx->fd);
         llid = msg_watch_fd(get_all_ctx(), ctx->fd, 
                             tcp_rx_from_out, tcp_err_from_out);
         if (llid <= 0)
           KOUT(" ");
         ctx->llid = llid;
-        end_ctx(ctx, llid);
         }
-      else
-        end_ctx(ctx, -1);
+      end_ctx(ctx, llid);
       }
     }
 }
@@ -340,15 +335,12 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
   ctx = find_ctx(tcpid);
   if (ctx)
     {
-    KERR(" REPEAT CONNECT TO PORT %d %08X", 
+    KERR(" !!!!!!! NOT EXPECTED REPEAT CONNECT TO PORT %d %08X", 
            ctx->tcpid.local_port, ctx->tcpid.local_ip);
-    ctx->count = 0;
-    res = connect(fd, addr, addr_len);
-    KERR("%d %d", res, errno);
     }
   else
     {
-    ctx = alloc_ctx(cb, tcpid, fd);
+    ctx = alloc_ctx(cb, tcpid, fd, addr, addr_len);
     res = connect(fd, addr, addr_len);
     KERR("%d %d", res, errno);
     clownix_timeout_add(get_all_ctx(), 1, timer_connect_wait, (void *) ctx, 
