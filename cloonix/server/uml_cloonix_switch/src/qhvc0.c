@@ -60,13 +60,16 @@
   "fi\n"\
   "CONFIG=/mnt/cloonix_config_fs\n"\
   "if [ \"$(uname -m)\" = \"armv7l\" ]; then\n"\
+  "  AGD=vdb\n"\
   "  AGT=cloonix_agent_armv7l\n"\
   "  DRP=dropbear_cloonix_sshd_armv7l\n"\
   "else \n"\
   "  if [ \"$(uname -m)\" = \"aarch64\" ]; then\n"\
+  "    AGD=vdb\n"\
   "    AGT=cloonix_agent_aarch64\n"\
   "    DRP=dropbear_cloonix_sshd_aarch64\n"\
   "  else\n"\
+  "    AGD=sr0\n"\
   "    AGT=cloonix_agent_i386\n"\
   "    DRP=dropbear_cloonix_sshd_i386\n"\
   "  fi\n"\
@@ -81,10 +84,10 @@
   "fi\n"\
   "if [ ! -e ${CONFIG}/$AGT ]; then\n"\
   "  mkdir -p /mnt/cloonix_config_fs\n"\
-  "  umount /dev/sr0\n"\
-  "  umount /dev/sr0\n"\
-  "  mount /dev/sr0 /mnt/cloonix_config_fs\n"\
-  "  mount -o remount,exec /dev/sr0\n"\
+  "  umount /dev/${AGD}\n"\
+  "  umount /dev/${AGD}\n"\
+  "  mount /dev/${AGD} /mnt/cloonix_config_fs\n"\
+  "  mount -o remount,exec /dev/${AGD}\n"\
   "fi\n"\
   "${CONFIG}/$AGT\n"\
   "${CONFIG}/$DRP\n"\

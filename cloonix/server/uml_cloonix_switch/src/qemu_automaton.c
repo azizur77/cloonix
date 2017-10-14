@@ -56,9 +56,12 @@
 
 #define INSTALL_DISK " -boot d -drive file=%s,index=%d,media=disk,if=virtio"
 
-#define CDROM " -drive file=%s,if=none,media=cdrom,id=cd"\
-              " -device virtio-scsi-pci"\
-              " -device scsi-disk,drive=cd"
+#define AGENT_CDROM " -drive file=%s,if=none,media=cdrom,id=cd"\
+                    " -device virtio-scsi-pci"\
+                    " -device scsi-disk,drive=cd"
+
+#define AGENT_DISK " -drive file=%s,if=virtio,media=disk"
+
 
 #define ADDED_CDROM " -drive file=%s,media=cdrom"
 
@@ -344,7 +347,7 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
 static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
 {
   int i, len = 0;
-  char *cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
+  char *agent = utils_get_cdrom_path_name(vm->kvm.vm_id);
   len += sprintf(linux_cmd+len, 
                  " -m %d -name %s"
                  " -serial stdio"
@@ -376,7 +379,7 @@ static int create_linux_cmd_arm(t_vm *vm, char *linux_cmd)
   for (i=0; i<vm->kvm.nb_eth; i++)
     len+=sprintf(linux_cmd+len,"%s",format_virtkvm_net(vm,i));
 
-  len += sprintf(linux_cmd+len, CDROM, cdrom);
+  len += sprintf(linux_cmd+len, AGENT_DISK, agent);
 
   return len;
 }
@@ -470,7 +473,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
         len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
       } 
     cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
-    len += sprintf(linux_cmd+len, CDROM, cdrom);
+    len += sprintf(linux_cmd+len, AGENT_CDROM, cdrom);
   
     if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_ADDED_DISK)
       len += sprintf(linux_cmd+len, DRIVE_PARAMS, added_disk, 1);
