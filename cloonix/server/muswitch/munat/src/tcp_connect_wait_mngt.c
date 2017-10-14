@@ -336,18 +336,21 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
                                  struct sockaddr *addr, int addr_len)
 {
   t_connect_ctx *ctx;
+  int res;
   ctx = find_ctx(tcpid);
   if (ctx)
     {
     KERR(" REPEAT CONNECT TO PORT %d %08X", 
            ctx->tcpid.local_port, ctx->tcpid.local_ip);
     ctx->count = 0;
-    connect(fd, addr, addr_len);
+    res = connect(fd, addr, addr_len);
+    KERR("%d", res);
     }
   else
     {
     ctx = alloc_ctx(cb, tcpid, fd);
-    connect(fd, addr, addr_len);
+    res = connect(fd, addr, addr_len);
+    KERR("%d", res);
     clownix_timeout_add(get_all_ctx(), 1, timer_connect_wait, (void *) ctx, 
                         &(ctx->timer_abs_beat), &(ctx->timer_ref));
     }

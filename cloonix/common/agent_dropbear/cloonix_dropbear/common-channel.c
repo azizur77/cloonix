@@ -165,7 +165,6 @@ int writechannel(struct Channel* channel, int fd, circbuffer *cbuf)
       }
     if (len != maxlen)
       {
-      KERR("%d %d", len, maxlen);
       result = -2;
       }
     cbuf_incrread(cbuf, len);
