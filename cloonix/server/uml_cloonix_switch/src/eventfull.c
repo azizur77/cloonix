@@ -189,7 +189,7 @@ static int update_pid_infos(t_vm *vm)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int add_all_tidx_rx(t_lan_attached *lan_attached)
+static int add_all_tidx_prx(t_lan_attached *lan_attached)
 {
   int i, result = 0;
   for (i=0; i<MAX_TRAF_ENDPOINT; i++)
@@ -201,12 +201,50 @@ static int add_all_tidx_rx(t_lan_attached *lan_attached)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int add_all_tidx_tx(t_lan_attached *lan_attached)
+static int add_all_tidx_ptx(t_lan_attached *lan_attached)
 {
   int i, result = 0;
   for (i=0; i<MAX_TRAF_ENDPOINT; i++)
     {
     result += lan_attached[i].eventfull_tx_p;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+
+/*****************************************************************************/
+static int add_all_tidx_brx(t_lan_attached *lan_attached)
+{
+  int i, result = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    result += lan_attached[i].eventfull_rx_b;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int add_all_tidx_btx(t_lan_attached *lan_attached)
+{
+  int i, result = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    result += lan_attached[i].eventfull_tx_b;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int get_last_ms(t_lan_attached *lan_attached)
+{
+  int i, result = 0;
+  for (i=0; i<MAX_TRAF_ENDPOINT; i++)
+    {
+    if (result < lan_attached[i].eventfull_ms)
+      result = lan_attached[i].eventfull_ms;
     }
   return result;
 }
@@ -236,8 +274,11 @@ static int collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
         eventfull[i].cpu  = vm->cpu;
         }
       eventfull[i].ok   = cur->c2c.is_peered;
-      eventfull[i].rx   = add_all_tidx_rx(cur->lan_attached);
-      eventfull[i].tx   = add_all_tidx_tx(cur->lan_attached);
+      eventfull[i].ptx  = add_all_tidx_ptx(cur->lan_attached);
+      eventfull[i].prx  = add_all_tidx_prx(cur->lan_attached);
+      eventfull[i].btx  = add_all_tidx_btx(cur->lan_attached);
+      eventfull[i].brx  = add_all_tidx_brx(cur->lan_attached);
+      eventfull[i].ms   = get_last_ms(cur->lan_attached);
       real_nb += 1;
       }
     next = endp_mngt_get_next(cur);

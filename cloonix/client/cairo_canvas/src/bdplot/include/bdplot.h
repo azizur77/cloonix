@@ -15,9 +15,11 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void stats_counters_update_endp_tx_rx(char *name, int num, unsigned int ms, 
-                                      int ptx, int btx, int prx, int brx);
-void stats_counters_heartbeat(void);
-void stats_counters_death(char *name, int num);
-void stats_counters_llid_close(int llid);
-void stats_counters_init(void);
+#define NCURVES 2
+void bdplot_init(void);
+void bdplot_create(char *name, int num);
+void bdplot_destroy(char *name, int num);
+void bdplot_newdata(char *name, int num, int date_ms, int tx, int rx);
+
+
+

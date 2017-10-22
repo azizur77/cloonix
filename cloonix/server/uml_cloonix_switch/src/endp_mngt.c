@@ -672,7 +672,7 @@ static int llid_flow_to_restrict(char *name, int num, int tidx)
 /*****************************************************************************/
 void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line)
 {
-  int num, tidx, peer_llid, pkts, bytes, rank, stop;
+  int num, tidx, peer_llid, ptx, btx, prx, brx, rank, stop;
   unsigned int ms;
   t_priv_endp *mu = muendp_find_with_llid(llid);
   char name[MAX_NAME_LEN];
@@ -688,18 +688,18 @@ void endp_mngt_rpct_recv_evt_msg(int llid, int tid, char *line)
       else
         KERR("%s %d", name, num);
       }
-    else if (sscanf(line,"endp_eventfull_tx %u %d %d %d",
-                         &ms, &tidx, &pkts, &bytes) == 4)
+    else if (sscanf(line,"endp_eventfull_tx_rx %u %d %d %d %d %d",
+                         &ms, &tidx, &ptx, &btx, &prx, &brx) == 6)
       {
-      mu->lan_attached[tidx].eventfull_tx_p += pkts;
-      stats_counters_update_endp_tx(mu->name, mu->num, ms, pkts, bytes);
+      mu->lan_attached[tidx].eventfull_tx_p += ptx;
+      mu->lan_attached[tidx].eventfull_rx_p += prx;
+      mu->lan_attached[tidx].eventfull_tx_b += btx;
+      mu->lan_attached[tidx].eventfull_rx_b += brx;
+      mu->lan_attached[tidx].eventfull_ms = ms;
+      stats_counters_update_endp_tx_rx(mu->name,mu->num,ms,ptx,btx,prx,brx);
       }
-    else if (sscanf(line,"endp_eventfull_rx %u %d %d %d",
-                         &ms, &tidx, &pkts, &bytes) == 4)
-      {
-      mu->lan_attached[tidx].eventfull_rx_p += pkts;
-      stats_counters_update_endp_rx(mu->name, mu->num, ms, pkts, bytes);
-      }
+    else
+      KERR("%s", line);
     }
   else
     KERR("%s", line);
@@ -1485,6 +1485,8 @@ void endp_mngt_erase_eventfull_stats(void)
       {
       cur->lan_attached[i].eventfull_rx_p = 0;
       cur->lan_attached[i].eventfull_tx_p = 0;
+      cur->lan_attached[i].eventfull_rx_b = 0;
+      cur->lan_attached[i].eventfull_tx_b = 0;
       }
 
     cur = cur->next;

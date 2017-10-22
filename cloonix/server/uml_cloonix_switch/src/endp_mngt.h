@@ -23,6 +23,9 @@ typedef struct t_lan_attached
   int unix2inet_llid_con;
   int eventfull_rx_p;
   int eventfull_tx_p;
+  int eventfull_rx_b;
+  int eventfull_tx_b;
+  int eventfull_ms;
 } t_lan_attached;
 
 typedef struct t_endp

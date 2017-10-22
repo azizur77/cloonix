@@ -29,6 +29,7 @@
 #include "main_timer_loop.h"
 #include "menu_utils.h"
 #include "menus.h"
+#include "bdplot.h"
 
 /*--------------------------------------------------------------------------*/
 static int g_timeout_flipflop_freeze;

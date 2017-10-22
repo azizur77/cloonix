@@ -25,6 +25,7 @@
 #include "bank.h"
 #include "eventfull_eth.h"
 #include "main_timer_loop.h"
+#include "bdplot.h"
 
 typedef struct t_eth_blinks
 {
@@ -154,9 +155,11 @@ static void eventfull_arrival(int nb_endp, t_eventfull_endp *endp)
 {
   t_obj_blinks *cur;
   int i, num;
+  char *name;
   for (i=0; i<nb_endp; i++)
     {
-    cur = get_obj_blinks_with_name(endp[i].name);
+    name = endp[i].name;
+    cur = get_obj_blinks_with_name(name);
     if (cur)
       {
       num = endp[i].num;
@@ -169,19 +172,21 @@ static void eventfull_arrival(int nb_endp, t_eventfull_endp *endp)
         }
       if ((num == 0) && (!(cur->eth_blinks[num].bitem_eth)))
         {
-        if (endp[i].rx)
+        if (endp[i].prx)
           cur->eth_blinks[num].blink_rx = 1;
-        if (endp[i].tx)
+        if (endp[i].ptx)
           cur->eth_blinks[num].blink_tx = 1;
+        bdplot_newdata(name, num, endp[i].ms, endp[i].btx, endp[i].brx);
         }
       else if (cur->eth_blinks[num].bitem_eth)
         {
         if (cur->eth_blinks[num].bitem_eth->num != num)
           KOUT(" ");
-        if (endp[i].rx)
+        if (endp[i].prx)
           cur->eth_blinks[num].blink_rx = 1;
-        if (endp[i].tx)
+        if (endp[i].ptx)
           cur->eth_blinks[num].blink_tx = 1;
+        bdplot_newdata(name, num, endp[i].ms, endp[i].btx, endp[i].brx);
         }
       }
     }

@@ -765,6 +765,7 @@ void delete_node_topo(char *node)
       }
     }
   for (i=1; i<top->max_nodes; i++)
+    {
     if (top->summary.nodes_tab[i][0])
       {
       for (j=0; j<top->max_neighbors; j++)
@@ -776,6 +777,7 @@ void delete_node_topo(char *node)
           }
         }
       }
+    }
     summary_node_free (node_idx);
     delete_index_2_name(node);
     top->nb_nodes -= 1;

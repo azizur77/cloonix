@@ -14,6 +14,7 @@ LIB_CLIENT=../lib_client
 LIB_INTF=./src/interface
 LIB_BANK=./src/bank
 LIB_SUBSETS=./src/subsets
+LIB_BDPLOT=./src/bdplot
 
 EXE      = cloonix_gui
 WARNINGS=-Wall
@@ -32,6 +33,7 @@ INCLUDES= -I. $(shell pkg-config --cflags gtk+-3.0) \
           -I${LIB_INTF}/include \
           -I${LIB_BANK}/include \
           -I${LIB_SUBSETS}/include \
+          -I${LIB_BDPLOT}/include \
           -I./crcanvas_gtk
 
 LIBS = $(shell pkg-config --libs gtk+-3.0) \
@@ -42,6 +44,7 @@ LIBS = $(shell pkg-config --libs gtk+-3.0) \
        -L${LIB_INTF}/ -linterface \
        -L${LIB_BANK}/ -lbank \
        -L${LIB_SUBSETS}/ -lsubsets \
+       -L${LIB_BDPLOT}/ -lbdplot \
        -L${IO_CLOWNIX}/ -lio_clownix \
        -L${BLKD}/ -lblkd \
        -L${RPCT}/ -lrpct \
@@ -63,7 +66,7 @@ OBJ_DIR  = ./obj/
 OBJS     = $(addprefix $(OBJ_DIR), $(OBJ))
 
 
-CFLAGS   = -g -rdynamic $(WARNINGS) $(INCLUDES) -DWITH_GLIB
+CFLAGS   = -g -rdynamic $(WARNINGS) $(INCLUDES) -DWITH_GLIB -D_GNU_SOURCE
 
  
 CFLAGS+= -DGTK_DISABLE_SINGLE_INCLUDES \

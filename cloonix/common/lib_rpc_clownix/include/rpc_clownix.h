@@ -175,17 +175,17 @@ typedef struct t_sys_info
 typedef struct t_stats_count_item
 {
   int time_ms;
-  int pkts;
-  int bytes;
+  int ptx;
+  int btx;
+  int prx;
+  int brx;
 } t_stats_count_item;
 
 /*---------------------------------------------------------------------------*/
 typedef struct t_stats_counts
 {
-  int nb_tx_items;
-  int nb_rx_items;
-  t_stats_count_item tx_item[MAX_STATS_ITEMS];
-  t_stats_count_item rx_item[MAX_STATS_ITEMS];
+  int nb_items;
+  t_stats_count_item item[MAX_STATS_ITEMS];
 } t_stats_counts;
 /*---------------------------------------------------------------------------*/
 typedef struct t_stats_sysinfo
@@ -232,8 +232,11 @@ typedef struct t_eventfull_endp
   int  ram;
   int  cpu;
   int  ok;
-  int  rx;
-  int  tx;
+  int  ptx;
+  int  prx;
+  int  btx;
+  int  brx;
+  int  ms;
 } t_eventfull_endp;
 /*---------------------------------------------------------------------------*/
 void doors_io_basic_xml_init(t_llid_tx llid_tx);

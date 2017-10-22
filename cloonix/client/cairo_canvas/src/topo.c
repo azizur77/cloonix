@@ -36,6 +36,7 @@
 #include "layout_rpc.h"
 #include "make_layout.h"
 #include "layout_topo.h"
+#include "bdplot.h"
 
 
 

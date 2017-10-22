@@ -115,7 +115,8 @@
 /*---------------------------------------------------------------------------*/
 #define EVENTFULL_ENDP   "<eventfull_endp>\n"\
                          "name:%s num:%d type:%d \n"\
-                         "ram:%d cpu:%d ok:%d rx:%d tx:%d \n"\
+                         "ram:%d cpu:%d ok:%d \n"\
+                         "ptx:%d prx:%d btx:%d brx:%d ms:%d \n"\
                          "</eventfull_endp>"
 /*---------------------------------------------------------------------------*/
 #define ADD_VM_O         "<add_vm>\n"\
@@ -360,13 +361,9 @@
                          "  <param> %d </param>\n"\
                          "</vmcmd>"
 /*---------------------------------------------------------------------------*/
-#define EVT_STATS_TX_ITEM   "<tx_item>\n"\
-                            "  ms: %d p: %d b: %d \n"\
-                            "</tx_item>"
-/*---------------------------------------------------------------------------*/
-#define EVT_STATS_RX_ITEM   "<rx_item>\n"\
-                            "  ms: %d p: %d b: %d \n"\
-                            "</rx_item>"
+#define EVT_STATS_ITEM      "<item>\n"\
+                            "  ms: %d ptx: %d btx: %d prx: %d brx: %d \n"\
+                            "</item>"
 /*---------------------------------------------------------------------------*/
 #define SUB_EVT_STATS_ENDP  "<sub_evt_stats_endp>\n"\
                             "  <tid> %d </tid>\n"\
@@ -376,7 +373,7 @@
 #define EVT_STATS_ENDP_O    "<evt_stats_endp>\n"\
                             "  <tid> %d </tid>\n"\
                             "  network:%s name:%s num:%d status:%d \n"\
-                            "  nb_tx_items:%d nb_rx_items:%d \n"\
+                            "  nb_items:%d \n"
 /*---------------------------------------------------------------------------*/
 #define EVT_STATS_ENDP_C  "</evt_stats_endp>"
 /*---------------------------------------------------------------------------*/

@@ -52,31 +52,17 @@ static t_stats_sub *g_head_stats_sub;
 
 
 /****************************************************************************/
-static t_stats_count_item *get_next_count(t_stats_sub *stats_sub, int is_tx)
+static t_stats_count_item *get_next_count(t_stats_sub *stats_sub)
 {
   t_stats_count_item *result = NULL;
   int idx;
-  if (is_tx)
-    {
-    if (stats_sub->stats_counts.nb_tx_items + 1 >= MAX_STATS_ITEMS)
-      KERR("%s %d", stats_sub->name, stats_sub->stats_counts.nb_tx_items);
-    else
-      {
-      idx = stats_sub->stats_counts.nb_tx_items;
-      result = &(stats_sub->stats_counts.tx_item[idx]);
-      stats_sub->stats_counts.nb_tx_items += 1;
-      }
-    }
+  if (stats_sub->stats_counts.nb_items + 1 >= MAX_STATS_ITEMS)
+    KERR("%s %d", stats_sub->name, stats_sub->stats_counts.nb_items);
   else
     {
-    if (stats_sub->stats_counts.nb_rx_items + 1 >= MAX_STATS_ITEMS)
-      KERR("%s %d", stats_sub->name, stats_sub->stats_counts.nb_rx_items);
-    else
-      {
-      idx = stats_sub->stats_counts.nb_rx_items;
-      result = &(stats_sub->stats_counts.rx_item[idx]);
-      stats_sub->stats_counts.nb_rx_items += 1;
-      }
+    idx = stats_sub->stats_counts.nb_items;
+    result = &(stats_sub->stats_counts.item[idx]);
+    stats_sub->stats_counts.nb_items += 1;
     }
   return result;
 }
@@ -204,39 +190,21 @@ static t_stats_sub *find_next_stats_sub(t_stats_sub *head, char *name, int num)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void stats_counters_update_endp_tx(char *name, int num, unsigned int ms, 
-                                   int pkts, int bytes)
+void stats_counters_update_endp_tx_rx(char *name, int num, unsigned int ms, 
+                                      int ptx, int btx, int prx, int brx)
 {
   t_stats_count_item *sci;
   t_stats_sub *sub = find_next_stats_sub(NULL, name, num);
   while(sub)
     {
-    sci = get_next_count(sub, 1);
+    sci = get_next_count(sub);
     if (sci)
       {
       sci->time_ms = ms;
-      sci->pkts = pkts;
-      sci->bytes = bytes;
-      }
-    sub = find_next_stats_sub(sub, name, num);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void stats_counters_update_endp_rx(char *name, int num, unsigned int ms, 
-                                   int pkts, int bytes)
-{
-  t_stats_count_item *sci;
-  t_stats_sub *sub = find_next_stats_sub(NULL, name, num);
-  while(sub)
-    {
-    sci = get_next_count(sub, 0);
-    if (sci)
-      {
-      sci->time_ms = ms;
-      sci->pkts = pkts;
-      sci->bytes = bytes;
+      sci->ptx = ptx;
+      sci->btx = btx;
+      sci->prx = prx;
+      sci->brx = brx;
       }
     sub = find_next_stats_sub(sub, name, num);
     }
@@ -269,8 +237,7 @@ void stats_counters_heartbeat(void)
     {
     if (msg_exist_channel(cur->llid))
       {
-      if ((cur->stats_counts.nb_tx_items) || 
-          (cur->stats_counts.nb_rx_items))
+      if (cur->stats_counts.nb_items)
         {
         send_evt_stats_endp(cur->llid, cur->tid, 
                             network, cur->name, cur->num,

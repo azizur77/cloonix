@@ -63,20 +63,12 @@ static void eventfull_endp(t_all_ctx *all_ctx, int cloonix_llid, int tidx)
   char txt[2*MAX_NAME_LEN];
   collect_eventfull(all_ctx, tidx, &nb_pkt_tx, &nb_bytes_tx, 
                                    &nb_pkt_rx, &nb_bytes_rx);
-  if (nb_pkt_tx)
-    {
-    memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "endp_eventfull_tx %u %d %d %d",
-             cloonix_get_msec(), tidx, nb_pkt_tx, nb_bytes_tx);
-    rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
-    }
-  if (nb_pkt_rx)
-    {
-    memset(txt, 0, 2*MAX_NAME_LEN);
-    snprintf(txt, (2*MAX_NAME_LEN) - 1, "endp_eventfull_rx %u %d %d %d",
-             cloonix_get_msec(), tidx, nb_pkt_rx, nb_bytes_rx);
-    rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
-    }
+  memset(txt, 0, 2*MAX_NAME_LEN);
+  snprintf(txt, (2*MAX_NAME_LEN) - 1, 
+           "endp_eventfull_tx_rx %u %d %d %d %d %d",
+           cloonix_get_msec(), tidx, nb_pkt_tx, nb_bytes_tx,
+           nb_pkt_rx, nb_bytes_rx);
+  rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
 }
 /*---------------------------------------------------------------------------*/
 

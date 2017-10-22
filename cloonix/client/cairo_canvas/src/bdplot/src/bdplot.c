@@ -1,0 +1,142 @@
+/*****************************************************************************/
+/*    Copyright (C) 2006-2017 cloonix@cloonix.net License AGPL-3             */
+/*                                                                           */
+/*  This program is free software: you can redistribute it and/or modify     */
+/*  it under the terms of the GNU Affero General Public License as           */
+/*  published by the Free Software Foundation, either version 3 of the       */
+/*  License, or (at your option) any later version.                          */
+/*                                                                           */
+/*  This program is distributed in the hope that it will be useful,          */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of           */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            */
+/*  GNU Affero General Public License for more details.a                     */
+/*                                                                           */
+/*  You should have received a copy of the GNU Affero General Public License */
+/*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
+/*                                                                           */
+/*****************************************************************************/
+#include <cairo.h>
+#include <gtk/gtk.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <math.h>
+#include <time.h>
+#include <string.h>
+
+#include "io_clownix.h"
+#include "bdplot.h"
+#include "gtkplot.h"
+
+
+
+typedef struct t_bdplot
+{
+  char name[MAX_NAME_LEN];
+  int num;
+  struct t_bdplot *prev;
+  struct t_bdplot *next;
+} t_bdplot;
+
+static t_bdplot *g_bdplot_head;
+
+/****************************************************************************/
+static t_bdplot *bdplot_find(char *name, int num)
+{
+  t_bdplot *cur = g_bdplot_head;
+  while(cur)
+    {
+    if ((!strcmp(cur->name, name)) && (cur->num == num))
+      break;
+    cur = cur->next;
+    }
+  return cur;  
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void bdplot_alloc(char *name, int num)
+{
+  t_bdplot *cur = (t_bdplot *) malloc(sizeof(t_bdplot));
+  memset(cur, 0, sizeof(t_bdplot));
+  strncpy(cur->name, name, MAX_NAME_LEN-1);
+  cur->num = num; 
+  if (g_bdplot_head)
+    g_bdplot_head->prev = cur;
+  cur->next = g_bdplot_head;
+  g_bdplot_head = cur;
+KERR("%s %s %d", __FUNCTION__, name, num);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void bdplot_free(char *name, int num)
+{
+  t_bdplot *cur = bdplot_find(name, num);
+  if (!cur)
+    KERR("%s %d", name, num);
+  else
+    {
+    if (cur->prev)
+      cur->prev->next = cur->next;
+    if (cur->next)
+      cur->next->prev = cur->prev;
+    if (g_bdplot_head == cur)
+      g_bdplot_head = cur->next;
+    free(cur);
+    }
+KERR("%s %s %d", __FUNCTION__, name, num);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void bdplot_newdata(char *name, int num, int date_ms, int tx, int rx)
+{
+  float date_s;
+  float bd[NCURVES];
+  if(bdplot_find(name, num))
+    {
+    date_s = (float)date_ms/1000;
+    bd[0] = (float) tx;
+    bd[1] = (float) rx;
+KERR("%s %d   %d %d %d", name, num, date_ms, tx, rx);
+    gtkplot_newdata(date_s, bd);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void bdplot_create(char *name, int num)
+{
+  if(bdplot_find(name, num))
+    KERR("%s %d already exists", name, num);
+  else
+    {
+    gtkplot_create(name, num);
+    bdplot_alloc(name, num);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void bdplot_destroy(char *name, int num)
+{
+  if(!bdplot_find(name, num))
+    KERR("%s %d not found", name, num);
+  else
+    {
+    bdplot_free(name, num);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void bdplot_init(void)
+{
+  g_bdplot_head = NULL;
+  gtkplot_init();
+}
+/*--------------------------------------------------------------------------*/
+
+

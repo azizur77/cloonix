@@ -51,6 +51,7 @@
 #include "menu_dialog_c2c.h"
 #include "menu_dialog_lan.h"
 #include "cloonix_conf_info.h"
+#include "bdplot.h"
 
 
 extern char **environ;
@@ -610,6 +611,7 @@ int main(int argc, char *argv[])
   printf("GRAPH PID: %d\n", getpid());
   layout_topo_init();
   request_move_stop_go(1);
+  bdplot_init();
   gtk_main();
   return 0;
 }

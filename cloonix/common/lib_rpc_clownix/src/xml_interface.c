@@ -197,33 +197,21 @@ void sys_info_free(t_sys_info *sys)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int fill_tx_stats(char *buf, int nb, t_stats_count_item *item)
+static int fill_stats(char *buf, int nb, t_stats_count_item *item)
 {
   int i, len = 0;
   for (i=0; i<nb; i++)
     {  
-    len += sprintf(buf+len, EVT_STATS_TX_ITEM, item[i].time_ms,
-                                            item[i].pkts, item[i].bytes);
+    len += sprintf(buf+len, EVT_STATS_ITEM, item[i].time_ms,
+                                            item[i].ptx, item[i].btx,
+                                            item[i].prx, item[i].brx);
     }
   return len;
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int fill_rx_stats(char *buf, int nb, t_stats_count_item *item)
-{
-  int i, len = 0;
-  for (i=0; i<nb; i++)
-    {
-    len += sprintf(buf+len, EVT_STATS_RX_ITEM, item[i].time_ms,
-                                            item[i].pkts, item[i].bytes);
-    }
-  return len;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void helper_tx_stats(char *msg, int nb, t_stats_count_item *item)
+static void helper_stats(char *msg, int nb, t_stats_count_item *item)
 {
   char *ptr;
   int i;
@@ -233,49 +221,23 @@ static void helper_tx_stats(char *msg, int nb, t_stats_count_item *item)
   ptr = msg;
   for (i=0; i<nb; i++)
     {
-    ptr = strstr(ptr, "<tx_item>");
+    ptr = strstr(ptr, "<item>");
     if (!ptr)
       KOUT("%s", msg);
-    if (sscanf(ptr, EVT_STATS_TX_ITEM, &(item[i].time_ms), 
-                                       &(item[i].pkts), 
-                                       &(item[i].bytes)) != 3)
+    if (sscanf(ptr, EVT_STATS_ITEM, &(item[i].time_ms), 
+                                    &(item[i].ptx), 
+                                    &(item[i].btx),
+                                    &(item[i].prx), 
+                                    &(item[i].brx)) != 5)
       KOUT("%s", msg);
-    ptr = strstr(ptr, "</tx_item>");
+    ptr = strstr(ptr, "</item>");
     if (!ptr)
       KOUT("%s", msg);
     }
-  ptr = strstr(ptr, "<tx_item>");
+  ptr = strstr(ptr, "<item>");
   if (ptr)
     KOUT("%s", msg);
 }
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static void helper_rx_stats(char *msg, int nb, t_stats_count_item *item)
-{
-  char *ptr;
-  int i;
-  memset(item, 0, MAX_STATS_ITEMS*sizeof(t_stats_count_item));
-  if ((nb < 0) || (nb > MAX_STATS_ITEMS))
-    KOUT("%d", nb);
-  ptr = msg;
-  for (i=0; i<nb; i++)
-    {
-    ptr = strstr(ptr, "<rx_item>");
-    if (!ptr)
-      KOUT("%s", msg);
-    if (sscanf(ptr, EVT_STATS_RX_ITEM, &(item[i].time_ms),  
-                                       &(item[i].pkts),  
-                                       &(item[i].bytes)) != 3)
-      KOUT("%s", msg);
-    ptr = strstr(ptr, "</rx_item>");
-    if (!ptr)
-      KOUT("%s", msg);
-    }
-  ptr = strstr(ptr, "<rx_item>");
-  if (ptr)
-    KOUT("%s", msg);
-}   
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
@@ -558,13 +520,11 @@ void send_evt_stats_endp(int llid, int tid, char *network,
     KOUT(" ");
   if (strlen(name) >= MAX_NAME_LEN)
     name[MAX_NAME_LEN-1] = 0;
-  if ((sc->nb_tx_items < 0) || (sc->nb_tx_items > MAX_STATS_ITEMS) ||
-      (sc->nb_rx_items < 0) || (sc->nb_rx_items > MAX_STATS_ITEMS))
-    KOUT("%d %d", sc->nb_tx_items, sc->nb_rx_items);
+  if ((sc->nb_items < 0) || (sc->nb_items > MAX_STATS_ITEMS)) 
+    KOUT("%d ", sc->nb_items);
   len = sprintf(sndbuf, EVT_STATS_ENDP_O, tid, network, name, num, status, 
-                                         sc->nb_tx_items, sc->nb_rx_items);
-  len += fill_tx_stats(sndbuf+len, sc->nb_tx_items, sc->tx_item);
-  len += fill_rx_stats(sndbuf+len, sc->nb_rx_items, sc->rx_item);
+                                         sc->nb_items);
+  len += fill_stats(sndbuf+len, sc->nb_items, sc->item);
   len += sprintf(sndbuf+len, EVT_STATS_ENDP_C);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -1680,7 +1640,9 @@ void send_eventfull(int llid, int tid, int nb_endp, t_eventfull_endp *endp)
     len += sprintf(sndbuf+len, EVENTFULL_ENDP, endp[i].name, endp[i].num,
                                                endp[i].type, endp[i].ram,
                                                endp[i].cpu, endp[i].ok,
-                                               endp[i].rx, endp[i].tx);
+                                               endp[i].ptx, endp[i].prx,
+                                               endp[i].btx, endp[i].brx,
+                                               endp[i].ms);
   len += sprintf(sndbuf+len, EVENTFULL_C);
   my_msg_mngt_tx(llid, len, sndbuf);
 }
@@ -1702,8 +1664,11 @@ static void helper_eventfull_endp(char *msg, int nb, t_eventfull_endp *endp)
                                      &(endp[i].ram),
                                      &(endp[i].cpu),
                                      &(endp[i].ok),
-                                     &(endp[i].rx),
-                                     &(endp[i].tx)) != 8)
+                                     &(endp[i].ptx),
+                                     &(endp[i].prx),
+                                     &(endp[i].btx),
+                                     &(endp[i].brx),
+                                     &(endp[i].ms)) != 11)
       KOUT("%s", msg);
     ptr = strstr (ptr, "</eventfull_endp>");
     if (!ptr)
@@ -1839,11 +1804,9 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
 
     case bnd_evt_stats_endp:
       if (sscanf(msg, EVT_STATS_ENDP_O, &tid, network, name, &num,
-                                        &status, &(stats_counts.nb_tx_items), 
-                                        &(stats_counts.nb_rx_items)) != 7)
+                                        &status, &(stats_counts.nb_items)) != 6) 
         KOUT("%s", msg);
-      helper_tx_stats(msg, stats_counts.nb_tx_items, stats_counts.tx_item);
-      helper_rx_stats(msg, stats_counts.nb_rx_items, stats_counts.rx_item);
+      helper_stats(msg, stats_counts.nb_items, stats_counts.item);
       recv_evt_stats_endp(llid, tid, network, name, num, &stats_counts,status);
       break;
 

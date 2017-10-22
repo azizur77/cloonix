@@ -330,7 +330,6 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
                                  struct sockaddr *addr, int addr_len)
 {
   t_connect_ctx *ctx;
-  int res;
   ctx = find_ctx(tcpid);
   if (ctx)
     {
@@ -340,7 +339,7 @@ void tcp_connect_wait_management(t_connect cb, t_tcp_id *tcpid, int fd,
   else
     {
     ctx = alloc_ctx(cb, tcpid, fd, addr, addr_len);
-    res = connect(fd, addr, addr_len);
+    connect(fd, addr, addr_len);
     clownix_timeout_add(get_all_ctx(), 1, timer_connect_wait, (void *) ctx, 
                         &(ctx->timer_abs_beat), &(ctx->timer_ref));
     }

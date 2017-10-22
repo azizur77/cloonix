@@ -909,25 +909,17 @@ static void print_stats_counts(t_stats_counts *stats_counts)
 {
   int i;
 
-  if (stats_counts->nb_tx_items)
+  if (stats_counts->nb_items)
     {
-    printf("TX: %d\n", stats_counts->nb_tx_items);
-    for (i=0; i<stats_counts->nb_tx_items; i++)
+    printf("%d\n", stats_counts->nb_items);
+    for (i=0; i<stats_counts->nb_items; i++)
       {
-      printf("tx: ms:%d pkts:%d bytes:%d\n", stats_counts->tx_item[i].time_ms,
-                                             stats_counts->tx_item[i].pkts,
-                                             stats_counts->tx_item[i].bytes);
-      }
-    }
-
-  if (stats_counts->nb_rx_items)
-    {
-    printf("RX: %d\n", stats_counts->nb_rx_items);
-    for (i=0; i<stats_counts->nb_rx_items; i++)
-      {
-      printf("rx: ms:%d pkts:%d bytes:%d\n", stats_counts->rx_item[i].time_ms,
-                                             stats_counts->rx_item[i].pkts,
-                                             stats_counts->rx_item[i].bytes);
+      printf("tx: ms:%d ptx:%d btx:%d prx:%d brx:%d\n",
+                            stats_counts->item[i].time_ms,
+                            stats_counts->item[i].ptx,
+                            stats_counts->item[i].btx,
+                            stats_counts->item[i].prx,
+                            stats_counts->item[i].brx);
       }
     }
 }

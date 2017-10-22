@@ -222,8 +222,11 @@ static void random_eventfull_endp(t_eventfull_endp *endp)
   endp->ram  = rand();
   endp->cpu  = rand();
   endp->ok   = rand();
-  endp->rx   = rand();
-  endp->tx   = rand();
+  endp->ptx   = rand();
+  endp->prx   = rand();
+  endp->btx   = rand();
+  endp->brx   = rand();
+  endp->ms   = rand();
 }
 /*---------------------------------------------------------------------------*/
 
@@ -1054,45 +1057,34 @@ void recv_evt_stats_endp_sub(int llid, int itid, char *iname, int inum, int isub
 static int diff_stats_counts(t_stats_counts *sca, t_stats_counts *scb)
 {
   int i, nb, ok = 1, result = -1;
-  if (sca->nb_tx_items != scb->nb_tx_items)
-    KERR("%d %d", sca->nb_tx_items, scb->nb_tx_items);
-  else if (sca->nb_rx_items != scb->nb_rx_items)
-    KERR("%d %d", sca->nb_rx_items, scb->nb_rx_items);
+  if (sca->nb_items != scb->nb_items)
+    KERR("%d %d", sca->nb_items, scb->nb_items);
   else
     {
-    nb = sca->nb_tx_items;
+    nb = sca->nb_items;
     for (i=0; i<nb; i++)
       {
-      if (sca->tx_item[i].time_ms != scb->tx_item[i].time_ms)
+      if (sca->item[i].time_ms != scb->item[i].time_ms)
         {
         KERR("%d %d", i, nb);
         ok = 0;
         }
-      if (sca->tx_item[i].pkts != scb->tx_item[i].pkts)
+      if (sca->item[i].ptx != scb->item[i].ptx)
         {
         KERR("%d %d", i, nb);
         ok = 0;
         }
-      if (sca->tx_item[i].bytes != scb->tx_item[i].bytes)
+      if (sca->item[i].btx != scb->item[i].btx)
         {
         KERR("%d %d", i, nb);
         ok = 0;
         }
-      }
-    nb = sca->nb_rx_items;
-    for (i=0; i<nb; i++)
-      {
-      if (sca->rx_item[i].time_ms != scb->rx_item[i].time_ms)
+      if (sca->item[i].prx != scb->item[i].prx)
         {
         KERR("%d %d", i, nb);
         ok = 0;
         }
-      if (sca->rx_item[i].pkts != scb->rx_item[i].pkts)
-        {
-        KERR("%d %d", i, nb);
-        ok = 0;
-        }
-      if (sca->rx_item[i].bytes != scb->rx_item[i].bytes)
+      if (sca->item[i].brx != scb->item[i].brx)
         {
         KERR("%d %d", i, nb);
         ok = 0;
@@ -1110,19 +1102,14 @@ static void random_stats_counts(t_stats_counts *sc)
 {
   int i;
   memset(sc, 0, sizeof(t_stats_counts));
-  sc->nb_tx_items = (rand() % (MAX_STATS_ITEMS + 1));
-  for (i=0; i<sc->nb_tx_items; i++)
+  sc->nb_items = (rand() % (MAX_STATS_ITEMS + 1));
+  for (i=0; i<sc->nb_items; i++)
     {
-    sc->tx_item[i].time_ms = rand();  
-    sc->tx_item[i].pkts = rand();  
-    sc->tx_item[i].bytes = rand();  
-    } 
-  sc->nb_rx_items = (rand() % (MAX_STATS_ITEMS + 1));
-  for (i=0; i<sc->nb_rx_items; i++)
-    {
-    sc->rx_item[i].time_ms = rand();
-    sc->rx_item[i].pkts = rand();
-    sc->rx_item[i].bytes = rand();
+    sc->item[i].time_ms = rand();  
+    sc->item[i].ptx = rand();  
+    sc->item[i].prx = rand();  
+    sc->item[i].btx = rand();  
+    sc->item[i].brx = rand();  
     } 
 }
 /*---------------------------------------------------------------------------*/

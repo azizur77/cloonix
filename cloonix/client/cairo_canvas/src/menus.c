@@ -45,6 +45,7 @@
 #include "menu_dialog_snf.h"
 #include "menu_dialog_c2c.h"
 #include "menu_dialog_a2b.h"
+#include "bdplot.h"
 
 
 GtkWidget *get_main_window(void);
@@ -466,14 +467,12 @@ static void intf_item_promisc_off(GtkWidget *mn, t_item_ident *pm)
 /****************************************************************************/
 static void intf_item_monitor(GtkWidget *mn, t_item_ident *pm)
 {
-/*
-  t_bank_item *bitem, *node;
+  t_bank_item *bitem;
   bitem = look_for_eth_with_id(pm->name, pm->num);
   if (bitem)
     {
-    node = bitem->att_node;
+    bdplot_create(pm->name, pm->num);
     }
-*/
 }
 /*--------------------------------------------------------------------------*/
 

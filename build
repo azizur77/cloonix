@@ -87,6 +87,7 @@ done
             cairo_canvas/src/bank \
             cairo_canvas/src/interface \
             cairo_canvas/src/subsets \
+            cairo_canvas/src/bdplot \
             cairo_canvas \
             lib_zor \
             hyperzor \

@@ -400,10 +400,6 @@ int clo_high_syn_tx(t_tcp_id *tcpid)
 static void reset_rx_close_all(t_clo *clo)
 {
   int is_blkd, llid;
-  u32_t local_ip = clo->tcpid.local_ip;
-  u32_t remote_ip = clo->tcpid.remote_ip;
-  u16_t local_port = clo->tcpid.local_port;
-  u16_t remote_port = clo->tcpid.remote_port;
   llid = clo->tcpid.llid;
   if (msg_exist_channel(get_all_ctx(), llid, &is_blkd, __FUNCTION__))
     msg_delete_channel(get_all_ctx(), llid);
