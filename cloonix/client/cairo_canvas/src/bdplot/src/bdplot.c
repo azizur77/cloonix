@@ -35,6 +35,9 @@ typedef struct t_bdplot
 {
   char name[MAX_NAME_LEN];
   int num;
+  int tx;
+  int rx;
+  int last_date_ms;
   struct t_bdplot *prev;
   struct t_bdplot *next;
 } t_bdplot;
@@ -93,15 +96,27 @@ KERR("%s %s %d", __FUNCTION__, name, num);
 /****************************************************************************/
 void bdplot_newdata(char *name, int num, int date_ms, int tx, int rx)
 {
+  t_bdplot *cur;
   float date_s;
   float bd[NCURVES];
-  if(bdplot_find(name, num))
+  int delta;
+  cur = bdplot_find(name, num);
+  if(cur)
     {
-    date_s = (float)date_ms/1000;
-    bd[0] = (float) tx;
-    bd[1] = (float) rx;
-KERR("%s %d   %d %d %d", name, num, date_ms, tx, rx);
-    gtkplot_newdata(date_s, bd);
+    cur->tx += tx;
+    cur->rx += rx;
+    delta = (date_ms - cur->last_date_ms);
+    if (delta > 200)
+      {
+      date_s = (float)date_ms/1000;
+      bd[0]  = (float) cur->tx;
+      bd[1]  = (float) cur->rx;
+KERR("%s %d   %d %d %d", name, num, date_ms, cur->tx, cur->rx);
+      gtkplot_newdata(date_s, bd);
+      cur->last_date_ms = date_ms;
+      cur->tx = 0; 
+      cur->rx = 0; 
+      }
     }
 }
 /*--------------------------------------------------------------------------*/

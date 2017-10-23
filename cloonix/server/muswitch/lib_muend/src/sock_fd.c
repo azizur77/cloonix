@@ -81,9 +81,7 @@ static void eventfull_can_be_sent(t_all_ctx *all_ctx, void *data)
     {
     for (i=0; i<MAX_TRAF_ENDPOINT; i++)
       {
-      if ((all_ctx->g_traf_endp[i].nb_pkt_tx) || 
-          (all_ctx->g_traf_endp[i].nb_pkt_rx))
-        eventfull_endp(all_ctx, llid, i);
+      eventfull_endp(all_ctx, llid, i);
       }
     }
   clownix_timeout_add(all_ctx, 5, eventfull_can_be_sent, NULL, NULL, NULL);

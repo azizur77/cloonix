@@ -30,6 +30,8 @@
 #include "gtkplot.h"
 
 
+float zoom_force = 10;
+
 static float g_maxrange = 5000;
 
 static const int default_precision_graph = 1024;
@@ -37,8 +39,8 @@ static int precision_graph = 1024; //in ms, relative to default scaleX
 
 static float rayon = 2;
 
-static const float defaultscaleX = 64;
-static float scaleX = 64; //=1 for 1px on graph per second; =1000 for 1px on graph per millisecond etc
+static const float defaultscaleX = 32;
+static float scaleX = 32; //=1 for 1px on graph per second; =1000 for 1px on graph per millisecond etc
 
 static float scaleXMIN = 1;
 static float scaleXMAX = 512;
@@ -54,6 +56,21 @@ static float ColorBallsB[] = { 0.8, 0,0,0,0,0,0,0,0,0};
 static float ColorLinkR[] = { 0, 0.5,0,0,0,0,0,0,0,0};
 static float ColorLinkG[] = { 0, 0,0.5,0,0,0,0,0,0,0};
 static float ColorLinkB[] = { 0.5, 0,0,0,0,0,0,0,0,0};
+
+static gboolean onmouse(GtkWidget *widget, GdkEventMotion *event, gpointer user_data);
+static gboolean onpress(GtkWidget *widget, GdkEventButton *event, gpointer user_data);
+static gboolean onrelease(GtkWidget *widget, GdkEventButton *event, gpointer user_data);
+ 
+float mousex = 0;
+float mousey = 0;
+float initmousey = 0;
+bool dragging = false;
+bool manual = false;
+ 
+float oldScaleY = 100;
+float newScaleYrelative = 1;
+
+
 
 
 ///////STRUCS///////////
@@ -75,6 +92,43 @@ typedef struct t_destroy_data
   char name[MAX_NAME_LEN];
   int num;
 } t_destroy_data;
+
+static gboolean onmouse(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) {
+  mousex = event->x; mousey = event->y;
+  return FALSE;
+}
+
+
+static gboolean onpress(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+  mousex = event->x; mousey = event->y;
+
+  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3) //RIGHT
+  {
+    manual = false;
+  }
+  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 1) //LEFT
+  {
+    manual = true;
+    dragging = true;
+    initmousey = mousey;
+  }
+  
+  return true;
+}
+
+static gboolean onrelease(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+  mousex = event->x; mousey = event->y;
+
+  if (event->button == 1)
+  {
+    oldScaleY*=newScaleYrelative;
+    dragging = false;
+  }
+  
+
+  return true;
+}
+
 
 /////////FUNCTIONS DECLARATIONS////////////
 static gboolean onscroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data);
@@ -167,19 +221,38 @@ static void do_drawing(cairo_t *cr)
     float tempdx = 0;
     if(dots[ind]->len>0)tempdx = w-((g_array_index(dots[ind], Dot *, (dots[ind]->len)-1)->x)*scaleX+marginX+20);
 
-    if(tempdx<decalagex)decalagex=tempdx;
+    if(tempdx < decalagex)
+      decalagex=tempdx;
 
     for(int i = 0;i<dots[ind]->len;i++)
     {
       Dot *bali = g_array_index(dots[ind], Dot *, i);
-      if(-bali->y>maxheight)maxheight=-bali->y;
+      if(-bali->y > maxheight)
+        maxheight=-bali->y;
     }
   }
 
-  float scaleY = (h-marginY-h/5)/maxheight;
 
-  decalagey+= basedecaly; //To center on the y axis, with the bottom margin
-  decalagex+=basedecalx; //for the left margin
+  float scaleY = oldScaleY;
+  if(!manual)
+  {
+    scaleY = (h-marginY-h/5)/maxheight;
+    oldScaleY = scaleY;
+  } 
+  else
+  {
+    if(dragging)
+    {
+      newScaleYrelative = -(mousey-initmousey)/h*zoom_force;
+      if(newScaleYrelative<0)newScaleYrelative=1/(1-newScaleYrelative);
+      else newScaleYrelative=newScaleYrelative+1;
+      scaleY*=newScaleYrelative;
+    }
+  }
+
+
+  decalagey += basedecaly; //To center on the y axis, with the bottom margin
+  decalagex += basedecalx; //for the left margin
 
   //ARROWS
   cairo_set_source_rgb(cr,0,0,0);
@@ -212,13 +285,10 @@ static void do_drawing(cairo_t *cr)
 
   ///
 
-  cairo_set_font_size(cr, 20);
+  cairo_set_font_size(cr, 12);
 
   //cairo_move_to(cr, marginX*0.2, h-marginY*0.2);
   //cairo_show_text(cr, "0"); 
-
-  cairo_move_to(cr, marginX*0.2, 20);
-  cairo_show_text(cr, "kBps");
 
   cairo_set_source_rgb(cr,ColorLinkR[0],ColorLinkG[0],ColorLinkB[0]);
   cairo_move_to(cr, marginX*0.2+100, 20);
@@ -230,23 +300,23 @@ static void do_drawing(cairo_t *cr)
 
   cairo_set_source_rgb(cr,0,0,0);
 
-  cairo_move_to(cr, w-100, h-marginY*0.2);
+  cairo_move_to(cr, w-50, h-marginY*0.2);
   cairo_show_text(cr, "time(s)");
 
   //LABEL TIME AXE
   float mintime = (basedecalx-decalagex)/scaleX*1000/precision_graph;
-  float maxtime = mintime+(w-marginX-80)/scaleX*1000/precision_graph;
+  float maxtime = mintime+(w-marginX-30)/scaleX*1000/precision_graph;
 
   int mint = (int)mintime+1;
   int maxt = (int)maxtime;
 
-  cairo_set_font_size(cr, 12);
+  cairo_set_font_size(cr, 8);
   for(int i = mint;i<maxt;i++)
   {
 
-    char output[5];
-
-    snprintf(output, 5, "%f", (float)i*precision_graph/1000);
+    char output[7];
+    output[6] = 0;
+    snprintf(output, 6, "%f", (float)i*precision_graph/1000);
 
     cairo_move_to(cr, decalagex+i*scaleX/1000*precision_graph, h-marginY+3);
     cairo_line_to(cr, decalagex+i*scaleX/1000*precision_graph, h-marginY-3);
@@ -260,27 +330,43 @@ static void do_drawing(cairo_t *cr)
   float minkb = 0;
 
   float maxkb = (h-marginY-50)/scaleY*1000;
-  int precisionkb = (int)(maxkb/10);
+
+  int multiple = 1;
+  if(maxkb>1000000)multiple=1000;
+  if(maxkb>1000000000)multiple=1000000;
+  int64_t precisionkb = (int64_t)(maxkb/10);
   maxkb/=precisionkb;
 
-  int mink = (int)minkb+1;
-  int maxk = (int)maxkb;
+  int64_t mink = (int64_t)minkb+1;
+  int64_t maxk = (int64_t)maxkb;
 
-  cairo_set_font_size(cr, 12);
-  for(int i = mink;i<maxk;i++)
+
+  cairo_set_font_size(cr, 8);
+  for(int64_t i = mink;i<maxk;i++)
   {
 
     char output[7];
 
-    snprintf(output, 7, "%d", (int)i*precisionkb/1000);
+    snprintf(output, 7, "%f", i*precisionkb/1000/(float)multiple);
 
     cairo_move_to(cr, marginX-3, h-marginY-i*scaleY/1000*precisionkb);
     cairo_line_to(cr, marginX+3, h-marginY-i*scaleY/1000*precisionkb);
     cairo_stroke(cr);
 
-    cairo_move_to(cr, 20,  h-marginY-i*scaleY/1000*precisionkb+5);
+    cairo_move_to(cr, 10,  h-marginY-i*scaleY/1000*precisionkb+5);
     cairo_show_text(cr, output);
   }
+  cairo_move_to(cr, marginX*0.2, 20);
+  cairo_set_font_size(cr, 10);
+  if(multiple==1000000000)
+    cairo_show_text(cr, "GBps");
+  else if(multiple == 1000000)
+    cairo_show_text(cr, "MBps");
+  else if(multiple == 1000)
+    cairo_show_text(cr, "kBps");
+  else
+    cairo_show_text(cr, "Bps");
+
   ///END ARROWS
 
   for(int ind=0;ind<NCURVES;ind++)
@@ -368,8 +454,17 @@ void gtkplot_create(char *name, int num)
            | GDK_LEAVE_NOTIFY_MASK   | GDK_POINTER_MOTION_MASK
            | GDK_BUTTON_PRESS_MASK | GDK_SCROLL_MASK
            | GDK_BUTTON_RELEASE_MASK);
-   g_signal_connect(G_OBJECT(darea), "draw", G_CALLBACK(on_draw_event), NULL);
-   g_signal_connect(g_plot_window, "scroll-event", G_CALLBACK(onscroll), NULL);
+   g_signal_connect(G_OBJECT(darea), "draw",
+                                     G_CALLBACK(on_draw_event), NULL);
+   g_signal_connect(g_plot_window,   "scroll-event", 
+                                     G_CALLBACK(onscroll), NULL);
+   g_signal_connect(g_plot_window,   "motion_notify_event",
+                                     G_CALLBACK(onmouse), NULL);
+   g_signal_connect(g_plot_window,   "button-press-event", 
+                                     G_CALLBACK(onpress), NULL);
+   g_signal_connect(g_plot_window,   "button-release-event",
+                                     G_CALLBACK(onrelease),NULL);
+
    gtk_window_set_position(GTK_WINDOW(g_plot_window), GTK_WIN_POS_CENTER);
    gtk_window_set_default_size(GTK_WINDOW(g_plot_window), 400, 300);
    gtk_window_set_title(GTK_WINDOW(g_plot_window), title);
