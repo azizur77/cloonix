@@ -29,336 +29,235 @@
 #include "bdplot.h"
 #include "gtkplot.h"
 
-
-float zoom_force = 10;
-
-static float g_maxrange = 5000;
-
 static const int default_precision_graph = 1024;
-static int precision_graph = 1024; //in ms, relative to default scaleX
-
-static float rayon = 2;
-
-static const float defaultscaleX = 32;
-static float scaleX = 32; //=1 for 1px on graph per second; =1000 for 1px on graph per millisecond etc
-
-static float scaleXMIN = 1;
-static float scaleXMAX = 512;
-
-static float marginX = 80;
-static float marginY = 30;
-
+static const float defaultscaleX = 64;
+static const float maxrange = 5000;
+static const float rayon = 2;
 
 static float ColorBallsR[] = { 0, 0.8,0,0,0,0,0,0,0,0};
 static float ColorBallsG[] = { 0, 0,0.8,0,0,0,0,0,0,0};
 static float ColorBallsB[] = { 0.8, 0,0,0,0,0,0,0,0,0};
-
 static float ColorLinkR[] = { 0, 0.5,0,0,0,0,0,0,0,0};
 static float ColorLinkG[] = { 0, 0,0.5,0,0,0,0,0,0,0};
 static float ColorLinkB[] = { 0.5, 0,0,0,0,0,0,0,0,0};
 
-static gboolean onmouse(GtkWidget *widget, GdkEventMotion *event, gpointer user_data);
-static gboolean onpress(GtkWidget *widget, GdkEventButton *event, gpointer user_data);
-static gboolean onrelease(GtkWidget *widget, GdkEventButton *event, gpointer user_data);
- 
-float mousex = 0;
-float mousey = 0;
-float initmousey = 0;
-bool dragging = false;
-bool manual = false;
- 
-float oldScaleY = 100;
-float newScaleYrelative = 1;
 
-
-
-
-///////STRUCS///////////
-
-typedef struct Dot Dot;
-
-struct Dot
+typedef struct t_Dot
 {
   float x;
   float y;
-  Dot *prevdot;
+  struct t_Dot *prevdot;
   float r;
   float g;
   float b;
-};
+} t_Dot;
 
-typedef struct t_destroy_data
+typedef struct t_gtk_plot_ctx
 {
   char name[MAX_NAME_LEN];
-  int num;
-} t_destroy_data;
-
-static gboolean onmouse(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) {
-  mousex = event->x; mousey = event->y;
-  return FALSE;
-}
-
-
-static gboolean onpress(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-  mousex = event->x; mousey = event->y;
-
-  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3) //RIGHT
-  {
-    manual = false;
-  }
-  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 1) //LEFT
-  {
-    manual = true;
-    dragging = true;
-    initmousey = mousey;
-  }
-  
-  return true;
-}
-
-static gboolean onrelease(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-  mousex = event->x; mousey = event->y;
-
-  if (event->button == 1)
-  {
-    oldScaleY*=newScaleYrelative;
-    dragging = false;
-  }
-  
-
-  return true;
-}
-
-
-/////////FUNCTIONS DECLARATIONS////////////
-static gboolean onscroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data);
-
-static void do_drawing(cairo_t *cr);
-static void addot(float x,float y,int ind);
-
-/////////VARIABLES DECLARATIONS////////////
-static GtkWidget *g_plot_window;
-
-static GArray *dots[NCURVES];
-
-
-//////////EVENTS//////////////////
-
-static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data)
-{
-  do_drawing(cr);
-  return FALSE;
-}
-
-static gboolean onscroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
-{
-  if(event->direction==1)
-  {
-    scaleX*=0.5;
-    if(scaleX<=scaleXMIN)scaleX=scaleXMIN;
-    precision_graph=default_precision_graph*(defaultscaleX/scaleX);
-  }
-  else if(event->direction==0)
-  {
-    scaleX*=2;
-    if(scaleX>=scaleXMAX)scaleX=scaleXMAX;
-    precision_graph=default_precision_graph*(defaultscaleX/scaleX);
-  } 
-  return FALSE;
-}
-
-//////////////UTILITY FUNCTIONS//////////////
-
-Dot *bal;
-static void addot(float x,float y,int ind)
-{
-  bal = malloc(sizeof(Dot));
-  memset(bal,0,sizeof(Dot));
-
-  bal->x = x;
-  bal->y = y;
-  bal->r = ColorBallsR[ind];
-  bal->g = ColorBallsG[ind];
-  bal->b = ColorBallsB[ind];
-  if(dots[ind]->len > 0)
-  {
-    bal->prevdot = g_array_index(dots[ind], Dot *, (dots[ind]->len)-1);
-  }
-  else bal->prevdot=NULL;
-
-  //printf("%p\n",bal);
-  g_array_append_val (dots[ind], bal);
-
-  Dot *first = g_array_index(dots[ind], Dot *, 0);
-  while(first->x < bal->x*scaleXMIN - g_maxrange)
-  {
-    g_array_remove_index(dots[ind],0);
-    first = g_array_index(dots[ind], Dot *, 0);
-  }
-}
-
-
-
+  int  num;
+  char title[MAX_NAME_LEN];
+  GtkWidget *window;
+  t_Dot *bal;
+  GArray *dots[NCURVES];
+  float zoom_force;
+  int precision_graph;
+  float scaleX;
+  float scaleXMIN;
+  float scaleXMAX;
+  float marginX;
+  float marginY;
+  float mousex;
+  float mousey;
+  float initmousey;
+  bool dragging;
+  bool manual;
+  float oldScaleY;
+  float newScaleYrelative;
+  float last_date_s;
+} t_gtk_plot_ctx;
+/*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void do_drawing(cairo_t *cr)
+static void addot(t_gtk_plot_ctx *gp, float x, float y, int ind)
 {
-  int w = gtk_widget_get_allocated_width (g_plot_window);
-  int h = gtk_widget_get_allocated_height (g_plot_window);
+  t_Dot *first;
+  gp->bal = malloc(sizeof(t_Dot));
+  memset(gp->bal,0,sizeof(t_Dot));
+  gp->bal->x = x;
+  gp->bal->y = y;
+  gp->bal->r = ColorBallsR[ind];
+  gp->bal->g = ColorBallsG[ind];
+  gp->bal->b = ColorBallsB[ind];
+  if(gp->dots[ind]->len > 0)
+    gp->bal->prevdot=g_array_index(gp->dots[ind], t_Dot *,
+                                   (gp->dots[ind]->len)-1);
+  else
+    gp->bal->prevdot=NULL;
+  g_array_append_val(gp->dots[ind], gp->bal);
+  first = g_array_index(gp->dots[ind], t_Dot *, 0);
+  while(first->x < gp->bal->x * gp->scaleXMIN - maxrange)
+    {
+    g_array_remove_index(gp->dots[ind], 0);
+    first = g_array_index(gp->dots[ind], t_Dot *, 0);
+    }
+}
+/*--------------------------------------------------------------------------*/
 
-  if(w<50)w=50;
-  if(h<50)h=50;
-
+/****************************************************************************/
+static void do_drawing(t_gtk_plot_ctx *gp, cairo_t *cr)
+{
+  int i, ind, mint, maxt;
+  unsigned int multiple;
+  int w = gtk_widget_get_allocated_width (gp->window);
+  int h = gtk_widget_get_allocated_height (gp->window);
   float decalagex = 0; //How much to offset the drawing
   float decalagey = 0;
   float maxheight = 0;
+  float basedecalx = gp->marginX;
+  float basedecaly = h-gp->marginY;
+  float tempdx, scaleY, mintime, maxtime, minkb, maxkb;
+  t_Dot *bali;
+  char output[7];
+  int64_t j, precisionkb, mink, maxk;
 
-  float basedecalx = marginX;
-  float basedecaly = h-marginY;
+  if(w<50)
+    w=50;
+  if(h<50)
+    h=50;
 
-  for(int ind=0;ind<NCURVES;ind++)
-  {
-    float tempdx = 0;
-    if(dots[ind]->len>0)tempdx = w-((g_array_index(dots[ind], Dot *, (dots[ind]->len)-1)->x)*scaleX+marginX+20);
-
+  for(ind=0; ind<NCURVES; ind++)
+    {
+    tempdx = 0;
+    if(gp->dots[ind]->len > 0)
+      {
+      tempdx = w - gp->marginX -20 -
+      (g_array_index(gp->dots[ind],t_Dot *,
+                     (gp->dots[ind]->len)-1)->x) * gp->scaleX;
+      }
     if(tempdx < decalagex)
-      decalagex=tempdx;
-
-    for(int i = 0;i<dots[ind]->len;i++)
-    {
-      Dot *bali = g_array_index(dots[ind], Dot *, i);
+      decalagex = tempdx;
+    for(i = 0; i<gp->dots[ind]->len; i++)
+      {
+      bali = g_array_index(gp->dots[ind], t_Dot *, i);
       if(-bali->y > maxheight)
-        maxheight=-bali->y;
+        maxheight = -bali->y;
+      }
     }
-  }
-
-
-  float scaleY = oldScaleY;
-  if(!manual)
-  {
-    scaleY = (h-marginY-h/5)/maxheight;
-    oldScaleY = scaleY;
-  } 
-  else
-  {
-    if(dragging)
+  scaleY = gp->oldScaleY;
+  if(!gp->manual)
     {
-      newScaleYrelative = -(mousey-initmousey)/h*zoom_force;
-      if(newScaleYrelative<0)newScaleYrelative=1/(1-newScaleYrelative);
-      else newScaleYrelative=newScaleYrelative+1;
-      scaleY*=newScaleYrelative;
+    scaleY = (h-gp->marginY-h/5)/maxheight;
+    gp->oldScaleY = scaleY;
+    } 
+  else
+    {
+    if(gp->dragging)
+      {
+      gp->newScaleYrelative = -(gp->mousey-gp->initmousey)/h*gp->zoom_force;
+      if(gp->newScaleYrelative < 0)
+        gp->newScaleYrelative = 1/(1-gp->newScaleYrelative);
+      else
+        gp->newScaleYrelative = gp->newScaleYrelative + 1;
+      scaleY *= gp->newScaleYrelative;
+      }
     }
-  }
-
-
   decalagey += basedecaly; //To center on the y axis, with the bottom margin
   decalagex += basedecalx; //for the left margin
 
   //ARROWS
   cairo_set_source_rgb(cr,0,0,0);
 
-  cairo_move_to(cr, marginX, h-marginY);
-  cairo_line_to(cr, w-30, h-marginY);
+  cairo_move_to(cr, gp->marginX, h-gp->marginY);
+  cairo_line_to(cr, w-30, h-gp->marginY);
   cairo_stroke(cr);
 
-  cairo_move_to(cr, w-30, h-marginY);
-  cairo_line_to(cr, w-30-7, h-marginY-7);
+  cairo_move_to(cr, w-30, h-gp->marginY);
+  cairo_line_to(cr, w-30-7, h-gp->marginY-7);
   cairo_stroke(cr);
 
-  cairo_move_to(cr, w-30, h-marginY);
-  cairo_line_to(cr, w-30-7, h-marginY+7);
+  cairo_move_to(cr, w-30, h-gp->marginY);
+  cairo_line_to(cr, w-30-7, h-gp->marginY+7);
   cairo_stroke(cr);
 
-  ///
-
-  cairo_move_to(cr, marginX, h-marginY);
-  cairo_line_to(cr, marginX, marginY);
+  cairo_move_to(cr, gp->marginX, h-gp->marginY);
+  cairo_line_to(cr, gp->marginX, gp->marginY);
   cairo_stroke(cr);
 
-  cairo_move_to(cr, marginX, marginY);
-  cairo_line_to(cr, marginX-7, marginY+7);
+  cairo_move_to(cr, gp->marginX, gp->marginY);
+  cairo_line_to(cr, gp->marginX-7, gp->marginY+7);
   cairo_stroke(cr);
 
-  cairo_move_to(cr, marginX, marginY);
-  cairo_line_to(cr, marginX+7, marginY+7);
+  cairo_move_to(cr, gp->marginX, gp->marginY);
+  cairo_line_to(cr, gp->marginX+7, gp->marginY+7);
   cairo_stroke(cr);
-
-  ///
 
   cairo_set_font_size(cr, 12);
 
-  //cairo_move_to(cr, marginX*0.2, h-marginY*0.2);
-  //cairo_show_text(cr, "0"); 
-
   cairo_set_source_rgb(cr,ColorLinkR[0],ColorLinkG[0],ColorLinkB[0]);
-  cairo_move_to(cr, marginX*0.2+100, 20);
+  cairo_move_to(cr, gp->marginX*0.2 + 100, 20);
   cairo_show_text(cr, "RX");
 
   cairo_set_source_rgb(cr,ColorLinkR[1],ColorLinkG[1],ColorLinkB[1]);
-  cairo_move_to(cr, marginX*0.2+180, 20);
+  cairo_move_to(cr, gp->marginX*0.2+180, 20);
   cairo_show_text(cr, "TX");
 
   cairo_set_source_rgb(cr,0,0,0);
 
-  cairo_move_to(cr, w-50, h-marginY*0.2);
+  cairo_move_to(cr, w-50, h-gp->marginY*0.2);
   cairo_show_text(cr, "time(s)");
 
   //LABEL TIME AXE
-  float mintime = (basedecalx-decalagex)/scaleX*1000/precision_graph;
-  float maxtime = mintime+(w-marginX-30)/scaleX*1000/precision_graph;
+  mintime = (basedecalx-decalagex)/gp->scaleX*1000/gp->precision_graph;
+  maxtime = mintime+(w-gp->marginX-30)/gp->scaleX*1000/gp->precision_graph;
 
-  int mint = (int)mintime+1;
-  int maxt = (int)maxtime;
+  mint = (int)mintime+1;
+  maxt = (int)maxtime;
 
   cairo_set_font_size(cr, 8);
-  for(int i = mint;i<maxt;i++)
-  {
-
-    char output[7];
+  for(i = mint; i<maxt; i++)
+    {
     output[6] = 0;
-    snprintf(output, 6, "%f", (float)i*precision_graph/1000);
+    snprintf(output, 6, "%f", (float)i*gp->precision_graph/1000);
 
-    cairo_move_to(cr, decalagex+i*scaleX/1000*precision_graph, h-marginY+3);
-    cairo_line_to(cr, decalagex+i*scaleX/1000*precision_graph, h-marginY-3);
+    cairo_move_to(cr, decalagex + i*gp->scaleX/1000*gp->precision_graph,
+                      h-gp->marginY + 3);
+    cairo_line_to(cr, decalagex + i*gp->scaleX/1000*gp->precision_graph,
+                      h-gp->marginY - 3);
     cairo_stroke(cr);
 
-    cairo_move_to(cr, decalagex+i*scaleX/1000*precision_graph-10, h-marginY*0.3);
+    cairo_move_to(cr, decalagex + i*gp->scaleX/1000*gp->precision_graph-10,
+                      h-gp->marginY * 0.3);
     cairo_show_text(cr, output);
-  }
+    }
 
   //LABEL KBPS AXE
-  float minkb = 0;
-
-  float maxkb = (h-marginY-50)/scaleY*1000;
-
-  int multiple = 1;
-  if(maxkb>1000000)multiple=1000;
-  if(maxkb>1000000000)multiple=1000000;
-  int64_t precisionkb = (int64_t)(maxkb/10);
+  minkb = 0;
+  maxkb = (h-gp->marginY-50)/scaleY*1000;
+  multiple = 1;
+  if (maxkb > 1000000.0)
+    multiple=1000;
+  if (maxkb > 1000000000.0)
+    multiple=1000000;
+  if (maxkb > 1000000000000.0)
+    multiple=1000000000;
+  precisionkb = (int64_t)(maxkb/10);
   maxkb/=precisionkb;
-
-  int64_t mink = (int64_t)minkb+1;
-  int64_t maxk = (int64_t)maxkb;
-
-
+  mink = (int64_t)minkb+1;
+  maxk = (int64_t)maxkb;
   cairo_set_font_size(cr, 8);
-  for(int64_t i = mink;i<maxk;i++)
-  {
-
-    char output[7];
-
-    snprintf(output, 7, "%f", i*precisionkb/1000/(float)multiple);
-
-    cairo_move_to(cr, marginX-3, h-marginY-i*scaleY/1000*precisionkb);
-    cairo_line_to(cr, marginX+3, h-marginY-i*scaleY/1000*precisionkb);
+  for(j = mink; j<maxk; j++)
+    {
+    snprintf(output, 7, "%f", j*precisionkb/1000/(float)multiple);
+    cairo_move_to(cr, gp->marginX-3, h-gp->marginY-j*scaleY/1000*precisionkb);
+    cairo_line_to(cr, gp->marginX+3, h-gp->marginY-j*scaleY/1000*precisionkb);
     cairo_stroke(cr);
-
-    cairo_move_to(cr, 10,  h-marginY-i*scaleY/1000*precisionkb+5);
+    cairo_move_to(cr, 10,  h-gp->marginY-j*scaleY/1000*precisionkb+5);
     cairo_show_text(cr, output);
-  }
-  cairo_move_to(cr, marginX*0.2, 20);
+    }
+  cairo_move_to(cr, gp->marginX*0.2, 20);
   cairo_set_font_size(cr, 10);
-  if(multiple==1000000000)
+  if(multiple == 1000000000)
     cairo_show_text(cr, "GBps");
   else if(multiple == 1000000)
     cairo_show_text(cr, "MBps");
@@ -369,114 +268,220 @@ static void do_drawing(cairo_t *cr)
 
   ///END ARROWS
 
-  for(int ind=0;ind<NCURVES;ind++)
-  {
-    for(int i = 0;i<dots[ind]->len;i++)
+  for(ind=0; ind<NCURVES; ind++)
     {
-
-      Dot *bali = g_array_index(dots[ind], Dot *, i);
-
-      if (decalagex+bali->x*scaleX>basedecalx)
+    for(i = 0; i<gp->dots[ind]->len; i++)
       {
-        //lines
-        if(bali->prevdot && decalagex+bali->prevdot->x*scaleX>basedecalx)
+      bali = g_array_index(gp->dots[ind], t_Dot *, i);
+      if (decalagex + bali->x * gp->scaleX > basedecalx)
         {
-          cairo_set_source_rgb(cr,ColorLinkR[ind],ColorLinkG[ind],ColorLinkB[ind]);
-
-          cairo_move_to(cr, decalagex+(scaleX*bali->x), scaleY*bali->y+decalagey);
-          cairo_line_to(cr, decalagex+(scaleX*bali->prevdot->x), scaleY*bali->prevdot->y+decalagey);
+        //lines
+        if(bali->prevdot && decalagex+bali->prevdot->x*gp->scaleX > basedecalx)
+          {
+          cairo_set_source_rgb(cr, ColorLinkR[ind],
+                               ColorLinkG[ind],ColorLinkB[ind]);
+          cairo_move_to(cr, decalagex + (gp->scaleX * bali->x),
+                            scaleY * bali->y + decalagey);
+          cairo_line_to(cr, decalagex + (gp->scaleX * bali->prevdot->x),
+                            scaleY * bali->prevdot->y + decalagey);
           cairo_stroke(cr);
-
           cairo_move_to(cr, 0, 0);
-        }
-
+          }
         //dots
-        cairo_set_source_rgb(cr,bali->r,bali->g,bali->b);
-        cairo_arc(cr, decalagex+(scaleX*bali->x), scaleY*bali->y+decalagey, rayon, 0, 2 * M_PI);
+        cairo_set_source_rgb(cr, bali->r, bali->g, bali->b);
+        cairo_arc(cr, decalagex + (gp->scaleX * bali->x),
+                      scaleY * bali->y + decalagey, rayon, 0, 2 * M_PI);
         cairo_fill(cr);
+        }
       }
     }
-  }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void gtkplot_newdata(void *gtk_plot_ctx, float date_s, float *bd)
+{
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) gtk_plot_ctx;
+  int i;
+  float delta_s = date_s - gp->last_date_s;
+  if (gp->last_date_s != 0)
+    {
+    if (delta_s < 0.001)
+      KERR("%f %f", date_s, gp->last_date_s);
+    else
+      {
+      for(i=0;i<NCURVES;i++)
+        addot(gp, date_s, -(bd[i]/delta_s), i);
+      gtk_widget_queue_draw(gp->window);
+      }
+    }
+  gp->last_date_s = date_s;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 static void destroy(GtkWidget *widget, gpointer data)
-{
-  t_destroy_data *dd = (t_destroy_data *) data;
-  bdplot_destroy(dd->name, dd->num);
-  free(data);
+{ 
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  bdplot_destroy(gp->name, gp->num);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void gtkplot_newdata(float date_s, float *bd)
+static gboolean onmouse(GtkWidget *widget,
+                        GdkEventMotion *event,
+                        gpointer data)
 {
-  static float g_last_date_s = 0;
-  int i;
-  float delta_s = date_s - g_last_date_s;
-  if (g_last_date_s != 0)
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  gp->mousex = event->x;
+  gp->mousey = event->y;
+  return FALSE;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static gboolean onpress(GtkWidget *widget,
+                        GdkEventButton *event,
+                        gpointer data)
+{
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  gp->mousex = event->x;
+  gp->mousey = event->y; 
+  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3) //RIGHT
+    gp->manual = false;
+  if (event->type == GDK_BUTTON_PRESS  &&  event->button == 1) //LEFT
     {
-    if (delta_s < 0.001)
-      KERR("%f %f", date_s, g_last_date_s);
-    else
-      {
-      for(i=0;i<NCURVES;i++)
-        addot(date_s, -(bd[i]/delta_s), i);
-      gtk_widget_queue_draw(g_plot_window);
-      }
+    gp->manual = true;
+    gp->dragging = true;
+    gp->initmousey = gp->mousey;
     }
-  g_last_date_s = date_s;
+  return true;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void gtkplot_create(char *name, int num)
+static gboolean onrelease(GtkWidget *widget,
+                          GdkEventButton *event,
+                          gpointer data)
 {
-   char title[MAX_NAME_LEN];
-   GtkWidget *darea;
-   int ind;
-   t_destroy_data *dd = (t_destroy_data *) malloc(sizeof(t_destroy_data));
-   memset(dd, 0, sizeof(t_destroy_data));
-   memset(title, 0, MAX_NAME_LEN);
-   snprintf(title, MAX_NAME_LEN-1, "%s_eth%d", name, num);
-   strncpy(dd->name, name, MAX_NAME_LEN-1);
-   dd->num = num;
-   for(ind = 0;ind<NCURVES;ind++)
-   {
-     dots[ind] = g_array_new (false, false, sizeof (Dot *));
-   }
-  g_plot_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-   darea = gtk_drawing_area_new();
-   g_signal_connect(G_OBJECT(g_plot_window), "destroy", G_CALLBACK(destroy), NULL);
-   gtk_container_add(GTK_CONTAINER(g_plot_window), darea);
-   gtk_widget_set_events (g_plot_window, GDK_EXPOSURE_MASK
-           | GDK_LEAVE_NOTIFY_MASK   | GDK_POINTER_MOTION_MASK
-           | GDK_BUTTON_PRESS_MASK | GDK_SCROLL_MASK
-           | GDK_BUTTON_RELEASE_MASK);
-   g_signal_connect(G_OBJECT(darea), "draw",
-                                     G_CALLBACK(on_draw_event), NULL);
-   g_signal_connect(g_plot_window,   "scroll-event", 
-                                     G_CALLBACK(onscroll), NULL);
-   g_signal_connect(g_plot_window,   "motion_notify_event",
-                                     G_CALLBACK(onmouse), NULL);
-   g_signal_connect(g_plot_window,   "button-press-event", 
-                                     G_CALLBACK(onpress), NULL);
-   g_signal_connect(g_plot_window,   "button-release-event",
-                                     G_CALLBACK(onrelease),NULL);
-
-   gtk_window_set_position(GTK_WINDOW(g_plot_window), GTK_WIN_POS_CENTER);
-   gtk_window_set_default_size(GTK_WINDOW(g_plot_window), 400, 300);
-   gtk_window_set_title(GTK_WINDOW(g_plot_window), title);
-  gtk_widget_show_all(g_plot_window);
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  gp->mousex = event->x;
+  gp->mousey = event->y;
+  if (event->button == 1)
+    {
+    gp->oldScaleY *= gp->newScaleYrelative;
+    gp->dragging = false;
+    }
+  return true;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void gtkplot_init(void)
+static gboolean on_draw_event(GtkWidget *widget,
+                              cairo_t *cr,
+                              gpointer data)
 {
-  g_maxrange = 5000;
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  do_drawing(gp, cr);
+  return FALSE;
 }
 /*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static gboolean onscroll(GtkWidget *widget,
+                         GdkEventScroll *event,
+                         gpointer data)
+{
+  t_gtk_plot_ctx *gp = (t_gtk_plot_ctx *) data;
+  if(event->direction==1)
+    {
+    gp->scaleX*=0.5;
+    if(gp->scaleX <= gp->scaleXMIN)
+      gp->scaleX = gp->scaleXMIN;
+    gp->precision_graph = default_precision_graph*(defaultscaleX/gp->scaleX);
+    }
+  else if(event->direction==0)
+    {
+    gp->scaleX*=2;
+    if(gp->scaleX >= gp->scaleXMAX)
+      gp->scaleX = gp->scaleXMAX;
+    gp->precision_graph = default_precision_graph*(defaultscaleX/gp->scaleX);
+    }
+  return FALSE;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static GtkWidget *gtkplot_create(void *gtk_plot_ctx)
+{
+  GtkWidget *window;
+  GtkWidget *darea;
+  int ind;
+  t_gtk_plot_ctx *gp = gtk_plot_ctx;
+  for(ind = 0;ind<NCURVES;ind++)
+   gp->dots[ind] = g_array_new (false, false, sizeof (t_Dot *));
+  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  darea = gtk_drawing_area_new();
+  g_signal_connect(G_OBJECT(window),"destroy", G_CALLBACK(destroy), gp);
+  gtk_container_add(GTK_CONTAINER(window), darea);
+  gtk_widget_set_events (window, GDK_EXPOSURE_MASK       |
+                                 GDK_LEAVE_NOTIFY_MASK   |
+                                 GDK_POINTER_MOTION_MASK |
+                                 GDK_BUTTON_PRESS_MASK   |
+                                 GDK_SCROLL_MASK         |
+                                 GDK_BUTTON_RELEASE_MASK);
+  g_signal_connect(G_OBJECT(darea),  "draw",
+                                     G_CALLBACK(on_draw_event), gp);
+  g_signal_connect(G_OBJECT(window), "scroll-event",
+                                     G_CALLBACK(onscroll), gp);
+  g_signal_connect(G_OBJECT(window), "motion_notify_event",
+                                     G_CALLBACK(onmouse), gp);
+  g_signal_connect(G_OBJECT(window), "button-press-event",
+                                     G_CALLBACK(onpress), gp);
+  g_signal_connect(G_OBJECT(window), "button-release-event",
+                                     G_CALLBACK(onrelease),gp);
+  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+  gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
+  gtk_window_set_title(GTK_WINDOW(window), gp->title);
+  gtk_widget_show_all(window);
+  return window;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void *gtkplot_alloc(char *name, int num)
+{
+  t_gtk_plot_ctx *gt = (t_gtk_plot_ctx *) malloc(sizeof(t_gtk_plot_ctx));
+  memset(gt, 0, sizeof(t_gtk_plot_ctx));
+  strncpy(gt->name, name, MAX_NAME_LEN-1);
+  gt->num = num;
+  snprintf(gt->title, MAX_NAME_LEN-1, "%s_eth%d", name, num);
+  gt->zoom_force = 10;
+  gt->precision_graph = 1024; //in ms, relative to default scaleX
+  gt->scaleX = 32; //=1 for 1px on graph per second; =1000 for 1px per milli
+  gt->scaleXMIN = 1;
+  gt->scaleXMAX = 512;
+  gt->marginX = 80;
+  gt->marginY = 30;
+  gt->mousex = 0;
+  gt->mousey = 0;
+  gt->initmousey = 0;
+  gt->dragging = false;
+  gt->manual = false;
+  gt->oldScaleY = 100;
+  gt->newScaleYrelative = 1;
+  gt->last_date_s = 0;
+  gt->window = gtkplot_create(gt);
+  return (void *) gt;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void gtkplot_free(void *gtk_plot_ctx)
+{
+  free(gtk_plot_ctx);
+}
+/*--------------------------------------------------------------------------*/
+
 
 

@@ -15,9 +15,9 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
-void gtkplot_newdata(float date_s, float *bd);
-void gtkplot_create(char *name, int num);
-void gtkplot_init(void);
+void *gtkplot_alloc(char *name, int num);
+void gtkplot_free(void *gtk_ctx);
+void gtkplot_newdata(void *gtk_ctx, float date_s, float *bd);
 /*--------------------------------------------------------------------------*/
 
 
