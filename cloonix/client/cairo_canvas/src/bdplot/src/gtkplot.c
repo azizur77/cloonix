@@ -96,7 +96,8 @@ static void addot(t_gtk_plot_ctx *gp, float x, float y, int ind)
     gp->bal->prevdot=NULL;
   g_array_append_val(gp->dots[ind], gp->bal);
   first = g_array_index(gp->dots[ind], t_Dot *, 0);
-  while(first->x < gp->bal->x * gp->scaleXMIN - maxrange)
+  while(gp->dots[ind]->len>0 && first->x*gp->scaleXMIN < 
+        gp->bal->x*gp->scaleXMIN - maxrange)
     {
     g_array_remove_index(gp->dots[ind], 0);
     first = g_array_index(gp->dots[ind], t_Dot *, 0);
@@ -137,11 +138,19 @@ static void do_drawing(t_gtk_plot_ctx *gp, cairo_t *cr)
       }
     if(tempdx < decalagex)
       decalagex = tempdx;
+    }
+  decalagey += basedecaly; //To center on the y axis, with the bottom margin
+  decalagex += basedecalx; //for the left margin
+  for(ind=0; ind<NCURVES; ind++)
+    {
     for(i = 0; i<gp->dots[ind]->len; i++)
       {
       bali = g_array_index(gp->dots[ind], t_Dot *, i);
-      if(-bali->y > maxheight)
-        maxheight = -bali->y;
+      if (decalagex+bali->x*gp->scaleX>basedecalx)
+        {
+        if(-bali->y > maxheight)
+          maxheight = -bali->y;
+        }
       }
     }
   scaleY = gp->oldScaleY;
@@ -162,8 +171,6 @@ static void do_drawing(t_gtk_plot_ctx *gp, cairo_t *cr)
       scaleY *= gp->newScaleYrelative;
       }
     }
-  decalagey += basedecaly; //To center on the y axis, with the bottom margin
-  decalagex += basedecalx; //for the left margin
 
   //ARROWS
   cairo_set_source_rgb(cr,0,0,0);
@@ -459,7 +466,7 @@ void *gtkplot_alloc(char *name, int num)
   gt->zoom_force = 10;
   gt->precision_graph = 1024; //in ms, relative to default scaleX
   gt->scaleX = 32; //=1 for 1px on graph per second; =1000 for 1px per milli
-  gt->scaleXMIN = 1;
+  gt->scaleXMIN = 2;
   gt->scaleXMAX = 512;
   gt->marginX = 80;
   gt->marginY = 30;
