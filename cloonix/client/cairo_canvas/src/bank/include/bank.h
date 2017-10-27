@@ -157,8 +157,6 @@ t_bank_item *look_for_lan_with_id(char *name);
 int is_first_brtcl_on_canvas(void);
 t_bank_item *look_for_sat_with_id(char *name);
 t_bank_item *look_for_eth_with_id(char *name, int num);
-t_bank_item *look_for_edge_with_id(int bank_type, char *name, 
-                                   int num, char *lan);
 /*--------------------------------------------------------------------------*/
 void bank_node_create(char *name, char *kernel, char *rootfs_used,
                       char *rootfs_backing, char *install_cdrom,

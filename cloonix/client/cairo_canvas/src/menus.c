@@ -489,10 +489,32 @@ static void node_item_delete(GtkWidget *mn, t_item_ident *pm)
 /****************************************************************************/
 static void lan_item_delete(GtkWidget *mn, t_item_ident *pm)
 {
-  t_bank_item *bitem;
+  t_bank_item *edge, *bitem;
+  t_list_bank_item *cur;
   bitem = look_for_lan_with_id(pm->name);
   if (bitem)
+    {
     to_cloonix_switch_delete_lan(pm->name);
+    if (bitem->bank_type == bank_type_lan)
+      {
+      cur = bitem->head_edge_list;
+      while (cur)
+        {
+        if (!cur->bitem)
+          KOUT("%s", pm->name);
+        if (!cur->bitem->att_eth)
+          KOUT("%s", pm->name);
+        if (!cur->bitem->att_eth->att_node)
+          KOUT("%s", pm->name);
+        edge = bank_get_item(bank_type_edge,
+                             cur->bitem->att_eth->att_node->name,
+                             cur->bitem->att_eth->num, pm->name);
+        if (edge)
+          call_cloonix_interface_edge_delete(edge);
+        cur = cur->next;
+        }
+      }
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -580,7 +602,7 @@ static void sat_item_delete(GtkWidget *mn, t_item_ident *pm)
 static void edge_item_delete(GtkWidget *mn, t_item_ident *pm)
 {
   t_bank_item *bitem;
-  bitem = look_for_edge_with_id(pm->bank_type, pm->name, pm->num, pm->lan);
+  bitem = bank_get_item(pm->bank_type, pm->name, pm->num, pm->lan);
   if (bitem)
     call_cloonix_interface_edge_delete(bitem);
 }

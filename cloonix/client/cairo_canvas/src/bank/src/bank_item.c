@@ -532,16 +532,6 @@ t_bank_item *look_for_eth_with_id(char *name, int num)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-t_bank_item *look_for_edge_with_id(int bank_type, char *name, 
-                                   int num, char *lan)
-{
-  t_bank_item *bitem;
-  bitem = bank_look_for_item(bank_type, name, num, lan);
-  return bitem;
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 int get_nb_total_items(void)
 {
   return (head_bank[bank_type_all_non_edges_items].count_nb_items);
