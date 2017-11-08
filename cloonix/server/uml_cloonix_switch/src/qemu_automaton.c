@@ -65,6 +65,8 @@
 
 #define ADDED_CDROM " -drive file=%s,media=cdrom"
 
+#define VHOST_VSOCK " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%d"
+
 typedef struct t_cprootfs_config
 {
   char name[MAX_NAME_LEN];
@@ -412,6 +414,7 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
                 utils_get_qmonitor_path(vm->kvm.vm_id),
                 utils_get_qmp_path(vm->kvm.vm_id));
 
+ 
   if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
     len += sprintf(cmd_start+len, QEMU_OPTS_CLOONIX, 
                    utils_get_qbackdoor_path(vm->kvm.vm_id),
@@ -431,6 +434,10 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
     else
       len += sprintf(linux_cmd+len," -nographic -vga none");
     }
+
+  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_VHOST_VSOCK)
+    len += sprintf(linux_cmd+len, VHOST_VSOCK, vm->kvm.vm_id+2);
+
   if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
     if (vm->kvm.p9_host_share[0] == 0) 

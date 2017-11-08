@@ -29,6 +29,9 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --enable-mueth
                      --enable-gtk
                      --enable-virglrenderer
+                     --enable-vhost-net
+                     --enable-vhost-vsock
+                     --enable-vhost-user
                      --muethdir=${MUETH}
                      --disable-libusb
                      --disable-linux-aio
@@ -66,7 +69,6 @@ cd ${HERE}/qemu_bin/tainted_qemu
                      --disable-netmap
                      --disable-cap-ng
                      --disable-attr
-                     --disable-vhost-net
                      --disable-rbd
                      --disable-libnfs
                      --disable-smartcard

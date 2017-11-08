@@ -40,6 +40,7 @@ void help_add_vm_kvm(char *line)
   printf("\n\tcpu is the processor qty\n");
   printf("\n\teth is the ethernet qty\n");
   printf("\n\t[options]");
+  printf("\n\t       --vhost-vsock");
   printf("\n\t       --arm_kernel=<zImage> ");
   printf("\n\t       --aarch64_kernel=<zImage> ");
   printf("\n\t       --persistent ");
@@ -139,6 +140,8 @@ static int local_add_kvm(char *name, int mem, int cpu, int eth,
       }
     else if (!strcmp(argv[i], "--fullvirt"))
       prop_flags |= VM_CONFIG_FLAG_FULL_VIRT;
+    else if (!strcmp(argv[i], "--vhost-vsock"))
+      prop_flags |= VM_CONFIG_FLAG_VHOST_VSOCK;
     else if (!strcmp(argv[i], "--balloon"))
       prop_flags |= VM_CONFIG_FLAG_BALLOONING;
     else if (!strncmp(argv[i], "--9p_share=", strlen("--9p_share=")))
