@@ -416,9 +416,13 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
 
  
   if (!(vm->kvm.vm_config_flags & VM_CONFIG_FLAG_CISCO))
+    {
+    if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_VHOST_VSOCK)
+      len += sprintf(cmd_start+len, VHOST_VSOCK, vm->kvm.vm_id+2);
     len += sprintf(cmd_start+len, QEMU_OPTS_CLOONIX, 
                    utils_get_qbackdoor_path(vm->kvm.vm_id),
                    utils_get_qhvc0_path(vm->kvm.vm_id));
+    }
 
   len = sprintf(linux_cmd, " %s"
                         " -pidfile %s/%s/pid"
@@ -435,8 +439,6 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
       len += sprintf(linux_cmd+len," -nographic -vga none");
     }
 
-  if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_VHOST_VSOCK)
-    len += sprintf(linux_cmd+len, VHOST_VSOCK, vm->kvm.vm_id+2);
 
   if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_9P_SHARED)
     {
@@ -615,7 +617,8 @@ static void timer_launch_end(void *data)
         {
         if (!file_exists(utils_get_dtach_sock_path(name), F_OK))
           {
-          sprintf(err, "ERROR QEMU UNEXPECTED STOP %s\n", name);
+          sprintf(err, "ERROR QEMU UNEXPECTED STOP %s do \n"
+                       "sudo cat /var/log/user.log | grep qemu\n", name);
           event_print(err);
           send_status_ko(wake_up_eths->llid, wake_up_eths->tid, err);
           utils_launched_vm_death(name, error_death_qemu_quiterr);

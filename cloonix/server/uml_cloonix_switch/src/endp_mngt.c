@@ -302,8 +302,6 @@ static int trace_alloc(t_priv_endp *mu)
     else
       KOUT("%d", mu->endp_type);
     }
-  else
-    KERR("%s %s", mu->name, sock);
   return llid;
 }
 /*--------------------------------------------------------------------------*/
