@@ -736,7 +736,7 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
         clownix_timeout_add(4000, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       else
-        clownix_timeout_add(500, static_vm_timeout, (void *) wake_up_eths,
+        clownix_timeout_add(1000, static_vm_timeout, (void *) wake_up_eths,
                             NULL, NULL);
       break;
     case auto_create_vm_connect:
