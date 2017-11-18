@@ -18,6 +18,7 @@ rm -f /usr/local/bin/cloonix/LICENCE
 rm -rf /usr/local/bin/cloonix/client
 rm -rf /usr/local/bin/cloonix/server
 rm -rf /usr/local/bin/cloonix/common
+mkdir -p /usr/local/bin
 cd /usr/local/bin
 tar zxvf ${HERE}/${CLOONIX}
 chown -R root:root /usr/local/bin/cloonix*
