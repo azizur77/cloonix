@@ -71,7 +71,7 @@ fct_build_get_debian_packages()
                      libevent-dev libreadline-dev python-pyparsing python-six \
                      libgstreamer-plugins-base1.0-dev libepoxy-dev libdrm-dev \
                      libgbm-dev libpolkit-gobject-1-dev libacl1-dev \
-		     sudo zlib1g-dev liborc-0.4-dev
+		     sudo zlib1g-dev liborc-0.4-dev libegl1-mesa-dev
 }
 #--------------------------------------------------------------------------
 fct_run_get_debian_packages()
@@ -92,7 +92,8 @@ fct_build_get_centos_packages()
          gtk3-devel libcap-devel libevent-devel readline-devel \
          pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel polkit-devel libacl-devel \
-         dejavu-serif-fonts mesa-libgbm-devel orc-devel
+         dejavu-serif-fonts mesa-libgbm-devel orc-devel \
+         mesa-libEGL-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_centos_packages()
@@ -114,7 +115,8 @@ fct_build_get_fedora_packages()
          gtk3-devel libcap-devel libevent-devel readline-devel \
          python pyparsing python-six gstreamer1-plugins-base-devel \
          libepoxy-devel libdrm-devel polkit-devel \
-	 libacl-devel dejavu-serif-fonts mesa-libgbm-devel orc-devel
+	 libacl-devel dejavu-serif-fonts mesa-libgbm-devel orc-devel \
+         mesa-libEGL-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_fedora_packages()
@@ -134,7 +136,8 @@ fct_build_get_opensuse_packages()
          gtk3-devel libcap-devel libevent-devel readline-devel \
          python python-pyparsing python-six dejavu-fonts patch \
          gstreamer-plugins-base-devel libepoxy-devel polkit-devel \
-         libacl-devel glibc-locale libgbm-devel orc-devel
+         libacl-devel glibc-locale libgbm-devel orc-devel \
+         Mesa-libEGL-devel
 }
 #--------------------------------------------------------------------------
 fct_run_get_opensuse_packages()
