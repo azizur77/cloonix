@@ -37,9 +37,16 @@ typedef struct t_transfert
   int inside_llid;
   int beat_count;
   int init_done;
+  int ident_flow_timeout;
   struct t_transfert *prev;
   struct t_transfert *next;
 } t_transfert;
+
+typedef struct t_flow_ctrl
+{
+  int ident_flow_timeout;
+  int dido_llid;
+} t_flow_ctrl;
 
 static t_transfert *g_head_transfert;
 static t_transfert *g_dido_llid[CLOWNIX_MAX_CHANNELS];
@@ -67,6 +74,42 @@ static t_transfert *get_inside_transfert(int inside_llid)
   return (g_inside_llid[inside_llid]);
 }
 /*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void timeout_flow_ctrl(void *data)
+{
+  t_flow_ctrl *fc = (t_flow_ctrl *) data;
+  t_transfert *tf = get_dido_transfert(fc->dido_llid);
+  if (tf)
+    {
+    if (tf->ident_flow_timeout == fc->ident_flow_timeout)
+      {
+      channel_rx_local_flow_ctrl(NULL, tf->inside_llid, 0);
+      }
+    }
+  free(data);
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int flow_ctrl_activation_done(t_transfert *tf)
+{
+  int result = 0;
+  int qsiz = (int) channel_get_tx_queue_len(tf->dido_llid);
+  t_flow_ctrl *fc;
+  if (qsiz > 1000000)
+    {
+    fc = (t_flow_ctrl *) malloc(sizeof(t_flow_ctrl));
+    tf->ident_flow_timeout += 1;
+    fc->ident_flow_timeout = tf->ident_flow_timeout;
+    fc->dido_llid = tf->dido_llid;
+    channel_rx_local_flow_ctrl(NULL, tf->inside_llid, 0);
+    clownix_timeout_add(1, timeout_flow_ctrl, (void *)fc, NULL, NULL);
+    result = 1;
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int dispatch_get_dido_llid_with_inside_llid(int inside_llid, int *init_done)
@@ -205,6 +248,7 @@ static void in_rx_switch(int inside_llid, int len, char *buf)
 }
 /*--------------------------------------------------------------------------*/
 
+
 /*****************************************************************************/
 static int in_rx_spice(void *ptr, int inside_llid, int fd)
 {
@@ -221,28 +265,36 @@ static int in_rx_spice(void *ptr, int inside_llid, int fd)
     {
     if (inside_llid != ilt->inside_llid)
       KOUT(" ");
-    len = read (fd, g_buf, MAX_DOORWAYS_BUF_LEN);
-    if (len <= 0) 
+    if (flow_ctrl_activation_done(ilt))
       {
-      free_transfert(ilt->dido_llid, ilt->inside_llid);
       len = 0;
       }
     else
       {
-      if (msg_exist_channel(ilt->dido_llid))
-        {
-        if (doorways_tx(ilt->dido_llid, 0, doors_type_spice,
-                        doors_val_none, len, g_buf))
-          {
-          KERR(" ");
-          free_transfert(ilt->dido_llid, ilt->inside_llid);
-          len = 0;
-          }
-        }
-      else
+      len = read (fd, g_buf, MAX_DOORWAYS_BUF_LEN);
+      if (len <= 0) 
         {
         free_transfert(ilt->dido_llid, ilt->inside_llid);
         len = 0;
+        }
+      else
+        {
+        if (msg_exist_channel(ilt->dido_llid))
+          {
+          if (doorways_tx(ilt->dido_llid, 0, doors_type_spice,
+                          doors_val_none, len, g_buf))
+            {
+            KERR(" ");
+            free_transfert(ilt->dido_llid, ilt->inside_llid);
+            len = 0;
+            }
+          flow_ctrl_activation_done(ilt);
+          }
+        else
+          {
+          free_transfert(ilt->dido_llid, ilt->inside_llid);
+          len = 0;
+          }
         }
       }
     }
@@ -360,7 +412,9 @@ static void dispach_door_rx_spice(int dido_llid, int val, int len, char *buf)
       if (dido_llid != olt->dido_llid)
         KOUT(" ");
       if (msg_exist_channel(olt->inside_llid))
+        {
         watch_tx(olt->inside_llid, len, buf);
+        }
       else
         free_transfert(olt->dido_llid, olt->inside_llid);
       }

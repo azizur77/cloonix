@@ -53,6 +53,7 @@
 #define QMP_CAPA  "{ \"execute\": \"qmp_capabilities\" }"
 #define QMP_QUERY "{\"execute\":\"query-status\"}"
 #define QMP_BALLOON "{\"execute\":\"balloon\",\"arguments\":{\"value\":%llu}}"
+#define QMP_QUERY_CMD "{ \"execute\": \"query-commands\" }"
 
 enum {
   msg_type_none = 0,
@@ -62,6 +63,7 @@ enum {
   msg_type_tx_shutdown,
   msg_type_tx_capa,
   msg_type_tx_query,
+  msg_type_tx_query_cmd,
   msg_type_tx_balloon,
   msg_type_rx_capa,
   msg_type_rx_running_true,
@@ -89,6 +91,7 @@ enum {
   state_stop_return_wait,
   state_cont_return_wait,
   state_query_return_wait,
+  state_query_cmd_return_wait,
   state_max,
 };
 
@@ -163,6 +166,9 @@ static char *state2ascii(int state, char *ascii_state)
     case state_query_return_wait:
       strcpy(ascii_state, "state_query_return_wait");
       break;
+    case state_query_cmd_return_wait:
+      strcpy(ascii_state, "state_query_cmd_return_wait");
+      break;
     case state_shutdown_return_wait:
       strcpy(ascii_state, "state_shutdown_return_wait");
       break;
@@ -187,7 +193,7 @@ static void change_state(int line, t_qmp_vm *qvm, int new_state)
   char ascii_new_state[MAX_NAME_LEN];
   state2ascii(qvm->qmp_auto_state, ascii_old_state);
   state2ascii(new_state, ascii_new_state);
-//  KERR("%d   %s ---> %s", line, ascii_old_state, ascii_new_state);
+  KERR("%d   %s ---> %s", line, ascii_old_state, ascii_new_state);
   qvm->qmp_auto_state = new_state;
 }
 /*--------------------------------------------------------------------------*/
@@ -231,6 +237,9 @@ static void send_msg_to_qmp(t_qmp_vm *qvm, int msg_type,
         break;
       case msg_type_tx_query:
         watch_tx(qvm->vm_qmv_llid, strlen(QMP_QUERY), QMP_QUERY);
+        break;
+      case msg_type_tx_query_cmd:
+        watch_tx(qvm->vm_qmv_llid, strlen(QMP_QUERY_CMD), QMP_QUERY_CMD);
         break;
       case msg_type_tx_balloon:
         memset(buf, 0, 2*MAX_NAME_LEN);
@@ -338,7 +347,8 @@ static void auto_state_msg_rx(t_qmp_vm *qvm, int msg_type)
       if (msg_type == msg_type_rx_return)
         {
         qvm->capa_exchange_done = 1;
-        change_state(__LINE__, qvm, state_idle_pid_known);
+        change_state(__LINE__, qvm, state_query_return_wait);
+        send_msg_to_qmp(qvm, msg_type_tx_query, 0);
         }
       else
         KERR("%s %d", qvm->name, msg_type);
@@ -382,10 +392,13 @@ static void auto_state_msg_rx(t_qmp_vm *qvm, int msg_type)
       break;
 
     case state_query_return_wait:
-        change_state(__LINE__, qvm, state_idle_pid_known);
-        KERR("%s %d", qvm->name, msg_type);
+      change_state(__LINE__, qvm, state_query_cmd_return_wait);
+      send_msg_to_qmp(qvm, msg_type_tx_query_cmd, 0);
       break;
 
+    case state_query_cmd_return_wait:
+      change_state(__LINE__, qvm, state_idle_pid_known);
+      break;
 
     default:
       KOUT("%s %d", qvm->name, qvm->qmp_auto_state);
@@ -433,6 +446,7 @@ static int get_received_msg(char *name, char *qmp_msg)
     msg_type = msg_type_rx_resume;
   else
     KERR("%s UNKNOWN_RX: %s", name, ptr_start);
+KERR("%s", ptr_start);
   return msg_type;
 }
 /*--------------------------------------------------------------------------*/

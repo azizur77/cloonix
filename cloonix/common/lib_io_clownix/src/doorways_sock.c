@@ -38,8 +38,8 @@
 #include "hmac_cipher.h"
 
 #define MAX_TOT_LEN_WARNING_DOORWAYS_Q 100000000
-#define MAX_TOT_LEN_DOORWAYS_Q 500000000
-#define MAX_TOT_LEN_DOORWAYS_SOCK_Q 50000000
+#define MAX_TOT_LEN_DOORWAYS_Q         500000000
+#define MAX_TOT_LEN_DOORWAYS_SOCK_Q     50000000
 
 
 typedef struct t_rx_pktbuf
@@ -124,7 +124,8 @@ static int max_tx_sock_queue_len_reached(int llid, int cidx, int fd)
         {
         KERR("%d %d", used, MAX_TOT_LEN_DOORWAYS_SOCK_Q);
         channel_tx_local_flow_ctrl(NULL, llid, 1);
-        clownix_timeout_add(2,fct_stop_writing_timeout,(void *) ul_llid,NULL,NULL);
+        clownix_timeout_add(2, fct_stop_writing_timeout,
+                            (void *) ul_llid,NULL,NULL);
         g_max_tx_sock_queue_len_reached += 1;
         max_reached = 1;
         }
@@ -983,7 +984,6 @@ int doorways_tx(int llid, int tid, int type, int val, int len, char *buf)
         KOUT(" ");
       if (dchan->tot_txq_size >  MAX_TOT_LEN_WARNING_DOORWAYS_Q)
         {
-        KERR("%d %d", (int) dchan->tot_txq_size, MAX_TOT_LEN_WARNING_DOORWAYS_Q);
         g_max_tx_doorway_queue_len_reached += 1;
         }
       if (dchan->tot_txq_size <  MAX_TOT_LEN_DOORWAYS_Q)

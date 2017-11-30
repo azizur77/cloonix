@@ -45,9 +45,6 @@ int get_fd_with_cidx(int cidx);
 /*---------------------------------------------------------------------------*/
 void channel_heartbeat_ms_set (int heartbeat_ms);
 /*---------------------------------------------------------------------------*/
-void channel_rx_local_flow_ctrl(void *ptr, int llid, int stop);
-void channel_tx_local_flow_ctrl(void *ptr, int llid, int stop);
-/*---------------------------------------------------------------------------*/
 
 
 

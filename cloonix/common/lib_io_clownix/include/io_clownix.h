@@ -64,6 +64,9 @@ int get_fd_with_llid(int llid);
 int get_in_bytes_with_cidx(int cidx);
 int get_out_bytes_with_cidx(int cidx);
 
+void channel_rx_local_flow_ctrl(void *ptr, int llid, int stop);
+void channel_tx_local_flow_ctrl(void *ptr, int llid, int stop);
+/*---------------------------------------------------------------------------*/
 
 char *get_bigbuf(void);
 
