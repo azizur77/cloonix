@@ -3,6 +3,7 @@ CLOONIX_VERSION=38-02
 CLOONIX_TREE=/usr/local/bin/cloonix
 CLOONIX_WORK=${HOME}/cloonix_data
 CLOONIX_BULK=${HOME}/cloonix_data/bulk
+#CLOONIX_BULK=/mnt/mountsdb/opt/bulk
 #-------------------------------------------------
 
 ##################################################
@@ -23,7 +24,7 @@ CLOONIX_NET: mito {
 
 ##################################################
 CLOONIX_NET: fido {
-  cloonix_ip       172.16.0.184
+  cloonix_ip       172.16.0.92
   cloonix_port     43213
   cloonix_passwd   fidoclown
 }
@@ -31,7 +32,7 @@ CLOONIX_NET: fido {
 
 ##################################################
 CLOONIX_NET: pipo {
-  cloonix_ip       172.16.0.184
+  cloonix_ip       172.16.0.92
   cloonix_port     43214
   cloonix_passwd   pipoclown
 }
