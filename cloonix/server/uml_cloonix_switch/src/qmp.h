@@ -16,12 +16,11 @@
 /*                                                                           */
 /*****************************************************************************/
 void qmp_begin_qemu_unix(char *name);
-int qmp_end_qemu_unix(char *name);
-int  qmp_still_present(void);
-void qmp_vm_delete(char *name);
+int  qmp_end_qemu_unix(char *name);
 void qmp_agent_sysinfo(char *name, int used_mem_agent);
 void qmp_request_qemu_reboot(char *name);
-int qmp_request_qemu_stop_cont(char *name, int cont);
-void init_qmp(void);
-int get_probably_stopped_cpu(char *name);
+void qmp_vm_save_rootfs(char *name, char *path, int llid, int tid, int stype);
+void qmp_vm_save_rootfs_all(int nb, t_vm *vm, char *path,
+                            int llid, int tid, int stype);
+void qmp_init(void);
 /*--------------------------------------------------------------------------*/

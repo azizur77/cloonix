@@ -1,9 +1,8 @@
 ##################################################
-CLOONIX_VERSION=38-02
+CLOONIX_VERSION=38-03
 CLOONIX_TREE=/usr/local/bin/cloonix
 CLOONIX_WORK=${HOME}/cloonix_data
 CLOONIX_BULK=${HOME}/cloonix_data/bulk
-#CLOONIX_BULK=/mnt/mountsdb/opt/bulk
 #-------------------------------------------------
 
 ##################################################

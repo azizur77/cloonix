@@ -47,7 +47,6 @@
 #include "timeout_service.h"
 #include "c2c.h"
 #include "dropbear.h"
-#include "sav_vm.h"
 #include "mulan_mngt.h"
 #include "endp_mngt.h"
 #include "endp_evt.h"
@@ -1358,10 +1357,6 @@ void recv_sav_vm(int llid, int tid, char *name, int stype, char *path)
     {
     send_status_ko(llid, tid, "MACHINE NOT FOUND");
     }
-  else if (sav_vm_count())
-    {
-    send_status_ko(llid, tid, "LAST SAVING NOT FINISHED");
-    }
   else if (file_exists(path, F_OK))
     {
     send_status_ko(llid, tid, "FILE ALREADY EXISTS");
@@ -1370,13 +1365,9 @@ void recv_sav_vm(int llid, int tid, char *name, int stype, char *path)
     {
     send_status_ko(llid, tid, "DIRECTORY NOT WRITABLE OR NOT FOUND");
     }
-  else if (!sav_vm_agent_ok_name(name))
-    {
-    send_status_ko(llid, tid, "AGENT NOT REACHEABLE FOR THIS VM");
-    }
   else
     {
-    sav_vm_rootfs(name, path, llid, tid, stype);
+    qmp_vm_save_rootfs(name, path, llid, tid, stype);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -1392,11 +1383,6 @@ void recv_sav_vm_all(int llid, int tid, int stype, char *path)
     {
     send_status_ko(llid, tid, "NO MACHINE NOT FOUND");
     }
-  else if (sav_vm_count())
-    {
-    sprintf(info, "LAST SAVING NOT FINISHED");
-    send_status_ko(llid, tid, info);
-    }
   else if (file_exists(path, F_OK))
     {
     send_status_ko(llid, tid, "DIRECTORY ALREADY EXISTS");
@@ -1405,10 +1391,6 @@ void recv_sav_vm_all(int llid, int tid, int stype, char *path)
     {
     sprintf(info, "DIRECTORY %s NOT WRITABLE", dir_path);
     send_status_ko(llid, tid, info);
-    }
-  else if (!sav_vm_agent_ok_all())
-    {
-    send_status_ko(llid, tid, "AGENT NOT REACHEABLE FOR AT LEAST ONE VM");
     }
   else
     {
@@ -1427,7 +1409,7 @@ void recv_sav_vm_all(int llid, int tid, int stype, char *path)
       }
     else
       {
-      sav_all_vm_rootfs(nb, vm, path, llid, tid, stype);
+      qmp_vm_save_rootfs_all(nb, vm, path, llid, tid, stype);
       }
     }
 }

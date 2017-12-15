@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <asm/types.h>
@@ -31,14 +30,16 @@
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
 #include <sys/time.h>
+#include <termios.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 
 #include "sock.h"
 #include "commun.h"
 #include "x11_channels.h"
 #include "nonblock.h"
-
-int use_hvc_console(int use_hcv);
 
 static int  g_time_count;
 static int  g_fd_virtio;
@@ -362,7 +363,6 @@ static void no_signal_pipe(void)
 }
 /*---------------------------------------------------------------------------*/
 
-
 /****************************************************************************/
 int main(int argc, char *argv[])
 { 
@@ -371,17 +371,9 @@ int main(int argc, char *argv[])
   action_init();
   x11_init();
   g_time_count = 0;
-  sleep(2);
   g_fd_virtio = sock_open_virtio_port(VIRTIOPORT);
-  if (g_fd_virtio <= 0)
-    {
-    KERR("Bad Virtio port %s, trying hvc0", VIRTIOPORT);
-    g_fd_virtio = use_hvc_console(1);
-    }
-  else
-    {
-    use_hvc_console(0);
-    }
+  if (g_fd_virtio < 0)
+    KOUT("Bad Virtio port %s", VIRTIOPORT);
   my_mkdir(UNIX_X11_SOCKET_DIR);
   purge();
   no_signal_pipe();

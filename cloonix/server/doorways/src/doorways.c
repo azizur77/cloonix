@@ -164,8 +164,6 @@ void doors_recv_command(int llid, int tid, char *name, char *cmd)
   memset(addr, 0, MAX_PATH_LEN);
   if (!strcmp(cmd, CLOONIX_UP_VPORT_AND_RUNNING))
     llid_backdoor_cloonix_up_vport_and_running(name);
-  else if (!strcmp(cmd, CLOONIX_UP_HVC_AND_RUNNING))
-    llid_backdoor_cloonix_up_hvc_and_running(name);
   else if (!strcmp(cmd, CLOONIX_DOWN_AND_NOT_RUNNING))
     llid_backdoor_cloonix_down_and_not_running(name);
   else if (sscanf(cmd, REBOOT_REQUEST, &job_idx) == 1)

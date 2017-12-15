@@ -648,17 +648,12 @@ static void launcher_death(void *data, int status, char *name)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static int launch_qemu_vm(t_vm *vm)
+static void launch_qemu_vm(t_vm *vm)
 {
   char **argv;
-  int i, pid, result = -1;
+  int i, pid;
   argv = create_qemu_argv(vm);
   utils_send_creation_info(vm->kvm.name, argv);
-
-//VIP
-// gdb ...
-// set follow-fork-mode child
-
   pid = pid_clone_launch(start_launch_args, launcher_death, NULL, 
                         (void *)argv, (void *)argv, NULL, 
                         vm->kvm.name, -1, 1);
@@ -672,9 +667,6 @@ static int launch_qemu_vm(t_vm *vm)
         KERR("%s %d", vm->kvm.name, i);
       }
     }
-  result = 0;
-
-  return result;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -695,49 +687,44 @@ void qemu_vm_automaton(void *unused_data, int status, char *name)
   char err[MAX_PRINT_LEN];
   int i, state;
   t_vm   *vm = cfg_get_vm(name);
-  t_wake_up_eths *wake_up_eths;
+  t_wake_up_eths *wake_up;
   t_small_evt vm_evt;
   if (!vm)
     return;
-  wake_up_eths = vm->wake_up_eths;
-  if (!wake_up_eths)
+  wake_up = vm->wake_up_eths;
+  if (!wake_up)
     return;
-  if (strcmp(wake_up_eths->name, name))
+  if (strcmp(wake_up->name, name))
     KOUT(" ");
-  state = wake_up_eths->state;
+  state = wake_up->state;
   if (status)
     {
     sprintf(err, "ERROR when creating %s\n", name);
     event_print(err);
-    send_status_ko(wake_up_eths->llid, wake_up_eths->tid, err);
+    send_status_ko(wake_up->llid, wake_up->tid, err);
     utils_launched_vm_death(name, error_death_qemuerr);
     return;
     }
   switch (state)
     {
     case auto_idle:
-      wake_up_eths->state = auto_create_vm_launch;
+      wake_up->state = auto_create_vm_launch;
       if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_PERSISTENT)
-        clownix_timeout_add(1, static_vm_timeout, (void *) wake_up_eths,
-                            NULL, NULL);
+        clownix_timeout_add(1, static_vm_timeout, (void *)wake_up,NULL,NULL);
       else if (vm->kvm.vm_config_flags & VM_CONFIG_FLAG_EVANESCENT)
         derived_file_creation_request(vm);
       else
         KOUT("%X", vm->kvm.vm_config_flags);
       break;
     case auto_create_vm_launch:
-      wake_up_eths->state = auto_create_vm_connect;
+      wake_up->state = auto_create_vm_connect;
       for (i=0; i<vm->kvm.nb_eth; i++)
         {
         if (endp_mngt_start(0, 0, vm->kvm.name, i, endp_type_kvm))
           KERR("%s %d", vm->kvm.name, i);
         }
-      if (launch_qemu_vm(vm))
-        clownix_timeout_add(4000, static_vm_timeout, (void *) wake_up_eths,
-                            NULL, NULL);
-      else
-        clownix_timeout_add(1000, static_vm_timeout, (void *) wake_up_eths,
-                            NULL, NULL);
+      launch_qemu_vm(vm);
+      clownix_timeout_add(100, static_vm_timeout, (void *)wake_up,NULL,NULL);
       break;
     case auto_create_vm_connect:
       vm->dtach_launch = 1;

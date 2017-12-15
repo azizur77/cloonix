@@ -1,0 +1,328 @@
+/*****************************************************************************/
+/*    Copyright (C) 2006-2017 cloonix@cloonix.net License AGPL-3             */
+/*                                                                           */
+/*  This program is free software: you can redistribute it and/or modify     */
+/*  it under the terms of the GNU Affero General Public License as           */
+/*  published by the Free Software Foundation, either version 3 of the       */
+/*  License, or (at your option) any later version.                          */
+/*                                                                           */
+/*  This program is distributed in the hope that it will be useful,          */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of           */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            */
+/*  GNU Affero General Public License for more details.a                     */
+/*                                                                           */
+/*  You should have received a copy of the GNU Affero General Public License */
+/*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
+/*                                                                           */
+/*****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+#include "io_clownix.h"
+#include "rpc_clownix.h"
+#include "util_sock.h"
+#include "cfg_store.h"
+#include "utils_cmd_line_maker.h"
+#include "llid_trace.h"
+#include "qmp_dialog.h"
+
+#define MAX_QMP_MSG_LEN 10000
+
+typedef struct t_qrec
+{
+  char name[MAX_NAME_LEN];
+  int  state;
+  int  llid;
+  t_end_conn end_cb;
+  char req[MAX_QMP_MSG_LEN];
+  t_dialog_resp resp_cb;
+  char resp[MAX_QMP_MSG_LEN];
+  int  resp_offset;
+  struct t_qrec *prev;
+  struct t_qrec *next;
+} t_qrec;
+/*--------------------------------------------------------------------------*/
+
+static t_qrec *g_head_qrec;
+static t_qrec *g_llid_qrec[CLOWNIX_MAX_CHANNELS];
+
+/****************************************************************************/
+static t_qrec *get_qrec_with_name(char *name)
+{
+  t_qrec *cur = g_head_qrec;
+  while(cur)
+    {
+    if (!strcmp(name, cur->name))
+      break;
+    cur = cur->next;
+    }
+  return cur;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static t_qrec *get_qrec_with_llid(int llid)
+{
+  if ((llid <= 0) || (llid >= CLOWNIX_MAX_CHANNELS))
+    KOUT("%d", llid);
+  return (g_llid_qrec[llid]);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void set_qrec_with_llid(int llid, t_qrec *q)
+{
+  if ((llid <= 0) || (llid >= CLOWNIX_MAX_CHANNELS))
+    KOUT("%d", llid);
+  g_llid_qrec[llid] = q;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void qrec_alloc(char *name, t_end_conn end_cb)
+{
+  t_qrec *q = (t_qrec *) clownix_malloc(sizeof(t_qrec), 7);
+  memset(q, 0, sizeof(t_qrec));
+  strncpy(q->name, name, MAX_NAME_LEN-1);
+  q->end_cb = end_cb;
+  q->prev = NULL;
+  if (g_head_qrec)
+    g_head_qrec->prev = q;
+  q->next = g_head_qrec; 
+  g_head_qrec = q;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void qrec_free(t_qrec *qrec, int transmit)
+{
+  t_qrec *q;
+  char name[MAX_NAME_LEN];
+  t_end_conn end_cb = qrec->end_cb;
+  memset(name, 0, MAX_NAME_LEN);
+  strncpy(name, qrec->name, MAX_NAME_LEN-1);
+  if (qrec->llid)
+    {
+    q = get_qrec_with_llid(qrec->llid);
+    if (qrec != q)
+      KERR("%s", name); 
+    set_qrec_with_llid(qrec->llid, NULL);
+    llid_trace_free(qrec->llid, 0, __FUNCTION__);
+    }
+  if (qrec->prev)
+    qrec->prev->next = qrec->next;
+  if (qrec->next)
+    qrec->next->prev = qrec->prev;
+  if (qrec == g_head_qrec) 
+    g_head_qrec = qrec->next;
+  if (transmit)
+    end_cb(name);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static int message_braces_complete(char *whole_rx)
+{
+  int j, i=0, count=0, result = 0;
+  if (strchr(whole_rx, '{'))
+    {
+    do
+      {
+      j = whole_rx[i];
+      if (j == '{')
+        count += 1;
+      if (j == '}')
+        count -= 1;
+      i += 1;
+      } while (j);
+    if (count == 0)
+      result = 1;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static int qmp_rx_cb(void *ptr, int llid, int fd)
+{
+  int len, max;
+  char *buf;
+  t_qrec *qrec = get_qrec_with_llid(llid);
+  if (!qrec)
+    KERR(" ");
+  else
+    {
+    max = MAX_QMP_MSG_LEN - qrec->resp_offset;
+    buf = qrec->resp + qrec->resp_offset;
+    len = util_read(buf, max, fd);
+    if (len < 0)
+      {
+      KERR("%s", qrec->name);
+      qrec_free(qrec, 1);
+      }
+    else
+      {
+      if (len == max)
+        KERR("%s %s %d", qrec->name, qrec->resp, len);
+      else if (len != strlen(buf))
+        KERR("%s %s %d %d", qrec->name, qrec->resp, len, (int) strlen(buf));
+      else
+        {
+        if (message_braces_complete(qrec->resp))
+          {
+          if ((!strlen(qrec->req)) || (!qrec->resp_cb))
+            KERR("%s", qrec->resp);
+          else
+            qrec->resp_cb(qrec->name, qrec->req, qrec->resp);
+          memset(qrec->req, 0, MAX_QMP_MSG_LEN);
+          memset(qrec->resp, 0, MAX_QMP_MSG_LEN);
+          qrec->resp_cb = NULL;
+          qrec->resp_offset = 0;
+          }
+        else
+          qrec->resp_offset += len;
+        }
+      }
+    }
+  return len;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void qmp_err_cb (void *ptr, int llid, int err, int from)
+{
+  t_qrec *qrec = get_qrec_with_llid(llid);
+  if (!qrec)
+    KERR(" ");
+  else
+    {
+    KERR("%s", qrec->name);
+    qrec_free(qrec, 1);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
+static void timer_connect_qmp(void *data)
+{
+  char *pname = (char *) data;
+  char *qmp_path;
+  int fd;
+  t_vm *vm;
+  t_qrec *qrec = get_qrec_with_name(pname);
+  if (!qrec)
+    KERR("%s", pname);
+  else if (qrec->llid)
+    KERR("%s %d", pname, qrec->llid);
+  else
+    {
+    vm = cfg_get_vm(pname);
+    if (!vm)
+      {
+      KERR("%s", pname);
+      clownix_free(pname, __FUNCTION__);
+      qrec_free(qrec, 1);
+      }
+    else
+      {
+      if (!utils_get_pid_of_machine(vm))
+        {
+KERR("%s", pname);
+        clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+        }
+      else
+        {
+        qmp_path = utils_get_qmp_path(vm->kvm.vm_id);
+        if (util_nonblock_client_socket_unix(qmp_path, &fd))
+          {
+KERR("%s", pname);
+          clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+          }
+        else
+          {
+          if (fd < 0)
+            KOUT(" ");
+          qrec->llid = msg_watch_fd(fd, qmp_rx_cb, qmp_err_cb, "qmp");
+          if (qrec->llid == 0)
+            KOUT(" ");
+          llid_trace_alloc(qrec->llid,"QMP",0,0, type_llid_trace_unix_qmonitor);
+          set_qrec_with_llid(qrec->llid, qrec);
+KERR("%s CONN OK", pname);
+          }
+        }
+      }
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+int qmp_dialog_req(char *name, char *req, t_dialog_resp cb)
+{
+  int result = -1;
+  t_qrec *qrec = get_qrec_with_name(name);
+  if (!qrec)
+    KERR("%s", name);
+  else if ((!strlen(qrec->req)) || (!qrec->resp_cb))
+    KERR("%s %s", name, qrec->req);
+  else if (strlen(req) >= MAX_QMP_MSG_LEN)
+    KERR("%s %d %d", name, (int)strlen(req), MAX_QMP_MSG_LEN);
+  else if ((!qrec->llid) || (!msg_exist_channel(qrec->llid)))  
+    KERR("%s", name);
+  else
+    {
+    qrec->resp_cb = cb;
+    strncpy(qrec->req, req, MAX_QMP_MSG_LEN-1);
+    watch_tx(qrec->llid, strlen(req), req);
+    result = 0;
+    }
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_dialog_free(char *name)
+{
+  t_qrec *qrec = get_qrec_with_name(name);
+  if (!qrec)
+    KERR("%s", name);
+  else
+    qrec_free(qrec, 0);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_dialog_alloc(char *name, t_end_conn cb)
+{
+  char *pname;
+  t_qrec *qrec;
+  if ((!name) || (!cb))
+    KOUT("%p %p", name, cb);
+  if (strlen(name) < 1)
+    KERR(" ");
+  else 
+    {
+    qrec = get_qrec_with_name(name);
+    if (qrec)
+      KERR("%s exists", name);
+    else
+      {
+      qrec_alloc(name, cb);
+      pname = (char *) clownix_malloc(MAX_NAME_LEN, 7);
+      memset(pname, 0, MAX_NAME_LEN);
+      strncpy(pname, name, MAX_NAME_LEN-1);
+      clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+      }
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_dialog_init(void)
+{
+  g_head_qrec = NULL;
+  memset(g_llid_qrec, 0, CLOWNIX_MAX_CHANNELS * sizeof(t_qrec *));
+}
+/*--------------------------------------------------------------------------*/

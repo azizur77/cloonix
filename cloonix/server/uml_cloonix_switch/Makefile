@@ -39,11 +39,11 @@ SRC = \
       hop_event.c \
       layout_topo.c \
       qmonitor.c \
+      qmp_dialog.c \
       qmp.c \
       qhvc0.c \
       dropbear.c \
       timeout_service.c \
-      sav_vm.c \
       mulan_mngt.c \
       endp_mngt.c \
       endp_evt.c \

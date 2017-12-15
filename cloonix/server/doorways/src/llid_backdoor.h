@@ -31,7 +31,6 @@ void *llid_backdoor_get_next(char **name, int *backdoor_llid, void *ptr_cur);
 void llid_backdoor_init(void);
 int  llid_backdoor_ping_status_is_ok(char *name);
 void llid_backdoor_cloonix_up_vport_and_running(char *name);
-void llid_backdoor_cloonix_up_hvc_and_running(char *name);
 void llid_backdoor_tx_fifreeze_freeze_to_agent(char *name);
 void llid_backdoor_tx_fifreeze_thaw_to_agent(char *name);
 void llid_backdoor_cloonix_down_and_not_running(char *name);

@@ -58,7 +58,6 @@
 #include "doorways_sock.h"
 #include "dropbear.h"
 #include "c2c.h"
-#include "sav_vm.h"
 #include "mulan_mngt.h"
 #include "endp_mngt.h"
 #include "hop_event.h"
@@ -66,6 +65,7 @@
 #include "blkd_data.h"
 #include "cloonix_conf_info.h"
 #include "unix2inet.h"
+#include "qmp_dialog.h"
 
 static t_topo_clc g_clc;
 static t_cloonix_conf_info *g_cloonix_conf_info;
@@ -588,9 +588,9 @@ int main (int argc, char *argv[])
   hop_init();
   init_c2c();
   init_qmonitor();
-  init_qmp();
+  qmp_dialog_init();
+  qmp_init();
   init_qhvc0();
-  sav_vm_init();
   timeout_service_init();
   mulan_init();
   endp_mngt_init();

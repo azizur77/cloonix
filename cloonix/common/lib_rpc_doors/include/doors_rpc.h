@@ -24,7 +24,6 @@
 #define AGENT_SYSINFO "agent_sysinfo_sys"
 #define AGENT_SYSINFO_DF "agent_sysinfo_df"
 #define CLOONIX_UP_VPORT_AND_RUNNING "cloonix_up_vport_and_running"
-#define CLOONIX_UP_HVC_AND_RUNNING "cloonix_up_HVC_and_running"
 #define CLOONIX_DOWN_AND_NOT_RUNNING "cloonix_down_and_not_running"
 #define STOP_DOORS_LISTENING "stop_doors_listening"
 

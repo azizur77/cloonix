@@ -74,8 +74,6 @@ typedef struct t_backdoor_vm
   char backdoor[MAX_PATH_LEN];
   int backdoor_llid;
   int backdoor_fd;
-  int backdoor_hvc0_llid;
-  int backdoor_hvc0_fd;
   int connect_count;
   long long heartbeat_abeat;
   int heartbeat_ref;
@@ -95,7 +93,6 @@ typedef struct t_backdoor_vm
   int halt_job_idx;
   int cloonix_up_and_running;
   int cloonix_is_fifreezed;
-  int hvc0_is_used;
   struct t_backdoor_vm *prev;
   struct t_backdoor_vm *next;
 } t_backdoor_vm;
@@ -151,7 +148,7 @@ static t_backdoor_vm *check_llid_name(int llid, char *name, const char *fct)
   t_backdoor_vm *bvm = vm_get_with_backdoor_llid(llid);
   if (bvm)
     {
-    if ((bvm->backdoor_llid != llid) && (bvm->backdoor_hvc0_llid != llid))
+    if (bvm->backdoor_llid != llid)
       KOUT(" ");
     if (strcmp(bvm->name, name))
       KOUT("%s %s %s", bvm->name, name, fct);
@@ -173,10 +170,7 @@ static void local_backdoor_tx(t_backdoor_vm *bvm, int dido_llid,
     sock_header_set_info(buf, dido_llid, len, type, val, &payload);
     if (payload != buf + headsize)
       KOUT("%p %p", payload, buf);
-    if (bvm->hvc0_is_used)
-      llid = bvm->backdoor_hvc0_llid;
-    else
-      llid = bvm->backdoor_llid;
+    llid = bvm->backdoor_llid;
     llid_backdoor_low_tx(llid, len + headsize, buf);
     }
   else
@@ -201,16 +195,8 @@ void llid_backdoor_tx(char *name, int llid_backdoor, int dido_llid,
       sock_header_set_info(buf, dido_llid, len, type, val, &payload);
       if (payload != buf + headsize)
         KOUT("%p %p", payload, buf);
-      if (bvm->hvc0_is_used)
-        {
-        if (llid_backdoor != bvm->backdoor_hvc0_llid)
-          KOUT(" ");
-        }
-      else
-        {
-        if (llid_backdoor != bvm->backdoor_llid)
-          KOUT(" ");
-        }
+      if (llid_backdoor != bvm->backdoor_llid)
+        KOUT(" ");
       llid_backdoor_low_tx(llid_backdoor, len + headsize, buf);
       }
     }
@@ -380,20 +366,11 @@ static void llid_setup(t_backdoor_vm *bvm, int llid, int fd)
 {
   if (g_llid_backdoor[llid])
     KOUT(" ");
-  if (!bvm->hvc0_is_used)
-    {
-    if (bvm->backdoor_llid)
-      KOUT(" ");
-    bvm->backdoor_llid = llid;
-    bvm->backdoor_fd   = fd;
-    g_llid_backdoor[llid] = bvm;
-    }
-  else
-    {
-    bvm->backdoor_hvc0_llid = llid;
-    bvm->backdoor_hvc0_fd   = fd;
-    g_llid_backdoor[llid] = bvm;
-    }
+  if (bvm->backdoor_llid)
+    KOUT(" ");
+  bvm->backdoor_llid = llid;
+  bvm->backdoor_fd   = fd;
+  g_llid_backdoor[llid] = bvm;
 }
 /*--------------------------------------------------------------------------*/
 
@@ -422,14 +399,6 @@ static void llid_unsetup(t_backdoor_vm *bvm)
   g_llid_backdoor[bvm->backdoor_llid] = NULL;
   bvm->backdoor_llid = 0;
   bvm->backdoor_fd = 0;
-  if (bvm->hvc0_is_used)
-    {
-    if (msg_exist_channel(bvm->backdoor_hvc0_llid))
-      msg_delete_channel(bvm->backdoor_hvc0_llid);
-    g_llid_backdoor[bvm->backdoor_hvc0_llid] = NULL;
-    bvm->backdoor_hvc0_llid = 0;
-    bvm->backdoor_hvc0_fd = 0;
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -559,10 +528,7 @@ static void rx_from_agent_conclusion(t_backdoor_vm *bvm,
     switch (val)
       {
       case header_val_x11_open_serv:
-        if (bvm->hvc0_is_used)
-          llid = bvm->backdoor_hvc0_llid;
-        else
-          llid = bvm->backdoor_llid;
+        llid = bvm->backdoor_llid;
         x11_open_close(llid, dido_llid, payload);
       break;
 
@@ -821,14 +787,13 @@ static void vm_err_cb (void *ptr, int llid, int err, int from)
   bvm = vm_get_with_backdoor_llid(llid);
   if (bvm)
     {
-    if (((!bvm->hvc0_is_used) && (llid != bvm->backdoor_llid)) ||
-         ((bvm->hvc0_is_used) && (llid != bvm->backdoor_hvc0_llid)))
-      KERR("%d %s", bvm->hvc0_is_used, bvm->name);
+    if ((llid != bvm->backdoor_llid))
+      KERR("%s", bvm->name);
     else
       KERR("%s", bvm->name);
     if (bvm->backdoor_llid)
       {
-      if ((llid != bvm->backdoor_llid) && (llid != bvm->backdoor_hvc0_llid))
+      if (llid != bvm->backdoor_llid)
         KOUT(" ");
       llid_backdoor_cloonix_down_and_not_running(bvm->name);
       KERR(" BAD BACKDOOR 2 %s", bvm->name);
@@ -860,9 +825,8 @@ static int vm_rx_cb(void *ptr, int llid, int fd)
     }
   if (!bvm)
     KERR(" ");
-  else if (((!bvm->hvc0_is_used) && (llid != bvm->backdoor_llid)) || 
-           ((bvm->hvc0_is_used) && (llid != bvm->backdoor_hvc0_llid))) 
-    KERR("%d %d %s", len, bvm->hvc0_is_used, bvm->name);
+  else if (llid != bvm->backdoor_llid)
+    KERR("%d %s", len, bvm->name);
   else
     {
     if (len < 0)
@@ -897,20 +861,6 @@ static int working_backdoor_llid(t_backdoor_vm *bvm)
   return result;
 }
 /*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-static int working_backdoor_hvc0_llid(t_backdoor_vm *bvm)
-{
-  int result = 0;
-  if (bvm->backdoor_hvc0_llid)
-    {
-    if (msg_exist_channel(bvm->backdoor_hvc0_llid))
-      result = 1;
-    }
-  return result;
-}
-/*--------------------------------------------------------------------------*/
-
 
 /****************************************************************************/
 static void action_ga_heartbeat_on_working_llid(t_backdoor_vm *bvm)
@@ -960,16 +910,8 @@ static void timer_ga_heartbeat(void *data)
     bvm->heartbeat_ref = 0;
     if (bvm->cloonix_up_and_running)
       {
-      if (bvm->hvc0_is_used)
-        {
-        if (working_backdoor_hvc0_llid(bvm))
-          action_ga_heartbeat_on_working_llid(bvm);
-        }
-      else
-        {
-        if (working_backdoor_llid(bvm))
-          action_ga_heartbeat_on_working_llid(bvm);
-        }
+      if (working_backdoor_llid(bvm))
+        action_ga_heartbeat_on_working_llid(bvm);
       }
     clownix_timeout_add(50, timer_ga_heartbeat, (void *) name,
                         &(bvm->heartbeat_abeat), &(bvm->heartbeat_ref));
@@ -1014,24 +956,6 @@ static void plug_to_backdoor_llid(t_backdoor_vm *bvm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void plug_to_backdoor_hvc0_llid(t_backdoor_vm *bvm, char *path)
-{
-  int fd, llid;
-  if (!bvm->hvc0_is_used)
-    KOUT(" ");
-  fd = sock_nonblock_client_unix(path);
-  if (fd > 0)
-    {
-    llid = msg_watch_fd(fd, vm_rx_cb, vm_err_cb, "cloon");
-    if (llid == 0)
-      KOUT(" ");
-    llid_setup(bvm, llid, fd);
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-
-/****************************************************************************/
 static void action_bvm_connect_backdoor(t_backdoor_vm *bvm)
 {
   if (!(bvm->backdoor_llid))
@@ -1069,27 +993,11 @@ int llid_backdoor_get_info(char *name, int *llid_backdoor)
   if (bvm)
     {
     result = -2;
-//    if (bvm->cloonix_up_and_running)
+    if (working_backdoor_llid(bvm))
       {
-      if (bvm->hvc0_is_used)
-        {
-        if (working_backdoor_hvc0_llid(bvm))
-          {
-          *llid_backdoor = bvm->backdoor_hvc0_llid;     
-          result = 0;
-          }
-        }
-      else
-        {
-        if (working_backdoor_llid(bvm))
-          {
-          *llid_backdoor = bvm->backdoor_llid;
-          result = 0;
-          }
-        }
+      *llid_backdoor = bvm->backdoor_llid;
+      result = 0;
       }
-//    else
-//      KERR("%d", bvm->hvc0_is_used);
     }
   return result;
 }
@@ -1156,16 +1064,6 @@ void llid_backdoor_begin_unix(char *name, char *path)
     clownix_timeout_add(300, timer_ga_heartbeat, (void *) vmname,
                         &(bvm->heartbeat_abeat), &(bvm->heartbeat_ref));
     }
-  else if (bvm->hvc0_is_used)
-    {
-    plug_to_backdoor_hvc0_llid(bvm, path);
-    if (working_backdoor_hvc0_llid(bvm))
-      {
-      bvm->cloonix_up_and_running = 1;
-      }
-    else
-      KERR("%s %s", name, path);
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -1188,10 +1086,7 @@ void *llid_backdoor_get_first(char **name, int *backdoor_llid)
   if (ptr)
     {
     *name = bvm->name;
-    if (bvm->hvc0_is_used)
-      *backdoor_llid = bvm->backdoor_hvc0_llid;     
-    else
-      *backdoor_llid = bvm->backdoor_llid;     
+    *backdoor_llid = bvm->backdoor_llid;     
     }
   return ptr;
 }
@@ -1205,10 +1100,7 @@ void *llid_backdoor_get_next(char **name, int *backdoor_llid, void *ptr_cur)
   if (ptr)
     {
     *name = bvm->name;
-    if (bvm->hvc0_is_used)
-      *backdoor_llid = bvm->backdoor_hvc0_llid;     
-    else
-      *backdoor_llid = bvm->backdoor_llid;     
+    *backdoor_llid = bvm->backdoor_llid;     
     }
   return ptr;
 }
@@ -1219,21 +1111,7 @@ void llid_backdoor_cloonix_up_vport_and_running(char *name)
 {
   t_backdoor_vm *bvm = vm_get_with_name(name);
   if (bvm)
-    {
     bvm->cloonix_up_and_running = 1;
-    bvm->hvc0_is_used = 0;
-    }
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
-void llid_backdoor_cloonix_up_hvc_and_running(char *name)
-{
-  t_backdoor_vm *bvm = vm_get_with_name(name);
-  if (bvm)
-    {
-    bvm->hvc0_is_used = 1;
-    }
 }
 /*--------------------------------------------------------------------------*/
 

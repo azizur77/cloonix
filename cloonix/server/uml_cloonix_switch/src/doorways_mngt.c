@@ -42,7 +42,6 @@
 #include "qmp.h"
 #include "timeout_service.h"
 #include "c2c.h"
-#include "sav_vm.h"
 #include "hop_event.h"
 #include "header_sock.h"
 #include "stats_counters.h"
@@ -191,10 +190,6 @@ void doors_recv_event(int llid, int tid, char *name, char *line)
     timeout_service_trigger(job_idx);
   else if (sscanf(line, HALT_REQUEST, &job_idx) == 1)
     timeout_service_trigger(job_idx);
-  else if (!strcmp(line, FIFREEZE_FITHAW_FREEZE))
-    sav_vm_fifreeze_fithaw(name, 1);
-  else if (!strcmp(line, FIFREEZE_FITHAW_THAW))
-    sav_vm_fifreeze_fithaw(name, 0);
   else
     KOUT("%s", line);
   
