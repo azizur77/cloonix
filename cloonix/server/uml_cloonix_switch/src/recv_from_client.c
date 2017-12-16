@@ -52,6 +52,7 @@
 #include "endp_evt.h"
 #include "hop_event.h"
 #include "c2c_utils.h"
+#include "qmp.h"
 
 
 
@@ -1423,15 +1424,28 @@ static void recv_reboot_vm(int llid, int tid, char *name)
 /*****************************************************************************/
 void recv_qmp_sub(int llid, int tid, char *name)
 {
-  send_qmp_resp(llid, tid, "noname", "no implem", -1);
+  t_vm *vm;
+  if (!name)
+    qmp_request_sub(NULL, llid, tid);
+  else
+    {
+    vm = cfg_get_vm(name);
+    if (vm)
+      qmp_request_sub(name, llid, tid);
+    else
+      send_qmp_resp(llid, tid, name, "MACHINE NOT FOUND", -1);
+    }
 }
 /*--------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 void recv_qmp_req(int llid, int tid, char *name, char *msg)
 {
-  send_qmp_resp(llid, tid, "noname", "no implem", -1);
+  t_vm *vm = cfg_get_vm(name);
+  if (vm)
+    qmp_request_snd(name, llid, tid, msg);
+  else
+    send_qmp_resp(llid, tid, name, "MACHINE NOT FOUND", -1);
 }
 /*--------------------------------------------------------------------------*/
 
