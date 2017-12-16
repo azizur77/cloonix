@@ -285,7 +285,6 @@ static void process_llid_error( t_qmonitor_vm *qvm)
   if (qvm->vm_qmonitor_llid)
     llid_trace_free(qvm->vm_qmonitor_llid, 0, __FUNCTION__);
   qvm->vm_qmonitor_llid = 0;
-  qmp_end_qemu_unix(qvm->name);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -355,7 +354,6 @@ static void rearm_timer_qvm_connect_qmonitor(t_qmonitor_vm *qvm)
   else
     {
     KERR(" %s", qvm->name);
-    qmp_end_qemu_unix(qvm->name);
     }
 }
 /*---------------------------------------------------------------------------*/

@@ -200,7 +200,7 @@ static void node_sav_rootfs(GtkWidget *mn, t_item_ident *pm)
 /****************************************************************************/
 static void node_qreboot_vm(GtkWidget *mn, t_item_ident *pm)
 {
-  client_reboot_vm(0, end_cb_node_reboot, pm->name, 0);
+  client_reboot_vm(0, end_cb_node_reboot, pm->name);
 }
 /*--------------------------------------------------------------------------*/
 

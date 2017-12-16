@@ -326,7 +326,7 @@ int cmd_qreboot_vm(int argc, char **argv)
       {
       result = 0;
       init_connection_to_uml_cloonix_switch();
-      client_reboot_vm(0, callback_end, name, 0);
+      client_reboot_vm(0, callback_end, name);
       }
     }
   return result;
@@ -1040,5 +1040,62 @@ int cmd_a2b_dump(int argc, char **argv)
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void qmp_cb(int tid, char *name, char *line, int status)
+{
+  if (status)
+    {
+    printf("RESPKO: %s %s\n\n", name, line);
+    exit(1);
+    }
+  else
+    {
+    printf("%s\n", line);
+    }
+}
+/*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void qmp_sub_cb(int tid, char *name, char *line, int status)
+{
+  qmp_cb(tid, name, line, status);
+}
+/*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+static void qmp_nosub_cb(int tid, char *name, char *line, int status)
+{
+  qmp_cb(tid, name, line, status);
+  exit(0);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int cmd_sub_qmp(int argc, char **argv)
+{
+  int result = -1;
+  if (argc == 1)
+    {
+    result = 0;
+    init_connection_to_uml_cloonix_switch();
+    set_qmp_callback(qmp_sub_cb);
+    client_qmp_sub(0, argv[0]);
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int cmd_snd_qmp(int argc, char **argv)
+{
+  int result = -1;
+  if (argc == 2)
+    {
+    result = 0;
+    init_connection_to_uml_cloonix_switch();
+    set_qmp_callback(qmp_nosub_cb);
+    client_qmp_snd(0, argv[0], argv[1]);
+    }
+  return result;
+}
+/*---------------------------------------------------------------------------*/

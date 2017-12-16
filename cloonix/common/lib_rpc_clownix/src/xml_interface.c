@@ -83,6 +83,9 @@ enum
   bnd_evt_stats_sysinfo,
   bnd_blkd_reports,
   bnd_blkd_reports_sub,
+  bnd_qmp_sub,
+  bnd_qmp_req,
+  bnd_qmp_msg,
   bnd_max,
   };
 static char bound_list[bnd_max][MAX_CLOWNIX_BOUND_LEN];
@@ -404,6 +407,10 @@ void send_hop_evt_doors(int llid, int tid, int type_evt_sub,
                         char *name, char *txt)
 {
   int len;
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
+    KOUT(" ");
+  if ((!txt) || (strlen(txt)==0) || (strlen(txt) >= MAX_RPC_MSG_LEN))
+    KOUT(" ");
   len = sprintf(sndbuf, HOP_EVT_DOORS_O, tid, type_evt_sub, name);
   len += sprintf(sndbuf+len, HOP_FREE_TXT, txt);
   len += sprintf(sndbuf+len, HOP_EVT_DOORS_C);
@@ -462,26 +469,6 @@ static t_hop_list *helper_rx_hop_name_list(char *msg, int nb)
   if (ptr)
     KOUT("%s", msg);
   return list;
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
-static char *get_hop_free_txt(char *msg)
-{
-  int len;
-  char *ptrs, *ptre, *txt;
-  ptrs = strstr(msg, "<hop_free_txt_joker>");
-  if (!ptrs)
-    KOUT("%s", msg);
-  ptrs += strlen("<hop_free_txt_joker>");
-  ptre = strstr(ptrs, "</hop_free_txt_joker>");
-  if (!ptre)
-    KOUT("%s", msg);
-  len = ptre - ptrs;
-  txt = (char *) clownix_malloc(len+1, 10);
-  memcpy(txt, ptrs, len);
-  txt[len] = 0;
-  return txt;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -566,8 +553,8 @@ void send_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
     name[MAX_NAME_LEN-1] = 0;
   if (df)
     {
-    if (strlen(df) >= MAX_STATS_SYSDF)
-      df[MAX_STATS_SYSDF-1] = 0;
+    if (strlen(df) >= MAX_RPC_MSG_LEN)
+      df[MAX_RPC_MSG_LEN-1] = 0;
     }
   len = sprintf(sndbuf, EVT_STATS_SYSINFOO, tid, network, name, status,
                                        si->time_ms,       si->uptime,
@@ -594,12 +581,10 @@ void send_evt_stats_sysinfo(int llid, int tid, char *network, char *name,
 void send_mucli_dialog_req(int llid, int tid, char *name, int eth, char *line)
 {
   int len;
-  if (!line)
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
     KOUT(" ");
-  if (strlen(line) < 1)
+  if ((!line) || (strlen(line)==0) || (strlen(line) >= MAX_RPC_MSG_LEN))
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
   len = sprintf(sndbuf, MUCLI_DIALOG_REQ_O, tid, name, eth);
   len += sprintf(sndbuf+len, MUCLI_DIALOG_REQ_I, line);
   len += sprintf(sndbuf+len, MUCLI_DIALOG_REQ_C);
@@ -612,12 +597,10 @@ void send_mucli_dialog_resp(int llid, int tid, char *name, int eth,
                             char *line, int status)
 {
   int len;
-  if (!line)
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
     KOUT(" ");
-  if (strlen(line) < 1)
+  if ((!line) || (strlen(line)==0) || (strlen(line) >= MAX_RPC_MSG_LEN))
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
   len = sprintf(sndbuf, MUCLI_DIALOG_RESP_O, tid, name, eth, status);
   len += sprintf(sndbuf+len, MUCLI_DIALOG_RESP_I, line);
   len += sprintf(sndbuf+len, MUCLI_DIALOG_RESP_C);
@@ -1287,9 +1270,7 @@ void send_list_commands_resp(int llid, int tid, int qty, t_list_commands *list)
 void send_vmcmd(int llid, int tid, char *name, int vmcmd, int param)
 {
   int len = 0;
-  if (name[0] == 0)
-    KOUT(" ");
-  if (strlen(name) >= MAX_NAME_LEN)
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
     KOUT(" ");
   len = sprintf(sndbuf, VMCMD, tid, name, vmcmd, param);
   my_msg_mngt_tx(llid, len, sndbuf);
@@ -1723,6 +1704,74 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
 }
 /*---------------------------------------------------------------------------*/
 
+/*****************************************************************************/
+void send_qmp_sub(int llid, int tid, char *name)
+{
+  int len = 0;
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
+    KOUT(" ");
+  len = sprintf(sndbuf, QMP_SUB, tid, name);
+  my_msg_mngt_tx(llid, len, sndbuf);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void send_qmp_req(int llid, int tid, char *name, char *line)
+{
+  int len = 0;
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
+    KOUT(" ");
+  if ((!line) || (strlen(line)==0) || (strlen(line) >= MAX_RPC_MSG_LEN))
+    KOUT(" ");
+  len = sprintf(sndbuf, QMP_REQ_O, tid, name);
+  len += sprintf(sndbuf+len, QMP_LINE, line);
+  len += sprintf(sndbuf+len, QMP_REQ_C);
+  my_msg_mngt_tx(llid, len, sndbuf);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void send_qmp_resp(int llid, int tid, char *name, char *line, int status)
+{
+  int len = 0;
+  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
+    KOUT(" ");
+  if ((!line) || (strlen(line)==0) || (strlen(line) >= MAX_RPC_MSG_LEN))
+    KOUT(" ");
+  len = sprintf(sndbuf, QMP_MSG_O, tid, name, status);
+  len += sprintf(sndbuf+len, QMP_LINE, line);
+  len += sprintf(sndbuf+len, QMP_MSG_C);
+  my_msg_mngt_tx(llid, len, sndbuf);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static char *extract_rpc_msg(char *msg, char *bound)
+{
+  int len;
+  char *ptrs, *ptre, *line = NULL;
+  char searchbound[MAX_CLOWNIX_BOUND_LEN];
+  memset(searchbound, 0, MAX_CLOWNIX_BOUND_LEN); 
+  snprintf(searchbound, MAX_CLOWNIX_BOUND_LEN-1, "<%s>", bound);
+  ptrs = strstr(msg, searchbound);
+  if (!ptrs)
+    KOUT("%s", msg);
+  ptrs += strlen(searchbound);
+  memset(searchbound, 0, MAX_CLOWNIX_BOUND_LEN); 
+  snprintf(searchbound, MAX_CLOWNIX_BOUND_LEN-1, "</%s>", bound);
+  ptre = strstr(msg, searchbound);
+  len = (int) (ptre - ptrs);
+  if (ptrs && ptre && (len>0))
+    {
+    if (len >= MAX_RPC_MSG_LEN)
+      len = MAX_RPC_MSG_LEN-1;
+    line = (char *) clownix_malloc(MAX_RPC_MSG_LEN, 10);
+    memcpy(line, ptrs, len);
+    line[len] = 0;
+    }
+  return line;
+}
+/*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static void dispatcher(int llid, int bnd_evt, char *msg)
@@ -1743,7 +1792,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
   char param2[MAX_PATH_LEN];
   char lan[MAX_NAME_LEN];
   char info[MAX_PRINT_LEN];
-  char *ptr, *ptrs, *ptre, *line, *txt;
+  char *ptr, *line;
   t_pid_lst *pid_lst;
   t_sys_info *sys;
   t_topo_info *topo;
@@ -1756,8 +1805,6 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
 
   switch(bnd_evt)
     {
-
-
 
     case bnd_hop_evt_doors_sub:
       if (sscanf(msg, HOP_EVT_DOORS_SUB_O, &tid, &flags_hop, &qty) != 3)
@@ -1777,9 +1824,9 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
     case bnd_hop_evt_doors:
       if (sscanf(msg, HOP_EVT_DOORS_O, &tid, &flags_hop, name) != 3)
         KOUT("%s", msg);
-      txt = get_hop_free_txt(msg);
-      recv_hop_evt_doors(llid, tid, flags_hop, name, txt);
-      clownix_free(txt, __FUNCTION__);
+      line = extract_rpc_msg(msg, "hop_free_txt_joker");
+      recv_hop_evt_doors(llid, tid, flags_hop, name, line);
+      clownix_free(line, __FUNCTION__);
       break;
 
    case bnd_hop_get_list:
@@ -1830,21 +1877,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
              &(stats_sysinfo.process_cutime), &(stats_sysinfo.process_cstime),
              &(stats_sysinfo.process_rss)) != 25)
         KOUT("%s", msg);
-      line = NULL;
-      ptre = NULL;
-      ptrs = strstr(msg, "<bound_for_df_dumprd>");
-      if (ptrs)
-        ptrs += strlen("<bound_for_df_dumprd>");
-      ptre = strstr(msg, "</bound_for_df_dumprd>");
-      len = (int) (ptre - ptrs);
-      if (ptrs && ptre && (len>0))
-        {
-        if (len >= MAX_STATS_SYSDF)
-          len = MAX_STATS_SYSDF-1;
-        line = (char *) clownix_malloc(MAX_STATS_SYSDF, 10);
-        memcpy(line, ptrs, len);
-        line[len] = 0;
-        }
+      line = extract_rpc_msg(msg, "bound_for_df_dumprd");
       recv_evt_stats_sysinfo(llid, tid, network, name,
                              &stats_sysinfo, line, status);
       clownix_free(line, __FUNCTION__);
@@ -1853,17 +1886,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
     case bnd_mucli_dialog_req:
       if (sscanf(msg, MUCLI_DIALOG_REQ_O, &tid, name, &eth) != 3)
         KOUT("%s", msg);
-      ptrs = strstr(msg, "<mucli_dialog_req_bound>");
-      if (!ptrs)
-        KOUT("%s", msg);
-      ptrs += strlen("<mucli_dialog_req_bound>");
-      ptre = strstr(ptrs, "</mucli_dialog_req_bound>");
-      if (!ptre)
-        KOUT("%s", msg);
-      len = ptre - ptrs;
-      line = (char *) clownix_malloc(len+1, 10);
-      memset(line, 0, len+1);
-      memcpy(line, ptrs, len);
+      line = extract_rpc_msg(msg, "mucli_dialog_req_bound");
       recv_mucli_dialog_req(llid, tid, name, eth, line);
       clownix_free(line, __FUNCTION__);
       break;
@@ -1872,17 +1895,7 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       if (sscanf(msg, MUCLI_DIALOG_RESP_O, &tid, name, &eth, 
                                            &status) != 4)
         KOUT("%s", msg);
-      ptrs = strstr(msg, "<mucli_dialog_resp_bound>");
-      if (!ptrs)
-        KOUT("%s", msg);
-      ptrs += strlen("<mucli_dialog_resp_bound>");
-      ptre = strstr(ptrs, "</mucli_dialog_resp_bound>");
-      if (!ptre)
-        KOUT("%s", msg);
-      len = ptre - ptrs;
-      line = (char *) clownix_malloc(len+1, 10);
-      memset(line, 0, len+1);
-      memcpy(line, ptrs, len);
+      line = extract_rpc_msg(msg, "mucli_dialog_resp_bound");
       recv_mucli_dialog_resp(llid, tid, name, eth, line, status);
       clownix_free(line, __FUNCTION__);
       break;
@@ -2147,6 +2160,26 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       clownix_free(eventfull_endp, __FUNCTION__);
       break;
 
+    case bnd_qmp_sub:
+      if (sscanf(msg, QMP_SUB, &tid, name) != 2)
+        KOUT("%s", msg);
+      recv_qmp_sub(llid, tid, name);
+      break;
+
+    case bnd_qmp_req:
+      if (sscanf(msg, QMP_REQ_O, &tid, name) != 2)
+        KOUT("%s", msg);
+      line = extract_rpc_msg(msg, "msgqmp_req_boundyzzy");
+      recv_qmp_req(llid, tid, name, line);
+      break;
+
+    case bnd_qmp_msg:
+      if (sscanf(msg, QMP_MSG_O, &tid, name, &status) != 3)
+        KOUT("%s", msg);
+      line = extract_rpc_msg(msg, "msgqmp_req_boundyzzy");
+      recv_qmp_resp(llid, tid, name, line, status);
+      break;
+
     default:
       KOUT("%s", msg);
     }
@@ -2300,6 +2333,9 @@ void doors_io_basic_xml_init(t_llid_tx llid_tx)
   extract_boundary (HOP_EVT_DOORS_UNSUB, bound_list[bnd_hop_evt_doors_unsub]);
   extract_boundary (HOP_EVT_DOORS_O,   bound_list[bnd_hop_evt_doors]);
 
+  extract_boundary (QMP_SUB, bound_list[bnd_qmp_sub]);
+  extract_boundary (QMP_REQ_O, bound_list[bnd_qmp_req]);
+  extract_boundary (QMP_MSG_O, bound_list[bnd_qmp_msg]);
 }
 /*---------------------------------------------------------------------------*/
 

@@ -420,8 +420,8 @@ static void send_back_sysinfo_df(char *rx)
   memset(g_buf, 0, headsize);
   if (!strcmp(rx, LASTATSDF))
     {
-    buf[MAX_STATS_SYSDF-1] = 0;
-    create_msg_df(buf, MAX_STATS_SYSDF);
+    buf[MAX_RPC_MSG_LEN-1] = 0;
+    create_msg_df(buf, MAX_RPC_MSG_LEN);
     send_to_virtio(0, strlen(buf) + 1, header_type_stats,
                      header_val_sysinfo_df, g_buf);
     }

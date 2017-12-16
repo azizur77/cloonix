@@ -99,9 +99,9 @@ static int count_cmd_resp_txt = 0;
 static int count_cmd_resp_txt_sub = 0;
 static int count_cmd_resp_txt_unsub = 0;
 
-
-
-
+static int count_qmp_sub = 0;
+static int count_qmp_req = 0;
+static int count_qmp_resp = 0;
 
 
 /*****************************************************************************/
@@ -157,7 +157,6 @@ static void print_all_count(void)
   printf("%d\n", count_hop_name_list);
   printf("%d\n", count_hop_get_name_list);
 
-
   printf("%d\n", count_evt_msg);
   printf("%d\n", count_app_msg);
   printf("%d\n", count_diag_msg);
@@ -169,6 +168,9 @@ static void print_all_count(void)
   printf("%d\n", count_cmd_resp_txt_sub);
   printf("%d\n", count_cmd_resp_txt_unsub);
 
+  printf("%d\n", count_qmp_sub);
+  printf("%d\n", count_qmp_req);
+  printf("%d\n", count_qmp_resp);
 
   printf("END COUNT\n");
 }
@@ -2371,6 +2373,89 @@ void recv_mucli_dialog_resp(int llid, int itid, char *iname, int ieth,
 
 
 /*****************************************************************************/
+void recv_qmp_sub(int llid, int itid, char *iname)
+{
+  static char name[MAX_NAME_LEN];
+  static int tid;
+  if (i_am_client)
+    {
+    if (count_qmp_sub)
+      {
+      if (strcmp(iname, name))
+        KOUT(" ");
+      if (itid != tid)
+        KOUT(" ");
+      }
+    tid = rand();
+    random_choice_str(name, MAX_NAME_LEN);
+    send_qmp_sub(llid, tid, name);
+    }
+  else
+    send_qmp_sub(llid, itid, iname);
+  count_qmp_sub++;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void recv_qmp_req(int llid, int itid, char *iname, char *iline)
+{
+  static char name[MAX_NAME_LEN];
+  static char line[MAX_RPC_MSG_LEN];
+  static int tid;
+  if (i_am_client)
+    {
+    if (count_qmp_req)
+      {
+      if (strcmp(iname, name))
+        KOUT(" ");
+      if (strcmp(iline, line))
+        KOUT("\n\n%s\n\n%s\n", iline, line);
+      if (itid != tid)
+        KOUT(" ");
+      }
+    tid = rand();
+    random_choice_str(name, MAX_NAME_LEN);
+    random_choice_str(line, MAX_RPC_MSG_LEN);
+    send_qmp_req(llid, tid, name, line);
+    }
+  else
+    send_qmp_req(llid, itid, iname, iline);
+  count_qmp_req++;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void recv_qmp_resp(int llid, int itid, char *iname, char *iline, int istatus)
+{
+  static char name[MAX_NAME_LEN];
+  static char line[MAX_RPC_MSG_LEN];
+  static int tid, status;
+  if (i_am_client)
+    {
+    if (count_qmp_resp)
+      {
+      if (strcmp(iname, name))
+        KOUT(" ");
+      if (strcmp(iline, line))
+        KOUT("\n\n%s\n\n%s\n", iline, line);
+      if (itid != tid)
+        KOUT(" ");
+      if (istatus != status)
+        KOUT(" ");
+      }
+    tid = rand();
+    status = rand();
+    random_choice_str(name, MAX_NAME_LEN);
+    random_choice_str(line, MAX_RPC_MSG_LEN);
+    send_qmp_resp(llid, tid, name, line, status);
+    }
+  else
+    send_qmp_resp(llid, itid, iname, iline, istatus);
+  count_qmp_resp++;
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 /* FUNCTION: send_first_burst                                              */
 /*---------------------------------------------------------------------------*/
 static void send_first_burst(int llid)
@@ -2435,6 +2520,10 @@ static void send_first_burst(int llid)
   rpct_recv_hop_sub(NULL, llid, 0, 0);
   rpct_recv_hop_unsub(NULL, llid, 0);
   rpct_recv_hop_msg(NULL, llid, 0, 0, NULL);
+
+  recv_qmp_sub(llid, 0, NULL);
+  recv_qmp_req(llid, 0, NULL, NULL);
+  recv_qmp_resp(llid, 0, NULL, NULL, 0);
 
 }
 /*---------------------------------------------------------------------------*/

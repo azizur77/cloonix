@@ -53,6 +53,12 @@ int cmd_sav_full(int argc, char **argv);
 int cmd_sav_topo(int argc, char **argv);
 int cmd_sav_topo_full(int argc, char **argv);
 /*---------------------------------------------------------------------------*/
+int cmd_sub_qmp(int argc, char **argv);
+int cmd_snd_qmp(int argc, char **argv);
+/*---------------------------------------------------------------------------*/
+void help_sub_qmp(char *line);
+void help_snd_qmp(char *line);
+/*---------------------------------------------------------------------------*/
 void help_sav_derived(char *line);
 void help_sav_full(char *line);
 void help_sav_topo(char *line);

@@ -1887,7 +1887,7 @@ diff -Naur qemu-2.11.0/net/cloonix_mueth.c tainted_qemu/net/cloonix_mueth.c
 +void rpct_recv_cli_req(void *ptr, int llid, int tid,
 +                       int cli_llid, int cli_tid, char *line)
 +{
-+  char resp[MAX_MUTXT_LEN];
++  char resp[MAX_RPC_MSG_LEN];
 +  int on;
 +  if (sscanf(line, "set_link %d", &on) == 1)
 +    cloonix_set_link_status((t_all_ctx *) ptr, on);
@@ -1895,8 +1895,8 @@ diff -Naur qemu-2.11.0/net/cloonix_mueth.c tainted_qemu/net/cloonix_mueth.c
 +    cloonix_set_promisc((t_all_ctx *) ptr, on);
 +  else
 +    KERR("%s", line);
-+  memset(resp, 0, MAX_MUTXT_LEN);
-+  snprintf(resp, MAX_MUTXT_LEN-1, "ETH MUCLI RESP to %s", line);
++  memset(resp, 0, MAX_RPC_MSG_LEN);
++  snprintf(resp, MAX_RPC_MSG_LEN-1, "ETH MUCLI RESP to %s", line);
 +  rpct_send_cli_resp(ptr, llid, tid, cli_llid, cli_tid, resp);
 +}
 +/*---------------------------------------------------------------------------*/

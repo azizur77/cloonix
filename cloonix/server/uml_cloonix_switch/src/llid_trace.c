@@ -387,6 +387,7 @@ void llid_trace_free(int llid, int from_clone, const char* fct)
   if ((llid <1) || (llid >= CLOWNIX_MAX_CHANNELS))
     KOUT("%s %d", fct, llid);
 
+  qmp_event_free(llid);
   hop_event_free(llid);
   eventfull_llid_delete(llid);
   layout_llid_destroy(llid);
@@ -422,6 +423,21 @@ void llid_trace_free(int llid, int from_clone, const char* fct)
     llid_trace_data[llid] = NULL;
     clownix_free(cur, __FUNCTION__);
     }
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int llid_trace_exists(int llid)
+{
+  int result = 0;
+  if ((llid <1) || (llid >= CLOWNIX_MAX_CHANNELS))
+    KERR("%d", llid);
+  else
+    {
+    if (llid_trace_data[llid])
+      result = 1;
+    }
+  return result;
 }
 /*---------------------------------------------------------------------------*/
 

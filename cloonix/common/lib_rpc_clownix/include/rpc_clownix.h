@@ -64,9 +64,7 @@ enum {
 enum {
   vmcmd_min = 0,
   vmcmd_del,
-  vmcmd_halt_with_cloonix_agent,
   vmcmd_halt_with_qemu,
-  vmcmd_reboot_with_cloonix_agent,
   vmcmd_reboot_with_qemu,
   vmcmd_promiscious_flag_set,
   vmcmd_promiscious_flag_unset,
@@ -384,8 +382,10 @@ void recv_mucli_dialog_resp(int llid, int tid, char *name, int num,
 /*---------------------------------------------------------------------------*/
 char *prop_flags_ascii_get(int prop_flags);
 /*---------------------------------------------------------------------------*/
-
-
-
-
-
+void send_qmp_sub(int llid, int tid, char *name);
+void recv_qmp_sub(int llid, int tid, char *name);
+void send_qmp_req(int llid, int tid, char *name, char *msg);
+void recv_qmp_req(int llid, int tid, char *name, char *msg);
+void send_qmp_resp(int llid, int tid, char *name, char *line, int status);
+void recv_qmp_resp(int llid, int tid, char *name, char *line, int status);
+/*---------------------------------------------------------------------------*/

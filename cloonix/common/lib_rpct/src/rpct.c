@@ -204,8 +204,8 @@ void rpct_send_evt_msg(void *ptr, int llid, int tid, char *line)
     KOUT(" ");
   if (strlen(line) < 1)
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
+  if (strlen(line) >= MAX_RPC_MSG_LEN)
+    line[MAX_RPC_MSG_LEN-1] = 0;
   len = sprintf(buf, MUEVT_MSG_O, tid);
   len += sprintf(buf+len, MUEVT_MSG_I, line);
   len += sprintf(buf+len, MUEVT_MSG_C);
@@ -222,8 +222,8 @@ void rpct_send_diag_msg(void *ptr, int llid, int tid, char *line)
     KOUT(" ");
   if (strlen(line) < 1)
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
+  if (strlen(line) >= MAX_RPC_MSG_LEN)
+    line[MAX_RPC_MSG_LEN-1] = 0;
   len = sprintf(buf, MUDIAG_MSG_O, tid);
   len += sprintf(buf+len, MUDIAG_MSG_I, line);
   len += sprintf(buf+len, MUDIAG_MSG_C);
@@ -240,8 +240,8 @@ void rpct_send_app_msg(void *ptr, int llid, int tid, char *line)
     KOUT(" ");
   if (strlen(line) < 1)
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
+  if (strlen(line) >= MAX_RPC_MSG_LEN)
+    line[MAX_RPC_MSG_LEN-1] = 0;
   len = sprintf(buf, MUAPP_MSG_O, tid);
   len += sprintf(buf+len, MUAPP_MSG_I, line);
   len += sprintf(buf+len, MUAPP_MSG_C);
@@ -260,8 +260,8 @@ void rpct_send_cli_req(void *ptr, int llid, int tid,
     KOUT(" ");
   if (strlen(line) < 1)
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
+  if (strlen(line) >= MAX_RPC_MSG_LEN)
+    line[MAX_RPC_MSG_LEN-1] = 0;
   len = sprintf(buf, MUCLI_REQ_O, tid, cli_llid, cli_tid);
   len += sprintf(buf+len, MUCLI_REQ_I, line);
   len += sprintf(buf+len, MUCLI_REQ_C);
@@ -279,8 +279,8 @@ void rpct_send_cli_resp(void *ptr, int llid, int tid,
     KOUT(" ");
   if (strlen(line) < 1)
     KOUT(" ");
-  if (strlen(line) >= MAX_MUTXT_LEN)
-    line[MAX_MUTXT_LEN-1] = 0;
+  if (strlen(line) >= MAX_RPC_MSG_LEN)
+    line[MAX_RPC_MSG_LEN-1] = 0;
   len = sprintf(buf, MUCLI_RESP_O, tid, cli_llid, cli_tid);
   len += sprintf(buf+len, MUCLI_RESP_I, line);
   len += sprintf(buf+len, MUCLI_RESP_C);

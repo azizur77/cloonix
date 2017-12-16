@@ -32,6 +32,7 @@
 
 static int g_llid;
 static int g_connect_llid;
+static t_qmp_cb qmp_cb;
 static t_mud_cli_dialog_cb mud_cli_dialog_cb;
 static t_list_commands_cb clownix_list_commands_cb;
 static t_pid_cb   clownix_pid_cb;
@@ -107,6 +108,13 @@ void set_mud_cli_dialog_callback(t_mud_cli_dialog_cb cb)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+void set_qmp_callback(t_qmp_cb cb)
+{
+  qmp_cb = cb;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void recv_mucli_dialog_resp(int llid, int tid, 
                             char *name, int eth, char *line, int status)
 {
@@ -126,6 +134,39 @@ void client_mud_cli_cmd(int tid, char *name, int eth, char *line)
 #endif
 }
 /*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void recv_qmp_resp(int llid, int tid, char *name, char *line, int status)
+{
+  if (qmp_cb)
+    qmp_cb(tid, name, line, status);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void client_qmp_sub(int tid, char *name)
+{
+  if (!g_llid)
+    KOUT(" ");
+  send_qmp_sub(g_llid, tid, name);
+#ifdef WITH_GLIB
+  glib_prepare_rx_tx(g_llid);
+#endif
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void client_qmp_snd(int tid, char *name, char *msg)
+{
+  if (!g_llid)
+    KOUT(" ");
+  send_qmp_req(g_llid, tid, name, msg);
+#ifdef WITH_GLIB
+  glib_prepare_rx_tx(g_llid);
+#endif
+}
+/*---------------------------------------------------------------------------*/
+
 
 
 /*****************************************************************************/
@@ -477,16 +518,13 @@ void client_sav_vm_all(int tid, t_end_cb cb,
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-void client_reboot_vm(int tid, t_end_cb cb, char *nm, int is_cloonix_reboot)
+void client_reboot_vm(int tid, t_end_cb cb, char *nm)
 {
   int new_tid;
   if (!g_llid)
     KOUT(" ");
   new_tid = set_response_callback(cb, tid);
-  if (is_cloonix_reboot)
-    send_vmcmd(g_llid,new_tid,nm,vmcmd_reboot_with_cloonix_agent,0);
-  else
-    send_vmcmd(g_llid,new_tid,nm,vmcmd_reboot_with_qemu,0);
+  send_vmcmd(g_llid, new_tid, nm, vmcmd_reboot_with_qemu, 0);
 #ifdef WITH_GLIB
   glib_prepare_rx_tx(g_llid);
 #endif

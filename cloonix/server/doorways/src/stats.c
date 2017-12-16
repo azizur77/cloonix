@@ -113,7 +113,7 @@ static void set_sysinfo_df(char *msg, int max, char * payload)
 void stats_from_agent_process(char *name, int header_val, 
                               int paylen,  char *payload)
 {
-  char msg[MAX_STATS_SYSDF];
+  char msg[MAX_RPC_MSG_LEN];
   char *sys;
   unsigned long uptime, load1, load5, load15, totalram, freeram;
   unsigned long cachedram, sharedram, bufferram, totalswap, freeswap;
@@ -131,7 +131,7 @@ void stats_from_agent_process(char *name, int header_val,
       }
     else
       {
-      set_sysinfo_vals(msg, MAX_STATS_SYSDF-1, uptime, 
+      set_sysinfo_vals(msg, MAX_RPC_MSG_LEN-1, uptime, 
                                            load1, load5, load15, totalram,
                        freeram, cachedram, sharedram, bufferram, totalswap,
                        freeswap, procs, totalhigh, freehigh, mem_unit);
@@ -140,7 +140,7 @@ void stats_from_agent_process(char *name, int header_val,
     }
   else if (header_val == header_val_sysinfo_df)
     {
-    set_sysinfo_df(msg, MAX_STATS_SYSDF-1, (char *) payload);
+    set_sysinfo_df(msg, MAX_RPC_MSG_LEN-1, (char *) payload);
     doors_send_event(get_doorways_llid(), 0, name, msg);
     }
   else

@@ -285,9 +285,7 @@ static int put_in_file_xauth_line(char *xauth_bin, char *dpy, char *file)
       KERR("%s %d", cmd, errno);
     else
       {
-      if (!found)
-        KERR("%s not found in xauth list", dpy);
-      else
+      if (found)
         {
         fp = fopen(file, "w");
         if (fp == NULL)
@@ -333,7 +331,6 @@ static void xauth_extraction(char *tree,char *cookie_format, char *cookie_key)
                "0000NO_X11_FORWARDING_COOKIE");
       snprintf(cookie_key, MAX_XAUTH_COOKIE-1,
                "NO_X11_FORWARDING_COOKIE");
-      KERR("NO_X11_FORWARDING_COOKIE");
       }
     }
   else 

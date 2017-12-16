@@ -15,6 +15,7 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
+int llid_trace_exists(int llid);
 void llid_trace_alloc(int llid, char *name, int vm_id, int guest_fd, int type);
 void llid_trace_free(int llid, int is_clone, const char *fct);
 void llid_trace_init(void);

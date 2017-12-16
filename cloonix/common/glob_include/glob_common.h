@@ -69,10 +69,11 @@ int cloonix_get_pid(void);
 #define MAX_DOOR_CTRL_LEN 1000
 
 
+#define MAX_RPC_MSG_LEN 3000
+
 #define MAX_CLOWNIX_BOUND_LEN      64
 #define MIN_CLOWNIX_BOUND_LEN      2
 
-#define MAX_MUTXT_LEN      2500
 
 #define HEADER_BLKD_SIZE (4 + 8 + sizeof(long long))
 #define PAYLOAD_BLKD_SIZE 1524

@@ -402,6 +402,29 @@
 #define EVT_STATS_SYSINFOC "</evt_stats_sysinfo>\n"
 /*---------------------------------------------------------------------------*/
 
+#define QMP_SUB   "<qmpy_sub>\n"\
+                  "  <tid>  %d </tid>\n"\
+                  "  <name> %s </name>\n"\
+                  "</qmpy_sub>"
+/*---------------------------------------------------------------------------*/
+#define QMP_REQ_O "<qmpy_req>\n"\
+                  "  <tid>  %d </tid>\n"\
+                  "  <name> %s </name>\n"
+
+#define QMP_REQ_C "</qmpy_req>"
+/*---------------------------------------------------------------------------*/
+#define QMP_MSG_O "<qmpy_msg>\n"\
+                  "  <tid>  %d </tid>\n"\
+                  "  <name> %s </name>\n"\
+                  "  <status>  %d </status>\n"
+
+#define QMP_MSG_C "</qmpy_msg>"
+/*---------------------------------------------------------------------------*/
+#define QMP_LINE  "<msgqmp_req_boundyzzy>%s</msgqmp_req_boundyzzy>\n"\
+/*---------------------------------------------------------------------------*/
+
+
+
 
 
 

@@ -26,7 +26,6 @@
 #include "ioc_top.h"
 
 
-#define MAX_MUTXT_LEN      2500
 #define IO_MAX_BUF_LEN 50000
 #define MAX_SIZE_BIGGEST_MSG 100000
 #define MAX_TYPE_CB 10

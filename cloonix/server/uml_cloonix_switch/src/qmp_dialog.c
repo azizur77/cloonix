@@ -27,6 +27,7 @@
 #include "utils_cmd_line_maker.h"
 #include "llid_trace.h"
 #include "qmp_dialog.h"
+#include "qmp.h"
 
 #define MAX_QMP_MSG_LEN 10000
 
@@ -40,6 +41,7 @@ typedef struct t_qrec
   t_dialog_resp resp_cb;
   char resp[MAX_QMP_MSG_LEN];
   int  resp_offset;
+  int count_conn_timeout;
   struct t_qrec *prev;
   struct t_qrec *next;
 } t_qrec;
@@ -173,7 +175,7 @@ static int qmp_rx_cb(void *ptr, int llid, int fd)
         if (message_braces_complete(qrec->resp))
           {
           if ((!strlen(qrec->req)) || (!qrec->resp_cb))
-            KERR("%s", qrec->resp);
+            qmp_msg_recv(qrec->name, qrec->resp);
           else
             qrec->resp_cb(qrec->name, qrec->req, qrec->resp);
           memset(qrec->req, 0, MAX_QMP_MSG_LEN);
@@ -197,10 +199,7 @@ static void qmp_err_cb (void *ptr, int llid, int err, int from)
   if (!qrec)
     KERR(" ");
   else
-    {
-    KERR("%s", qrec->name);
     qrec_free(qrec, 1);
-    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -230,16 +229,22 @@ static void timer_connect_qmp(void *data)
       {
       if (!utils_get_pid_of_machine(vm))
         {
-KERR("%s", pname);
-        clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+        qrec->count_conn_timeout += 1;
+        if (qrec->count_conn_timeout > 5)
+          KERR("%s", pname);
+        else
+          clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
         }
       else
         {
         qmp_path = utils_get_qmp_path(vm->kvm.vm_id);
         if (util_nonblock_client_socket_unix(qmp_path, &fd))
           {
-KERR("%s", pname);
-          clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+          qrec->count_conn_timeout += 1;
+          if (qrec->count_conn_timeout > 5)
+            KERR("%s", pname);
+          else
+            clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
           }
         else
           {
@@ -250,7 +255,6 @@ KERR("%s", pname);
             KOUT(" ");
           llid_trace_alloc(qrec->llid,"QMP",0,0, type_llid_trace_unix_qmonitor);
           set_qrec_with_llid(qrec->llid, qrec);
-KERR("%s CONN OK", pname);
           }
         }
       }

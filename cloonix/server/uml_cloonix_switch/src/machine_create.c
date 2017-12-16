@@ -159,11 +159,12 @@ static void delayed_vm_cutoff(void *data)
   int vm_id;
   if (vm)
     {
+    KERR("%s", vm->kvm.name);
     pid = utils_get_pid_of_machine(vm);
     if (pid)
       {
-      if ( !kill(pid, SIGTERM))
-        KERR("Brutal kill of %s", vm->kvm.name);
+      KERR("Brutal kill of %s", vm->kvm.name);
+      kill(pid, SIGTERM);
       }
     vm_id = cfg_unset_vm(vm);
     cfg_free_vm_id(vm_id);
@@ -182,6 +183,7 @@ static void arm_delayed_vm_cutoff(char *name, int val)
   memset (vmn, 0, MAX_NAME_LEN);
   strncpy(vmn, name, MAX_NAME_LEN-1);
   clownix_timeout_add(val, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
+  KERR("%s", name);
 }
 /*---------------------------------------------------------------------------*/
     
@@ -400,13 +402,8 @@ int machine_death( char *name, int error_death)
     doors_send_del_vm(get_doorways_llid(), 0, name);
     qhvc0_end_qemu_unix(name);
     qmonitor_end_qemu_unix(name);
-    if (qmp_end_qemu_unix(name))
-      {
-      KERR("QMP FAILED REQUESTING SHUTDOWN");
-      arm_delayed_vm_cutoff(name, 10);
-      }
-    else
-      arm_delayed_vm_cutoff(name, 400);
+    qmp_request_qemu_halt(name, 0, 0);
+    arm_delayed_vm_cutoff(name, 200);
     if (vm->pid_of_cp_clone)
       {
       KERR("CP ROOTFS SIGKILL %s, PID %d", name, vm->pid_of_cp_clone);

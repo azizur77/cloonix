@@ -178,6 +178,14 @@ struct cmd_struct level_sub_cmd[] = {
 };
 /*---------------------------------------------------------------------------*/
 
+/****************************************************************************/
+struct cmd_struct level_qmp_cmd[] = {
+{"sub",  "Subscribe to qmp of vm", NULL, cmd_sub_qmp, help_sub_qmp},
+{"snd",  "Send qmp request", NULL, cmd_snd_qmp, help_snd_qmp},
+{"help",  "",                     level_qmp_cmd, NULL, NULL},
+};
+/*---------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------*/
 struct cmd_struct level_main_cmd[] = {
 {"kil", "Destroys all objects, cleans and kills switch", NULL, cmd_kill, NULL},
@@ -195,6 +203,7 @@ struct cmd_struct level_main_cmd[] = {
 {"evt", "prints events",         NULL,  cmd_event_print, NULL},
 {"sys", "prints system stats",   NULL,  cmd_event_sys, NULL},
 {"blk", "prints blkd debug",   NULL,  cmd_event_blkd, NULL},
+{"qmp", "qemu machine protocol cmd", level_qmp_cmd,  NULL, NULL},
 {"help",   "",                    level_main_cmd, NULL, NULL},
 };
 /*---------------------------------------------------------------------------*/

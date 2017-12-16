@@ -52,7 +52,7 @@ typedef struct t_stats_sysdf
   char process_cutime[MAX_NUM_LEN];
   char process_cstime[MAX_NUM_LEN];
   char process_rss[MAX_NUM_LEN];
-  char df[MAX_STATS_SYSDF];
+  char df[MAX_RPC_MSG_LEN];
 } t_stats_sysdf;
 
 
@@ -281,7 +281,7 @@ static void fill_fields(t_stats_sysinfo *si, char *df, t_stats_sysdf *sysdf)
   snprintf(sysdf->process_cutime, MAX_NUM_LEN-1, "%lu", si->process_cutime);
   snprintf(sysdf->process_cstime, MAX_NUM_LEN-1, "%lu", si->process_cstime);
   snprintf(sysdf->process_rss,    MAX_NUM_LEN-1, "%lu", si->process_rss);
-  snprintf(sysdf->df, MAX_STATS_SYSDF-1, "%s", df);
+  snprintf(sysdf->df, MAX_RPC_MSG_LEN-1, "%s", df);
 
 
 }

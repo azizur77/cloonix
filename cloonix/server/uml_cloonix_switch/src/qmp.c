@@ -28,47 +28,123 @@
 #include <fcntl.h>
 
 #include "io_clownix.h"
-//#include "rpc_qmonitor.h"
 #include "rpc_clownix.h"
 #include "cfg_store.h"
-//#include "util_sock.h"
-//#include "llid_trace.h"
-//#include "machine_create.h"
 #include "utils_cmd_line_maker.h"
-//#include "pid_clone.h"
 #include "commun_daemon.h"
 #include "event_subscriber.h"
 #include "qmp.h"
-//#include "qmonitor.h"
-//#include "qhvc0.h"
 #include "qmp_dialog.h"
+#include "llid_trace.h"
 
+
+
+/*--------------------------------------------------------------------------*/
+typedef struct t_qmp_sub
+{
+  int llid;
+  int tid;
+  struct t_qmp_sub *prev;
+  struct t_qmp_sub *next;
+} t_qmp_sub;
+/*--------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------*/
+typedef struct t_qmp
+{
+  char name[MAX_NAME_LEN];
+  t_qmp_sub *head_qmp_sub;
+  struct t_qmp *prev;
+  struct t_qmp *next;
+} t_qmp;
+/*--------------------------------------------------------------------------*/
+
+static t_qmp *g_head_qmp;
 
 /****************************************************************************/
-void qmp_request_qemu_reboot(char *name)
+static t_qmp *find_qmp(char *name)
 {
+  t_qmp *cur = g_head_qmp;
+  while (cur)
+    {
+    if (!strcmp(name, cur->name))
+      break;
+    cur = cur->next;
+    }
+  return cur;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-int qmp_end_qemu_unix(char *name)
+static void alloc_qmp(char *name)
 {
-  qmp_dialog_free(name);
-  return 0;
+  t_qmp *cur = (t_qmp *) clownix_malloc(sizeof(t_qmp), 7);
+  memset(cur, 0, sizeof(t_qmp));
+  strncpy(cur->name, name, MAX_NAME_LEN);
+  if (g_head_qmp)
+    g_head_qmp->prev = cur;
+  cur->next = g_head_qmp;
+  g_head_qmp = cur;
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void qmp_conn_end(char *name)
+static void free_qmp(t_qmp *cur)
 {
-KERR("%s", name);
+  if (cur->next)
+    cur->next->prev = cur->prev;
+  if (cur->prev)
+    cur->prev->next = cur->next;
+  if (cur == g_head_qmp)
+    g_head_qmp = cur->next;
+  clownix_free(cur, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void qmp_begin_qemu_unix(char *name)
+static t_qmp_sub *find_qmp_sub(t_qmp *qmp, int llid)
 {
-  qmp_dialog_alloc(name, qmp_conn_end);
+  t_qmp_sub *cur = qmp->head_qmp_sub;
+  while (cur)
+    {
+    if (cur->llid == llid)
+      break;
+    cur = cur->next;
+    }
+  return cur;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void alloc_qmp_sub(t_qmp *qmp, int llid, int tid)
+{
+  t_qmp_sub *cur = find_qmp_sub(qmp, llid);
+  if (cur)
+    KERR("%s %d", qmp->name, llid);
+  else
+    {
+    cur = (t_qmp_sub *) clownix_malloc(sizeof(t_qmp_sub), 7);
+    memset(cur, 0, sizeof(t_qmp_sub));
+    cur->llid = llid;
+    cur->tid = tid;
+    if (qmp->head_qmp_sub)
+      qmp->head_qmp_sub->prev = cur;
+    cur->next = qmp->head_qmp_sub;
+    qmp->head_qmp_sub = cur;
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void free_qmp_sub(t_qmp *qmp, t_qmp_sub *cur)
+{
+  if (cur->next)
+    cur->next->prev = cur->prev;
+  if (cur->prev)
+    cur->prev->next = cur->next;
+  if (cur == qmp->head_qmp_sub)
+    qmp->head_qmp_sub = cur->next;
+  clownix_free(cur, __FUNCTION__);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -86,23 +162,107 @@ void qmp_agent_sysinfo(char *name, int used_mem_agent)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void qmp_vm_save_rootfs(char *name, char *path, int llid, int tid, int stype)
+void qmp_msg_recv(char *name, char *msg)
+{
+  KERR("%s %s", name, msg);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_conn_end(char *name)
+{
+  t_qmp *qmp = find_qmp(name);
+  t_qmp_sub *cur, *next;
+  if (!qmp)
+    KERR("%s", name);
+  else
+    {
+    cur = qmp->head_qmp_sub;
+    while(cur)
+      {
+      next = cur->next;
+      free_qmp_sub(qmp, cur);
+      cur = next;
+      }
+    free_qmp(qmp);
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_event_free(int llid)
+{
+  t_qmp *cur = g_head_qmp;
+  t_qmp_sub *sub;
+  while(cur)
+    {
+    sub = find_qmp_sub(cur, llid);
+    if (sub)
+      free_qmp_sub(cur, sub);
+    cur = cur->next;
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
+void qmp_request_save_rootfs(char *name, char *path, int llid,
+                             int tid, int stype)
 {
   send_status_ko(llid, tid, "NOT IMPLEM");
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-void qmp_vm_save_rootfs_all(int nb, t_vm *vm, char *path,
-                           int llid, int tid, int stype)
+void qmp_request_save_rootfs_all(int nb, t_vm *vm, char *path, int llid,
+                                 int tid, int stype)
 {
   send_status_ko(llid, tid, "NOT IMPLEM");
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_request_qemu_reboot(char *name, int llid, int tid)
+{
+  send_status_ko(llid, tid, "NOT IMPLEM");
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_request_qemu_halt(char *name, int llid, int tid)
+{
+  if (llid)
+    send_status_ko(llid, tid, "NOT IMPLEM");
+  else
+    KERR("%s", name);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_begin_qemu_unix(char *name)
+{
+  alloc_qmp(name);
+  qmp_dialog_alloc(name, qmp_conn_end);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+void qmp_llid_subscribe(char *name, int llid, int tid)
+{
+  t_qmp *qmp = find_qmp(name);
+  if (!llid_trace_exists(llid))
+    KERR("%s %d", name, llid);
+  else if (!qmp)
+    KERR("%s %d", name, llid);
+  else
+    alloc_qmp_sub(qmp, llid, tid);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 void qmp_init(void)
 {
+  g_head_qmp = NULL;
 }
 /*--------------------------------------------------------------------------*/
 

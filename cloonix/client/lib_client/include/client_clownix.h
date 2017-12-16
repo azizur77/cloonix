@@ -24,6 +24,7 @@ typedef void (*t_evt_stats_sysinfo_cb)(int tid, char *name,
 
 typedef void (*t_evt_blkd_reports_cb)(int tid, t_blkd_reports *blkd);
 
+typedef void (*t_qmp_cb)(int tid, char *name, char *line, int status);
 typedef void (*t_mud_cli_dialog_cb)(int tid, char *name, int num, 
                                     char *line, int status);
 typedef void (*t_list_commands_cb)(int tid, int qty, t_list_commands *list);
@@ -67,7 +68,7 @@ void client_add_vm(int tid, t_end_cb cb, char *nm, int nb_eth,
                    t_eth_params *eth_params);
 void client_sav_vm(int tid, t_end_cb cb, char *nm, int type, char *new_dir_path);
 void client_sav_vm_all(int tid, t_end_cb cb, int type, char *new_dir_path);
-void client_reboot_vm(int tid, t_end_cb cb, char *nm, int is_cloonix_reboot);
+void client_reboot_vm(int tid, t_end_cb cb, char *nm);
 void client_halt_vm(int tid, t_end_cb cb, char *nm);
 void client_del_vm(int tid, t_end_cb cb, char *nm);
 void client_add_sat(int tid, t_end_cb cb, char *name, 
@@ -117,6 +118,11 @@ int cmd_topo_send(char *topo_dir, t_progress_txt_cb pcb);
 int set_response_callback(t_end_cb cb, int tid);
 void set_mud_cli_dialog_callback(t_mud_cli_dialog_cb cb);
 void client_mud_cli_cmd(int tid, char *name, int num, char *line);
+
+
+void set_qmp_callback(t_qmp_cb cb);
+void client_qmp_sub(int tid, char *name);
+void client_qmp_snd(int tid, char *name, char *msg);
 
 
 int llid_client_doors_connect(char *path, char *passwd, 
