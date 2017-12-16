@@ -32,6 +32,10 @@ void rpct_recv_cli_resp(void *ptr, int llid, int tid,
                      int cli_llid, int cli_tid, char *line) {KOUT();}
 
 
+void recv_qmp_sub(int llid, int tid, char *name){KOUT(" ");};
+void recv_qmp_req(int llid, int tid, char *name, char *msg){KOUT(" ");};
+
+
 /*****************************************************************************/
 void rpct_recv_report(void *ptr, int llid, t_blkd_item *item)
 {

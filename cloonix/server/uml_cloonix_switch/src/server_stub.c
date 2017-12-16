@@ -25,6 +25,13 @@
 
 
 /*****************************************************************************/
+void recv_qmp_resp(int llid, int tid, char *name, char *line, int status)
+{
+  KOUT(" ");
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void doors_recv_c2c_clone_birth(int llid, int tid, char *net_name,
                                 char *name, int fd, int endp_type,
                                 char *bin_path, char *sock)

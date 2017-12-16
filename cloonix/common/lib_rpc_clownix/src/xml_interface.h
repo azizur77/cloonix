@@ -401,7 +401,10 @@
 
 #define EVT_STATS_SYSINFOC "</evt_stats_sysinfo>\n"
 /*---------------------------------------------------------------------------*/
-
+#define QMP_ALL_SUB "<qmpy_all_sub>\n"\
+                    "  <tid>  %d </tid>\n"\
+                    "</qmpy_all_sub>"
+/*---------------------------------------------------------------------------*/
 #define QMP_SUB   "<qmpy_sub>\n"\
                   "  <tid>  %d </tid>\n"\
                   "  <name> %s </name>\n"\

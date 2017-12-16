@@ -83,6 +83,7 @@ enum
   bnd_evt_stats_sysinfo,
   bnd_blkd_reports,
   bnd_blkd_reports_sub,
+  bnd_qmp_all_sub,
   bnd_qmp_sub,
   bnd_qmp_req,
   bnd_qmp_msg,
@@ -1708,9 +1709,16 @@ static void helper_fill_blkd_reports(char *msg, t_blkd_reports *blkd)
 void send_qmp_sub(int llid, int tid, char *name)
 {
   int len = 0;
-  if ((!name) || (strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
-    KOUT(" ");
-  len = sprintf(sndbuf, QMP_SUB, tid, name);
+  if (!name)
+    {
+    len = sprintf(sndbuf, QMP_ALL_SUB, tid);
+    }
+  else
+    {
+    if ((strlen(name)==0) || (strlen(name) >= MAX_NAME_LEN))
+      KOUT(" ");
+    len = sprintf(sndbuf, QMP_SUB, tid, name);
+    }
   my_msg_mngt_tx(llid, len, sndbuf);
 }
 /*---------------------------------------------------------------------------*/
@@ -2160,6 +2168,12 @@ static void dispatcher(int llid, int bnd_evt, char *msg)
       clownix_free(eventfull_endp, __FUNCTION__);
       break;
 
+    case bnd_qmp_all_sub:
+      if (sscanf(msg, QMP_ALL_SUB, &tid) != 1)
+        KOUT("%s", msg);
+      recv_qmp_sub(llid, tid, NULL);
+      break;
+
     case bnd_qmp_sub:
       if (sscanf(msg, QMP_SUB, &tid, name) != 2)
         KOUT("%s", msg);
@@ -2333,6 +2347,7 @@ void doors_io_basic_xml_init(t_llid_tx llid_tx)
   extract_boundary (HOP_EVT_DOORS_UNSUB, bound_list[bnd_hop_evt_doors_unsub]);
   extract_boundary (HOP_EVT_DOORS_O,   bound_list[bnd_hop_evt_doors]);
 
+  extract_boundary (QMP_ALL_SUB, bound_list[bnd_qmp_all_sub]);
   extract_boundary (QMP_SUB, bound_list[bnd_qmp_sub]);
   extract_boundary (QMP_REQ_O, bound_list[bnd_qmp_req]);
   extract_boundary (QMP_MSG_O, bound_list[bnd_qmp_msg]);

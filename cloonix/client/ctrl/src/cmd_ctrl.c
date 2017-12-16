@@ -1074,12 +1074,15 @@ static void qmp_nosub_cb(int tid, char *name, char *line, int status)
 int cmd_sub_qmp(int argc, char **argv)
 {
   int result = -1;
-  if (argc == 1)
+  if ((argc == 0) || (argc == 1))
     {
     result = 0;
     init_connection_to_uml_cloonix_switch();
     set_qmp_callback(qmp_sub_cb);
-    client_qmp_sub(0, argv[0]);
+    if (argc == 1)
+      client_qmp_sub(0, argv[0]);
+    else
+      client_qmp_sub(0, NULL);
     }
   return result;
 }

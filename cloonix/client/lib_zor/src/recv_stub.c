@@ -103,6 +103,9 @@ void recv_mucli_dialog_req(int llid, int tid,
 void recv_mucli_dialog_resp(int llid, int tid,
                             char *name, int eth, char *line, int status){KOUT(" ");}
 
+void recv_qmp_sub(int llid, int tid, char *name){KOUT(" ");};
+void recv_qmp_req(int llid, int tid, char *name, char *msg){KOUT(" ");};
+void recv_qmp_resp(int llid, int tid, char *name, char *line, int status){KOUT(" ");};
 /*---------------------------------------------------------------------------*/
 
 

@@ -262,6 +262,7 @@ void help_a2b_dump(char *line)
 void help_sub_qmp(char *line)
 {
   printf("\n\n%s <name>\n", line);
+  printf("\n\n%s\n", line);
   printf("\n\n");
 }
 /*---------------------------------------------------------------------------*/
