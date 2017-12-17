@@ -159,7 +159,6 @@ static void delayed_vm_cutoff(void *data)
   int vm_id;
   if (vm)
     {
-    KERR("%s", vm->kvm.name);
     pid = utils_get_pid_of_machine(vm);
     if (pid)
       {
@@ -183,7 +182,6 @@ static void arm_delayed_vm_cutoff(char *name, int val)
   memset (vmn, 0, MAX_NAME_LEN);
   strncpy(vmn, name, MAX_NAME_LEN-1);
   clownix_timeout_add(val, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
-  KERR("%s", name);
 }
 /*---------------------------------------------------------------------------*/
     

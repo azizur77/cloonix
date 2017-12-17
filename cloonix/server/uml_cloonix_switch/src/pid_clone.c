@@ -46,6 +46,7 @@
   #include "cfg_store.h"
   #include "llid_trace.h"
   #include "event_subscriber.h"
+  #include "qmp.h"
 #endif
 
 #define XML_OPEN  "<ascii_free_format_text>"
@@ -478,6 +479,7 @@ static int forked_fct(void *ptr)
   cloonix_lock_fd_close();
   job_for_select_close_fd();
   clownix_timeout_del_all();
+  qmp_clean_all_data();
   nb_chan = get_clownix_channels_nb();
   for (i=0; i<=nb_chan; i++)
     {

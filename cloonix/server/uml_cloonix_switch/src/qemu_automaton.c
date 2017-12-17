@@ -303,7 +303,7 @@ static char *format_virtkvm_net(t_vm *vm, int eth)
    " -nodefaults"\
    " -rtc base=utc,driftfix=slew"\
    " -global kvm-pit.lost_tick_policy=delay"\
-   " -no-hpet -no-shutdown -boot strict=on"\
+   " -no-hpet -boot strict=on"\
    " -chardev socket,id=mon1,path=%s,server,nowait"\
    " -mon chardev=mon1,mode=readline"\
    " -chardev socket,id=qmp1,path=%s,server,nowait"\

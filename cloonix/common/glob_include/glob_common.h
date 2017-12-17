@@ -69,7 +69,7 @@ int cloonix_get_pid(void);
 #define MAX_DOOR_CTRL_LEN 1000
 
 
-#define MAX_RPC_MSG_LEN 3000
+#define MAX_RPC_MSG_LEN 5000
 
 #define MAX_CLOWNIX_BOUND_LEN      64
 #define MIN_CLOWNIX_BOUND_LEN      2

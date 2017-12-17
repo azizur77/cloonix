@@ -1050,7 +1050,7 @@ static void qmp_cb(int tid, char *name, char *line, int status)
     }
   else
     {
-    printf("%s\n", line);
+    printf("%s\n%s\n\n", name, line);
     }
 }
 /*---------------------------------------------------------------------------*/

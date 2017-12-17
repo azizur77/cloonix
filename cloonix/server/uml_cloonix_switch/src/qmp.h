@@ -20,6 +20,7 @@ void qmp_agent_sysinfo(char *name, int used_mem_agent);
 void qmp_msg_recv(char *name, char *msg);
 void qmp_event_free(int llid);
 void qmp_init(void);
+void qmp_clean_all_data(void);
 void qmp_request_qemu_reboot(char *name, int llid, int tid);
 void qmp_request_qemu_halt(char *name, int llid, int tid);
 void qmp_request_save_rootfs(char *name, char *path, int llid,
