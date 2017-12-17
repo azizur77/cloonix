@@ -29,7 +29,6 @@
 #include "qmp_dialog.h"
 #include "qmp.h"
 
-#define MAX_RPC_MSG_LEN 10000
 
 typedef struct t_timeout_resp
 {
@@ -156,10 +155,23 @@ static int message_braces_complete(char *whole_rx)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void call_cb_and_reset(t_qrec *q)
+static void call_cb_and_reset(t_qrec *q, int is_timeout)
 {
   if ((strlen(q->req)) && (q->resp_cb))
-    q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+    {
+    if (is_timeout)
+      {
+      strcpy(q->resp, "timeout_qmp_resp");
+      q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+      }
+    else
+      {
+      if (!strncmp(q->resp, "{\"return\":", strlen("{\"return\":")))
+        q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+      else
+        KERR("TOLOOKINTO %s %d %s %s", q->name, q->resp_llid, q->req, q->resp);
+      }
+    }
   q->ref_id += 1;
   memset(q->req, 0, MAX_RPC_MSG_LEN);
   memset(q->resp, 0, MAX_RPC_MSG_LEN);
@@ -197,7 +209,7 @@ static int qmp_rx_cb(void *ptr, int llid, int fd)
         if (message_braces_complete(qrec->resp))
           {
           qmp_msg_recv(qrec->name, qrec->resp);
-          call_cb_and_reset(qrec);
+          call_cb_and_reset(qrec, 0);
           }
         else
           qrec->resp_offset += len;
@@ -293,8 +305,7 @@ static void timeout_resp_qmp(void *data)
   t_qrec *qrec = get_qrec_with_name(timeout->name);
   if ((qrec) && (qrec->ref_id == timeout->ref_id))
     {
-    strcpy(qrec->resp, "timeout qmp resp");
-    call_cb_and_reset(qrec);
+    call_cb_and_reset(qrec, 1);
     }
   clownix_free(timeout, __FUNCTION__);
 }

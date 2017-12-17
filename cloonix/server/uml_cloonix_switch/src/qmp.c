@@ -38,6 +38,24 @@
 #include "llid_trace.h"
 
 
+#define QMP_RESET  "{ \"execute\": \"system_reset\" }"
+#define QMP_STOP  "{ \"execute\": \"stop\" }"
+#define QMP_CONT  "{ \"execute\": \"cont\" }"
+#define QMP_SHUTDOWN  "{ \"execute\": \"system_powerdown\" }"
+#define QMP_CAPA  "{ \"execute\": \"qmp_capabilities\" }"
+#define QMP_QUERY "{\"execute\":\"query-status\"}"
+#define QMP_BALLOON "{\"execute\":\"balloon\",\"arguments\":{\"value\":%llu}}"
+#define QMP_QUERY_CMD "{ \"execute\": \"query-commands\" }"
+
+
+enum {
+  waiting_for_nothing = 0,
+  waiting_for_capa_return,
+  waiting_for_shutdown_return,
+  waiting_for_reboot_return,
+  waiting_for_max,
+};
+
 /*--------------------------------------------------------------------------*/
 typedef struct t_qmp_req
 {
@@ -63,6 +81,9 @@ typedef struct t_qmp_sub
 typedef struct t_qmp
 {
   char name[MAX_NAME_LEN];
+  int capa_sent;
+  int capa_acked;
+  int waiting_for;
   t_qmp_req *head_qmp_req;
   t_qmp_sub *head_qmp_sub;
   struct t_qmp *prev;
@@ -239,17 +260,31 @@ void qmp_msg_recv(char *name, char *msg)
 {
   t_qmp *qmp = find_qmp(name);
   t_qmp_sub *cur;
-  cur = qmp->head_qmp_sub;
-  while(cur)
+  if (!qmp)
+    KERR("%s", name);
+  else
     {
-    send_qmp_resp(cur->llid, cur->tid, name, msg, 0);
-    cur = cur->next;
-    }
-  cur = g_head_all_qmp_sub;
-  while(cur)
-    {
-    send_qmp_resp(cur->llid, cur->tid, name, msg, 0);
-    cur = cur->next;
+    cur = qmp->head_qmp_sub;
+    while(cur)
+      {
+      send_qmp_resp(cur->llid, cur->tid, name, msg, 0);
+      cur = cur->next;
+      }
+    cur = g_head_all_qmp_sub;
+    while(cur)
+      {
+      send_qmp_resp(cur->llid, cur->tid, name, msg, 0);
+      cur = cur->next;
+      }
+    if (qmp->capa_sent == 0)
+      {
+      if (!strncmp(msg, "{\"QMP\":", strlen("{\"QMP\":")))
+        {
+        alloc_tail_qmp_req(qmp, 0, 0, QMP_CAPA);
+        qmp->capa_sent = 1;
+        qmp->waiting_for = waiting_for_capa_return;
+        }
+      }
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -346,9 +381,52 @@ void qmp_clean_all_data(void)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void dialog_resp_return(t_qmp *qmp, int llid, int tid, int status)
+{
+  if (qmp->waiting_for == waiting_for_capa_return)
+    qmp->capa_acked = 1;
+  else if ((qmp->waiting_for == waiting_for_shutdown_return) ||
+           (qmp->waiting_for == waiting_for_reboot_return))
+    {
+    if ((llid) && (llid_trace_exists(llid)))
+      {
+      if (status)
+        send_status_ko(llid, tid, "qmp timeout");
+      else
+        send_status_ok(llid, tid, "qmp return");
+      }
+    else
+      KERR("%s %d", qmp->name, qmp->waiting_for);
+    }
+  qmp->waiting_for = waiting_for_nothing;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static void dialog_resp(char *name, int llid, int tid, char *req, char *resp)
 {
-  send_qmp_resp(llid, tid, name, resp, 0);
+  t_qmp *qmp = find_qmp(name);
+  if (!qmp)
+    KERR("%d %s", llid, name);
+  else
+    {
+    if (!qmp->waiting_for)
+      {
+      if ((!llid) || (!llid_trace_exists(llid)))
+        KERR("%d %s", llid, name);
+      else
+        send_qmp_resp(llid, tid, name, resp, 0);
+      }
+    else
+      {
+      if (!strncmp(resp, "{\"return\":", strlen("{\"return\":")))
+        dialog_resp_return(qmp, llid, tid, 0);
+      else if (!strncmp(resp, "timeout_qmp_resp", strlen("timeout_qmp_resp")))
+        dialog_resp_return(qmp, llid, tid, -1);
+      else
+        KERR("%d %s %s %s", qmp->waiting_for, name, req, resp);
+      }
+    }
 }
 /*--------------------------------------------------------------------------*/
 
@@ -362,7 +440,8 @@ static void timer_fifo_visit(void *data)
     req = cur->head_qmp_req;
     if (req)
       {
-      if (!qmp_dialog_req(cur->name,req->llid,req->tid,req->req,dialog_resp))
+      if (((cur->capa_acked) || (req->llid == 0))  &&
+          (!qmp_dialog_req(cur->name,req->llid,req->tid,req->req,dialog_resp)))
         {
         free_head_qmp_req(cur);
         }
@@ -371,7 +450,7 @@ static void timer_fifo_visit(void *data)
         req->count += 1;
         if (req->count > 10)
           {
-          if (llid_trace_exists(req->llid))
+          if ((req->llid) && llid_trace_exists(req->llid))
             send_qmp_resp(req->llid, req->tid, cur->name, "timeout", -1);
           free_head_qmp_req(cur);
           }
@@ -411,15 +490,22 @@ void qmp_request_save_rootfs_all(int nb, t_vm *vm, char *path, int llid,
 /****************************************************************************/
 void qmp_request_qemu_reboot(char *name, int llid, int tid)
 {
-  send_status_ko(llid, tid, "NOT IMPLEM");
+  t_qmp *qmp = find_qmp(name);
+  if (!qmp)
+    send_status_ko(llid, tid, "qmp record not found");
+  else
+    alloc_tail_qmp_req(qmp, llid, tid, QMP_RESET);
 }
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
 void qmp_request_qemu_halt(char *name, int llid, int tid)
 {
-  if (llid)
-    send_status_ko(llid, tid, "NOT IMPLEM");
+  t_qmp *qmp = find_qmp(name);
+  if (!qmp)
+    send_status_ko(llid, tid, "qmp record not found");
+  else
+    alloc_tail_qmp_req(qmp, llid, tid, QMP_SHUTDOWN);
 }
 /*--------------------------------------------------------------------------*/
 
