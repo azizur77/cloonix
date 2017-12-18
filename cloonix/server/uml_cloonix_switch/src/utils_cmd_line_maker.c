@@ -326,13 +326,7 @@ int utils_get_pid_of_machine(t_vm *vm)
   int pid = 0;
   if (!vm)
     KOUT(" ");
-  if (vm->saved_pid)
-    pid = vm->saved_pid;
-  else
-    {
-    pid = machine_read_umid_pid(vm->kvm.vm_id);
-    vm->saved_pid = pid;
-    }
+  pid = machine_read_umid_pid(vm->kvm.vm_id);
   return pid;
 }
 /*---------------------------------------------------------------------------*/

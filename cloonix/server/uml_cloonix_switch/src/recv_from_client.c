@@ -1350,15 +1350,15 @@ void recv_sav_vm(int llid, int tid, char *name, int stype, char *path)
   char *dir_path = mydirname(path);
   if (!vm)
     {
-    send_status_ko(llid, tid, "MACHINE NOT FOUND");
+    send_status_ko(llid, tid, "error MACHINE NOT FOUND");
     }
   else if (file_exists(path, F_OK))
     {
-    send_status_ko(llid, tid, "FILE ALREADY EXISTS");
+    send_status_ko(llid, tid, "error FILE ALREADY EXISTS");
     }
   else if (!file_exists(dir_path, W_OK))
     {
-    send_status_ko(llid, tid, "DIRECTORY NOT WRITABLE OR NOT FOUND");
+    send_status_ko(llid, tid, "error DIRECTORY NOT WRITABLE OR NOT FOUND");
     }
   else
     {
@@ -1376,15 +1376,15 @@ void recv_sav_vm_all(int llid, int tid, int stype, char *path)
   t_vm *vm = cfg_get_first_vm(&nb);
   if (!vm)
     {
-    send_status_ko(llid, tid, "NO MACHINE NOT FOUND");
+    send_status_ko(llid, tid, "error MACHINE NOT FOUND");
     }
   else if (file_exists(path, F_OK))
     {
-    send_status_ko(llid, tid, "DIRECTORY ALREADY EXISTS");
+    send_status_ko(llid, tid, "error DIRECTORY ALREADY EXISTS");
     }
   else if (!file_exists(dir_path, W_OK))
     {
-    sprintf(info, "DIRECTORY %s NOT WRITABLE", dir_path);
+    sprintf(info, "error DIRECTORY %s NOT WRITABLE", dir_path);
     send_status_ko(llid, tid, info);
     }
   else
@@ -1393,12 +1393,12 @@ void recv_sav_vm_all(int llid, int tid, int stype, char *path)
       {
       if (errno == EEXIST)
         {
-        sprintf(info, "%s ALREADY EXISTS", path);
+        sprintf(info, "error %s ALREADY EXISTS", path);
         send_status_ko(llid, tid, info);
         }
       else
         {
-        sprintf(info, "DIR %s CREATE ERROR %d", path, errno);
+        sprintf(info, "error DIR %s CREATE ERROR %d", path, errno);
         send_status_ko(llid, tid, info);
         }
       }
@@ -1417,7 +1417,7 @@ static void recv_reboot_vm(int llid, int tid, char *name)
   if (vm)
     qmp_request_qemu_reboot(name, llid, tid);
   else
-    send_status_ko(llid, tid, "MACHINE NOT FOUND");
+    send_status_ko(llid, tid, "error MACHINE NOT FOUND");
 }
 /*--------------------------------------------------------------------------*/
 
@@ -1433,7 +1433,7 @@ void recv_qmp_sub(int llid, int tid, char *name)
     if (vm)
       qmp_request_sub(name, llid, tid);
     else
-      send_qmp_resp(llid, tid, name, "MACHINE NOT FOUND", -1);
+      send_qmp_resp(llid, tid, name, "error MACHINE NOT FOUND", -1);
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -1445,20 +1445,17 @@ void recv_qmp_req(int llid, int tid, char *name, char *msg)
   if (vm)
     qmp_request_snd(name, llid, tid, msg);
   else
-    send_qmp_resp(llid, tid, name, "MACHINE NOT FOUND", -1);
+    send_qmp_resp(llid, tid, name, "error MACHINE NOT FOUND", -1);
 }
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 static void recv_halt_vm(int llid, int tid, char *name)
 {
-  t_vm   *vm = cfg_get_vm(name);
-  if (vm)
-    qmp_request_qemu_halt(name, llid, tid);
-  else
-    send_status_ko(llid, tid, "MACHINE NOT FOUND");
+  recv_del_vm(llid, tid, name);
 }
-/*--------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+
 
 /*****************************************************************************/
 void recv_init(void)

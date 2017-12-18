@@ -144,11 +144,10 @@ static void timeout_erase_dir_zombie(int vm_id, char *name)
   memset(act, 0, sizeof(t_action_rm_dir));
   act->vm_id = vm_id; 
   strcpy(act->name, name);
-  clownix_timeout_add(200, action_rm_dir_timed, (void *) act, NULL, NULL);
+  clownix_timeout_add(500, action_rm_dir_timed, (void *) act, NULL, NULL);
   inc_lock_self_destruction_dir();
 }
 /*---------------------------------------------------------------------------*/
-
 
 /*****************************************************************************/
 static void delayed_vm_cutoff(void *data)
@@ -173,15 +172,14 @@ static void delayed_vm_cutoff(void *data)
 }
 /*---------------------------------------------------------------------------*/
 
-
 /*****************************************************************************/
-static void arm_delayed_vm_cutoff(char *name, int val)
+static void arm_delayed_vm_cutoff(char *name)
 {
   char *vmn;
   vmn = clownix_malloc(MAX_NAME_LEN, 13);
   memset (vmn, 0, MAX_NAME_LEN);
   strncpy(vmn, name, MAX_NAME_LEN-1);
-  clownix_timeout_add(val, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
+  clownix_timeout_add(400, delayed_vm_cutoff,(void *)vmn, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
     
@@ -364,18 +362,6 @@ void machine_recv_add_vm(int llid, int tid, t_topo_kvm *kvm, int vm_id)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static void stop_mueth_qemu(t_vm *vm)
-{
-  int i;
-  for (i=0; i<vm->kvm.nb_eth; i++)
-    {
-    if (endp_mngt_stop(vm->kvm.name, i))
-      KERR("%s %d", vm->kvm.name, i);
-    }
-}
-/*---------------------------------------------------------------------------*/
-
-/*****************************************************************************/
 int machine_death( char *name, int error_death)
 {
   int result = -1;
@@ -396,31 +382,35 @@ int machine_death( char *name, int error_death)
   if (vm->vm_to_be_killed == 0)
     {
     vm->vm_to_be_killed = 1;
-    stop_mueth_qemu(vm);
     doors_send_del_vm(get_doorways_llid(), 0, name);
     qhvc0_end_qemu_unix(name);
     qmonitor_end_qemu_unix(name);
     qmp_request_qemu_halt(name, 0, 0);
-    arm_delayed_vm_cutoff(name, 200);
+    arm_delayed_vm_cutoff(name);
+KERR(" ");
     if (vm->pid_of_cp_clone)
       {
       KERR("CP ROOTFS SIGKILL %s, PID %d", name, vm->pid_of_cp_clone);
       kill(vm->pid_of_cp_clone, SIGKILL);
       vm->pid_of_cp_clone = 0;
+KERR(" ");
       }
     if (!cfg_is_a_zombie(name))
       {
+KERR(" ");
       result = 0;
       stats_counters_sysinfo_vm_death(name);
       cfg_add_zombie(vm->kvm.vm_id, name);
       if (!cfg_get_vm_locked(vm))
         {
+KERR(" ");
         if (vm->wake_up_eths != NULL)
           KOUT(" ");
         timeout_erase_dir_zombie(vm->kvm.vm_id, name);
         }
       else
         {
+KERR(" ");
         if (vm->wake_up_eths == NULL)
           KOUT(" ");
         vm->vm_to_be_killed = 0;
@@ -430,7 +420,9 @@ int machine_death( char *name, int error_death)
         clownix_timeout_add(1, utils_vm_create_fct_abort,(void *)vm,
                       &(vm->wake_up_eths->abs_beat),&(vm->wake_up_eths->ref));
         }
+KERR(" ");
       }
+KERR(" ");
     }
   return result;
 }

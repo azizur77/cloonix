@@ -1043,14 +1043,11 @@ int cmd_a2b_dump(int argc, char **argv)
 /*****************************************************************************/
 static void qmp_cb(int tid, char *name, char *line, int status)
 {
+  printf("\n%s", line);
   if (status)
     {
-    printf("RESPKO: %s %s\n\n", name, line);
+    printf("\n");
     exit(1);
-    }
-  else
-    {
-    printf("%s\n%s\n\n", name, line);
     }
 }
 /*---------------------------------------------------------------------------*/

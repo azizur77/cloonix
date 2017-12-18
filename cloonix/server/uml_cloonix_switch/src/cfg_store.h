@@ -52,7 +52,6 @@ typedef struct t_newborn
 typedef struct t_vm
   {
   t_topo_kvm kvm;
-  int saved_pid;
   int pid_of_cp_clone;
   int locked_vm;
   int vm_to_be_killed;

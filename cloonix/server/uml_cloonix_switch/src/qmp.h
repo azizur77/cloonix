@@ -18,6 +18,7 @@
 void qmp_begin_qemu_unix(char *name);
 void qmp_agent_sysinfo(char *name, int used_mem_agent);
 void qmp_msg_recv(char *name, char *msg);
+void qmp_msg_send(char *name, char *msg);
 void qmp_event_free(int llid);
 void qmp_init(void);
 void qmp_clean_all_data(void);

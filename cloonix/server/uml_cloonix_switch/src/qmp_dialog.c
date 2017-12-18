@@ -166,7 +166,8 @@ static void call_cb_and_reset(t_qrec *q, int is_timeout)
       }
     else
       {
-      if (!strncmp(q->resp, "{\"return\":", strlen("{\"return\":")))
+      if ((!strncmp(q->resp, "{\"return\":", strlen("{\"return\":"))) ||
+          (!strncmp(q->resp, "{\"error\":", strlen("{\"error\":"))))
         q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
       else
         KERR("TOLOOKINTO %s %d %s %s", q->name, q->resp_llid, q->req, q->resp);
@@ -262,7 +263,7 @@ static void timer_connect_qmp(void *data)
           KERR("%s", pname);
         else
           {
-          clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+          clownix_timeout_add(10,timer_connect_qmp,(void *) pname,NULL,NULL);
           timer_restarted = 1;
           }
         }
@@ -276,7 +277,7 @@ static void timer_connect_qmp(void *data)
             KERR("%s", pname);
           else
             {
-            clownix_timeout_add(10, timer_connect_qmp, (void *) pname, NULL, NULL);
+            clownix_timeout_add(10,timer_connect_qmp,(void *) pname,NULL,NULL);
             timer_restarted = 1;
             }
           }
@@ -287,7 +288,7 @@ static void timer_connect_qmp(void *data)
           qrec->llid = msg_watch_fd(fd, qmp_rx_cb, qmp_err_cb, "qmp");
           if (qrec->llid == 0)
             KOUT(" ");
-          llid_trace_alloc(qrec->llid,"QMP",0,0, type_llid_trace_unix_qmonitor);
+          llid_trace_alloc(qrec->llid,"QMP",0,0,type_llid_trace_unix_qmonitor);
           set_qrec_with_llid(qrec->llid, qrec);
           }
         }
@@ -338,6 +339,7 @@ int qmp_dialog_req(char *name, int llid, int tid, char *req, t_dialog_resp cb)
     qrec->resp_tid = tid;
     qrec->resp_cb = cb;
     strncpy(qrec->req, req, MAX_RPC_MSG_LEN-1);
+    qmp_msg_send(qrec->name, req);
     watch_tx(qrec->llid, strlen(req), req);
     result = 0;
     }
