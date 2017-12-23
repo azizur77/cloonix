@@ -387,30 +387,25 @@ int machine_death( char *name, int error_death)
     qmonitor_end_qemu_unix(name);
     qmp_request_qemu_halt(name, 0, 0);
     arm_delayed_vm_cutoff(name);
-KERR(" ");
     if (vm->pid_of_cp_clone)
       {
       KERR("CP ROOTFS SIGKILL %s, PID %d", name, vm->pid_of_cp_clone);
       kill(vm->pid_of_cp_clone, SIGKILL);
       vm->pid_of_cp_clone = 0;
-KERR(" ");
       }
     if (!cfg_is_a_zombie(name))
       {
-KERR(" ");
       result = 0;
       stats_counters_sysinfo_vm_death(name);
       cfg_add_zombie(vm->kvm.vm_id, name);
       if (!cfg_get_vm_locked(vm))
         {
-KERR(" ");
         if (vm->wake_up_eths != NULL)
           KOUT(" ");
         timeout_erase_dir_zombie(vm->kvm.vm_id, name);
         }
       else
         {
-KERR(" ");
         if (vm->wake_up_eths == NULL)
           KOUT(" ");
         vm->vm_to_be_killed = 0;
@@ -420,9 +415,7 @@ KERR(" ");
         clownix_timeout_add(1, utils_vm_create_fct_abort,(void *)vm,
                       &(vm->wake_up_eths->abs_beat),&(vm->wake_up_eths->ref));
         }
-KERR(" ");
       }
-KERR(" ");
     }
   return result;
 }

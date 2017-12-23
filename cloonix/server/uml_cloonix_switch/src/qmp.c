@@ -393,18 +393,13 @@ static void timer_waiting_for_shutdown(void *data)
 {
   char *pname = (char *) data;
   t_qmp *qmp = find_qmp(pname);
-if (!qmp)
-KERR("%s", pname);
   if (qmp)
     {
     if (qmp->waiting_for == waiting_for_shutdown_return)
       {
       alloc_tail_qmp_req(qmp, 0, 0, QMP_QUIT);
       qmp->waiting_for = waiting_for_quit_return;
-KERR("%s SENDING QUIT", pname);
       }
-    else
-KERR("%s NOT SENDING QUIT", pname);
     }
   clownix_free(pname, __FUNCTION__);
 }
@@ -418,7 +413,6 @@ static void dialog_resp_return(t_qmp *qmp, int llid, int tid, int status)
     {
     qmp->capa_acked = 1;
     qmp->waiting_for = waiting_for_nothing;
-KERR("waiting_for_capa_return");
     }
   else if (qmp->waiting_for == waiting_for_reboot_return)
     {
@@ -435,7 +429,6 @@ KERR("waiting_for_capa_return");
         KERR("%s", qmp->name);
       }
     qmp->waiting_for = waiting_for_nothing;
-KERR("waiting_for_reboot_return");
     }
   else if (qmp->waiting_for == waiting_for_shutdown_return)
     {
@@ -455,12 +448,10 @@ KERR("waiting_for_reboot_return");
     memset(pname, 0, MAX_NAME_LEN);
     strncpy(pname, qmp->name, MAX_NAME_LEN-1);
     clownix_timeout_add(250, timer_waiting_for_shutdown, pname, NULL, NULL);
-KERR("waiting_for_shutdown_return");
     }
   else if (qmp->waiting_for == waiting_for_quit_return)
     {
     qmp->waiting_for = waiting_for_nothing;
-KERR("waiting_for_quit_return");
     }
 }
 /*--------------------------------------------------------------------------*/
@@ -530,7 +521,6 @@ void qmp_msg_recv(char *name, char *msg)
       if (strstr(msg, "{\"SHUTDOWN\":"))
         {
         qmp->waiting_for = waiting_for_nothing;
-KERR(" ");
         }
       }
     }

@@ -71,7 +71,6 @@ void endp_mngt_del_mac_eth_vm(char *name, int vm_id, int nb_eth, t_eth_params *e
 
 int endp_mngt_start(int llid, int tid, char *name, int num, int endp_type);
 
-void endp_mngt_stop_all(void);
 int endp_mngt_stop(char *name, int num);
 
 void endp_mngt_snf_set_name(char *name, int num);

@@ -205,13 +205,6 @@ static void node_qreboot_vm(GtkWidget *mn, t_item_ident *pm)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
-static void node_halt_vm(GtkWidget *mn, t_item_ident *pm)
-{
-  client_halt_vm(0, end_cb_node_halt, pm->name);
-}
-/*--------------------------------------------------------------------------*/
-
-/****************************************************************************/
 static void node_sav_whole(GtkWidget *mn, t_item_ident *pm)
 {
   pm->joker_param = 1;
@@ -797,8 +790,7 @@ void node_ctx_menu(t_bank_item *bitem)
 {
   GtkWidget *dtach_console, *desktop=NULL, *xterm_qmonitor;
   GtkWidget *item_delete, *item_info, *item_color;
-  GtkWidget *save_whole, *save_derived;
-  GtkWidget *qreboot_vm, *halt_vm;
+  GtkWidget *save_whole, *save_derived, *qreboot_vm;
   GtkWidget *separator, *separator2, *menu = gtk_menu_new();
   GtkWidget *item_hidden;
   char *whole_rootfs = "save whole rootfs"; 
@@ -816,7 +808,6 @@ void node_ctx_menu(t_bank_item *bitem)
     save_whole = gtk_menu_item_new_with_label(whole_rootfs);
     save_derived = gtk_menu_item_new_with_label(derived_rootfs);
     qreboot_vm = gtk_menu_item_new_with_label("send reboot req to qemu");
-    halt_vm = gtk_menu_item_new_with_label("send poweroff req to qemu");
     }
   dtach_console = gtk_menu_item_new_with_label("dtach console");
   item_info = gtk_menu_item_new_with_label("Info");
@@ -860,9 +851,6 @@ void node_ctx_menu(t_bank_item *bitem)
     g_signal_connect(G_OBJECT(qreboot_vm), "activate",
                      G_CALLBACK(node_qreboot_vm), (gpointer) pm);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), qreboot_vm);
-    g_signal_connect(G_OBJECT(halt_vm), "activate",
-                     G_CALLBACK(node_halt_vm), (gpointer) pm);
-    gtk_menu_shell_append(GTK_MENU_SHELL(menu), halt_vm);
     }
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_info);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), separator2);
