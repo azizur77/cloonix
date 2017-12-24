@@ -38,22 +38,39 @@
 #include "llid_trace.h"
 
 
-#define QMP_RESET     "{ \"execute\": \"system_reset\" }"
-#define QMP_STOP      "{ \"execute\": \"stop\" }"
-#define QMP_CONT      "{ \"execute\": \"cont\" }"
-#define QMP_CAPA      "{ \"execute\": \"qmp_capabilities\" }"
-#define QMP_QUERY     "{\"execute\":\"query-status\"}"
-#define QMP_BALLOON   "{\"execute\":\"balloon\",\"arguments\":{\"value\":%llu}}"
-#define QMP_QUERY_CMD "{ \"execute\": \"query-commands\" }"
-#define QMP_SHUTDOWN  "{ \"execute\": \"system_powerdown\" }"
-#define QMP_QUIT      "{ \"execute\": \"quit\" }"
+#define QMP_RESET     "{ \"execute\": \"system_reset\" }\n"
+#define QMP_STOP      "{ \"execute\": \"stop\" }\n"
+#define QMP_CONT      "{ \"execute\": \"cont\" }\n"
+#define QMP_CAPA      "{ \"execute\": \"qmp_capabilities\" }\n"
+#define QMP_QUERY     "{\"execute\":\"query-status\"}\n"
+#define QMP_BALLOON   "{\"execute\":\"balloon\",\"arguments\":{\"value\":%llu}}\n"
+#define QMP_QUERY_CMD "{ \"execute\": \"query-commands\" }\n"
+#define QMP_SHUTDOWN  "{ \"execute\": \"system_powerdown\" }\n"
+#define QMP_QUIT      "{ \"execute\": \"quit\" }\n"
 
+
+#define QMP_START_SAVE "{ \"execute\": \"drive-mirror\", "\
+                       "    \"arguments\": {             "\
+                       "        \"device\": \"%s\",      "\
+                       "        \"job-id\": \"job_%s\",  "\
+                       "        \"target\": \"%s\",      "\
+                       "        \"sync\": \"full\"       "\
+                       "    }                            "\
+                       "}                                "
+
+#define QMP_END_SAVE "{\"execute\": \"block-job-cancel\", "\
+                     "    \"arguments\": {                "\
+                     "        \"device\": \"job_%s\"      "\
+                     "          }                         "\
+                     "}                                   "
 
 enum {
   waiting_for_nothing = 0,
   waiting_for_capa_return,
   waiting_for_reboot_return,
   waiting_for_shutdown_return,
+  waiting_for_save_return,
+  waiting_for_end_save_return,
   waiting_for_quit_return,
   waiting_for_max,
 };
@@ -406,6 +423,48 @@ static void timer_waiting_for_shutdown(void *data)
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void qmp_request_end_save(t_qmp *qmp, int llid, int tid)
+{
+  char req[MAX_RPC_MSG_LEN];
+  memset(req, 0, MAX_RPC_MSG_LEN);
+  snprintf(req, MAX_RPC_MSG_LEN-1, QMP_END_SAVE, qmp->name);
+  alloc_tail_qmp_req(qmp, llid, tid, req);
+  qmp->waiting_for = waiting_for_end_save_return;
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void dialog_resp_save(char *name, int llid, int tid, 
+                             char *req, char *resp)
+{
+  char job[MAX_NAME_LEN+10];
+  t_qmp *qmp = find_qmp(name);
+  if (!qmp)
+    KERR("%d %s", llid, name);
+  else
+    {
+    if (qmp->waiting_for != waiting_for_save_return)
+        KERR("%s %d", name, qmp->waiting_for);
+    else
+      {
+      if (strstr(resp, "BLOCK_JOB_READY"))
+        {
+        memset(job, 0, MAX_NAME_LEN+10);
+        snprintf(job, MAX_NAME_LEN+9, "job_%s", name);
+        if (strstr(resp, job))
+          {
+          qmp_request_end_save(qmp, llid, tid);
+          }
+        }
+      else
+        KERR("%s", resp);
+      }
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+
+/****************************************************************************/
 static void dialog_resp_return(t_qmp *qmp, int llid, int tid, int status)
 {
   char *pname;
@@ -453,6 +512,40 @@ static void dialog_resp_return(t_qmp *qmp, int llid, int tid, int status)
     {
     qmp->waiting_for = waiting_for_nothing;
     }
+  else if (qmp->waiting_for == waiting_for_save_return)
+    {
+    if (status)
+      {
+      KERR("%s", qmp->name);
+      if ((llid) && (llid_trace_exists(llid)))
+        send_status_ko(llid, tid, "qmp save ko");
+      qmp->waiting_for = waiting_for_nothing;
+      }
+    else
+      {
+      if (qmp_dialog_req(qmp->name, llid, tid, "", dialog_resp_save))
+        KERR("%s", qmp->name);
+      }
+    }
+  else if (qmp->waiting_for == waiting_for_end_save_return)
+    {
+    if (status)
+      {
+      KERR("%s", qmp->name);
+      if ((llid) && (llid_trace_exists(llid)))
+        send_status_ko(llid, tid, "qmp save ko");
+      }
+    else
+      {
+      send_status_ok(llid, tid, "qmp save ok");
+      }
+    qmp->waiting_for = waiting_for_nothing;
+    }
+  else if (qmp->waiting_for == waiting_for_nothing)
+    {
+    }
+  else
+    KERR("%s %d", qmp->name, qmp->waiting_for);
 }
 /*--------------------------------------------------------------------------*/
 
@@ -574,7 +667,17 @@ void qmp_init(void)
 void qmp_request_save_rootfs(char *name, char *path, int llid,
                              int tid, int stype)
 {
-  send_status_ko(llid, tid, "NOT IMPLEM");
+  char req[MAX_RPC_MSG_LEN];
+  t_qmp *qmp = find_qmp(name);
+  if (!qmp)
+    send_status_ko(llid, tid, "error qmp not found");
+  else
+    {
+    memset(req, 0, MAX_RPC_MSG_LEN);
+    snprintf(req, MAX_RPC_MSG_LEN-1, QMP_START_SAVE, name, name, path);
+    alloc_tail_qmp_req(qmp, llid, tid, req);
+    qmp->waiting_for = waiting_for_save_return;
+    }
 }
 /*--------------------------------------------------------------------------*/
 

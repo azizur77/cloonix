@@ -273,6 +273,9 @@ void help_snd_qmp(char *l)
   printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"system_reset\\\" }\"",l);
   printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"query-status\\\" }\"",l);
   printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"query-commands\\\" }\"",l);
+  printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"query-block\\\" }\"",l);
+  printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"query-blockstats\\\" }\"",l);
+  printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"query-cpus\\\" }\"",l);
   printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"system_powerdown\\\" }\"",l);
   printf("\n%s Cloon1 \"{ \\\"execute\\\": \\\"quit\\\" }\"",l);
   printf("\n...\n\n");

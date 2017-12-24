@@ -30,4 +30,5 @@ void qmp_request_save_rootfs_all(int nb, t_vm *vm, char *path, int llid,
                                  int tid, int stype);
 void qmp_request_sub(char *name, int llid, int tid);
 void qmp_request_snd(char *name, int llid, int tid, char *msg);
+
 /*--------------------------------------------------------------------------*/

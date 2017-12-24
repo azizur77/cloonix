@@ -67,6 +67,12 @@
 
 #define VHOST_VSOCK " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%d"
 
+
+#define BLOCKNAME " -blockdev node-name=%s,driver=qcow2,"\
+                  "file.driver=file,file.node-name=file,file.filename=%s" \
+                  " -device virtio-blk,drive=%s,id=virtio0"
+
+
 typedef struct t_cprootfs_config
 {
   char name[MAX_NAME_LEN];
@@ -479,7 +485,10 @@ static int create_linux_cmd_kvm(t_vm *vm, char *linux_cmd)
         " -uuid 3824cca6-7603-423b-8e5c-84d15d9b0a6a");
         }
       else
-        len += sprintf(linux_cmd+len, DRIVE_PARAMS, rootfs, 0);
+        {
+        len += sprintf(linux_cmd+len, BLOCKNAME, 
+                       vm->kvm.name, rootfs, vm->kvm.name );
+        }
       } 
     cdrom = utils_get_cdrom_path_name(vm->kvm.vm_id);
     len += sprintf(linux_cmd+len, AGENT_CDROM, cdrom);

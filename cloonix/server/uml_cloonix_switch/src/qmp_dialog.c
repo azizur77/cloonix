@@ -157,26 +157,38 @@ static int message_braces_complete(char *whole_rx)
 /****************************************************************************/
 static void call_cb_and_reset(t_qrec *q, int is_timeout)
 {
+  t_dialog_resp cb;
   if ((strlen(q->req)) && (q->resp_cb))
     {
     if (is_timeout)
       {
       strcpy(q->resp, "timeout_qmp_resp");
-      q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+      cb = q->resp_cb;
+      q->resp_cb = NULL;
+      cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
       }
     else
       {
       if ((!strncmp(q->resp, "{\"return\":", strlen("{\"return\":"))) ||
           (!strncmp(q->resp, "{\"error\":", strlen("{\"error\":"))))
-        q->resp_cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+        {
+        cb = q->resp_cb;
+        q->resp_cb = NULL;
+        cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
+        }
       else
         KERR("TOLOOKINTO %s %d %s %s", q->name, q->resp_llid, q->req, q->resp);
       }
+    } 
+  else if ((strlen(q->req)==0) && (q->resp_cb))
+    {
+    cb = q->resp_cb;
+    q->resp_cb = NULL;
+    cb(q->name, q->resp_llid, q->resp_tid, q->req, q->resp);
     }
   q->ref_id += 1;
   memset(q->req, 0, MAX_RPC_MSG_LEN);
   memset(q->resp, 0, MAX_RPC_MSG_LEN);
-  q->resp_cb = NULL;
   q->resp_offset = 0;
 }
 /*--------------------------------------------------------------------------*/
@@ -320,27 +332,30 @@ int qmp_dialog_req(char *name, int llid, int tid, char *req, t_dialog_resp cb)
   t_timeout_resp *timeout;
   if (!qrec)
     KERR("%s", name);
-  else if ((strlen(qrec->req)) || (qrec->resp_cb))
-    KERR("%s %s", name, qrec->req);
+  else if (qrec->resp_cb)
+    KERR("%s", name);
   else if (strlen(req) >= MAX_RPC_MSG_LEN)
     KERR("%s %d %d", name, (int)strlen(req), MAX_RPC_MSG_LEN);
   else if ((!qrec->llid) || (!msg_exist_channel(qrec->llid)))  
     KERR("%s", name);
-  else if (!message_braces_complete(req))
+  else if ((strlen(req)) && (!message_braces_complete(req)))
     cb(name, llid, tid, req, "invalid braces syntax"); 
   else
     {
-    timeout = (t_timeout_resp *) clownix_malloc(sizeof(t_timeout_resp), 7);
-    memset(timeout, 0, sizeof(t_timeout_resp));
-    strncpy(timeout->name, name, MAX_NAME_LEN-1);
-    timeout->ref_id = qrec->ref_id;
-    clownix_timeout_add(20, timeout_resp_qmp, (void *) timeout, NULL, NULL);
+    if (strlen(req))
+      {
+      timeout = (t_timeout_resp *) clownix_malloc(sizeof(t_timeout_resp), 7);
+      memset(timeout, 0, sizeof(t_timeout_resp));
+      strncpy(timeout->name, name, MAX_NAME_LEN-1);
+      timeout->ref_id = qrec->ref_id;
+      clownix_timeout_add(20, timeout_resp_qmp, (void *) timeout, NULL, NULL);
+      strncpy(qrec->req, req, MAX_RPC_MSG_LEN-1);
+      qmp_msg_send(qrec->name, req);
+      watch_tx(qrec->llid, strlen(req), req);
+      }
     qrec->resp_llid = llid;
     qrec->resp_tid = tid;
     qrec->resp_cb = cb;
-    strncpy(qrec->req, req, MAX_RPC_MSG_LEN-1);
-    qmp_msg_send(qrec->name, req);
-    watch_tx(qrec->llid, strlen(req), req);
     result = 0;
     }
   return result;
