@@ -37,6 +37,8 @@
 #include "qmp_dialog.h"
 #include "llid_trace.h"
 
+int produce_list_commands(t_list_commands *list);
+
 
 #define QMP_RESET     "{ \"execute\": \"system_reset\" }\n"
 #define QMP_STOP      "{ \"execute\": \"stop\" }\n"
@@ -118,6 +120,7 @@ static t_qmp_sub *g_head_all_qmp_sub;
 static int g_all_saving_ok;
 static int g_all_saving_ko;
 static int g_all_saving_nb;
+static char g_all_path[MAX_PATH_LEN];
 
 /****************************************************************************/
 static void alloc_tail_qmp_req(t_qmp *qmp, int llid, int tid, char *msg)
@@ -464,6 +467,104 @@ static void dialog_resp_save(char *name, int llid, int tid,
 /*--------------------------------------------------------------------------*/
 
 /****************************************************************************/
+static void fprintf_add_kvm(FILE *fhd, char *line, char *dir_path)
+{
+  int i, len = strlen(line) + 1;
+  char *ptr;
+  char *spare1 = (char *) clownix_malloc(len, 7);
+  char *spare2 = (char *) clownix_malloc(len, 7);
+  char rootfs[MAX_PATH_LEN];
+  memcpy(spare1, line, len);
+  memcpy(spare2, line, len);
+  ptr = spare1;
+  for (i=0; i<8; i++)
+    {
+    ptr = strchr(ptr, ' ');
+    if (!ptr)
+      KERR("%s", line);
+    else
+      {
+      if (i == 7)
+        *ptr = 0;
+      else
+        ptr++;
+      }
+    }
+  if (ptr)
+    {
+    ptr = spare2;
+    for (i=0; i<5; i++)
+      {
+      ptr = strchr(ptr, ' ');
+      if (!ptr)
+        KOUT("%s", line);
+      if (i == 4)
+        *ptr = 0;
+      else
+        ptr++;
+      }
+    ptr = spare2;
+    for (i=0; i<4; i++)
+      {
+      ptr = strchr(ptr, ' ');
+      if (!ptr)
+        KOUT("%s", line);
+      ptr++;
+      }
+    memset(rootfs, 0, MAX_PATH_LEN);
+    snprintf(rootfs, MAX_PATH_LEN-1, "%s/%s.qcow2", dir_path, ptr);
+    fprintf(fhd, "%s %s &\n", spare1, rootfs);
+    }
+  clownix_free(spare1, __FUNCTION__);
+  clownix_free(spare2, __FUNCTION__);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void write_script_file(char *dir_path, char *script,
+                              int qty, t_list_commands *list)
+{
+  FILE *fhd;
+  mode_t mode;
+  int i;
+  fhd = fopen(script, "w");
+  if (fhd)
+    {
+    for (i=0; i<qty; i++)
+      {
+      if (strstr(list[i].cmd, "add kvm"))
+        fprintf_add_kvm(fhd, list[i].cmd, dir_path);
+      else
+        fprintf(fhd, "%s\n", list[i].cmd);
+      }
+    fclose(fhd);
+    mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP;
+    if (chmod(script, mode))
+      KERR("%d", errno);
+    }
+  else
+    KERR("%d", errno);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
+static void create_replay_script(char *dir_path)
+{
+  char script[MAX_PATH_LEN];
+  t_list_commands *list;
+  int qty, alloc_len;
+  memset(script, 0, MAX_PATH_LEN);
+  snprintf(script,MAX_PATH_LEN-1,"%s/%s.sh",dir_path,cfg_get_cloonix_name());
+  alloc_len = MAX_LIST_COMMANDS_QTY * sizeof(t_list_commands);
+  list = (t_list_commands *) clownix_malloc(alloc_len, 7);
+  memset(list, 0, alloc_len);
+  qty = produce_list_commands(list);
+  write_script_file(dir_path, script, qty, list);
+  clownix_free(list, __FUNCTION__);
+}
+/*--------------------------------------------------------------------------*/
+
+/****************************************************************************/
 static void save_ko_return(t_qmp *qmp, int llid, int tid)
 {
   qmp->waiting_for = waiting_for_nothing;
@@ -478,6 +579,8 @@ static void save_ko_return(t_qmp *qmp, int llid, int tid)
       g_all_saving_ko = 0;
       g_all_saving_ok = 0;
       g_all_saving_nb = 0;
+      create_replay_script(g_all_path);
+      memset(g_all_path, 0, MAX_PATH_LEN);
       }
     }
   else
@@ -501,13 +604,15 @@ static void save_ok_return(t_qmp *qmp, int llid, int tid)
       if ((llid) && (llid_trace_exists(llid)))
         {
         if (g_all_saving_ko == 0)
-          send_status_ko(llid, tid, "qmp save all ok");
+          send_status_ok(llid, tid, "qmp save all ok");
         else
           send_status_ko(llid, tid, "qmp save all ko");
         }
       g_all_saving_ko = 0;
       g_all_saving_ok = 0;
       g_all_saving_nb = 0;
+      create_replay_script(g_all_path);
+      memset(g_all_path, 0, MAX_PATH_LEN);
       }
     }
   else
@@ -690,7 +795,7 @@ static void timer_fifo_visit(void *data)
       if (cur->waiting_for == waiting_for_save_block_job_ready)
         {
         if ((req->llid) && llid_trace_exists(req->llid))
-          send_qmp_resp(req->llid, req->tid, cur->name, "error saving block", -1);
+          send_qmp_resp(req->llid,req->tid,cur->name,"error saving block",-1);
         free_head_qmp_req(cur);
         }
       else if (((cur->capa_acked && (req->llid)) || (req->llid == 0))  && 
@@ -704,7 +809,7 @@ static void timer_fifo_visit(void *data)
         if (req->count > 10)
           {
           if ((req->llid) && llid_trace_exists(req->llid))
-            send_qmp_resp(req->llid, req->tid, cur->name, "error timeout", -1);
+            send_qmp_resp(req->llid, req->tid, cur->name, "error timeout",-1);
           free_head_qmp_req(cur);
           }
         }
@@ -720,6 +825,7 @@ void qmp_init(void)
 {
   g_head_qmp = NULL;
   g_head_all_qmp_sub = NULL;
+  memset(g_all_path, 0, MAX_PATH_LEN);
   clownix_timeout_add(10, timer_fifo_visit, NULL, NULL, NULL);
 }
 /*--------------------------------------------------------------------------*/
@@ -775,13 +881,15 @@ void qmp_request_save_rootfs_all(int nb, t_vm *vm, char *path, int llid,
       result = -1;
     cur = cur->next;
     }
-  if (result)
+  if ((result) || (strlen(g_all_path)))
     send_status_ko(llid, tid, "error one qmp not ready");
   else
     {
     g_all_saving_ok = 0;
     g_all_saving_ko = 0;
     g_all_saving_nb = 0;
+    memset(g_all_path, 0, MAX_PATH_LEN);
+    snprintf(g_all_path, MAX_PATH_LEN-1, "%s", path);
     cur = vm;
     while (cur)
       {
@@ -791,7 +899,7 @@ void qmp_request_save_rootfs_all(int nb, t_vm *vm, char *path, int llid,
       if (qmp->waiting_for != waiting_for_nothing)
         KERR(" ");
       memset(fpath, 0, MAX_PATH_LEN);
-      snprintf(fpath, MAX_PATH_LEN-1, "%s/%s", path, cur->kvm.name);
+      snprintf(fpath, MAX_PATH_LEN-1, "%s/%s.qcow2", path, cur->kvm.name);
       format_qmp_start_save(cur->kvm.name, fpath, stype, req);
       alloc_tail_qmp_req(qmp, llid, tid, req);
       g_all_saving_nb += 1;

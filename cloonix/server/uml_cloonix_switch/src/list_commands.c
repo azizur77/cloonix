@@ -530,19 +530,19 @@ static int produce_first_lines(int offset, t_list_commands *hlist)
   if (can_increment_index(result))
     {
     list = &(hlist[result]);
-    sprintf(list->cmd, "#cloonix_net %s", cfg_get_cloonix_name());
+    sprintf(list->cmd, "cloonix_net %s", cfg_get_cloonix_name());
     result += 1;
     }
   if (can_increment_index(result))
     {
     list = &(hlist[result]);
-    sprintf(list->cmd, "#sleep 2");
+    sprintf(list->cmd, "sleep 2");
     result += 1;
     }
   if (can_increment_index(result))
     {
     list = &(hlist[result]);
-    sprintf(list->cmd, "#cloonix_gui %s", cfg_get_cloonix_name());
+    sprintf(list->cmd, "cloonix_gui %s", cfg_get_cloonix_name());
     result += 1;
     }
   return result;
