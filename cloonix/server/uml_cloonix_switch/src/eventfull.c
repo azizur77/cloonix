@@ -264,9 +264,7 @@ static int collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
     else
       {
       vm = cfg_get_vm(cur->name);
-      if (!vm)
-        KERR("%s", cur->name);
-      else
+      if (vm)
         {
         strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
         eventfull[i].num  = cur->num;
