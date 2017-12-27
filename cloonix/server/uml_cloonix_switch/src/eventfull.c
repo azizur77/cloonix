@@ -263,22 +263,27 @@ static int collect(t_eventfull_endp *eventfull, int nb, t_endp *endp)
       KERR("%d", cur->endp_type);
     else
       {
-      strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
-      eventfull[i].num  = cur->num;
-      eventfull[i].type = cur->endp_type;
-      if ((cur->endp_type == endp_type_kvm) && (cur->num == 0)) 
+      vm = cfg_get_vm(cur->name);
+      if (!vm)
+        KERR("%s", cur->name);
+      else
         {
-        vm = cfg_get_vm(cur->name);
-        eventfull[i].ram  = vm->ram;
-        eventfull[i].cpu  = vm->cpu;
+        strncpy(eventfull[i].name, cur->name, MAX_NAME_LEN-1);
+        eventfull[i].num  = cur->num;
+        eventfull[i].type = cur->endp_type;
+        if ((cur->endp_type == endp_type_kvm) && (cur->num == 0)) 
+          {
+          eventfull[i].ram  = vm->ram;
+          eventfull[i].cpu  = vm->cpu;
+          }
+        eventfull[i].ok   = cur->c2c.is_peered;
+        eventfull[i].ptx  = add_all_tidx_ptx(cur->lan_attached);
+        eventfull[i].prx  = add_all_tidx_prx(cur->lan_attached);
+        eventfull[i].btx  = add_all_tidx_btx(cur->lan_attached);
+        eventfull[i].brx  = add_all_tidx_brx(cur->lan_attached);
+        eventfull[i].ms   = get_last_ms(cur->lan_attached);
+        real_nb += 1;
         }
-      eventfull[i].ok   = cur->c2c.is_peered;
-      eventfull[i].ptx  = add_all_tidx_ptx(cur->lan_attached);
-      eventfull[i].prx  = add_all_tidx_prx(cur->lan_attached);
-      eventfull[i].btx  = add_all_tidx_btx(cur->lan_attached);
-      eventfull[i].brx  = add_all_tidx_brx(cur->lan_attached);
-      eventfull[i].ms   = get_last_ms(cur->lan_attached);
-      real_nb += 1;
       }
     next = endp_mngt_get_next(cur);
     clownix_free(cur, __FILE__);
