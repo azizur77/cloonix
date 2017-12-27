@@ -23,10 +23,12 @@ Build and install from github sources:
   It must be run with root privilege.
   
   Then then a call to ./doitall does the build, and at the end, installs
-  the binaries in /usr/local/bin (root privilege necessary).
+  the binaries in /usr/local/bin (root privilege necessary for the
+  install part).
 
-  Be aware that cloonix_config must be saved because it is overwritten
-  with each new install.
+  Be aware that your cloonix_config must be saved because it is overwritten
+  with each new install, the config has been put in:
+  /usr/local/bin/cloonix/cloonix_config.
 
 -----------------------------------------------------------------------------
 
@@ -36,15 +38,15 @@ Build and install from github sources:
 Install from already compiled binaries found at cloonix.fr:
 -----------------------------------------------------------
 
-    wget http://cloonix.fr/bin_stored/v-37-02/jessie-cloonix-37-02.tar.gz
-    wget http://cloonix.fr/bin_stored/v-37-02/install_depends.gz
-    wget http://cloonix.fr/bin_stored/v-37-02/install_cloonix.gz
+    wget http://cloonix.fr/bin_stored/v-39-00/stretch-cloonix-39-00.tar.gz
+    wget http://cloonix.fr/bin_stored/v-39-00/install_depends.gz
+    wget http://cloonix.fr/bin_stored/v-39-00/install_cloonix.gz
     gunzip install_depends.gz
     gunzip install_cloonix.gz
     chmod +x install_depends
     chmod +x install_cloonix
     ./install_depends run
-    ./install_cloonix jessie-cloonix-37-02.tar.gz
+    ./install_cloonix stretch-cloonix-39-00.tar.gz
 
   To run the pre-compiled software, the host needs a subset of the packets
   needed for the build, install_depends can be launched with run as input
@@ -52,38 +54,41 @@ Install from already compiled binaries found at cloonix.fr:
   It must be run with root privilege.
 
 
+----------------------------------------------------------
 To use the software, a virtual machine qcow2 is necessary:
 ----------------------------------------------------------
        
-    wget http://cloonix.fr/bulk_stored/v-37-02/jessie.qcow2.xz
-    mv jessie.qcow2.xz ${HOME}/cloonix_data/bulk
+    wget http://cloonix.fr/bulk_stored/v-39-00/stretch.qcow2.xz
+    mv stretch.qcow2.xz ${HOME}/cloonix_data/bulk
     cd ${HOME}/cloonix_data/bulk
-    xz -d jessie.qcow2.xz
+    xz -d stretch.qcow2.xz
 
   After the install, download one of the virtual machines provided at
-  cloonix.fr, for example, choose the jessie.qcow2, and put it in your
+  cloonix.fr, for example, choose the stretch.qcow2, and put it in your
   "bulk" directory, see in /usr/local/bin/cloonix/cloonix_config the
   path for the bulk directory which is by default: 
   ${HOME}/cloonix_data/bulk. 
   
+
+-----------------------------------------
 Use a demo script to begin using cloonix:
 -----------------------------------------
 
-  http://cloonix.fr/demo_stored
+  http://cloonix.fr/demo_stored/v-39-00
 
   Download one of the demo scripts provided at cloonix.fr, choose the 
-  "ping.sh" script because it is the simplest one and launch it.
+  ping.tar.gz because it is the simplest one, untar and launch it.
   
 
 
-NOTE:
+NOTES:
 -----
   To use the sniffer, you must install wireshark-qt on the machine
   hosting the cloonix server.
   To build a cisco csr1000v machine compatible with cloonix, see the
   documentation at http://cloonix.fr
 
-  On the jessie, from the 37.03 version, you must have an updated 
+  On a jessie host, from the 37.03 version, you must have an updated 
   glib2, to make the spice compilation work, I did:
   tar xvf glib2.0_2.48.0.orig.tar.xz
   ./configure --prefix=/usr/local
@@ -97,28 +102,5 @@ with a working machine qcow2 as follows:
 export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
 /usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-x86_64 \
 -L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--hda lede.qcow2 -nographic
+-hda openwrt.qcow2 -nographic
 ---------------------------------------------------------------------
-
-For the arm emulation, test as follows:
-
-export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
-/usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-arm \
--L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--nographic -M virt -m 64 -kernel lede_arm_zImage -initrd lede_arm_zImage \
--drive file=lede_arm_root.ext4,format=raw,if=virtio -append 'root=/dev/vda'
-
-or
-
-export LD_LIBRARY_PATH="/usr/local/bin/cloonix/common/spice/spice_lib"
-/usr/local/bin/cloonix/server/qemu/qemu_bin/qemu-system-aarch64 \
--L /usr/local/bin/cloonix/server/qemu/qemu_bin \
--nographic -M virt -cpu cortex-a57 -m 256 -kernel lede_aarch64_Image \
--initrd lede_aarch64_Image-initramfs \
--drive file=lede_aarch64_root.ext4,format=raw,if=virtio -append 'root=/dev/vda'
-
-
-For the arm emulation, no gui to create a vm, use:
-cloonix_cli nemo add kvm tst32 256 1 2 lede_arm_root.ext4 --arm_kernel=lede_arm_zImage
-cloonix_cli nemo add kvm tst64 256 1 2 lede_aarch64_root.ext4 --aarch64_kernel=lede_aarch64_Image
-
