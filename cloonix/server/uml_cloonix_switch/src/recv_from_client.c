@@ -539,6 +539,7 @@ void recv_kill_uml_clownix(int llid, int tid)
   mulan_del_all();
   c2c_free_all();
   machine_recv_kill_clownix();
+  endp_mngt_stop_all_sat();
   auto_self_destruction(llid, tid);
   doors_send_command(get_doorways_llid(), 0, "noname", STOP_DOORS_LISTENING);
 }
@@ -1141,6 +1142,7 @@ void recv_del_all(int llid, int tid)
   mulan_del_all();
   c2c_free_all();
   machine_recv_kill_clownix();
+  endp_mngt_stop_all_sat();
   event_subscriber_send(sub_evt_topo, cfg_produce_topo_info());
   send_status_ok(llid, tid, "delall");
 }

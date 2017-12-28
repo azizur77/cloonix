@@ -126,18 +126,6 @@ static void end_cb_node_reboot(int tid, int status, char *err)
 }
 /*--------------------------------------------------------------------------*/
 
-
-/****************************************************************************/
-static void end_cb_node_halt(int tid, int status, char *err)
-{
-  if (status)
-    insert_next_warning(err, 1);
-  else
-    insert_next_warning("SEND HALT VM OK", 1);
-
-}
-/*--------------------------------------------------------------------------*/
-
 /****************************************************************************/
 static void end_cb_node_sav_rootfs(int tid, int status, char *err)
 {
@@ -485,7 +473,7 @@ static void node_item_delete(GtkWidget *mn, t_item_ident *pm)
 /****************************************************************************/
 static void lan_item_delete(GtkWidget *mn, t_item_ident *pm)
 {
-  t_bank_item *edge, *bitem;
+  t_bank_item *edge=NULL, *bitem;
   t_list_bank_item *cur, *next;
   bitem = look_for_lan_with_id(pm->name);
   if (bitem)
@@ -501,11 +489,20 @@ static void lan_item_delete(GtkWidget *mn, t_item_ident *pm)
           KOUT("%s", pm->name);
         if (!cur->bitem->att_eth)
           KOUT("%s", pm->name);
-        if (!cur->bitem->att_eth->att_node)
-          KOUT("%s", pm->name);
-        edge = bank_get_item(bank_type_edge,
-                             cur->bitem->att_eth->att_node->name,
-                             cur->bitem->att_eth->num, pm->name);
+        if (cur->bitem->att_eth->bank_type == bank_type_eth)
+          {
+          if (!cur->bitem->att_eth->att_node)
+            KOUT("%s", pm->name);
+          edge = bank_get_item(bank_type_edge,
+                               cur->bitem->att_eth->att_node->name,
+                               cur->bitem->att_eth->num, pm->name);
+          }
+        else
+          {
+          edge = bank_get_item(bank_type_edge,
+                               cur->bitem->att_eth->name,
+                               cur->bitem->att_eth->num, pm->name);
+          }
         if (edge)
           call_cloonix_interface_edge_delete(edge);
         cur = next;

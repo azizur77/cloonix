@@ -1288,6 +1288,26 @@ int endp_mngt_stop(char *name, int num)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+void endp_mngt_stop_all_sat(void)
+{
+  t_priv_endp *next, *cur = g_head_muendp;
+  while(cur)
+    {
+    next = cur->next;
+    if ((cur->endp_type == endp_type_tap) ||
+        (cur->endp_type == endp_type_wif) ||
+        (cur->endp_type == endp_type_raw) ||
+        (cur->endp_type == endp_type_a2b) ||
+        (cur->endp_type == endp_type_nat))
+      {
+      endp_mngt_stop(cur->name, cur->num);
+      }
+    cur = next;
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 int endp_mngt_get_all_llid(int **llid_tab)
 {
   t_priv_endp *cur = g_head_muendp;

@@ -103,35 +103,35 @@ int cfg_name_is_in_use(int is_lan, char *name, char *use)
     }
   else if (cfg_is_a_zombie(name))
     {
-    snprintf(use, MAX_NAME_LEN, "%s is vm zombie", name);
+    snprintf(use, MAX_NAME_LEN, "%s is used by vm zombie", name);
     result = 1;
     }
   else if (cfg_is_a_newborn(name))
     {
-    snprintf(use, MAX_NAME_LEN, "%s is vm newborn", name);
+    snprintf(use, MAX_NAME_LEN, "%s is used by vm newborn", name);
     result = 1;
     }
   else if (find_vm(name))
     {
-    snprintf(use, MAX_NAME_LEN, "%s is running vm", name);
+    snprintf(use, MAX_NAME_LEN, "%s is used by running vm", name);
     result = 1;
     }
   else if (endp_mngt_exists(name, 0, &type))
     {
     if (type == endp_type_tap)
-      snprintf(use, MAX_NAME_LEN, "%s is a tap", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a tap", name);
     else if (type == endp_type_wif)
-      snprintf(use, MAX_NAME_LEN, "%s is a wif", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a wif", name);
     else if (type == endp_type_raw)
-      snprintf(use, MAX_NAME_LEN, "%s is a raw", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a raw", name);
     else if (type == endp_type_snf)
-      snprintf(use, MAX_NAME_LEN, "%s is a snf", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a snf", name);
     else if (type == endp_type_a2b)
-      snprintf(use, MAX_NAME_LEN, "%s is a a2b", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a a2b", name);
     else if (type == endp_type_nat)
-      snprintf(use, MAX_NAME_LEN, "%s is a nat", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a nat", name);
     else if (type == endp_type_c2c)
-      snprintf(use, MAX_NAME_LEN, "%s is a c2c", name);
+      snprintf(use, MAX_NAME_LEN, "%s is used by a c2c", name);
     else
       KERR("%d ", type);
     result = 1;
