@@ -178,8 +178,6 @@ void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
       if (all_ctx->bytes_persec_tab[j])
         {
         all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
-KERR("%lld %d %d", all_ctx->bytes_persec_cur, j, 
-                          all_ctx->bytes_persec_tab[j]);
         all_ctx->bytes_persec_tab[j] = 0;  
         }
       }
@@ -203,7 +201,7 @@ int tx_unix_sock_shaping_overload(t_all_ctx *all_ctx)
   int result = 0;
   int ms = cloonix_get_msec();
   int idx = ms % MAX_PERSEC_ELEMS;
-  if (all_ctx->bytes_persec_tab[idx] > (all_ctx->bytes_persec_max / 64)) 
+  if (all_ctx->bytes_persec_tab[idx] > (all_ctx->bytes_persec_max / 512)) 
     result = 1;
   else if (all_ctx->bytes_persec_cur > all_ctx->bytes_persec_max)
     result = 1;
