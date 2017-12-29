@@ -102,8 +102,8 @@ void bdplot_newdata(char *name, int num, int date_ms, int tx, int rx)
     if (delta > 200)
       {
       date_s = (float)date_ms/1000;
-      bd[0]  = (float) cur->tx;
-      bd[1]  = (float) cur->rx;
+      bd[1]  = (float) cur->tx;
+      bd[0]  = (float) cur->rx;
       gtkplot_newdata(cur->gtk_plot_ctx, date_s, bd);
       cur->last_date_ms = date_ms;
       cur->tx = 0; 
