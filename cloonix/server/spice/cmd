@@ -14,6 +14,7 @@ fi
 #----------------------------------------------------------
 cd ${HERE}/spice_server
 tar xvf spice.tar.gz
+
 mv spice spice_server
 rm -rf ${TARGET}/spice_server
 mv spice_server ${TARGET}
@@ -24,6 +25,9 @@ set +e
   export NOCONFIGURE=yes
   ./autogen.sh
 set -e
+
+  sed -i s"/PACKAGE_VERSION='UNKNOWN'/PACKAGE_VERSION='0.13.4'/" configure
+
   ./configure --prefix=${TARGET} \
               --enable-gstreamer=yes \
               --libdir=${TARGET} \

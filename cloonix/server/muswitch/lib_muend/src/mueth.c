@@ -143,7 +143,71 @@ static void epoll_context_tx_activate(t_all_ctx *all_ctx)
 /*****************************************************************************/
 void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
 {
+  int i, j, ms, idx, zero_idx;
+  ms = cloonix_get_msec();
+  idx = ms % MAX_PERSEC_ELEMS;
+  zero_idx = (ms - 1100) % MAX_PERSEC_ELEMS;
+  for (i=0; i<100; i++)
+    {
+    j = zero_idx + i;
+    if (j > MAX_PERSEC_ELEMS)
+      j -= MAX_PERSEC_ELEMS; 
+    all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
+    all_ctx->bytes_persec_tab[j] = 0;  
+    }
+  all_ctx->bytes_persec_tab[idx] += len;
+  all_ctx->bytes_persec_cur += len;
   pool_tx_put(&(all_ctx->tx_pool), elem, len);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
+{
+  static int last_process_ms = 0;
+  int i, j, ms, zero_idx;
+  ms = cloonix_get_msec();
+  if ((ms - last_process_ms) > 100)
+    {
+    zero_idx = (ms + 100) % MAX_PERSEC_ELEMS;
+    for (i=0; i<850; i++)
+      {
+      j = zero_idx + i;
+      if (j > MAX_PERSEC_ELEMS)
+        j -= MAX_PERSEC_ELEMS; 
+      if (all_ctx->bytes_persec_tab[j])
+        {
+        all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
+KERR("%lld %d %d", all_ctx->bytes_persec_cur, j, 
+                          all_ctx->bytes_persec_tab[j]);
+        all_ctx->bytes_persec_tab[j] = 0;  
+        }
+      }
+    last_process_ms = ms;
+    }
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+void tx_unix_sock_shaping_value(t_all_ctx *all_ctx, int kbytes_persec)
+{
+  all_ctx->bytes_persec_max = (long long int) kbytes_persec;
+  all_ctx->bytes_persec_max *= 1000;
+KERR("%lld %lld", all_ctx->bytes_persec_cur, all_ctx->bytes_persec_max); 
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+int tx_unix_sock_shaping_overload(t_all_ctx *all_ctx)
+{
+  int result = 0;
+  int ms = cloonix_get_msec();
+  int idx = ms % MAX_PERSEC_ELEMS;
+  if (all_ctx->bytes_persec_tab[idx] > (all_ctx->bytes_persec_max / 64)) 
+    result = 1;
+  else if (all_ctx->bytes_persec_cur > all_ctx->bytes_persec_max)
+    result = 1;
+  return result;
 }
 /*---------------------------------------------------------------------------*/
 
@@ -182,6 +246,8 @@ void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name,
   all_ctx->g_num = num;
   strncpy(all_ctx->g_path, serv_path, MAX_PATH_LEN-1);
   sock_fd_init(all_ctx);
+  all_ctx->bytes_persec_max = 1000*1000;
+  all_ctx->bytes_persec_max *= 10000;
   msg_mngt_loop(all_ctx);
 }
 /*--------------------------------------------------------------------------*/

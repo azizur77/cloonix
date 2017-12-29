@@ -278,7 +278,7 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
 {
   t_connect_ctx *ctx = (t_connect_ctx *) data;
   t_connect_ctx *stctx;
-  int res, so_error, llid = -1;
+  int so_error, llid = -1;
   socklen_t len = sizeof so_error;
   stctx = find_ctx(&(ctx->tcpid));
   if (!stctx)
@@ -299,7 +299,7 @@ static void timer_connect_wait(t_all_ctx *all_ctx, void *data)
       {
       if ((ctx->count == 10) || (ctx->count == 20))
         {
-        res = connect(ctx->fd, &(ctx->addr), ctx->addr_len);
+        connect(ctx->fd, &(ctx->addr), ctx->addr_len);
         KERR(" RETRY CONNECT TO PORT %d %08X", 
              ctx->tcpid.local_port, ctx->tcpid.local_ip);
         }

@@ -34,6 +34,8 @@
 #define MASK_ASYNC_TX_POOL 0x7FF
 #define MASK_TX_ELEM_FREE_POOL 0x3FF
 #define MAX_USOCK_RANKS 200 
+
+#define MAX_PERSEC_ELEMS 2000
 /*--------------------------------------------------------------------------*/
 struct t_all_ctx;
 /*--------------------------------------------------------------------------*/
@@ -93,6 +95,7 @@ typedef t_blkd_chain *(*t_get_blkd_from_elem)(struct t_all_ctx *ctx,
 typedef void (*t_wake_out_epoll)(struct t_all_ctx *all_ctx);
 
 
+
 typedef struct t_all_ctx
 {
   t_all_ctx_head ctx_head;
@@ -122,6 +125,10 @@ typedef struct t_all_ctx
   int g_cloonix_net_status_ok;
   int g_qemu_net_status_ok;
   t_get_blkd_from_elem get_blkd_from_elem;
+
+  long long int bytes_persec_max;
+  long long int bytes_persec_cur;
+  int bytes_persec_tab[MAX_PERSEC_ELEMS];
 
 } t_all_ctx;
 
