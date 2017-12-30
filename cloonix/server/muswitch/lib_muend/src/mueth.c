@@ -150,7 +150,7 @@ void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
   for (i=0; i<100; i++)
     {
     j = zero_idx + i;
-    if (j > MAX_PERSEC_ELEMS)
+    if (j >= MAX_PERSEC_ELEMS)
       j -= MAX_PERSEC_ELEMS; 
     all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
     all_ctx->bytes_persec_tab[j] = 0;  
@@ -173,7 +173,7 @@ void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
     for (i=0; i<850; i++)
       {
       j = zero_idx + i;
-      if (j > MAX_PERSEC_ELEMS)
+      if (j >= MAX_PERSEC_ELEMS)
         j -= MAX_PERSEC_ELEMS; 
       if (all_ctx->bytes_persec_tab[j])
         {
@@ -191,20 +191,51 @@ void tx_unix_sock_shaping_value(t_all_ctx *all_ctx, int kbytes_persec)
 {
   all_ctx->bytes_persec_max = (long long int) kbytes_persec;
   all_ctx->bytes_persec_max *= 1000;
-KERR("%lld %lld", all_ctx->bytes_persec_cur, all_ctx->bytes_persec_max); 
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int tx_unix_sock_shaping_overload(t_all_ctx *all_ctx)
 {
-  int result = 0;
-  int ms = cloonix_get_msec();
-  int idx = ms % MAX_PERSEC_ELEMS;
-  if (all_ctx->bytes_persec_tab[idx] > (all_ctx->bytes_persec_max / 512)) 
-    result = 1;
-  else if (all_ctx->bytes_persec_cur > all_ctx->bytes_persec_max)
-    result = 1;
+  int k, i, j, topms, lap[4], idx[4], ms[4], result = 0;
+  long long int val[4], ref[4], max_ajusted;
+  topms = cloonix_get_msec();
+  ref[0] = (all_ctx->bytes_persec_max / 400);
+  ref[1] = (all_ctx->bytes_persec_max / 17);
+  ref[2] = (all_ctx->bytes_persec_max / 9);
+  ref[3] = (all_ctx->bytes_persec_max / 4);
+  lap[0] = 2;
+  lap[1] = 5;
+  lap[2] = 10;
+  lap[3] = 20;
+  for (k=0; k<4; k++)
+    {
+    ms[k]  = topms - lap[k];
+    idx[k] = ms[k] % MAX_PERSEC_ELEMS;
+    val[k] = 0;
+    for (i=0; i<lap[k]; i++)
+      {
+      j = idx[k] + i;
+      if (j >= MAX_PERSEC_ELEMS)
+        j -= MAX_PERSEC_ELEMS;
+      val[k] += all_ctx->bytes_persec_tab[j];
+      }
+    if (val[k] > ref[k])
+      {
+      KERR("%d %d %d", k, val[k], ref[k]);
+      result = 1;
+      break;
+      }
+    }
+  if (!result)
+    {
+    max_ajusted = all_ctx->bytes_persec_max + (all_ctx->bytes_persec_max/10);
+    if (all_ctx->bytes_persec_cur > max_ajusted)
+      {
+      KERR("%lld %lld", all_ctx->bytes_persec_cur,  all_ctx->bytes_persec_max);
+      result = 1;
+      }
+    }
   return result;
 }
 /*---------------------------------------------------------------------------*/
