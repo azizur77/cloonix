@@ -247,10 +247,6 @@ static void init_bytes_persec_max(t_all_ctx *all_ctx, long long int input)
 
   all_ctx->bytes_persec_max[4] = val + (5*val/100);
 
-  KERR("%lld %lld", input, val);
-  KERR("%lld %lld %lld %lld %lld", all_ctx->bytes_persec_max[0],
-       all_ctx->bytes_persec_max[1], all_ctx->bytes_persec_max[2],
-       all_ctx->bytes_persec_max[3], all_ctx->bytes_persec_max[4]);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -373,7 +369,7 @@ void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name,
   g_change_virtio_queue = change_virtio_queue;
   sock_fd_init(all_ctx);
   val = 1000*1000;
-  val *= 10000;
+  val *= 100000;
   init_bytes_persec_max(all_ctx, val);
   msg_mngt_loop(all_ctx);
 }
