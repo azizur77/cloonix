@@ -15,6 +15,7 @@
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /*                                                                           */
 /*****************************************************************************/
+typedef void  (*t_change_virtio_queue)(t_all_ctx *all_ctx);
 void pool_tx_init(t_tx_sock_async_pool *pool_tx);
 void unix_sock_rx_activate(t_all_ctx *all_ctx);
 void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len);
@@ -26,7 +27,8 @@ int tx_unix_sock_pool_len(t_all_ctx *all_ctx);
 void stop_tx_counter_increment(t_all_ctx *all_ctx, int idx);
 void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name,
                              char *name, int num, char *serv_path,
-                             t_get_blkd_from_elem get_blkd_from_elem);
+                             t_get_blkd_from_elem get_blkd_from_elem,
+                              t_change_virtio_queue change_virtio_queue);
 /*---------------------------------------------------------------------------*/
 
 

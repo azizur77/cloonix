@@ -925,9 +925,7 @@ int blkd_get_rank(void *ptr, int llid, char *name, int *num, int *tidx)
 void blkd_stop_tx_counter_increment(void *ptr, int llid)
 {
   t_llid_blkd *cur = find_llid_blk(ptr, llid);
-  if (!cur)
-    KERR(" ");
-  else
+  if (cur)
     {
     cur->fifo_tx.slot_stop[cur->fifo_tx.current_slot] += 1;
     }

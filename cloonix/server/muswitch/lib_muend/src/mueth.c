@@ -40,6 +40,7 @@
 #include "mueth.h"
 
 
+static t_change_virtio_queue g_change_virtio_queue;
 
 /*****************************************************************************/
 static void epoll_context_rx_activate(t_all_ctx *all_ctx)
@@ -141,20 +142,58 @@ static void epoll_context_tx_activate(t_all_ctx *all_ctx)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static int get_idx_from_time(int ms)
+{
+  int idx, target_ms;
+  target_ms = ms;
+  target_ms /= 5;
+  idx = target_ms % MAX_PERSEC_ELEMS;
+  return idx;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int get_idx_sub(int idx, int offset)
+{
+  int result = idx - offset;
+  if (result < 0)
+    result += MAX_PERSEC_ELEMS;
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static int get_idx_add(int idx, int offset)
+{
+  int result = idx + offset;
+  if (result >= MAX_PERSEC_ELEMS)
+    result -= MAX_PERSEC_ELEMS;
+  return result;
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
 {
-  int i, j, ms, idx, zero_idx;
+  int i, j, ms, idx, zero_idx, futur_idx;
   ms = cloonix_get_msec();
-  idx = ms % MAX_PERSEC_ELEMS;
-  zero_idx = (ms - 1100) % MAX_PERSEC_ELEMS;
-  for (i=0; i<100; i++)
+  idx = get_idx_from_time(ms);
+  zero_idx = get_idx_sub(idx, 230);
+  futur_idx = get_idx_add(idx, 1);
+  if (all_ctx->bytes_persec_tab[futur_idx])
     {
-    j = zero_idx + i;
-    if (j >= MAX_PERSEC_ELEMS)
-      j -= MAX_PERSEC_ELEMS; 
+    KERR("%d", all_ctx->bytes_persec_tab[futur_idx]); 
+    all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[futur_idx];
+    all_ctx->bytes_persec_tab[futur_idx] = 0;
+    }
+  for (i=0; i<30; i++)
+    {
+    j = get_idx_add(zero_idx, i);
     all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
     all_ctx->bytes_persec_tab[j] = 0;  
     }
+  if (len > 1600)
+    KERR("%d", len);
   all_ctx->bytes_persec_tab[idx] += len;
   all_ctx->bytes_persec_cur += len;
   pool_tx_put(&(all_ctx->tx_pool), elem, len);
@@ -165,16 +204,15 @@ void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
 void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
 {
   static int last_process_ms = 0;
-  int i, j, ms, zero_idx;
+  int i, j, ms, idx, zero_idx;
   ms = cloonix_get_msec();
-  if ((ms - last_process_ms) > 100)
+  if ((ms - last_process_ms) > 50)
     {
-    zero_idx = (ms + 100) % MAX_PERSEC_ELEMS;
-    for (i=0; i<850; i++)
+    idx = get_idx_from_time(ms);
+    zero_idx = get_idx_add(idx, 49);
+    for (i=0; i<150; i++)
       {
-      j = zero_idx + i;
-      if (j >= MAX_PERSEC_ELEMS)
-        j -= MAX_PERSEC_ELEMS; 
+      j = get_idx_add(zero_idx, i);
       if (all_ctx->bytes_persec_tab[j])
         {
         all_ctx->bytes_persec_cur -= all_ctx->bytes_persec_tab[j];
@@ -187,52 +225,108 @@ void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
+static void init_bytes_persec_max(t_all_ctx *all_ctx, long long int input)
+{
+  long long int val = input;
+
+  all_ctx->bytes_persec_max[0] = val/60;
+  if (all_ctx->bytes_persec_max[0] < 1600)
+    all_ctx->bytes_persec_max[0] = 1600;
+
+  all_ctx->bytes_persec_max[1] = val/30;
+  if (all_ctx->bytes_persec_max[1] < 1600)
+    all_ctx->bytes_persec_max[1] = 1600;
+
+  all_ctx->bytes_persec_max[2] =  val/16;
+  if (all_ctx->bytes_persec_max[2] < 1600)
+    all_ctx->bytes_persec_max[2] = 1600;
+
+  all_ctx->bytes_persec_max[3] =  val/10;
+  if (all_ctx->bytes_persec_max[3] < 1600)
+    all_ctx->bytes_persec_max[3] = 1600;
+
+  all_ctx->bytes_persec_max[4] = val + (5*val/100);
+
+  KERR("%lld %lld", input, val);
+  KERR("%lld %lld %lld %lld %lld", all_ctx->bytes_persec_max[0],
+       all_ctx->bytes_persec_max[1], all_ctx->bytes_persec_max[2],
+       all_ctx->bytes_persec_max[3], all_ctx->bytes_persec_max[4]);
+}
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void tx_purge_blkd_chain(t_all_ctx *all_ctx, t_blkd_chain *cur)
+{
+  t_blkd_chain *next;
+  while(cur)
+    {
+    next = cur->next;
+    blkd_free((void *) all_ctx, cur->blkd);
+    free(cur);
+    cur = next;
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+static void tx_elem_pool_purge(t_all_ctx *all_ctx)
+{
+  void *elem = pool_tx_get(&(all_ctx->tx_pool));
+  t_blkd_chain *cur;
+  while (elem)
+    {
+    cur = all_ctx->get_blkd_from_elem(all_ctx, elem);
+    tx_purge_blkd_chain(all_ctx, cur);
+    elem = pool_tx_get(&(all_ctx->tx_pool));
+    }
+}
+/*--------------------------------------------------------------------------*/
+
+/*****************************************************************************/
 void tx_unix_sock_shaping_value(t_all_ctx *all_ctx, int kbytes_persec)
 {
-  all_ctx->bytes_persec_max = (long long int) kbytes_persec;
-  all_ctx->bytes_persec_max *= 1000;
+  long long int val = (long long int) kbytes_persec;
+  val *= 1000;
+  init_bytes_persec_max(all_ctx, val);
+  tx_elem_pool_purge(all_ctx);
+  g_change_virtio_queue(all_ctx);
 }
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/
 int tx_unix_sock_shaping_overload(t_all_ctx *all_ctx)
 {
-  int k, i, j, topms, lap[4], idx[4], ms[4], result = 0;
-  long long int val[4], ref[4], max_ajusted;
-  topms = cloonix_get_msec();
-  ref[0] = (all_ctx->bytes_persec_max / 400);
-  ref[1] = (all_ctx->bytes_persec_max / 17);
-  ref[2] = (all_ctx->bytes_persec_max / 9);
-  ref[3] = (all_ctx->bytes_persec_max / 4);
-  lap[0] = 2;
-  lap[1] = 5;
-  lap[2] = 10;
-  lap[3] = 20;
+  int k, i, j, ms, refidx, lap[4], idx[4], result = 0;
+  long long int val[4], ref[4];
+  ms = cloonix_get_msec();
+  refidx = get_idx_from_time(ms);
+  lap[0] = 0;
+  lap[1] = 4;
+  lap[2] = 9;
+  lap[3] = 19;
   for (k=0; k<4; k++)
     {
-    ms[k]  = topms - lap[k];
-    idx[k] = ms[k] % MAX_PERSEC_ELEMS;
+    ref[k] = all_ctx->bytes_persec_max[k]; 
+    idx[k] = get_idx_sub(refidx, lap[k]);
     val[k] = 0;
-    for (i=0; i<lap[k]; i++)
+    for (i=0; i<=lap[k]; i++)
       {
-      j = idx[k] + i;
-      if (j >= MAX_PERSEC_ELEMS)
-        j -= MAX_PERSEC_ELEMS;
+      j = get_idx_add(idx[k], i);
       val[k] += all_ctx->bytes_persec_tab[j];
       }
     if (val[k] > ref[k])
       {
-      KERR("%d %d %d", k, val[k], ref[k]);
+      KERR("%d %lld %lld", k, val[k], ref[k]);
       result = 1;
       break;
       }
     }
   if (!result)
     {
-    max_ajusted = all_ctx->bytes_persec_max + (all_ctx->bytes_persec_max/10);
-    if (all_ctx->bytes_persec_cur > max_ajusted)
+    if (all_ctx->bytes_persec_cur > all_ctx->bytes_persec_max[4])
       {
-      KERR("%lld %lld", all_ctx->bytes_persec_cur,  all_ctx->bytes_persec_max);
+      KERR("%lld %lld", all_ctx->bytes_persec_cur,
+                        all_ctx->bytes_persec_max[4]);
       result = 1;
       }
     }
@@ -266,17 +360,21 @@ void stop_tx_counter_increment(t_all_ctx *all_ctx, int idx)
 /*****************************************************************************/
 void mueth_main_endless_loop(t_all_ctx *all_ctx, char *net_name, 
                              char *name, int num, char *serv_path,
-                             t_get_blkd_from_elem get_blkd_from_elem)
+                             t_get_blkd_from_elem get_blkd_from_elem,
+                             t_change_virtio_queue change_virtio_queue)
 {
+  long long int val;
   blkd_set_our_mutype((void *) all_ctx, endp_type_kvm);
   all_ctx->get_blkd_from_elem = get_blkd_from_elem;
   strncpy(all_ctx->g_net_name, net_name, MAX_NAME_LEN-1);
   strncpy(all_ctx->g_name, name, MAX_NAME_LEN-1);
   all_ctx->g_num = num;
   strncpy(all_ctx->g_path, serv_path, MAX_PATH_LEN-1);
+  g_change_virtio_queue = change_virtio_queue;
   sock_fd_init(all_ctx);
-  all_ctx->bytes_persec_max = 1000*1000;
-  all_ctx->bytes_persec_max *= 10000;
+  val = 1000*1000;
+  val *= 10000;
+  init_bytes_persec_max(all_ctx, val);
   msg_mngt_loop(all_ctx);
 }
 /*--------------------------------------------------------------------------*/
