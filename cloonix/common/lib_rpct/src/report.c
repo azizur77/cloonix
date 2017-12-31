@@ -232,7 +232,8 @@ void rpct_hop_print (void *ptr, int flags_hop, const char * format, ...)
 
   va_start (arguments, format);
   memset(line, 0, MAX_HOP_PRINT_LEN);
-  len = snprintf(line, MAX_HOP_PRINT_LEN-1, "%07u: ", cloonix_get_msec());
+  len = snprintf(line, MAX_HOP_PRINT_LEN-1, "%07u: ", 
+                 (unsigned int) cloonix_get_msec());
   vsnprintf (line+len, MAX_HOP_PRINT_LEN-1, format, arguments);
   interface_send_evt_txt (ptr, flags_hop, line);
   va_end (arguments);

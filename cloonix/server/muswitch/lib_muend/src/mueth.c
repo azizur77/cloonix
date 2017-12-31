@@ -142,11 +142,10 @@ static void epoll_context_tx_activate(t_all_ctx *all_ctx)
 /*--------------------------------------------------------------------------*/
 
 /*****************************************************************************/
-static int get_idx_from_time(int ms)
+static int get_idx_from_time(long long ms)
 {
   int idx, target_ms;
-  target_ms = ms;
-  target_ms /= 5;
+  target_ms = (int) (ms / 5);
   idx = target_ms % MAX_PERSEC_ELEMS;
   return idx;
 }
@@ -175,7 +174,8 @@ static int get_idx_add(int idx, int offset)
 /*****************************************************************************/
 void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
 {
-  int i, j, ms, idx, zero_idx, futur_idx;
+  int i, j, idx, zero_idx, futur_idx;
+  long long ms;
   ms = cloonix_get_msec();
   idx = get_idx_from_time(ms);
   zero_idx = get_idx_sub(idx, 230);
@@ -203,8 +203,9 @@ void tx_unix_sock(t_all_ctx *all_ctx, void *elem, int len)
 /*****************************************************************************/
 void tx_unix_sock_shaping_timer(t_all_ctx *all_ctx)
 {
-  static int last_process_ms = 0;
-  int i, j, ms, idx, zero_idx;
+  static long long last_process_ms = 0;
+  int i, j, idx, zero_idx;
+  long long ms;
   ms = cloonix_get_msec();
   if ((ms - last_process_ms) > 50)
     {
@@ -292,8 +293,8 @@ void tx_unix_sock_shaping_value(t_all_ctx *all_ctx, int kbytes_persec)
 /*****************************************************************************/
 int tx_unix_sock_shaping_overload(t_all_ctx *all_ctx)
 {
-  int k, i, j, ms, refidx, lap[4], idx[4], result = 0;
-  long long int val[4], ref[4];
+  int k, i, j, refidx, lap[4], idx[4], result = 0;
+  long long ms, val[4], ref[4];
   ms = cloonix_get_msec();
   refidx = get_idx_from_time(ms);
   lap[0] = 0;

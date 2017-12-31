@@ -197,7 +197,7 @@ void help_mud_eth(char *line)
   printf("\n%s Cloon1 0 \"set_promisc 0\"\n", line);
   printf("\n%s Cloon1 0 \"set_shaping 100\"", line);
   printf("\n (value for set_shaping is in kilo bytes per sec)");
-  printf("\n\n\n", line);
+  printf("\n\n\n");
 }
 /*---------------------------------------------------------------------------*/
 

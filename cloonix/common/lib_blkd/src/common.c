@@ -28,15 +28,15 @@
 static int g_pid;
 
 /*****************************************************************************/
-unsigned int cloonix_get_msec(void)
+long long cloonix_get_msec(void)
 {
   struct timespec ts;
-  unsigned int result;
+  long long result;
   if (syscall(SYS_clock_gettime, CLOCK_MONOTONIC_COARSE, &ts))
     KOUT(" ");
-  result = (unsigned int) (ts.tv_sec);
+  result = (long long) (ts.tv_sec);
   result *= 1000;
-  result += ((unsigned int) ts.tv_nsec) / 1000000;
+  result += ((long long) ts.tv_nsec) / 1000000;
   return result;
 }
 /*---------------------------------------------------------------------------*/

@@ -484,7 +484,7 @@ void hop_event_hook(int llid, int flag, char *iline)
     {
     memset(line, 0, MAX_HOP_PRINT_LEN);
     snprintf(line, MAX_HOP_PRINT_LEN-1, "%07u: %s",
-             cloonix_get_msec(), iline);
+             (unsigned int) cloonix_get_msec(), iline);
     while ((cur_client) && (cur_client->flags_hop & flag))
       {
       send_hop_evt_doors(cur_client->llid, cur_client->tid,

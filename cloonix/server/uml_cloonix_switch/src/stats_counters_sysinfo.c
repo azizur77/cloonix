@@ -309,7 +309,7 @@ void stats_counters_sysinfo_update(char *name,
       memset(&sysinfo, 0, sizeof(t_stats_sysinfo));
       if (!read_proc_pid_stat(&pid_info, vm->pid))
         {
-        sysinfo.time_ms        = cloonix_get_msec();
+        sysinfo.time_ms        = (unsigned int) cloonix_get_msec();
         sysinfo.uptime         = uptime;
         sysinfo.load1          = load1;
         sysinfo.load5          = load5;

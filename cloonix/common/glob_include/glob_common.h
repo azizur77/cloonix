@@ -20,23 +20,23 @@
 #include <stdint.h>
 #include <syslog.h>
 #include <string.h>
-unsigned int cloonix_get_msec(void);
+long long cloonix_get_msec(void);
 long long cloonix_get_usec(void);
 void cloonix_set_pid(int pid);
 int cloonix_get_pid(void);
 
 #define KERR(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "%07u %s"           \
-    " line:%d " format "\n", cloonix_get_msec(),         \
+    syslog(LOG_ERR | LOG_USER, "%07u %s"                 \
+    " line:%d " format "\n", (unsigned int) cloonix_get_msec(),   \
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
      __LINE__, ## a);                                    \
     } while (0)
 
 #define KOUT(format, a...)                               \
  do {                                                    \
-    syslog(LOG_ERR | LOG_USER, "KILL %07u %s"      \
-    " line:%d   " format "\n\n", cloonix_get_msec(),     \
+    syslog(LOG_ERR | LOG_USER, "KILL %07u %s"            \
+    " line:%d   " format "\n\n", (unsigned int) cloonix_get_msec(),  \
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__), \
      __LINE__, ## a);                                    \
     exit(-1);                                            \

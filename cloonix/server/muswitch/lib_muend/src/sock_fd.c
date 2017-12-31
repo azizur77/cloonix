@@ -66,7 +66,7 @@ static void eventfull_endp(t_all_ctx *all_ctx, int cloonix_llid, int tidx)
   memset(txt, 0, 2*MAX_NAME_LEN);
   snprintf(txt, (2*MAX_NAME_LEN) - 1, 
            "endp_eventfull_tx_rx %u %d %d %d %d %d",
-           cloonix_get_msec(), tidx, nb_pkt_tx, nb_bytes_tx,
+           (unsigned int) cloonix_get_msec(), tidx, nb_pkt_tx, nb_bytes_tx,
            nb_pkt_rx, nb_bytes_rx);
   rpct_send_evt_msg(all_ctx, cloonix_llid, 0, txt);
 }
