@@ -144,7 +144,7 @@ static void epoll_context_tx_activate(t_all_ctx *all_ctx)
 /*****************************************************************************/
 static int get_idx_from_time(long long ms)
 {
-  long long tmp
+  long long tmp;
   unsigned int target_ms;
   int idx;
   tmp = ms / 5;
