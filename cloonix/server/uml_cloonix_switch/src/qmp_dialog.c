@@ -271,7 +271,7 @@ static void timer_connect_qmp(void *data)
       if (!utils_get_pid_of_machine(vm))
         {
         qrec->count_conn_timeout += 1;
-        if (qrec->count_conn_timeout > 5)
+        if (qrec->count_conn_timeout > 20)
           KERR("%s", pname);
         else
           {
@@ -285,7 +285,7 @@ static void timer_connect_qmp(void *data)
         if (util_nonblock_client_socket_unix(qmp_path, &fd))
           {
           qrec->count_conn_timeout += 1;
-          if (qrec->count_conn_timeout > 5)
+          if (qrec->count_conn_timeout > 10)
             KERR("%s", pname);
           else
             {
