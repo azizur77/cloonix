@@ -43,7 +43,8 @@ set -e
               --disable-vala \
               --disable-webdav \
               --disable-smartcard \
-              --disable-lz4
+              --disable-lz4 \
+              --enable_python_checks
 
 make clean
 make

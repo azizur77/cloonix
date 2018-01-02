@@ -9,7 +9,8 @@ cd $TARGET
 tar xvf ${HERE}/spice_protocol/spice-protocol.tar.gz
 cd spice-protocol
 ./configure --prefix=${TARGET} \
-            --datarootdir=${TARGET}
+            --datarootdir=${TARGET} \
+            --enable_python_checks
 make clean
 make
 make install
@@ -25,7 +26,9 @@ tar xvf ${HERE}/spice_usb/usbredir.tar.gz
 cd usbredir
 patch -p1 < ${HERE}/spice_usb/usbredir.patch
 
-./configure --prefix=${TARGET} --libdir=${TARGET}
+./configure --prefix=${TARGET} \
+            --libdir=${TARGET} \
+            --enable_python_checks
 
 make clean
 make
@@ -36,7 +39,9 @@ cd ${TARGET}
 tar xvf ${HERE}/virglrenderer/virglrenderer.tar.gz
 cd virglrenderer
 
-./configure --prefix=${TARGET} --libdir=${TARGET}
+./configure --prefix=${TARGET} \
+            --libdir=${TARGET} \
+            --enable_python_checks
 
 make clean
 make
