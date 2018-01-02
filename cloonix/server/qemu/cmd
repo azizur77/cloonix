@@ -20,6 +20,7 @@ cd ${HERE}/qemu_bin/tainted_qemu
 
  CONFIGURATION_OPTS="--prefix=/usr/local
                      --target-list=x86_64-softmmu
+                     --python=/usr/bin/python2
                      --enable-fdt
                      --enable-kvm
                      --enable-spice

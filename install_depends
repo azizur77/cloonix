@@ -46,11 +46,7 @@ fct_build_get_arch_packages()
              tar cdrkit rxvt-unicode base-devel \
              readline libevent gtk3 python2 python2-pyparsing \
              python2-six intltool opus polkit acl mesa libusb \
-             gst-plugins-base ttf-dejavu orc
-
-  yes | pacman -Sy gcc-multilib
-
-  ln -s /usr/bin/python2 /usr/bin/python
+             gst-plugins-base ttf-dejavu orc python
 
 }
 #--------------------------------------------------------------------------

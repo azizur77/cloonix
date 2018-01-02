@@ -21,22 +21,17 @@ mv spice_server ${TARGET}
 cd ${TARGET}/spice_server
 export PKG_CONFIG_PATH=${TARGET}/pkgconfig
 
-set +e
-  export NOCONFIGURE=yes
-  ./autogen.sh
-set -e
+sed -i s"/PACKAGE_VERSION='UNKNOWN'/PACKAGE_VERSION='0.13.4'/" configure
 
-  sed -i s"/PACKAGE_VERSION='UNKNOWN'/PACKAGE_VERSION='0.13.4'/" configure
-
-  ./configure --prefix=${TARGET} \
-              --enable-gstreamer=yes \
-              --libdir=${TARGET} \
-              --datarootdir=${TARGET} \
-              --disable-celt051 \
-              --disable-smartcard \
-              --disable-client \
-              --disable-static \
-              --disable-lz4
+./configure --prefix=${TARGET} \
+            --enable-gstreamer=yes \
+            --libdir=${TARGET} \
+            --datarootdir=${TARGET} \
+            --disable-celt051 \
+            --disable-smartcard \
+            --disable-client \
+            --disable-static \
+            --disable-lz4
 
 make clean
 make
