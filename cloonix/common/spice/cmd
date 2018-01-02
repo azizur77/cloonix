@@ -10,7 +10,7 @@ tar xvf ${HERE}/spice_protocol/spice-protocol.tar.gz
 cd spice-protocol
 ./configure --prefix=${TARGET} \
             --datarootdir=${TARGET} \
-            --enable_python_checks
+            --enable-python-checks
 make clean
 make
 make install
@@ -28,7 +28,7 @@ patch -p1 < ${HERE}/spice_usb/usbredir.patch
 
 ./configure --prefix=${TARGET} \
             --libdir=${TARGET} \
-            --enable_python_checks
+            --enable-python-checks
 
 make clean
 make
@@ -41,7 +41,7 @@ cd virglrenderer
 
 ./configure --prefix=${TARGET} \
             --libdir=${TARGET} \
-            --enable_python_checks
+            --enable-python-checks
 
 make clean
 make

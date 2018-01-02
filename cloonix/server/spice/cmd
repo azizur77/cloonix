@@ -32,7 +32,7 @@ sed -i s"/PACKAGE_VERSION='UNKNOWN'/PACKAGE_VERSION='0.13.4'/" configure
             --disable-client \
             --disable-static \
             --disable-lz4 \
-            --enable_python_checks
+            --enable-python-checks
 
 make clean
 make

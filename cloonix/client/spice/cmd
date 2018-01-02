@@ -44,7 +44,7 @@ set -e
               --disable-webdav \
               --disable-smartcard \
               --disable-lz4 \
-              --enable_python_checks
+              --enable-python-checks
 
 make clean
 make
