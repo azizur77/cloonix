@@ -1,7 +1,7 @@
 #!/bin/bash
 HERE=`pwd`
 version_openssl=$1
-OPENSSH=openssh-7.5p1
+OPENSSH=openssh-7.6p1
 rm -rf $OPENSSH
 if [ -e tainted_openssh ]; then
   echo remove tainted_openssh directory and start again
@@ -11,7 +11,7 @@ tar xvf ${OPENSSH}.tar.gz
 mv ${OPENSSH} tainted_openssh
 cd tainted_openssh
 if [ "$version_openssl" = "1.1" ]; then
-  patch -f -p1 < ../openssh-7.5p1-openssl-1.1.0-1.patch
+  patch -f -p1 < ../openssh-7.6p1-openssl-1.1.0-1.patch
 fi
 patch -f -p1 < ../openssh.patch
 
